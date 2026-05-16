@@ -503,6 +503,51 @@ func TestHandlerFallsBackAfterValidatorRetryableFailure(t *testing.T) {
 		t.Fatalf("ChannelCreate second channel failed: %v", err)
 	}
 
+	site := &model.Site{
+		Name:         "relay-trace-site",
+		Platform:     model.SitePlatformOpenAI,
+		BaseURL:      firstServer.URL,
+		Enabled:      true,
+		GlobalWeight: 1,
+	}
+	if err := op.SiteCreate(site, ctx); err != nil {
+		t.Fatalf("SiteCreate failed: %v", err)
+	}
+	firstAccount := &model.SiteAccount{
+		SiteID:         site.ID,
+		Name:           "relay-trace-first-account",
+		CredentialType: model.SiteCredentialTypeAPIKey,
+		APIKey:         "fake-site-key-1",
+	}
+	if err := op.SiteAccountCreate(firstAccount, ctx); err != nil {
+		t.Fatalf("SiteAccountCreate first failed: %v", err)
+	}
+	secondAccount := &model.SiteAccount{
+		SiteID:         site.ID,
+		Name:           "relay-trace-second-account",
+		CredentialType: model.SiteCredentialTypeAPIKey,
+		APIKey:         "fake-site-key-2",
+	}
+	if err := op.SiteAccountCreate(secondAccount, ctx); err != nil {
+		t.Fatalf("SiteAccountCreate second failed: %v", err)
+	}
+	if err := dbpkg.GetDB().WithContext(ctx).Create(&model.SiteChannelBinding{
+		SiteID:        site.ID,
+		SiteAccountID: firstAccount.ID,
+		GroupKey:      "first",
+		ChannelID:     firstChannel.ID,
+	}).Error; err != nil {
+		t.Fatalf("create first SiteChannelBinding failed: %v", err)
+	}
+	if err := dbpkg.GetDB().WithContext(ctx).Create(&model.SiteChannelBinding{
+		SiteID:        site.ID,
+		SiteAccountID: secondAccount.ID,
+		GroupKey:      "second",
+		ChannelID:     secondChannel.ID,
+	}).Error; err != nil {
+		t.Fatalf("create second SiteChannelBinding failed: %v", err)
+	}
+
 	group := &model.Group{
 		Name:         "relay-validator-failover-group",
 		Mode:         model.GroupModeFailover,
@@ -559,6 +604,35 @@ func TestHandlerFallsBackAfterValidatorRetryableFailure(t *testing.T) {
 		t.Fatalf("expected relay log attempts to be recorded, got %#v", logs)
 	}
 
+	relayLog := logs[0]
+	if relayLog.TraceID == "" {
+		t.Fatalf("expected relay log trace id, got %#v", relayLog)
+	}
+	if relayLog.ClientAPIKeyID != 99 {
+		t.Fatalf("expected client api key id 99, got %#v", relayLog)
+	}
+	if relayLog.GroupID != group.ID {
+		t.Fatalf("expected group id %d, got %#v", group.ID, relayLog)
+	}
+	if relayLog.FinalStatus != "success" {
+		t.Fatalf("expected final status success, got %#v", relayLog)
+	}
+	if relayLog.FinalChannelID != secondChannel.ID {
+		t.Fatalf("expected final channel id %d, got %#v", secondChannel.ID, relayLog)
+	}
+	if relayLog.FinalSiteID != site.ID {
+		t.Fatalf("expected final site id %d, got %#v", site.ID, relayLog)
+	}
+	if relayLog.FinalUpstreamModel != "fallback-model" {
+		t.Fatalf("expected final upstream model fallback-model, got %#v", relayLog)
+	}
+	if relayLog.AttemptsCount != len(relayLog.Attempts) || relayLog.TotalAttempts != len(relayLog.Attempts) {
+		t.Fatalf("expected attempts counts to match attempts, got %#v", relayLog)
+	}
+	if relayLog.TotalLatencyMS != relayLog.UseTime {
+		t.Fatalf("expected total latency to mirror use time, got %#v", relayLog)
+	}
+
 	firstAttempt := logs[0].Attempts[0]
 	if firstAttempt.AttemptIndex != 1 {
 		t.Fatalf("expected first attempt index 1, got %#v", firstAttempt)
@@ -566,8 +640,26 @@ func TestHandlerFallsBackAfterValidatorRetryableFailure(t *testing.T) {
 	if firstAttempt.ChannelID != firstChannel.ID {
 		t.Fatalf("expected first attempt channel id %d, got %#v", firstChannel.ID, firstAttempt)
 	}
+	if firstAttempt.KeyID == 0 || firstAttempt.KeyID != firstAttempt.ChannelKeyID {
+		t.Fatalf("expected first attempt key id to mirror channel key id, got %#v", firstAttempt)
+	}
+	if firstAttempt.SiteID != site.ID || firstAttempt.SiteAccountID != firstAccount.ID || firstAttempt.AccountID != firstAccount.ID {
+		t.Fatalf("expected first attempt site/account metadata, got %#v", firstAttempt)
+	}
+	if firstAttempt.BaseURL != firstServer.URL+"/v1" {
+		t.Fatalf("expected sanitized first base url, got %#v", firstAttempt)
+	}
 	if firstAttempt.UpstreamModel != "fallback-model" {
 		t.Fatalf("expected first attempt upstream model fallback-model, got %#v", firstAttempt)
+	}
+	if firstAttempt.RequestProtocol != string(transformerModel.APIFormatOpenAIChatCompletion) {
+		t.Fatalf("expected first attempt request protocol, got %#v", firstAttempt)
+	}
+	if firstAttempt.UpstreamProtocol != "openai_chat" {
+		t.Fatalf("expected first attempt upstream protocol openai_chat, got %#v", firstAttempt)
+	}
+	if firstAttempt.ResponseProtocol != string(transformerModel.APIFormatOpenAIChatCompletion) {
+		t.Fatalf("expected first attempt response protocol, got %#v", firstAttempt)
 	}
 	if firstAttempt.HTTPStatus != http.StatusOK {
 		t.Fatalf("expected first attempt http status 200, got %#v", firstAttempt)
@@ -575,8 +667,28 @@ func TestHandlerFallsBackAfterValidatorRetryableFailure(t *testing.T) {
 	if firstAttempt.FailureReason != "empty_choices" {
 		t.Fatalf("expected first attempt failure reason empty_choices, got %#v", firstAttempt)
 	}
+	if !firstAttempt.Retryable {
+		t.Fatalf("expected first validator failure attempt to be retryable, got %#v", firstAttempt)
+	}
 	if firstAttempt.DurationMS != firstAttempt.Duration {
 		t.Fatalf("expected first attempt duration_ms to mirror duration, got %#v", firstAttempt)
+	}
+	if firstAttempt.TotalMS != firstAttempt.DurationMS {
+		t.Fatalf("expected first attempt total_ms to mirror duration_ms, got %#v", firstAttempt)
+	}
+	if firstAttempt.ErrorSummary == "" || strings.Contains(firstAttempt.ErrorSummary, "fake-site-key") {
+		t.Fatalf("expected sanitized first attempt error summary, got %#v", firstAttempt)
+	}
+
+	secondAttempt := logs[0].Attempts[1]
+	if secondAttempt.Status != model.AttemptSuccess {
+		t.Fatalf("expected second attempt success, got %#v", secondAttempt)
+	}
+	if secondAttempt.SiteID != site.ID || secondAttempt.SiteAccountID != secondAccount.ID || secondAttempt.AccountID != secondAccount.ID {
+		t.Fatalf("expected second attempt site/account metadata, got %#v", secondAttempt)
+	}
+	if secondAttempt.BaseURL != secondServer.URL+"/v1" {
+		t.Fatalf("expected sanitized second base url, got %#v", secondAttempt)
 	}
 }
 

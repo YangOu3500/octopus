@@ -420,12 +420,15 @@ func newWSRelayRequest(
 		return nil, nil, fmt.Errorf("no available channel")
 	}
 
+	metrics := NewRelayMetrics(apiKeyID, requestModel, rawBody, metricsRequest)
+	metrics.SetGroupID(group.ID)
+
 	return &relayRequest{
 		c:               nil,
 		ctx:             ctx,
 		inAdapter:       inAdapter,
 		internalRequest: executionRequest,
-		metrics:         NewRelayMetrics(apiKeyID, requestModel, rawBody, metricsRequest),
+		metrics:         metrics,
 		apiKeyID:        apiKeyID,
 		requestModel:    requestModel,
 		iter:            iter,

@@ -85,8 +85,9 @@ func HandleResponsesCompact(c *gin.Context) {
 		return
 	}
 
-	metricsReq := &transformerModel.InternalLLMRequest{Model: requestModel, RawRequest: body}
+	metricsReq := &transformerModel.InternalLLMRequest{Model: requestModel, RawRequest: body, RawAPIFormat: transformerModel.APIFormatOpenAIResponse}
 	metrics := NewRelayMetrics(apiKeyID, requestModel, body, metricsReq)
+	metrics.SetGroupID(group.ID)
 
 	var lastErr error
 	var lastStatusCode int

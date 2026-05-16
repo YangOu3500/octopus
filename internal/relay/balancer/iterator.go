@@ -117,6 +117,7 @@ func (it *Iterator) Skip(channelID, channelKeyID int, channelName, msg string) {
 	it.attempts = append(it.attempts, model.ChannelAttempt{
 		ChannelID:     channelID,
 		ChannelKeyID:  channelKeyID,
+		KeyID:         channelKeyID,
 		ChannelName:   channelName,
 		ModelName:     it.candidates[it.index].ModelName,
 		UpstreamModel: it.candidates[it.index].ModelName,
@@ -124,6 +125,7 @@ func (it *Iterator) Skip(channelID, channelKeyID int, channelName, msg string) {
 		AttemptIndex:  it.count,
 		Status:        model.AttemptSkipped,
 		FailureReason: normalizeAttemptFailureReason(msg),
+		CreatedAt:     time.Now().UnixMilli(),
 		Sticky:        it.IsSticky(),
 		Msg:           msg,
 	})
@@ -144,6 +146,7 @@ func (it *Iterator) SkipCircuitBreak(channelID, channelKeyID int, channelName st
 	it.attempts = append(it.attempts, model.ChannelAttempt{
 		ChannelID:     channelID,
 		ChannelKeyID:  channelKeyID,
+		KeyID:         channelKeyID,
 		ChannelName:   channelName,
 		ModelName:     modelName,
 		UpstreamModel: modelName,
@@ -151,6 +154,7 @@ func (it *Iterator) SkipCircuitBreak(channelID, channelKeyID int, channelName st
 		AttemptIndex:  it.count,
 		Status:        model.AttemptCircuitBreak,
 		FailureReason: normalizeAttemptFailureReason(msg),
+		CreatedAt:     time.Now().UnixMilli(),
 		Sticky:        it.IsSticky(),
 		Msg:           msg,
 	})
@@ -160,18 +164,21 @@ func (it *Iterator) SkipCircuitBreak(channelID, channelKeyID int, channelName st
 // StartAttempt 开始一次真实转发尝试，返回 Span 用于记录结果
 func (it *Iterator) StartAttempt(channelID, channelKeyID int, channelName string) *AttemptSpan {
 	it.count++
+	start := time.Now()
 	return &AttemptSpan{
 		attempt: model.ChannelAttempt{
 			ChannelID:     channelID,
 			ChannelKeyID:  channelKeyID,
+			KeyID:         channelKeyID,
 			ChannelName:   channelName,
 			ModelName:     it.candidates[it.index].ModelName,
 			UpstreamModel: it.candidates[it.index].ModelName,
 			AttemptNum:    it.count,
 			AttemptIndex:  it.count,
+			CreatedAt:     start.UnixMilli(),
 			Sticky:        it.IsSticky(),
 		},
-		startTime: time.Now(),
+		startTime: start,
 		iter:      it,
 	}
 }
@@ -198,8 +205,10 @@ func (s *AttemptSpan) End(status model.AttemptStatus, statusCode int, msg string
 	s.attempt.Status = status
 	s.attempt.Duration = int(time.Since(s.startTime).Milliseconds())
 	s.attempt.DurationMS = s.attempt.Duration
+	s.attempt.TotalMS = s.attempt.DurationMS
 	s.attempt.HTTPStatus = statusCode
 	s.attempt.FailureReason = normalizeAttemptFailureReason(msg)
+	s.attempt.Retryable = isAttemptRetryable(status, statusCode, msg)
 	s.attempt.Msg = msg
 	s.iter.attempts = append(s.iter.attempts, s.attempt)
 }
@@ -226,6 +235,17 @@ func normalizeAttemptFailureReason(msg string) string {
 	}
 
 	return slugFailureReason(msg)
+}
+
+func isAttemptRetryable(status model.AttemptStatus, statusCode int, msg string) bool {
+	if status != model.AttemptFailed {
+		return false
+	}
+	if statusCode == 0 || statusCode == 429 || statusCode >= 500 {
+		return true
+	}
+	msg = strings.TrimSpace(strings.ToLower(msg))
+	return statusCode >= 200 && statusCode < 300 && msg != ""
 }
 
 func slugFailureReason(msg string) string {

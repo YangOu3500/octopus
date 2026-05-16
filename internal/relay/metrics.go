@@ -16,6 +16,7 @@ import (
 // RelayMetrics 负责最终的日志收集与持久化
 type RelayMetrics struct {
 	APIKeyID     int
+	GroupID      int
 	RequestModel string
 	StartTime    time.Time
 
@@ -77,6 +78,10 @@ func (m *RelayMetrics) SetWSRecovery(recovery model.RelayLogWSRecovery) {
 	m.WSRecovery = wsRecoveryPtr(recovery)
 }
 
+func (m *RelayMetrics) SetGroupID(groupID int) {
+	m.GroupID = groupID
+}
+
 // SetSelectedChannel 记录此次命中的通道 ID，用于 SetInternalResponse 时按站点 (账号, 分组) 查询价格。
 func (m *RelayMetrics) SetSelectedChannel(channelID int) {
 	m.SelectedChannelID = channelID
@@ -113,6 +118,7 @@ func (m *RelayMetrics) SetInternalResponse(resp *transformerModel.InternalLLMRes
 
 func (m *RelayMetrics) Save(ctx context.Context, success bool, err error, attempts []model.ChannelAttempt) {
 	duration := time.Since(m.StartTime)
+	attempts = m.enrichTraceAttempts(ctx, attempts)
 
 	globalStats := model.StatsMetrics{
 		WaitTime:    duration.Milliseconds(),
@@ -141,7 +147,7 @@ func (m *RelayMetrics) Save(ctx context.Context, success bool, err error, attemp
 		m.Stats.InputCost, m.Stats.OutputCost, m.Stats.InputCost+m.Stats.OutputCost,
 		len(attempts))
 
-	m.saveLog(ctx, err, duration, attempts, channelID, channelName)
+	m.saveLog(ctx, success, err, duration, attempts, channelID, channelName)
 }
 
 func finalChannel(attempts []model.ChannelAttempt) (int, string) {
@@ -160,22 +166,35 @@ func finalChannel(attempts []model.ChannelAttempt) (int, string) {
 	return lastID, lastName
 }
 
-func (m *RelayMetrics) saveLog(ctx context.Context, err error, duration time.Duration, attempts []model.ChannelAttempt, channelID int, channelName string) {
+func (m *RelayMetrics) saveLog(ctx context.Context, success bool, err error, duration time.Duration, attempts []model.ChannelAttempt, channelID int, channelName string) {
 	actualModel := m.ActualModel
 	if actualModel == "" {
 		actualModel = m.RequestModel
 	}
+	totalLatencyMS := int(duration.Milliseconds())
+	cacheTokens := traceCacheTokens(m.CacheReadTokens, m.CacheWriteTokens)
+	estimatedCost := m.Stats.InputCost + m.Stats.OutputCost
 
 	relayLog := model.RelayLog{
-		Time:             m.StartTime.Unix(),
-		RequestModelName: m.RequestModel,
-		ChannelName:      channelName,
-		ChannelId:        channelID,
-		ActualModelName:  actualModel,
-		UseTime:          int(duration.Milliseconds()),
-		Attempts:         attempts,
-		TotalAttempts:    len(attempts),
-		UsedWS:           m.UsedWS,
+		Time:               m.StartTime.Unix(),
+		ClientAPIKeyID:     m.APIKeyID,
+		GroupID:            m.GroupID,
+		RequestModelName:   m.RequestModel,
+		ChannelName:        channelName,
+		ChannelId:          channelID,
+		ActualModelName:    actualModel,
+		FinalStatus:        traceFinalStatus(success, err),
+		FinalChannelID:     channelID,
+		FinalSiteID:        traceFinalSiteID(attempts, channelID),
+		FinalUpstreamModel: actualModel,
+		AttemptsCount:      len(attempts),
+		TotalLatencyMS:     totalLatencyMS,
+		UseTime:            totalLatencyMS,
+		Attempts:           attempts,
+		TotalAttempts:      len(attempts),
+		CacheTokens:        cacheTokens,
+		EstimatedCost:      estimatedCost,
+		UsedWS:             m.UsedWS,
 	}
 
 	if apiKey, getErr := op.APIKeyGet(m.APIKeyID, ctx); getErr == nil {
@@ -191,7 +210,7 @@ func (m *RelayMetrics) saveLog(ctx context.Context, err error, duration time.Dur
 	if m.InternalResponse != nil && m.InternalResponse.Usage != nil {
 		relayLog.InputTokens = int(m.InternalResponse.Usage.PromptTokens)
 		relayLog.OutputTokens = int(m.InternalResponse.Usage.CompletionTokens)
-		relayLog.Cost = m.Stats.InputCost + m.Stats.OutputCost
+		relayLog.Cost = estimatedCost
 	}
 	relayLog.TransportInputTokens = m.TransportInputTokens
 	relayLog.BillInputTokens = m.BillInputTokens
@@ -219,7 +238,7 @@ func (m *RelayMetrics) saveLog(ctx context.Context, err error, duration time.Dur
 
 	// 错误信息
 	if err != nil {
-		relayLog.Error = err.Error()
+		relayLog.Error = sanitizeTraceText(err.Error(), "")
 	}
 
 	if logErr := op.RelayLogAdd(ctx, relayLog); logErr != nil {

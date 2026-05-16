@@ -1,74 +1,99 @@
 package model
 
-// AttemptStatus 尝试状态
 type AttemptStatus string
 
 const (
-	AttemptSuccess      AttemptStatus = "success"       // 转发成功
-	AttemptFailed       AttemptStatus = "failed"        // 转发失败
-	AttemptCircuitBreak AttemptStatus = "circuit_break" // 熔断跳过
-	AttemptSkipped      AttemptStatus = "skipped"       // 其他原因跳过（禁用、无Key、类型不兼容等）
+	AttemptSuccess      AttemptStatus = "success"
+	AttemptFailed       AttemptStatus = "failed"
+	AttemptCircuitBreak AttemptStatus = "circuit_break"
+	AttemptSkipped      AttemptStatus = "skipped"
 )
 
-// ChannelAttempt 记录单次渠道尝试的决策和结果
 type ChannelAttempt struct {
-	ChannelID     int           `json:"channel_id"`
-	ChannelKeyID  int           `json:"channel_key_id,omitempty"`
-	ChannelName   string        `json:"channel_name"`
-	ModelName     string        `json:"model_name"`
-	UpstreamModel string        `json:"upstream_model,omitempty"`
-	AttemptNum    int           `json:"attempt_num"`
-	AttemptIndex  int           `json:"attempt_index,omitempty"`
-	Status        AttemptStatus `json:"status"`
-	Duration      int           `json:"duration"`
-	DurationMS    int           `json:"duration_ms,omitempty"`
-	HTTPStatus    int           `json:"http_status,omitempty"`
-	FailureReason string        `json:"failure_reason,omitempty"`
-	Sticky        bool          `json:"sticky,omitempty"`
-	Msg           string        `json:"msg,omitempty"`
+	ChannelID        int           `json:"channel_id"`
+	ChannelKeyID     int           `json:"channel_key_id,omitempty"`
+	KeyID            int           `json:"key_id,omitempty"`
+	ChannelName      string        `json:"channel_name"`
+	SiteID           int           `json:"site_id,omitempty"`
+	SiteAccountID    int           `json:"site_account_id,omitempty"`
+	AccountID        int           `json:"account_id,omitempty"`
+	BaseURL          string        `json:"base_url,omitempty"`
+	ModelName        string        `json:"model_name"`
+	UpstreamModel    string        `json:"upstream_model,omitempty"`
+	RequestProtocol  string        `json:"request_protocol,omitempty"`
+	UpstreamProtocol string        `json:"upstream_protocol,omitempty"`
+	ResponseProtocol string        `json:"response_protocol,omitempty"`
+	AttemptNum       int           `json:"attempt_num"`
+	AttemptIndex     int           `json:"attempt_index,omitempty"`
+	Status           AttemptStatus `json:"status"`
+	Duration         int           `json:"duration"`
+	DurationMS       int           `json:"duration_ms,omitempty"`
+	TTFBMS           int           `json:"ttfb_ms,omitempty"`
+	TotalMS          int           `json:"total_ms,omitempty"`
+	HTTPStatus       int           `json:"http_status,omitempty"`
+	FailureReason    string        `json:"failure_reason,omitempty"`
+	Retryable        bool          `json:"retryable,omitempty"`
+	InputTokens      int           `json:"input_tokens,omitempty"`
+	OutputTokens     int           `json:"output_tokens,omitempty"`
+	CacheTokens      int           `json:"cache_tokens,omitempty"`
+	EstimatedCost    float64       `json:"estimated_cost,omitempty"`
+	ErrorSummary     string        `json:"error_summary,omitempty"`
+	CreatedAt        int64         `json:"created_at,omitempty"`
+	Sticky           bool          `json:"sticky,omitempty"`
+	Msg              string        `json:"msg,omitempty"`
 }
 
-// RelayLogWSMode 表示本次上游 WebSocket 的使用方式。
 type RelayLogWSMode string
 
 const (
-	RelayLogWSModeFresh        RelayLogWSMode = "fresh"        // 新建 WS 会话
-	RelayLogWSModeContinuation RelayLogWSMode = "continuation" // 直接续传上游会话
-	RelayLogWSModeReplay       RelayLogWSMode = "replay"       // 续传失败后回放上下文
+	RelayLogWSModeFresh        RelayLogWSMode = "fresh"
+	RelayLogWSModeContinuation RelayLogWSMode = "continuation"
+	RelayLogWSModeReplay       RelayLogWSMode = "replay"
 )
 
-// RelayLogWSRecovery 表示本次会话在执行过程中触发的恢复动作。
 type RelayLogWSRecovery string
 
 const (
-	RelayLogWSRecoveryReconnect RelayLogWSRecovery = "reconnect" // 续传链路失效后，原链路强制重连成功
-	RelayLogWSRecoveryReplay    RelayLogWSRecovery = "replay"    // 续传失败后回放上下文成功
-	RelayLogWSRecoveryDowngrade RelayLogWSRecovery = "downgrade" // WebSocket 不可用后降级到 HTTP
+	RelayLogWSRecoveryReconnect RelayLogWSRecovery = "reconnect"
+	RelayLogWSRecoveryReplay    RelayLogWSRecovery = "replay"
+	RelayLogWSRecoveryDowngrade RelayLogWSRecovery = "downgrade"
 )
 
 type RelayLog struct {
-	ID                   int64               `json:"id" gorm:"primaryKey;autoIncrement:false"` // Snowflake ID
-	Time                 int64               `json:"time"`                                     // 时间戳（秒）
-	RequestModelName     string              `json:"request_model_name"`                       // 请求模型名称
-	RequestAPIKeyName    string              `json:"request_api_key_name"`                     // 请求使用的 API Key 名称
-	ChannelId            int                 `json:"channel" gorm:"index"`                     // 实际使用的渠道ID
-	ChannelName          string              `json:"channel_name"`                             // 渠道名称
-	ActualModelName      string              `json:"actual_model_name"`                        // 实际使用模型名称
-	InputTokens          int                 `json:"input_tokens"`                             // 输入Token
-	TransportInputTokens *int                `json:"transport_input_tokens,omitempty"`         // 实际发送到上游请求体的 Token 估算
-	BillInputTokens      *int                `json:"bill_input_tokens,omitempty"`              // 按常规输入价格计费的 Token
-	CacheReadTokens      *int                `json:"cache_read_tokens,omitempty"`              // 从缓存读取的 Token
-	CacheWriteTokens     *int                `json:"cache_write_tokens,omitempty"`             // 写入缓存的 Token
-	OutputTokens         int                 `json:"output_tokens"`                            // 输出 Token
-	Ftut                 int                 `json:"ftut"`                                     // 首字时间(毫秒)
-	UseTime              int                 `json:"use_time"`                                 // 总用时(毫秒)
-	Cost                 float64             `json:"cost"`                                     // 消耗费用
-	RequestContent       string              `json:"request_content"`                          // 请求内容
-	ResponseContent      string              `json:"response_content"`                         // 响应内容
-	Error                string              `json:"error"`                                    // 错误信息
-	Attempts             []ChannelAttempt    `json:"attempts" gorm:"serializer:json"`          // 所有尝试记录
-	TotalAttempts        int                 `json:"total_attempts"`                           // 总尝试次数
-	UsedWS               bool                `json:"used_ws" gorm:"default:false"`             // 是否使用了上游WebSocket
-	WSMode               *RelayLogWSMode     `json:"ws_mode,omitempty"`                        // 上游 WebSocket 模式
-	WSRecovery           *RelayLogWSRecovery `json:"ws_recovery,omitempty"`                    // 本次请求触发的恢复动作
+	ID                   int64               `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	TraceID              string              `json:"trace_id" gorm:"index"`
+	ThreadID             string              `json:"thread_id,omitempty"`
+	ClientAPIKeyID       int                 `json:"client_api_key_id,omitempty" gorm:"index"`
+	GroupID              int                 `json:"group_id,omitempty" gorm:"index"`
+	Time                 int64               `json:"time"`
+	RequestModelName     string              `json:"request_model_name"`
+	RequestAPIKeyName    string              `json:"request_api_key_name"`
+	ChannelId            int                 `json:"channel" gorm:"index"`
+	ChannelName          string              `json:"channel_name"`
+	ActualModelName      string              `json:"actual_model_name"`
+	FinalStatus          string              `json:"final_status,omitempty" gorm:"index"`
+	FinalChannelID       int                 `json:"final_channel_id,omitempty"`
+	FinalSiteID          int                 `json:"final_site_id,omitempty"`
+	FinalUpstreamModel   string              `json:"final_upstream_model,omitempty"`
+	AttemptsCount        int                 `json:"attempts_count,omitempty"`
+	TotalLatencyMS       int                 `json:"total_latency_ms,omitempty"`
+	InputTokens          int                 `json:"input_tokens"`
+	TransportInputTokens *int                `json:"transport_input_tokens,omitempty"`
+	BillInputTokens      *int                `json:"bill_input_tokens,omitempty"`
+	CacheReadTokens      *int                `json:"cache_read_tokens,omitempty"`
+	CacheWriteTokens     *int                `json:"cache_write_tokens,omitempty"`
+	CacheTokens          int                 `json:"cache_tokens,omitempty"`
+	OutputTokens         int                 `json:"output_tokens"`
+	Ftut                 int                 `json:"ftut"`
+	UseTime              int                 `json:"use_time"`
+	Cost                 float64             `json:"cost"`
+	EstimatedCost        float64             `json:"estimated_cost,omitempty"`
+	RequestContent       string              `json:"request_content"`
+	ResponseContent      string              `json:"response_content"`
+	Error                string              `json:"error"`
+	Attempts             []ChannelAttempt    `json:"attempts" gorm:"serializer:json"`
+	TotalAttempts        int                 `json:"total_attempts"`
+	UsedWS               bool                `json:"used_ws" gorm:"default:false"`
+	WSMode               *RelayLogWSMode     `json:"ws_mode,omitempty"`
+	WSRecovery           *RelayLogWSRecovery `json:"ws_recovery,omitempty"`
 }

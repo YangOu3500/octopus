@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"strconv"
 	"sync"
 	"time"
 
@@ -124,6 +125,9 @@ func RelayLogAdd(ctx context.Context, relayLog model.RelayLog) error {
 		maxSize = relayLogMaxSizeNoDB
 	}
 	relayLog.ID = snowflake.GenerateID()
+	if relayLog.TraceID == "" {
+		relayLog.TraceID = "trace_" + strconv.FormatInt(relayLog.ID, 10)
+	}
 	go notifySubscribers(relayLog)
 
 	relayLogCacheLock.Lock()
