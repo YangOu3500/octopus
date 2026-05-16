@@ -85,6 +85,13 @@ func setSetting(c *gin.Context) {
 			return
 		}
 		task.Update(string(setting.Key), time.Duration(hours)*time.Hour)
+	case model.SettingKeyProbeSiteMinInterval:
+		minutes, err := strconv.Atoi(setting.Value)
+		if err != nil {
+			resp.Error(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		task.Update(task.TaskSlowProbe, time.Duration(minutes)*time.Minute)
 	}
 	resp.Success(c, setting)
 }

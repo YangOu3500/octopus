@@ -530,6 +530,7 @@ func channelRefreshCache(ctx context.Context) error {
 		log.Warnf("failed to get channels: %v", err)
 		return err
 	}
+	channelCache.Clear()
 	channelKeyCache.Clear()
 	channelKeyCacheNeedUpdateLock.Lock()
 	channelKeyCacheNeedUpdate = make(map[int]struct{})

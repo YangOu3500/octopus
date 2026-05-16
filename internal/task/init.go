@@ -19,6 +19,7 @@ const (
 	TaskBaseUrlDelay = "base_url_delay"
 	TaskSiteSync     = "site_sync"
 	TaskSiteCheckin  = "site_checkin"
+	TaskSlowProbe    = "slow_probe"
 )
 
 func Init() {
@@ -62,6 +63,12 @@ func Init() {
 	}
 	siteCheckinInterval := time.Duration(siteCheckinIntervalHours) * time.Hour
 	Register(string(model.SettingKeySiteCheckinInterval), siteCheckinInterval, true, SiteCheckinTask)
+
+	probeIntervalMinutes, err := op.SettingGetInt(model.SettingKeyProbeSiteMinInterval)
+	if err != nil || probeIntervalMinutes <= 0 {
+		probeIntervalMinutes = 30
+	}
+	Register(TaskSlowProbe, time.Duration(probeIntervalMinutes)*time.Minute, false, SlowProbeTask)
 
 	// 注册统计保存任务
 	statsSaveIntervalMinutes, err := op.SettingGetInt(model.SettingKeyStatsSaveInterval)

@@ -2,6 +2,7 @@ package op
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -513,6 +514,20 @@ func SiteModelDisabledUpdate(accountID int, groupKey string, modelName string, d
 		Model(&model.SiteModel{}).
 		Where("site_account_id = ? AND group_key = ? AND model_name = ?", accountID, model.NormalizeSiteGroupKey(groupKey), strings.TrimSpace(modelName)).
 		Update("disabled", disabled).Error
+}
+
+func SiteModelIsDisabled(accountID int, groupKey string, modelName string, ctx context.Context) (bool, error) {
+	var row model.SiteModel
+	err := db.GetDB().WithContext(ctx).
+		Where("site_account_id = ? AND group_key = ? AND model_name = ?", accountID, model.NormalizeSiteGroupKey(groupKey), strings.TrimSpace(modelName)).
+		First(&row).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return row.Disabled, nil
 }
 
 func SiteUpdateSystemProxy(id int, useSystemProxy bool, ctx context.Context) error {

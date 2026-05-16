@@ -46,7 +46,7 @@ func TestRunGroupHealthFailoverDoesNotMutateRuntimeStats(t *testing.T) {
 
 	secondServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"id":"resp_1","object":"response","status":"completed"}`))
+		_, _ = w.Write([]byte(`{"id":"resp_1","object":"response","status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"ok"}]}]}`))
 	}))
 	defer secondServer.Close()
 

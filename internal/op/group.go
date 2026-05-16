@@ -431,6 +431,8 @@ func groupRefreshCache(ctx context.Context) error {
 		Find(&groups).Error; err != nil {
 		return err
 	}
+	groupCache.Clear()
+	groupMap.Clear()
 	for _, group := range groups {
 		groupCache.Set(group.ID, group)
 		groupMap.Set(group.Name, group)
