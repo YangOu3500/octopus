@@ -36,7 +36,12 @@ type ChannelAttempt struct {
 	InputTokens      int           `json:"input_tokens,omitempty"`
 	OutputTokens     int           `json:"output_tokens,omitempty"`
 	CacheTokens      int           `json:"cache_tokens,omitempty"`
+	InputCost        float64       `json:"input_cost,omitempty"`
+	OutputCost       float64       `json:"output_cost,omitempty"`
 	EstimatedCost    float64       `json:"estimated_cost,omitempty"`
+	CostIncurred     string        `json:"cost_incurred,omitempty"`
+	CostSource       string        `json:"cost_source,omitempty"`
+	ServiceTier      string        `json:"service_tier,omitempty"`
 	ErrorSummary     string        `json:"error_summary,omitempty"`
 	CreatedAt        int64         `json:"created_at,omitempty"`
 	Sticky           bool          `json:"sticky,omitempty"`
@@ -88,6 +93,10 @@ type RelayLog struct {
 	UseTime              int                 `json:"use_time"`
 	Cost                 float64             `json:"cost"`
 	EstimatedCost        float64             `json:"estimated_cost,omitempty"`
+	FinalSuccessCost     float64             `json:"final_success_cost,omitempty"`
+	TotalAttemptCost     float64             `json:"total_attempt_cost,omitempty"`
+	FailedAttemptCost    float64             `json:"failed_attempt_estimated_cost,omitempty"`
+	ServiceTier          string              `json:"service_tier,omitempty"`
 	RequestContent       string              `json:"request_content"`
 	ResponseContent      string              `json:"response_content"`
 	Error                string              `json:"error"`

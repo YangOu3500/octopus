@@ -3,6 +3,7 @@ package relay
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/bestruirui/octopus/internal/model"
@@ -35,6 +36,7 @@ type RelayMetrics struct {
 	WSMode            *model.RelayLogWSMode
 	WSRecovery        *model.RelayLogWSRecovery
 	SelectedChannelID int
+	ServiceTier       string
 
 	TransportInputTokens *int
 	BillInputTokens      *int
@@ -90,6 +92,9 @@ func (m *RelayMetrics) SetSelectedChannel(channelID int) {
 func (m *RelayMetrics) SetInternalResponse(resp *transformerModel.InternalLLMResponse, actualModel string) {
 	m.InternalResponse = resp
 	m.ActualModel = actualModel
+	if resp != nil {
+		m.ServiceTier = strings.TrimSpace(resp.ServiceTier)
+	}
 
 	if resp == nil || resp.Usage == nil {
 		return
@@ -173,7 +178,11 @@ func (m *RelayMetrics) saveLog(ctx context.Context, success bool, err error, dur
 	}
 	totalLatencyMS := int(duration.Milliseconds())
 	cacheTokens := traceCacheTokens(m.CacheReadTokens, m.CacheWriteTokens)
-	estimatedCost := m.Stats.InputCost + m.Stats.OutputCost
+	finalSuccessCost := m.Stats.InputCost + m.Stats.OutputCost
+	totalAttemptCost, failedAttemptCost := traceAttemptCostSummary(attempts)
+	if totalAttemptCost == 0 && finalSuccessCost > 0 {
+		totalAttemptCost = finalSuccessCost
+	}
 
 	relayLog := model.RelayLog{
 		Time:               m.StartTime.Unix(),
@@ -193,7 +202,11 @@ func (m *RelayMetrics) saveLog(ctx context.Context, success bool, err error, dur
 		Attempts:           attempts,
 		TotalAttempts:      len(attempts),
 		CacheTokens:        cacheTokens,
-		EstimatedCost:      estimatedCost,
+		EstimatedCost:      finalSuccessCost,
+		FinalSuccessCost:   finalSuccessCost,
+		TotalAttemptCost:   totalAttemptCost,
+		FailedAttemptCost:  failedAttemptCost,
+		ServiceTier:        traceServiceTier(m),
 		UsedWS:             m.UsedWS,
 	}
 
@@ -210,7 +223,7 @@ func (m *RelayMetrics) saveLog(ctx context.Context, success bool, err error, dur
 	if m.InternalResponse != nil && m.InternalResponse.Usage != nil {
 		relayLog.InputTokens = int(m.InternalResponse.Usage.PromptTokens)
 		relayLog.OutputTokens = int(m.InternalResponse.Usage.CompletionTokens)
-		relayLog.Cost = estimatedCost
+		relayLog.Cost = finalSuccessCost
 	}
 	relayLog.TransportInputTokens = m.TransportInputTokens
 	relayLog.BillInputTokens = m.BillInputTokens

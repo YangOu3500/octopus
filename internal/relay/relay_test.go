@@ -1527,6 +1527,128 @@ func TestRelayMetricsCapturesAnthropicInputBreakdown(t *testing.T) {
 	}
 }
 
+func TestRelayMetricsEnrichesAttemptCostAccounting(t *testing.T) {
+	ctx := setupRelayTestDB(t)
+	requestTier := "default"
+	metrics := NewRelayMetrics(7, "client-model-group", []byte(`{"model":"client-model-group","messages":[{"role":"user","content":"hello"}]}`), &transformerModel.InternalLLMRequest{
+		Model:       "client-model-group",
+		ServiceTier: &requestTier,
+	})
+	metrics.StartTime = time.Now()
+	metrics.SetInternalResponse(&transformerModel.InternalLLMResponse{
+		Model:       "gpt-4o-mini",
+		ServiceTier: "priority",
+		Usage: &transformerModel.Usage{
+			PromptTokens:     1000,
+			CompletionTokens: 200,
+			PromptTokensDetails: &transformerModel.PromptTokensDetails{
+				CachedTokens: 250,
+			},
+		},
+	}, "gpt-4o-mini")
+
+	attempts := metrics.enrichTraceAttempts(ctx, []model.ChannelAttempt{
+		{
+			ChannelName:   "bad-soft",
+			ModelName:     "gpt-4o-mini",
+			UpstreamModel: "gpt-4o-mini",
+			AttemptNum:    1,
+			AttemptIndex:  1,
+			Status:        model.AttemptFailed,
+			HTTPStatus:    http.StatusOK,
+			FailureReason: "empty_choices",
+		},
+		{
+			ChannelName:  "good",
+			ModelName:    "fallback-model",
+			AttemptNum:   2,
+			AttemptIndex: 2,
+			Status:       model.AttemptSuccess,
+			HTTPStatus:   http.StatusOK,
+		},
+	})
+
+	if len(attempts) != 2 {
+		t.Fatalf("expected 2 attempts, got %d", len(attempts))
+	}
+	failed := attempts[0]
+	if failed.CostIncurred != "unknown" {
+		t.Fatalf("expected failed attempt cost incurred unknown, got %q", failed.CostIncurred)
+	}
+	if failed.CostSource != "estimated_input" {
+		t.Fatalf("expected failed attempt estimated_input source, got %q", failed.CostSource)
+	}
+	if failed.InputTokens <= 0 || failed.EstimatedCost <= 0 || failed.InputCost <= 0 {
+		t.Fatalf("expected failed attempt input cost estimate, got %+v", failed)
+	}
+
+	success := attempts[1]
+	if success.UpstreamModel != "gpt-4o-mini" {
+		t.Fatalf("expected success upstream model to use actual model, got %q", success.UpstreamModel)
+	}
+	if success.ServiceTier != "priority" {
+		t.Fatalf("expected success service tier priority, got %q", success.ServiceTier)
+	}
+	if success.CostIncurred != "yes" || success.CostSource != "usage" {
+		t.Fatalf("expected success usage cost source, got incurred=%q source=%q", success.CostIncurred, success.CostSource)
+	}
+	if success.CacheTokens != 250 || success.EstimatedCost <= 0 {
+		t.Fatalf("expected success cache tokens and final cost, got %+v", success)
+	}
+
+	totalCost, failedCost := traceAttemptCostSummary(attempts)
+	if failedCost != failed.EstimatedCost {
+		t.Fatalf("failed cost summary = %f, want %f", failedCost, failed.EstimatedCost)
+	}
+	if totalCost <= success.EstimatedCost {
+		t.Fatalf("expected total attempt cost to include failed cost, got total=%f success=%f", totalCost, success.EstimatedCost)
+	}
+}
+
+func TestRelayLogStoresFailoverCostSummary(t *testing.T) {
+	ctx := setupRelayTestDB(t)
+	if err := op.RelayLogClear(ctx); err != nil {
+		t.Fatalf("RelayLogClear failed: %v", err)
+	}
+	metrics := NewRelayMetrics(0, "client-model-group", []byte(`{"model":"client-model-group","messages":[{"role":"user","content":"hello"}]}`), &transformerModel.InternalLLMRequest{Model: "client-model-group"})
+	metrics.StartTime = time.Now().Add(-time.Second)
+	metrics.SetInternalResponse(&transformerModel.InternalLLMResponse{
+		Model:       "gpt-4o-mini",
+		ServiceTier: "priority",
+		Usage: &transformerModel.Usage{
+			PromptTokens:     100,
+			CompletionTokens: 20,
+		},
+	}, "gpt-4o-mini")
+	attempts := metrics.enrichTraceAttempts(ctx, []model.ChannelAttempt{
+		{ChannelName: "bad-soft", ModelName: "gpt-4o-mini", AttemptNum: 1, AttemptIndex: 1, Status: model.AttemptFailed, HTTPStatus: http.StatusOK, FailureReason: "empty_choices"},
+		{ChannelName: "good", ModelName: "gpt-4o-mini", AttemptNum: 2, AttemptIndex: 2, Status: model.AttemptSuccess, HTTPStatus: http.StatusOK},
+	})
+
+	metrics.saveLog(ctx, true, nil, time.Second, attempts, 0, "good")
+
+	logs, err := op.RelayLogList(ctx, nil, nil, nil, 1, 10)
+	if err != nil {
+		t.Fatalf("RelayLogList failed: %v", err)
+	}
+	if len(logs) != 1 {
+		t.Fatalf("expected 1 relay log, got %d", len(logs))
+	}
+	relayLog := logs[0]
+	if relayLog.FinalSuccessCost <= 0 {
+		t.Fatalf("expected final success cost, got %+v", relayLog)
+	}
+	if relayLog.FailedAttemptCost <= 0 {
+		t.Fatalf("expected failed attempt cost, got %+v", relayLog)
+	}
+	if relayLog.TotalAttemptCost <= relayLog.FinalSuccessCost {
+		t.Fatalf("expected total attempt cost to include failed attempt, got total=%f final=%f", relayLog.TotalAttemptCost, relayLog.FinalSuccessCost)
+	}
+	if relayLog.ServiceTier != "priority" {
+		t.Fatalf("expected relay log service tier priority, got %q", relayLog.ServiceTier)
+	}
+}
+
 func TestDefaultWSModeForRequest(t *testing.T) {
 	previousResponseID := "resp_123"
 	if got := defaultWSModeForRequest(&transformerModel.InternalLLMRequest{PreviousResponseID: &previousResponseID}); got != model.RelayLogWSModeContinuation {

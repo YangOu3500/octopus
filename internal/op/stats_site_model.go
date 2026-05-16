@@ -106,6 +106,13 @@ func StatsSiteModelHourlyRecordAttempts(attempts []model.ChannelAttempt, fallbac
 		} else {
 			metrics.RequestFailed = 1
 		}
+		metrics.InputToken = int64(attempt.InputTokens)
+		metrics.OutputToken = int64(attempt.OutputTokens)
+		metrics.InputCost = attempt.InputCost
+		metrics.OutputCost = attempt.OutputCost
+		if metrics.InputCost == 0 && metrics.OutputCost == 0 && attempt.EstimatedCost > 0 {
+			metrics.InputCost = attempt.EstimatedCost
+		}
 		StatsSiteModelHourlyUpdate(attempt.ChannelID, modelName, metrics)
 	}
 }
