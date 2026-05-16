@@ -580,6 +580,144 @@ func TestHandlerFallsBackAfterValidatorRetryableFailure(t *testing.T) {
 	}
 }
 
+func TestHandlerStreamGateFallsBackAfterDoneWithoutContent(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx := setupRelayTestDB(t)
+
+	var firstHits atomic.Int32
+	firstServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		firstHits.Add(1)
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = w.Write([]byte("data: [DONE]\n\n"))
+	}))
+	defer firstServer.Close()
+
+	var secondHits atomic.Int32
+	secondServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		secondHits.Add(1)
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = w.Write([]byte(strings.Join([]string{
+			`data: {"id":"chatcmpl-ok","object":"chat.completion.chunk","created":1,"model":"fallback-model","choices":[{"index":0,"delta":{"role":"assistant"}}]}`,
+			"",
+			`data: {"id":"chatcmpl-ok","object":"chat.completion.chunk","created":1,"model":"fallback-model","choices":[{"index":0,"delta":{"content":"ok"}}]}`,
+			"",
+			`data: {"id":"chatcmpl-ok","object":"chat.completion.chunk","created":1,"model":"fallback-model","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`,
+			"",
+			"data: [DONE]",
+			"",
+		}, "\n")))
+	}))
+	defer secondServer.Close()
+
+	firstChannel := &model.Channel{
+		Name:     "relay-stream-gate-first",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: firstServer.URL + "/v1"}},
+		Model:    "fallback-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "first-key"}},
+	}
+	if err := op.ChannelCreate(firstChannel, ctx); err != nil {
+		t.Fatalf("ChannelCreate first channel failed: %v", err)
+	}
+
+	secondChannel := &model.Channel{
+		Name:     "relay-stream-gate-second",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: secondServer.URL + "/v1"}},
+		Model:    "fallback-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "second-key"}},
+	}
+	if err := op.ChannelCreate(secondChannel, ctx); err != nil {
+		t.Fatalf("ChannelCreate second channel failed: %v", err)
+	}
+
+	group := &model.Group{
+		Name:         "relay-stream-gate-failover-group",
+		Mode:         model.GroupModeFailover,
+		RetryEnabled: false,
+	}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{
+		GroupID:   group.ID,
+		ChannelID: firstChannel.ID,
+		ModelName: "fallback-model",
+		Priority:  1,
+		Weight:    1,
+	}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd first item failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{
+		GroupID:   group.ID,
+		ChannelID: secondChannel.ID,
+		ModelName: "fallback-model",
+		Priority:  2,
+		Weight:    1,
+	}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd second item failed: %v", err)
+	}
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Set("api_key_id", 99)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", strings.NewReader(`{"model":"relay-stream-gate-failover-group","messages":[{"role":"user","content":"hello"}],"stream":true}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	Handler(inbound.InboundTypeOpenAIChat, c)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected relay handler to stream via fallback channel, got status %d body %s", recorder.Code, recorder.Body.String())
+	}
+	if firstHits.Load() != 1 {
+		t.Fatalf("expected invalid stream channel to be attempted once, got %d", firstHits.Load())
+	}
+	if secondHits.Load() != 1 {
+		t.Fatalf("expected fallback stream channel to be attempted once, got %d", secondHits.Load())
+	}
+
+	body := recorder.Body.String()
+	if !strings.Contains(body, `"role":"assistant"`) {
+		t.Fatalf("expected buffered role chunk from successful stream to be preserved, got %s", body)
+	}
+	if !strings.Contains(body, `"content":"ok"`) {
+		t.Fatalf("expected fallback stream content to be returned, got %s", body)
+	}
+	if count := strings.Count(body, "data: [DONE]"); count != 1 {
+		t.Fatalf("expected bad stream [DONE] not to be written before fallback, got %d DONE events in %s", count, body)
+	}
+
+	logs, err := op.RelayLogList(ctx, nil, nil, nil, 1, 10)
+	if err != nil {
+		t.Fatalf("RelayLogList failed: %v", err)
+	}
+	if len(logs) == 0 || len(logs[0].Attempts) < 2 {
+		t.Fatalf("expected relay log attempts to be recorded, got %#v", logs)
+	}
+
+	firstAttempt := logs[0].Attempts[0]
+	if firstAttempt.AttemptIndex != 1 {
+		t.Fatalf("expected first attempt index 1, got %#v", firstAttempt)
+	}
+	if firstAttempt.ChannelID != firstChannel.ID {
+		t.Fatalf("expected first attempt channel id %d, got %#v", firstChannel.ID, firstAttempt)
+	}
+	if firstAttempt.UpstreamModel != "fallback-model" {
+		t.Fatalf("expected first attempt upstream model fallback-model, got %#v", firstAttempt)
+	}
+	if firstAttempt.HTTPStatus != http.StatusOK {
+		t.Fatalf("expected first attempt http status 200, got %#v", firstAttempt)
+	}
+	if firstAttempt.FailureReason != "stream_done_without_content" {
+		t.Fatalf("expected first attempt failure reason stream_done_without_content, got %#v", firstAttempt)
+	}
+	if firstAttempt.DurationMS != firstAttempt.Duration {
+		t.Fatalf("expected first attempt duration_ms to mirror duration, got %#v", firstAttempt)
+	}
+}
+
 func TestHandlerReturnsSanitizedErrorAfterValidatorFailures(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctx := setupRelayTestDB(t)

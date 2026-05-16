@@ -50,6 +50,10 @@ const (
 	ReasonCandidateWithoutPart = "candidate_without_parts"
 	ReasonNoValidCandidate     = "no_valid_candidate"
 	ReasonBlockedNoValidReply  = "blocked_no_valid_reply"
+	ReasonInvalidSSE           = "invalid_sse"
+	ReasonStreamNoValidChunk   = "stream_no_valid_chunk"
+	ReasonStreamDoneNoContent  = "stream_done_without_content"
+	ReasonStreamBufferExceeded = "stream_buffer_exceeded"
 )
 
 type Response struct {

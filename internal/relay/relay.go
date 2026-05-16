@@ -764,7 +764,7 @@ func (ra *relayAttempt) forwardViaHTTP(ctx context.Context) (int, error) {
 	// 处理响应
 	if ra.internalRequest.Stream != nil && *ra.internalRequest.Stream {
 		if err := ra.handleStreamResponse(ctx, response); err != nil {
-			return 0, err
+			return response.StatusCode, err
 		}
 		return response.StatusCode, nil
 	}
@@ -937,6 +937,9 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 		}()
 	}
 
+	var bufferedChunks []streamGateChunk
+	bufferedSize := 0
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -951,11 +954,17 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 			_ = response.Body.Close()
 			return fmt.Errorf("first token timeout (%ds)", ra.firstTokenTimeOutSec)
 		case <-heartbeatC:
+			if firstToken {
+				continue
+			}
 			if err := writeSSEHeartbeat(writer); err != nil {
 				return err
 			}
 		case r, ok := <-results:
 			if !ok {
+				if firstToken {
+					return streamNoValidChunkError()
+				}
 				log.Infof("stream end")
 				return nil
 			}
@@ -964,13 +973,46 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 				return fmt.Errorf("failed to read stream event: %w", r.err)
 			}
 
-			data, err := ra.transformStreamData(ctx, r.data)
-			if err != nil || len(data) == 0 {
-				continue
-			}
 			if firstToken {
+				chunk, err := ra.decodeStreamGateChunk(ctx, r.data)
+				if err != nil {
+					log.Warnf("first valid chunk gate rejected stream from channel %s: %v", ra.channel.Name, err)
+					return err
+				}
+				if streamChunkIsDone(chunk) {
+					return streamDoneWithoutContentError()
+				}
+				if !streamChunkIsEmpty(chunk) {
+					bufferedChunks = append(bufferedChunks, chunk)
+					bufferedSize += chunk.size
+					if bufferedSize > streamFirstValidMaxBufferBytes {
+						return streamBufferExceededError(bufferedSize)
+					}
+				}
+				if !streamChunkHasValidContent(chunk) {
+					continue
+				}
+				wrote := false
+				for _, buffered := range bufferedChunks {
+					data, err := ra.encodeStreamGateChunk(ctx, buffered)
+					if err != nil {
+						return err
+					}
+					if len(data) == 0 {
+						continue
+					}
+					ra.streamPayloadWritten.Store(true)
+					if _, err := ra.getStreamWriter().Write(data); err != nil {
+						return err
+					}
+					wrote = true
+				}
+				if !wrote {
+					continue
+				}
 				ra.metrics.SetFirstTokenTime(time.Now())
 				firstToken = false
+				bufferedChunks = nil
 				if firstTokenTimer != nil {
 					if !firstTokenTimer.Stop() {
 						select {
@@ -981,8 +1023,14 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 					firstTokenTimer = nil
 					firstTokenC = nil
 				}
+				ra.getStreamWriter().Flush()
+				continue
 			}
 
+			data, err := ra.transformStreamData(ctx, r.data)
+			if err != nil || len(data) == 0 {
+				continue
+			}
 			ra.streamPayloadWritten.Store(true)
 			ra.getStreamWriter().Write(data)
 			ra.getStreamWriter().Flush()
@@ -1477,7 +1525,7 @@ func (ra *relayAttempt) forwardViaHTTPStandard(ctx context.Context) (int, error)
 
 	if ra.internalRequest.Stream != nil && *ra.internalRequest.Stream {
 		if err := ra.handleStreamResponse(ctx, response); err != nil {
-			return 0, err
+			return response.StatusCode, err
 		}
 		return response.StatusCode, nil
 	}
