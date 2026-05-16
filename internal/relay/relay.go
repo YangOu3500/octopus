@@ -970,7 +970,7 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 			}
 			if r.err != nil {
 				log.Warnf("failed to read event: %v", r.err)
-				return fmt.Errorf("failed to read stream event: %w", r.err)
+				return streamValidationDecodeError(r.err)
 			}
 
 			if firstToken {
@@ -1035,6 +1035,74 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 			ra.getStreamWriter().Write(data)
 			ra.getStreamWriter().Flush()
 		}
+	}
+}
+
+type passthroughStreamGateResult struct {
+	raw []byte
+	err error
+}
+
+func (ra *relayAttempt) waitForPassthroughFirstValidChunk(ctx context.Context, response *http.Response, outAdapter model.Outbound, inAdapter model.Inbound) ([]byte, error) {
+	results := make(chan passthroughStreamGateResult, 1)
+	safe.Go("relay-passthrough-first-valid-gate", func() {
+		var raw bytes.Buffer
+		tee := io.TeeReader(response.Body, &raw)
+		readCfg := &sse.ReadConfig{MaxEventSize: maxSSEEventSize}
+		for ev, err := range sse.Read(tee, readCfg) {
+			if err != nil {
+				results <- passthroughStreamGateResult{err: streamValidationDecodeError(err)}
+				return
+			}
+			if raw.Len() > streamFirstValidMaxBufferBytes {
+				results <- passthroughStreamGateResult{err: streamBufferExceededError(raw.Len())}
+				return
+			}
+
+			chunk, err := decodeStreamGateChunk(ctx, ev.Data, outAdapter, inAdapter)
+			if err != nil {
+				results <- passthroughStreamGateResult{err: err}
+				return
+			}
+			if streamChunkIsDone(chunk) {
+				results <- passthroughStreamGateResult{err: streamDoneWithoutContentError()}
+				return
+			}
+			if !streamChunkHasValidContent(chunk) {
+				continue
+			}
+
+			results <- passthroughStreamGateResult{raw: append([]byte(nil), raw.Bytes()...)}
+			return
+		}
+		if raw.Len() > streamFirstValidMaxBufferBytes {
+			results <- passthroughStreamGateResult{err: streamBufferExceededError(raw.Len())}
+			return
+		}
+		results <- passthroughStreamGateResult{err: streamNoValidChunkError()}
+	})
+
+	var firstTokenTimer *time.Timer
+	var firstTokenC <-chan time.Time
+	if ra.firstTokenTimeOutSec > 0 {
+		firstTokenTimer = time.NewTimer(time.Duration(ra.firstTokenTimeOutSec) * time.Second)
+		firstTokenC = firstTokenTimer.C
+		defer firstTokenTimer.Stop()
+	}
+
+	select {
+	case <-ctx.Done():
+		_ = response.Body.Close()
+		return nil, contextError(ctx)
+	case <-firstTokenC:
+		log.Warnf("first token timeout (%ds), switching channel", ra.firstTokenTimeOutSec)
+		_ = response.Body.Close()
+		return nil, fmt.Errorf("first token timeout (%ds)", ra.firstTokenTimeOutSec)
+	case result := <-results:
+		if result.err != nil {
+			return nil, result.err
+		}
+		return result.raw, nil
 	}
 }
 
@@ -1240,7 +1308,7 @@ func (ra *relayAttempt) forwardViaHTTPPassthroughOpenAIResponses(ctx context.Con
 
 	if ra.internalRequest.Stream != nil && *ra.internalRequest.Stream {
 		if err := ra.handleStreamResponsePassthroughOpenAIResponses(ctx, response); err != nil {
-			return 0, err
+			return response.StatusCode, err
 		}
 		return response.StatusCode, nil
 	}
@@ -1265,12 +1333,25 @@ func (ra *relayAttempt) handleStreamResponsePassthroughOpenAIResponses(ctx conte
 	writer.Header().Set("Connection", "keep-alive")
 	writer.Header().Set("X-Accel-Buffering", "no")
 
-	heartbeatTicker, heartbeatC := newStreamHeartbeatTicker()
-	if heartbeatTicker != nil {
-		defer heartbeatTicker.Stop()
+	gateOut := outbound.Get(outbound.OutboundTypeOpenAIResponse)
+	gateIn := inbound.Get(inbound.InboundTypeOpenAIResponse)
+	prefix, err := ra.waitForPassthroughFirstValidChunk(ctx, response, gateOut, gateIn)
+	if err != nil {
+		log.Warnf("first valid chunk gate rejected openai responses stream from channel %s: %v", ra.channel.Name, err)
+		return err
 	}
 
-	firstToken := true
+	var rawStream bytes.Buffer
+	if len(prefix) > 0 {
+		if _, werr := writer.Write(prefix); werr != nil {
+			return werr
+		}
+		ra.streamPayloadWritten.Store(true)
+		_, _ = rawStream.Write(prefix)
+		writer.Flush()
+		ra.metrics.SetFirstTokenTime(time.Now())
+	}
+
 	type rawReadResult struct {
 		chunk []byte
 		err   error
@@ -1291,18 +1372,10 @@ func (ra *relayAttempt) handleStreamResponsePassthroughOpenAIResponses(ctx conte
 			}
 		}
 	})
-	var rawStream bytes.Buffer
 
-	var firstTokenTimer *time.Timer
-	var firstTokenC <-chan time.Time
-	if firstToken && ra.firstTokenTimeOutSec > 0 {
-		firstTokenTimer = time.NewTimer(time.Duration(ra.firstTokenTimeOutSec) * time.Second)
-		firstTokenC = firstTokenTimer.C
-		defer func() {
-			if firstTokenTimer != nil {
-				firstTokenTimer.Stop()
-			}
-		}()
+	heartbeatTicker, heartbeatC := newStreamHeartbeatTicker()
+	if heartbeatTicker != nil {
+		defer heartbeatTicker.Stop()
 	}
 
 	for {
@@ -1312,15 +1385,11 @@ func (ra *relayAttempt) handleStreamResponsePassthroughOpenAIResponses(ctx conte
 			if isLocalRelayBudgetExceeded(ctx, err) {
 				return err
 			}
-			log.Infof("client disconnected, stopping stream: written=%t raw_bytes=%d first_token_seen=%t elapsed=%s", ra.streamPayloadWritten.Load(), rawStream.Len(), !firstToken, time.Since(ra.metrics.StartTime))
+			log.Infof("client disconnected, stopping stream: written=%t raw_bytes=%d first_token_seen=%t elapsed=%s", ra.streamPayloadWritten.Load(), rawStream.Len(), true, time.Since(ra.metrics.StartTime))
 			if rawStream.Len() > 0 {
 				ra.collectOpenAIResponsesPassthroughMetrics(context.Background(), rawStream.Bytes())
 			}
 			return err
-		case <-firstTokenC:
-			log.Warnf("first token timeout (%ds), switching channel", ra.firstTokenTimeOutSec)
-			_ = response.Body.Close()
-			return fmt.Errorf("first token timeout (%ds)", ra.firstTokenTimeOutSec)
 		case <-heartbeatC:
 			if err := writeSSEHeartbeat(writer); err != nil {
 				return err
@@ -1349,21 +1418,6 @@ func (ra *relayAttempt) handleStreamResponsePassthroughOpenAIResponses(ctx conte
 			ra.streamPayloadWritten.Store(true)
 			_, _ = rawStream.Write(r.chunk)
 			writer.Flush()
-
-			if firstToken {
-				ra.metrics.SetFirstTokenTime(time.Now())
-				firstToken = false
-				if firstTokenTimer != nil {
-					if !firstTokenTimer.Stop() {
-						select {
-						case <-firstTokenTimer.C:
-						default:
-						}
-					}
-					firstTokenTimer = nil
-					firstTokenC = nil
-				}
-			}
 		}
 	}
 }
@@ -1478,7 +1532,7 @@ func (ra *relayAttempt) forwardViaHTTPPassthroughAnthropic(ctx context.Context) 
 
 	if ra.internalRequest.Stream != nil && *ra.internalRequest.Stream {
 		if err := ra.handleStreamResponsePassthroughAnthropic(ctx, response); err != nil {
-			return 0, err
+			return response.StatusCode, err
 		}
 		return response.StatusCode, nil
 	}
@@ -1554,12 +1608,25 @@ func (ra *relayAttempt) handleStreamResponsePassthroughAnthropic(ctx context.Con
 	writer.Header().Set("Connection", "keep-alive")
 	writer.Header().Set("X-Accel-Buffering", "no")
 
-	heartbeatTicker, heartbeatC := newStreamHeartbeatTicker()
-	if heartbeatTicker != nil {
-		defer heartbeatTicker.Stop()
+	gateOut := outbound.Get(outbound.OutboundTypeAnthropic)
+	gateIn := inbound.Get(inbound.InboundTypeAnthropic)
+	prefix, err := ra.waitForPassthroughFirstValidChunk(ctx, response, gateOut, gateIn)
+	if err != nil {
+		log.Warnf("first valid chunk gate rejected anthropic stream from channel %s: %v", ra.channel.Name, err)
+		return err
 	}
 
-	firstToken := true
+	var rawStream bytes.Buffer
+	if len(prefix) > 0 {
+		if _, werr := writer.Write(prefix); werr != nil {
+			return werr
+		}
+		ra.streamPayloadWritten.Store(true)
+		_, _ = rawStream.Write(prefix)
+		writer.Flush()
+		ra.metrics.SetFirstTokenTime(time.Now())
+	}
+
 	type rawReadResult struct {
 		chunk []byte
 		err   error
@@ -1580,18 +1647,10 @@ func (ra *relayAttempt) handleStreamResponsePassthroughAnthropic(ctx context.Con
 			}
 		}
 	})
-	var rawStream bytes.Buffer
 
-	var firstTokenTimer *time.Timer
-	var firstTokenC <-chan time.Time
-	if firstToken && ra.firstTokenTimeOutSec > 0 {
-		firstTokenTimer = time.NewTimer(time.Duration(ra.firstTokenTimeOutSec) * time.Second)
-		firstTokenC = firstTokenTimer.C
-		defer func() {
-			if firstTokenTimer != nil {
-				firstTokenTimer.Stop()
-			}
-		}()
+	heartbeatTicker, heartbeatC := newStreamHeartbeatTicker()
+	if heartbeatTicker != nil {
+		defer heartbeatTicker.Stop()
 	}
 
 	for {
@@ -1601,16 +1660,12 @@ func (ra *relayAttempt) handleStreamResponsePassthroughAnthropic(ctx context.Con
 			if isLocalRelayBudgetExceeded(ctx, err) {
 				return err
 			}
-			log.Infof("client disconnected, stopping stream: written=%t raw_bytes=%d first_token_seen=%t elapsed=%s", ra.streamPayloadWritten.Load(), rawStream.Len(), !firstToken, time.Since(ra.metrics.StartTime))
+			log.Infof("client disconnected, stopping stream: written=%t raw_bytes=%d first_token_seen=%t elapsed=%s", ra.streamPayloadWritten.Load(), rawStream.Len(), true, time.Since(ra.metrics.StartTime))
 			if rawStream.Len() > 0 {
 				ra.collectAnthropicPassthroughMetrics(context.Background(), rawStream.Bytes())
 				ra.collectResponse()
 			}
 			return err
-		case <-firstTokenC:
-			log.Warnf("first token timeout (%ds), switching channel", ra.firstTokenTimeOutSec)
-			_ = response.Body.Close()
-			return fmt.Errorf("first token timeout (%ds)", ra.firstTokenTimeOutSec)
 		case <-heartbeatC:
 			if err := writeSSEHeartbeat(writer); err != nil {
 				return err
@@ -1642,21 +1697,6 @@ func (ra *relayAttempt) handleStreamResponsePassthroughAnthropic(ctx context.Con
 			ra.streamPayloadWritten.Store(true)
 			_, _ = rawStream.Write(r.chunk)
 			writer.Flush()
-
-			if firstToken {
-				ra.metrics.SetFirstTokenTime(time.Now())
-				firstToken = false
-				if firstTokenTimer != nil {
-					if !firstTokenTimer.Stop() {
-						select {
-						case <-firstTokenTimer.C:
-						default:
-						}
-					}
-					firstTokenTimer = nil
-					firstTokenC = nil
-				}
-			}
 		}
 	}
 }

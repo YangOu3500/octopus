@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	gatewayvalidator "github.com/bestruirui/octopus/internal/gateway/validator"
 	transformerModel "github.com/bestruirui/octopus/internal/transformer/model"
@@ -19,9 +20,21 @@ type streamGateChunk struct {
 }
 
 func (ra *relayAttempt) decodeStreamGateChunk(ctx context.Context, data string) (streamGateChunk, error) {
+	return decodeStreamGateChunk(ctx, data, ra.outAdapter, ra.inAdapter)
+}
+
+func decodeStreamGateChunk(ctx context.Context, data string, outAdapter transformerModel.Outbound, inAdapter transformerModel.Inbound) (streamGateChunk, error) {
+	if outAdapter == nil {
+		return streamGateChunk{}, streamValidationError(gatewayvalidator.ReasonInvalidSSE, "stream transformer unavailable")
+	}
+
 	raw := []byte(data)
-	outEventAdapter, outOK := ra.outAdapter.(transformerModel.OutboundStreamEventTransformer)
-	_, inOK := ra.inAdapter.(transformerModel.InboundStreamEventTransformer)
+	if strings.TrimSpace(data) == "[DONE]" {
+		return streamGateChunk{internal: &transformerModel.InternalLLMResponse{Object: "[DONE]"}, size: len(raw)}, nil
+	}
+
+	outEventAdapter, outOK := outAdapter.(transformerModel.OutboundStreamEventTransformer)
+	_, inOK := inAdapter.(transformerModel.InboundStreamEventTransformer)
 	if outOK && inOK {
 		events, err := outEventAdapter.TransformStreamEvent(ctx, raw)
 		if err != nil {
@@ -33,7 +46,7 @@ func (ra *relayAttempt) decodeStreamGateChunk(ctx context.Context, data string) 
 		return streamGateChunk{useEvents: true, events: events, size: len(raw)}, nil
 	}
 
-	internal, err := ra.decodeOutboundStreamResponse(ctx, raw)
+	internal, err := outAdapter.TransformStream(ctx, raw)
 	if err != nil {
 		return streamGateChunk{}, streamValidationDecodeError(err)
 	}
