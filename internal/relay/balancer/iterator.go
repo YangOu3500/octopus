@@ -31,8 +31,7 @@ func NewIterator(group model.Group, apiKeyID int, requestModel string) *Iterator
 // NewIteratorWithPreference 创建带优先通道偏好的负载均衡迭代器。
 // preferred 非空时，会优先把指定通道提前到候选列表最前面。
 func NewIteratorWithPreference(group model.Group, apiKeyID int, requestModel string, preferred *SessionEntry) *Iterator {
-	b := GetBalancer(group.Mode)
-	candidates := b.Candidates(group.Items)
+	candidates := candidatesForGroup(group.Mode, group.Items)
 
 	stickyIdx := -1
 	stickyKeyID := 0
@@ -161,6 +160,40 @@ func (it *Iterator) SkipCircuitBreak(channelID, channelKeyID int, channelName st
 	return true
 }
 
+// SkipHealthCooldown 检查真实请求反馈产生的冷却状态。
+func (it *Iterator) SkipHealthCooldown(channelID, channelKeyID int, channelName, baseURL string) bool {
+	modelName := it.candidates[it.index].ModelName
+	cooling, remaining, reason := IsHealthCoolingDown(channelID, channelKeyID, modelName, baseURL)
+	if !cooling {
+		return false
+	}
+	msg := "health cooldown active"
+	if reason != "" {
+		msg = fmt.Sprintf("health cooldown active: %s", reason)
+	}
+	if remaining > 0 {
+		msg = fmt.Sprintf("%s, remaining cooldown: %ds", msg, int(remaining.Seconds()))
+	}
+	it.count++
+	it.attempts = append(it.attempts, model.ChannelAttempt{
+		ChannelID:     channelID,
+		ChannelKeyID:  channelKeyID,
+		KeyID:         channelKeyID,
+		ChannelName:   channelName,
+		ModelName:     modelName,
+		UpstreamModel: modelName,
+		AttemptNum:    it.count,
+		AttemptIndex:  it.count,
+		Status:        model.AttemptCircuitBreak,
+		FailureReason: normalizeAttemptFailureReason(msg),
+		Retryable:     true,
+		CreatedAt:     time.Now().UnixMilli(),
+		Sticky:        it.IsSticky(),
+		Msg:           msg,
+	})
+	return true
+}
+
 // StartAttempt 开始一次真实转发尝试，返回 Span 用于记录结果
 func (it *Iterator) StartAttempt(channelID, channelKeyID int, channelName string) *AttemptSpan {
 	it.count++
@@ -216,6 +249,13 @@ func (s *AttemptSpan) End(status model.AttemptStatus, statusCode int, msg string
 // Duration 返回从开始到现在的耗时
 func (s *AttemptSpan) Duration() time.Duration {
 	return time.Since(s.startTime)
+}
+
+func (s *AttemptSpan) FirstTokenDurationMS(firstToken time.Time) int {
+	if firstToken.IsZero() || firstToken.Before(s.startTime) {
+		return 0
+	}
+	return int(firstToken.Sub(s.startTime).Milliseconds())
 }
 
 func normalizeAttemptFailureReason(msg string) string {

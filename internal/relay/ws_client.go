@@ -349,7 +349,8 @@ func bestEffortWarmupUpstreamWS(
 			if usedKey.ChannelKey == "" {
 				break
 			}
-			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) {
+			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
+				iter.SkipHealthCooldown(channel.ID, usedKey.ID, channel.Name, channel.GetBaseUrl()) {
 				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
 				continue
 			}
@@ -524,11 +525,13 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 			if usedKey.ChannelKey == "" {
 				break
 			}
-			if !req.iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) {
-				break
+			if req.iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
+				req.iter.SkipHealthCooldown(channel.ID, usedKey.ID, channel.Name, channel.GetBaseUrl()) {
+				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
+				usedKey = dbmodel.ChannelKey{}
+				continue
 			}
-			selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
-			usedKey = dbmodel.ChannelKey{}
+			break
 		}
 		if usedKey.ChannelKey == "" {
 			if len(selectOpts.ExcludeKeyIDs) == 0 {

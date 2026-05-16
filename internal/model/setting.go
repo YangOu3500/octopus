@@ -25,6 +25,12 @@ const (
 	SettingKeySSEHeartbeatInterval       SettingKey = "sse_heartbeat_interval"         // SSE 流式心跳间隔（秒），0 表示禁用
 	SettingKeySSEPreStreamHeartbeatDelay SettingKey = "sse_pre_stream_heartbeat_delay" // SSE 上游流建立前心跳首次延迟（秒），0 表示禁用
 	SettingKeyGroupHealthEnabled         SettingKey = "group_health_enabled"           // 是否启用分组健康检查功能
+	SettingKeyHealthScoreEnabled         SettingKey = "enable_health_score"            // 是否启用真实请求反馈驱动的健康分与冷却调度
+	SettingKeyHealthScoreWindowMinutes   SettingKey = "health_score_window_minutes"    // 健康分统计窗口（分钟）
+	SettingKeyHealthMinConfidentSample   SettingKey = "health_min_confident_sample"    // 健康分最低可信样本量
+	SettingKeySuccessRatePenaltyWeight   SettingKey = "success_rate_penalty_weight"    // 失败率惩罚权重
+	SettingKeyEmptyResponsePenaltyWeight SettingKey = "empty_response_penalty_weight"  // 空响应惩罚权重
+	SettingKeyLatencyPenaltyWeight       SettingKey = "latency_penalty_weight"         // 延迟惩罚权重
 	SettingKeyJWTSecret                  SettingKey = "jwt_secret"                     // JWT 签名密钥（自动生成）
 	SettingKeyStatsSiteModelBackfilled   SettingKey = "stats_site_model_backfilled"    // 站点渠道小时聚合是否已回填历史日志
 )
@@ -52,7 +58,13 @@ func DefaultSettings() []Setting {
 		{Key: SettingKeySSEHeartbeatInterval, Value: "0"},        // 默认禁用 SSE 流式心跳
 		{Key: SettingKeySSEPreStreamHeartbeatDelay, Value: "0"},  // 默认禁用 SSE 上游流建立前心跳
 		{Key: SettingKeyGroupHealthEnabled, Value: "false"},      // 默认不显示/运行分组健康检查，避免打扰主界面
-		{Key: SettingKeyJWTSecret, Value: ""},                    // 为空时自动生成
+		{Key: SettingKeyHealthScoreEnabled, Value: "false"},      // 默认关闭，避免升级后改变既有路由行为
+		{Key: SettingKeyHealthScoreWindowMinutes, Value: "60"},
+		{Key: SettingKeyHealthMinConfidentSample, Value: "10"},
+		{Key: SettingKeySuccessRatePenaltyWeight, Value: "70"},
+		{Key: SettingKeyEmptyResponsePenaltyWeight, Value: "25"},
+		{Key: SettingKeyLatencyPenaltyWeight, Value: "8"},
+		{Key: SettingKeyJWTSecret, Value: ""}, // 为空时自动生成
 		{Key: SettingKeyStatsSiteModelBackfilled, Value: "false"},
 	}
 }
@@ -61,7 +73,9 @@ func (s *Setting) Validate() error {
 	switch s.Key {
 	case SettingKeyModelInfoUpdateInterval, SettingKeySyncLLMInterval, SettingKeySiteSyncInterval,
 		SettingKeySiteCheckinInterval, SettingKeyRelayLogKeepPeriod,
-		SettingKeyCircuitBreakerThreshold, SettingKeyCircuitBreakerCooldown, SettingKeyCircuitBreakerMaxCooldown:
+		SettingKeyCircuitBreakerThreshold, SettingKeyCircuitBreakerCooldown, SettingKeyCircuitBreakerMaxCooldown,
+		SettingKeyHealthScoreWindowMinutes, SettingKeyHealthMinConfidentSample,
+		SettingKeySuccessRatePenaltyWeight, SettingKeyEmptyResponsePenaltyWeight, SettingKeyLatencyPenaltyWeight:
 		_, err := strconv.Atoi(s.Value)
 		if err != nil {
 			return fmt.Errorf("setting value must be an integer")
@@ -76,7 +90,7 @@ func (s *Setting) Validate() error {
 			return fmt.Errorf("setting value must be non-negative")
 		}
 		return nil
-	case SettingKeyRelayLogKeepEnabled, SettingKeyRelayWSUpgradeEnabled, SettingKeyGroupHealthEnabled:
+	case SettingKeyRelayLogKeepEnabled, SettingKeyRelayWSUpgradeEnabled, SettingKeyGroupHealthEnabled, SettingKeyHealthScoreEnabled:
 		if s.Value != "true" && s.Value != "false" {
 			return fmt.Errorf("setting value must be true or false")
 		}

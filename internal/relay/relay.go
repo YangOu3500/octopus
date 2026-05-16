@@ -196,11 +196,13 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 			if usedKey.ChannelKey == "" {
 				break
 			}
-			if !iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) {
-				break
+			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
+				iter.SkipHealthCooldown(channel.ID, usedKey.ID, channel.Name, channel.GetBaseUrl()) {
+				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
+				usedKey = dbmodel.ChannelKey{}
+				continue
 			}
-			selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
-			usedKey = dbmodel.ChannelKey{}
+			break
 		}
 		if usedKey.ChannelKey == "" {
 			if len(selectOpts.ExcludeKeyIDs) == 0 {
@@ -330,6 +332,16 @@ func (ra *relayAttempt) attempt() attemptResult {
 		op.ChannelKeyUpdate(ra.usedKey)
 
 		span.End(dbmodel.AttemptSuccess, statusCode, "")
+		balancer.RecordHealthAttempt(balancer.HealthAttempt{
+			ChannelID:    ra.channel.ID,
+			ChannelKeyID: ra.usedKey.ID,
+			ModelName:    ra.internalRequest.Model,
+			BaseURL:      ra.channel.GetBaseUrl(),
+			Status:       dbmodel.AttemptSuccess,
+			HTTPStatus:   statusCode,
+			TTFBMS:       span.FirstTokenDurationMS(ra.metrics.FirstTokenTime),
+			TotalMS:      int(span.Duration().Milliseconds()),
+		})
 
 		// Channel 维度统计
 		op.StatsChannelUpdate(ra.channel.ID, dbmodel.StatsMetrics{
@@ -353,6 +365,17 @@ func (ra *relayAttempt) attempt() attemptResult {
 		}
 		op.ChannelKeyUpdate(ra.usedKey)
 		span.End(dbmodel.AttemptFailed, statusCode, fwdErr.Error())
+		balancer.RecordHealthAttempt(balancer.HealthAttempt{
+			ChannelID:     ra.channel.ID,
+			ChannelKeyID:  ra.usedKey.ID,
+			ModelName:     ra.internalRequest.Model,
+			BaseURL:       ra.channel.GetBaseUrl(),
+			Status:        dbmodel.AttemptFailed,
+			HTTPStatus:    statusCode,
+			FailureReason: fwdErr.Error(),
+			RetryAfter:    ra.retryAfter,
+			TotalMS:       int(span.Duration().Milliseconds()),
+		})
 		return attemptResult{
 			Success:    false,
 			Written:    written,
@@ -364,6 +387,17 @@ func (ra *relayAttempt) attempt() attemptResult {
 
 	op.ChannelKeyUpdate(ra.usedKey)
 	span.End(dbmodel.AttemptFailed, statusCode, fwdErr.Error())
+	balancer.RecordHealthAttempt(balancer.HealthAttempt{
+		ChannelID:     ra.channel.ID,
+		ChannelKeyID:  ra.usedKey.ID,
+		ModelName:     ra.internalRequest.Model,
+		BaseURL:       ra.channel.GetBaseUrl(),
+		Status:        dbmodel.AttemptFailed,
+		HTTPStatus:    statusCode,
+		FailureReason: fwdErr.Error(),
+		RetryAfter:    ra.retryAfter,
+		TotalMS:       int(span.Duration().Milliseconds()),
+	})
 
 	// Channel 维度统计
 	op.StatsChannelUpdate(ra.channel.ID, dbmodel.StatsMetrics{

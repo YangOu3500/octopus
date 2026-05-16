@@ -136,11 +136,13 @@ func HandleResponsesCompact(c *gin.Context) {
 			if usedKey.ChannelKey == "" {
 				break
 			}
-			if !iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) {
-				break
+			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
+				iter.SkipHealthCooldown(channel.ID, usedKey.ID, channel.Name, channel.GetBaseUrl()) {
+				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
+				usedKey = dbmodel.ChannelKey{}
+				continue
 			}
-			selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
-			usedKey = dbmodel.ChannelKey{}
+			break
 		}
 		if usedKey.ChannelKey == "" {
 			if len(selectOpts.ExcludeKeyIDs) == 0 {
@@ -181,6 +183,14 @@ func HandleResponsesCompact(c *gin.Context) {
 
 		if success {
 			balancer.RecordSuccess(channel.ID, usedKey.ID, requestModel)
+			balancer.RecordHealthAttempt(balancer.HealthAttempt{
+				ChannelID:    channel.ID,
+				ChannelKeyID: usedKey.ID,
+				ModelName:    requestModel,
+				BaseURL:      channel.GetBaseUrl(),
+				Status:       dbmodel.AttemptSuccess,
+				HTTPStatus:   statusCode,
+			})
 			balancer.SetSticky(apiKeyID, requestModel, channel.ID, usedKey.ID)
 			metrics.Save(c.Request.Context(), true, nil, iter.Attempts())
 			return
@@ -188,6 +198,20 @@ func HandleResponsesCompact(c *gin.Context) {
 
 		failureKind := circuitFailureKind(group.RetryEnabled, statusCode)
 		balancer.RecordFailure(channel.ID, usedKey.ID, requestModel, failureKind)
+		failureReason := ""
+		if attemptErr != nil {
+			failureReason = attemptErr.Error()
+		}
+		balancer.RecordHealthAttempt(balancer.HealthAttempt{
+			ChannelID:     channel.ID,
+			ChannelKeyID:  usedKey.ID,
+			ModelName:     requestModel,
+			BaseURL:       channel.GetBaseUrl(),
+			Status:        dbmodel.AttemptFailed,
+			HTTPStatus:    statusCode,
+			FailureReason: failureReason,
+			RetryAfter:    retryAfter,
+		})
 		lastErr = attemptErr
 		lastStatusCode = statusCode
 		lastRetryAfter = retryAfter
