@@ -2,6 +2,7 @@ package balancer
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/bestruirui/octopus/internal/model"
@@ -114,14 +115,17 @@ func (it *Iterator) Index() int {
 func (it *Iterator) Skip(channelID, channelKeyID int, channelName, msg string) {
 	it.count++
 	it.attempts = append(it.attempts, model.ChannelAttempt{
-		ChannelID:    channelID,
-		ChannelKeyID: channelKeyID,
-		ChannelName:  channelName,
-		ModelName:    it.candidates[it.index].ModelName,
-		AttemptNum:   it.count,
-		Status:       model.AttemptSkipped,
-		Sticky:       it.IsSticky(),
-		Msg:          msg,
+		ChannelID:     channelID,
+		ChannelKeyID:  channelKeyID,
+		ChannelName:   channelName,
+		ModelName:     it.candidates[it.index].ModelName,
+		UpstreamModel: it.candidates[it.index].ModelName,
+		AttemptNum:    it.count,
+		AttemptIndex:  it.count,
+		Status:        model.AttemptSkipped,
+		FailureReason: normalizeAttemptFailureReason(msg),
+		Sticky:        it.IsSticky(),
+		Msg:           msg,
 	})
 }
 
@@ -138,14 +142,17 @@ func (it *Iterator) SkipCircuitBreak(channelID, channelKeyID int, channelName st
 	}
 	it.count++
 	it.attempts = append(it.attempts, model.ChannelAttempt{
-		ChannelID:    channelID,
-		ChannelKeyID: channelKeyID,
-		ChannelName:  channelName,
-		ModelName:    modelName,
-		AttemptNum:   it.count,
-		Status:       model.AttemptCircuitBreak,
-		Sticky:       it.IsSticky(),
-		Msg:          msg,
+		ChannelID:     channelID,
+		ChannelKeyID:  channelKeyID,
+		ChannelName:   channelName,
+		ModelName:     modelName,
+		UpstreamModel: modelName,
+		AttemptNum:    it.count,
+		AttemptIndex:  it.count,
+		Status:        model.AttemptCircuitBreak,
+		FailureReason: normalizeAttemptFailureReason(msg),
+		Sticky:        it.IsSticky(),
+		Msg:           msg,
 	})
 	return true
 }
@@ -155,12 +162,14 @@ func (it *Iterator) StartAttempt(channelID, channelKeyID int, channelName string
 	it.count++
 	return &AttemptSpan{
 		attempt: model.ChannelAttempt{
-			ChannelID:    channelID,
-			ChannelKeyID: channelKeyID,
-			ChannelName:  channelName,
-			ModelName:    it.candidates[it.index].ModelName,
-			AttemptNum:   it.count,
-			Sticky:       it.IsSticky(),
+			ChannelID:     channelID,
+			ChannelKeyID:  channelKeyID,
+			ChannelName:   channelName,
+			ModelName:     it.candidates[it.index].ModelName,
+			UpstreamModel: it.candidates[it.index].ModelName,
+			AttemptNum:    it.count,
+			AttemptIndex:  it.count,
+			Sticky:        it.IsSticky(),
 		},
 		startTime: time.Now(),
 		iter:      it,
@@ -188,6 +197,9 @@ func (s *AttemptSpan) End(status model.AttemptStatus, statusCode int, msg string
 	s.ended = true
 	s.attempt.Status = status
 	s.attempt.Duration = int(time.Since(s.startTime).Milliseconds())
+	s.attempt.DurationMS = s.attempt.Duration
+	s.attempt.HTTPStatus = statusCode
+	s.attempt.FailureReason = normalizeAttemptFailureReason(msg)
 	s.attempt.Msg = msg
 	s.iter.attempts = append(s.iter.attempts, s.attempt)
 }
@@ -195,4 +207,59 @@ func (s *AttemptSpan) End(status model.AttemptStatus, statusCode int, msg string
 // Duration 返回从开始到现在的耗时
 func (s *AttemptSpan) Duration() time.Duration {
 	return time.Since(s.startTime)
+}
+
+func normalizeAttemptFailureReason(msg string) string {
+	msg = strings.TrimSpace(msg)
+	if msg == "" {
+		return ""
+	}
+
+	const validationPrefix = "response validation failed:"
+	lower := strings.ToLower(msg)
+	if strings.HasPrefix(lower, validationPrefix) {
+		return slugFailureReason(strings.TrimSpace(msg[len(validationPrefix):]))
+	}
+
+	if strings.HasPrefix(lower, "circuit breaker tripped") {
+		return "circuit_breaker_tripped"
+	}
+
+	return slugFailureReason(msg)
+}
+
+func slugFailureReason(msg string) string {
+	msg = strings.TrimSpace(msg)
+	if msg == "" {
+		return "attempt_failed"
+	}
+
+	if idx := strings.IndexAny(msg, ":\r\n"); idx >= 0 {
+		msg = msg[:idx]
+	}
+	msg = strings.ToLower(strings.TrimSpace(msg))
+	if msg == "" {
+		return "attempt_failed"
+	}
+
+	var b strings.Builder
+	lastUnderscore := false
+	for _, r := range msg {
+		isASCIIAlphaNum := (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')
+		if isASCIIAlphaNum {
+			b.WriteRune(r)
+			lastUnderscore = false
+			continue
+		}
+		if !lastUnderscore {
+			b.WriteByte('_')
+			lastUnderscore = true
+		}
+	}
+
+	reason := strings.Trim(b.String(), "_")
+	if reason == "" {
+		return "attempt_failed"
+	}
+	return reason
 }

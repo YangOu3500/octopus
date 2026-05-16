@@ -295,7 +295,7 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 		return
 	}
 	if lastResult.StatusCode > 0 {
-		hb.FlushOrError(c, lastResult.StatusCode, "channel failed")
+		hb.FlushOrError(c, finalRelayFailureStatus(lastResult.StatusCode), "channel failed")
 		return
 	}
 	hb.FlushOrError(c, http.StatusBadGateway, "channel failed")
@@ -769,7 +769,7 @@ func (ra *relayAttempt) forwardViaHTTP(ctx context.Context) (int, error) {
 		return response.StatusCode, nil
 	}
 	if err := ra.handleResponse(ctx, response); err != nil {
-		return 0, err
+		return response.StatusCode, err
 	}
 	return response.StatusCode, nil
 }
@@ -1059,6 +1059,16 @@ func (ra *relayAttempt) encodeInboundStreamResponse(ctx context.Context, interna
 
 // handleResponse 处理非流式响应
 func (ra *relayAttempt) handleResponse(ctx context.Context, response *http.Response) error {
+	body, err := readResponseBody(response)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+	if err := validateNonStreamBody(ra.channel.Type, response, body); err != nil {
+		log.Warnf("response validator rejected non-stream response from channel %s: %v", ra.channel.Name, err)
+		return err
+	}
+	restoreResponseBody(response, body)
+
 	internalResponse, err := ra.outAdapter.TransformResponse(ctx, response)
 	if err != nil {
 		log.Warnf("failed to transform response: %v", err)
@@ -1187,7 +1197,7 @@ func (ra *relayAttempt) forwardViaHTTPPassthroughOpenAIResponses(ctx context.Con
 		return response.StatusCode, nil
 	}
 	if err := ra.handleResponsePassthroughOpenAIResponses(ctx, response); err != nil {
-		return 0, err
+		return response.StatusCode, err
 	}
 	return response.StatusCode, nil
 }
@@ -1342,9 +1352,13 @@ func (ra *relayAttempt) collectOpenAIResponsesPassthroughMetrics(ctx context.Con
 }
 
 func (ra *relayAttempt) handleResponsePassthroughOpenAIResponses(ctx context.Context, response *http.Response) error {
-	body, err := io.ReadAll(response.Body)
+	body, err := readResponseBody(response)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
+	}
+	if err := validateNonStreamBody(ra.channel.Type, response, body); err != nil {
+		log.Warnf("response validator rejected openai responses body from channel %s: %v", ra.channel.Name, err)
+		return err
 	}
 
 	contentType := response.Header.Get("Content-Type")
@@ -1421,7 +1435,7 @@ func (ra *relayAttempt) forwardViaHTTPPassthroughAnthropic(ctx context.Context) 
 		return response.StatusCode, nil
 	}
 	if err := ra.handleResponsePassthroughAnthropic(ctx, response); err != nil {
-		return 0, err
+		return response.StatusCode, err
 	}
 	return response.StatusCode, nil
 }
@@ -1468,7 +1482,7 @@ func (ra *relayAttempt) forwardViaHTTPStandard(ctx context.Context) (int, error)
 		return response.StatusCode, nil
 	}
 	if err := ra.handleResponse(ctx, response); err != nil {
-		return 0, err
+		return response.StatusCode, err
 	}
 	return response.StatusCode, nil
 }
@@ -1632,9 +1646,13 @@ func (ra *relayAttempt) collectAnthropicPassthroughMetrics(ctx context.Context, 
 
 // handleResponsePassthroughAnthropic 非流式直通：upstream JSON 原样写回客户端；旁路解析用于 metrics。
 func (ra *relayAttempt) handleResponsePassthroughAnthropic(ctx context.Context, response *http.Response) error {
-	body, err := io.ReadAll(response.Body)
+	body, err := readResponseBody(response)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
+	}
+	if err := validateNonStreamBody(ra.channel.Type, response, body); err != nil {
+		log.Warnf("response validator rejected anthropic body from channel %s: %v", ra.channel.Name, err)
+		return err
 	}
 
 	contentType := response.Header.Get("Content-Type")
