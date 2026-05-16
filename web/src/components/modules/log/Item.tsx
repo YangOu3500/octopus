@@ -213,6 +213,38 @@ function formatAttemptRetryable(attempt: ChannelAttempt, t: LogCardTranslations)
     return '—';
 }
 
+function formatOptionalText(value: string | null | undefined) {
+    return value?.trim() || '—';
+}
+
+function formatCostIncurred(value: string | null | undefined, t: LogCardTranslations) {
+    switch (value?.trim().toLowerCase()) {
+        case 'yes':
+            return t('yes');
+        case 'no':
+            return t('no');
+        case 'unknown':
+            return t('unknown');
+        default:
+            return '—';
+    }
+}
+
+function formatCostSource(value: string | null | undefined, t: LogCardTranslations) {
+    switch (value?.trim().toLowerCase()) {
+        case 'usage':
+            return t('costSourceUsage');
+        case 'estimated_input':
+            return t('costSourceEstimatedInput');
+        case 'estimated_tokens':
+            return t('costSourceEstimatedTokens');
+        case 'unknown':
+            return t('unknown');
+        default:
+            return formatOptionalText(value);
+    }
+}
+
 function formatProtocolPath(attempt: ChannelAttempt) {
     const parts = [attempt.request_protocol, attempt.upstream_protocol, attempt.response_protocol]
         .map((part) => part?.trim())
@@ -245,7 +277,11 @@ function hasTraceSummary(log: RelayLog) {
         || log.attempts_count
         || log.total_latency_ms
         || log.cache_tokens
-        || log.estimated_cost,
+        || log.estimated_cost
+        || log.final_success_cost
+        || log.total_attempt_cost
+        || log.failed_attempt_estimated_cost
+        || log.service_tier,
     );
 }
 
@@ -533,17 +569,24 @@ function TraceFieldGrid({ rows }: { rows: Array<{ label: string; value: string; 
 
 function TraceSummary({ log }: { log: RelayLog }) {
     const t = useTranslations('log.card');
+    const finalUpstreamModel = log.final_upstream_model?.trim() || log.actual_model_name?.trim();
+    const serviceTier = log.service_tier?.trim();
 
     const rows = [
         log.trace_id ? { label: t('traceId'), value: log.trace_id, title: log.trace_id } : null,
+        log.request_model_name ? { label: t('clientRequestModel'), value: log.request_model_name, title: log.request_model_name } : null,
         log.final_status ? { label: t('finalStatus'), value: formatFinalStatus(log.final_status, t), title: log.final_status } : null,
         log.attempts_count ? { label: t('attemptCount'), value: log.attempts_count.toLocaleString() } : null,
         log.final_channel_id ? { label: t('finalChannel'), value: `${t('channel')} #${log.final_channel_id}` } : null,
         log.final_site_id ? { label: t('finalSite'), value: `${t('site')} #${log.final_site_id}` } : null,
-        log.final_upstream_model ? { label: t('finalUpstreamModel'), value: log.final_upstream_model, title: log.final_upstream_model } : null,
+        finalUpstreamModel ? { label: t('finalUpstreamModel'), value: finalUpstreamModel, title: finalUpstreamModel } : null,
+        serviceTier ? { label: t('serviceTier'), value: serviceTier, title: serviceTier } : null,
         log.total_latency_ms ? { label: t('totalLatency'), value: formatOptionalDuration(log.total_latency_ms) } : null,
         log.cache_tokens ? { label: t('cacheTokens'), value: log.cache_tokens.toLocaleString() } : null,
         log.estimated_cost ? { label: t('estimatedCost'), value: formatOptionalCost(log.estimated_cost) } : null,
+        hasNumber(log.final_success_cost) ? { label: t('finalSuccessCost'), value: formatOptionalCost(log.final_success_cost) } : null,
+        hasNumber(log.total_attempt_cost) ? { label: t('totalAttemptCost'), value: formatOptionalCost(log.total_attempt_cost) } : null,
+        hasNumber(log.failed_attempt_estimated_cost) ? { label: t('failedAttemptEstimatedCost'), value: formatOptionalCost(log.failed_attempt_estimated_cost) } : null,
     ].filter((row): row is { label: string; value: string; title?: string } => Boolean(row));
 
     if (rows.length === 0) return null;
@@ -575,7 +618,12 @@ function AttemptTraceDetails({ attempt, target }: { attempt: MergedAttempt; targ
         { label: t('firstTokenTime'), value: formatOptionalDuration(attempt.ttfb_ms) },
         { label: t('totalTime'), value: formatOptionalDuration(totalMS) },
         { label: t('tokenUsage'), value: formatAttemptTokens(attempt, t), title: formatAttemptTokens(attempt, t) },
+        { label: t('costIncurred'), value: formatCostIncurred(attempt.cost_incurred, t) },
+        { label: t('inputCost'), value: formatOptionalCost(attempt.input_cost) },
+        { label: t('outputCost'), value: formatOptionalCost(attempt.output_cost) },
         { label: t('estimatedCost'), value: formatOptionalCost(attempt.estimated_cost) },
+        { label: t('costSource'), value: formatCostSource(attempt.cost_source, t), title: formatCostSource(attempt.cost_source, t) },
+        { label: t('serviceTier'), value: formatOptionalText(attempt.service_tier), title: formatOptionalText(attempt.service_tier) },
         { label: t('protocol'), value: formatProtocolPath(attempt), title: formatProtocolPath(attempt) },
         { label: t('baseUrl'), value: attempt.base_url?.trim() || '—', title: attempt.base_url?.trim() || undefined },
         { label: t('startedAt'), value: formatOptionalDateTime(attempt.created_at) },

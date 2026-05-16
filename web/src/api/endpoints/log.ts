@@ -43,7 +43,12 @@ export interface ChannelAttempt {
     input_tokens?: number;
     output_tokens?: number;
     cache_tokens?: number;
+    input_cost?: number;
+    output_cost?: number;
     estimated_cost?: number;
+    cost_incurred?: string;
+    cost_source?: string;
+    service_tier?: string;
     error_summary?: string;
     created_at?: number;
     sticky?: boolean;
@@ -82,6 +87,10 @@ export interface RelayLog {
     use_time: number;            // 总用时(毫秒)
     cost: number;                // 消耗费用
     estimated_cost?: number;     // 估算成本
+    final_success_cost?: number; // 最终成功 attempt 成本
+    total_attempt_cost?: number; // 整个故障转移链路成本
+    failed_attempt_estimated_cost?: number; // 失败 attempt 估算成本
+    service_tier?: string;       // 服务层级
     request_content: string;     // 请求内容
     response_content: string;    // 响应内容
     error: string;               // 错误信息
