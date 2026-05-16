@@ -57,6 +57,8 @@ export type LogSiteActionTargets = {
     legacyErrorTarget: LogSiteActionTarget | null;
 };
 
+type LogCardTranslations = ReturnType<typeof useTranslations<'log.card'>>;
+
 function formatTime(timestamp: number): string {
     const date = new Date(timestamp * 1000);
     return date.toLocaleString('zh-CN', {
@@ -104,30 +106,40 @@ interface MergedAttempt extends ChannelAttempt {
     repeat: number;
     lastAttemptNum: number;
     totalDuration: number;
+    originalIndex: number;
+}
+
+function sameAttemptGroup(left: ChannelAttempt, right: ChannelAttempt) {
+    return (
+        left.channel_id === right.channel_id
+        && (left.key_id || left.channel_key_id || 0) === (right.key_id || right.channel_key_id || 0)
+        && left.model_name === right.model_name
+        && (left.upstream_model ?? '') === (right.upstream_model ?? '')
+        && left.status === right.status
+        && (left.http_status ?? 0) === (right.http_status ?? 0)
+        && (left.failure_reason ?? '') === (right.failure_reason ?? '')
+        && (left.retryable ?? false) === (right.retryable ?? false)
+        && (left.msg ?? '') === (right.msg ?? '')
+    );
 }
 
 function mergeAdjacentAttempts(attempts: ChannelAttempt[]): MergedAttempt[] {
     const out: MergedAttempt[] = [];
-    for (const a of attempts) {
+    for (let i = 0; i < attempts.length; i++) {
+        const a = attempts[i];
         const last = out[out.length - 1];
-        if (
-            last
-            && last.channel_id === a.channel_id
-            && last.channel_key_id === a.channel_key_id
-            && last.model_name === a.model_name
-            && last.status === a.status
-            && (last.msg ?? '') === (a.msg ?? '')
-        ) {
+        if (last && sameAttemptGroup(last, a)) {
             last.repeat += 1;
             last.lastAttemptNum = a.attempt_num;
-            last.totalDuration += a.duration;
+            last.totalDuration += a.total_ms || a.duration_ms || a.duration;
             continue;
         }
         out.push({
             ...a,
             repeat: 1,
             lastAttemptNum: a.attempt_num,
-            totalDuration: a.duration,
+            totalDuration: a.total_ms || a.duration_ms || a.duration,
+            originalIndex: i,
         });
     }
     return out;
@@ -141,6 +153,113 @@ function makeDisableTargetKey(target: LogSiteActionTarget | null | undefined) {
 function formatOptionalTokenCount(value: number | null | undefined) {
     if (typeof value !== 'number') return '—';
     return value.toLocaleString();
+}
+
+function hasNumber(value: number | null | undefined): value is number {
+    return typeof value === 'number' && Number.isFinite(value);
+}
+
+function formatOptionalDuration(value: number | null | undefined) {
+    if (!hasNumber(value)) return '—';
+    return formatDuration(value);
+}
+
+function formatOptionalCost(value: number | null | undefined) {
+    if (!hasNumber(value)) return '—';
+    return Number(value).toFixed(6);
+}
+
+function formatOptionalDateTime(value: number | null | undefined) {
+    if (!hasNumber(value) || value <= 0) return '—';
+    const timestamp = value > 1_000_000_000_000 ? value : value * 1000;
+    return new Date(timestamp).toLocaleString('zh-CN', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    });
+}
+
+function formatEntity(label: string, id: number | null | undefined, name?: string | null) {
+    const trimmed = name?.trim();
+    if (trimmed) return id ? `${trimmed} (#${id})` : trimmed;
+    return id ? `${label} #${id}` : '—';
+}
+
+function formatAttemptIndex(attempt: MergedAttempt) {
+    const first = attempt.attempt_index || attempt.attempt_num || 0;
+    const last = attempt.lastAttemptNum || first;
+    if (!first) return '—';
+    return attempt.repeat > 1 && last !== first ? `${first}-${last}` : String(first);
+}
+
+function formatAttemptKey(attempt: ChannelAttempt, t: LogCardTranslations) {
+    const keyID = attempt.key_id || attempt.channel_key_id || 0;
+    return keyID ? `${t('key')} #${keyID}` : '—';
+}
+
+function formatAttemptSite(attempt: ChannelAttempt, target: LogSiteActionTarget | null, t: LogCardTranslations) {
+    return formatEntity(t('site'), attempt.site_id, target?.siteName);
+}
+
+function formatAttemptAccount(attempt: ChannelAttempt, target: LogSiteActionTarget | null, t: LogCardTranslations) {
+    return formatEntity(t('account'), attempt.account_id || attempt.site_account_id, target?.accountName);
+}
+
+function formatAttemptRetryable(attempt: ChannelAttempt, t: LogCardTranslations) {
+    if (attempt.retryable === true) return t('yes');
+    if (attempt.status === 'failed') return t('no');
+    return '—';
+}
+
+function formatProtocolPath(attempt: ChannelAttempt) {
+    const parts = [attempt.request_protocol, attempt.upstream_protocol, attempt.response_protocol]
+        .map((part) => part?.trim())
+        .filter(Boolean);
+    return parts.length > 0 ? parts.join(' -> ') : '—';
+}
+
+function formatAttemptTokens(attempt: ChannelAttempt, t: LogCardTranslations) {
+    const parts: string[] = [];
+    const inputTokens = attempt.input_tokens;
+    const outputTokens = attempt.output_tokens;
+    const cacheTokens = attempt.cache_tokens;
+    if (hasNumber(inputTokens)) parts.push(`${t('inputShort')} ${inputTokens.toLocaleString()}`);
+    if (hasNumber(outputTokens)) parts.push(`${t('outputShort')} ${outputTokens.toLocaleString()}`);
+    if (hasNumber(cacheTokens)) parts.push(`${t('cacheShort')} ${cacheTokens.toLocaleString()}`);
+    return parts.length > 0 ? parts.join(' / ') : '—';
+}
+
+function getAttemptFailureText(attempt: ChannelAttempt) {
+    return sanitizeErrorMessage(attempt.failure_reason || attempt.error_summary || attempt.msg);
+}
+
+function hasTraceSummary(log: RelayLog) {
+    return Boolean(
+        log.trace_id
+        || log.final_status
+        || log.final_channel_id
+        || log.final_site_id
+        || log.final_upstream_model
+        || log.attempts_count
+        || log.total_latency_ms
+        || log.cache_tokens
+        || log.estimated_cost,
+    );
+}
+
+function formatFinalStatus(status: string | undefined, t: LogCardTranslations) {
+    switch (status) {
+        case 'success':
+            return t('success');
+        case 'failed':
+            return t('failed');
+        case 'canceled':
+            return t('canceled');
+        default:
+            return status?.trim() || '—';
+    }
 }
 
 function hasInputTokenDetails(log: RelayLog) {
@@ -391,6 +510,92 @@ function InputTokenDetailsPopover({ log }: { log: RelayLog }) {
     );
 }
 
+function TraceFieldGrid({ rows }: { rows: Array<{ label: string; value: string; title?: string }> }) {
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-1.5">
+            {rows.map((row) => (
+                <div
+                    key={row.label}
+                    className="min-w-0 rounded-lg border border-border/50 bg-background/40 px-2 py-1.5 grid grid-cols-[auto_1fr] items-center gap-2"
+                >
+                    <span className="text-[10px] font-medium text-muted-foreground">{row.label}</span>
+                    <span
+                        className="min-w-0 truncate text-right font-mono text-[11px] text-foreground"
+                        title={row.title ?? row.value}
+                    >
+                        {row.value}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function TraceSummary({ log }: { log: RelayLog }) {
+    const t = useTranslations('log.card');
+
+    const rows = [
+        log.trace_id ? { label: t('traceId'), value: log.trace_id, title: log.trace_id } : null,
+        log.final_status ? { label: t('finalStatus'), value: formatFinalStatus(log.final_status, t), title: log.final_status } : null,
+        log.attempts_count ? { label: t('attemptCount'), value: log.attempts_count.toLocaleString() } : null,
+        log.final_channel_id ? { label: t('finalChannel'), value: `${t('channel')} #${log.final_channel_id}` } : null,
+        log.final_site_id ? { label: t('finalSite'), value: `${t('site')} #${log.final_site_id}` } : null,
+        log.final_upstream_model ? { label: t('finalUpstreamModel'), value: log.final_upstream_model, title: log.final_upstream_model } : null,
+        log.total_latency_ms ? { label: t('totalLatency'), value: formatOptionalDuration(log.total_latency_ms) } : null,
+        log.cache_tokens ? { label: t('cacheTokens'), value: log.cache_tokens.toLocaleString() } : null,
+        log.estimated_cost ? { label: t('estimatedCost'), value: formatOptionalCost(log.estimated_cost) } : null,
+    ].filter((row): row is { label: string; value: string; title?: string } => Boolean(row));
+
+    if (rows.length === 0) return null;
+
+    return (
+        <div className="rounded-xl border border-border/60 bg-background/40 p-2.5 flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <Info className="size-3.5 text-muted-foreground" />
+                <span>{t('trace')}</span>
+            </div>
+            <TraceFieldGrid rows={rows} />
+        </div>
+    );
+}
+
+function AttemptTraceDetails({ attempt, target }: { attempt: MergedAttempt; target: LogSiteActionTarget | null }) {
+    const t = useTranslations('log.card');
+    const failureText = getAttemptFailureText(attempt);
+    const totalMS = attempt.total_ms || attempt.duration_ms || attempt.totalDuration || attempt.duration;
+    const rows = [
+        { label: t('attemptIndex'), value: formatAttemptIndex(attempt) },
+        { label: t('site'), value: formatAttemptSite(attempt, target, t), title: formatAttemptSite(attempt, target, t) },
+        { label: t('account'), value: formatAttemptAccount(attempt, target, t), title: formatAttemptAccount(attempt, target, t) },
+        { label: t('channel'), value: formatEntity(t('channel'), attempt.channel_id, attempt.channel_name), title: formatEntity(t('channel'), attempt.channel_id, attempt.channel_name) },
+        { label: t('key'), value: formatAttemptKey(attempt, t) },
+        { label: t('upstreamModel'), value: attempt.upstream_model?.trim() || attempt.model_name || '—', title: attempt.upstream_model?.trim() || attempt.model_name },
+        { label: t('httpStatus'), value: attempt.http_status ? String(attempt.http_status) : '—' },
+        { label: t('retryable'), value: formatAttemptRetryable(attempt, t) },
+        { label: t('firstTokenTime'), value: formatOptionalDuration(attempt.ttfb_ms) },
+        { label: t('totalTime'), value: formatOptionalDuration(totalMS) },
+        { label: t('tokenUsage'), value: formatAttemptTokens(attempt, t), title: formatAttemptTokens(attempt, t) },
+        { label: t('estimatedCost'), value: formatOptionalCost(attempt.estimated_cost) },
+        { label: t('protocol'), value: formatProtocolPath(attempt), title: formatProtocolPath(attempt) },
+        { label: t('baseUrl'), value: attempt.base_url?.trim() || '—', title: attempt.base_url?.trim() || undefined },
+        { label: t('startedAt'), value: formatOptionalDateTime(attempt.created_at) },
+    ];
+
+    return (
+        <div className="flex flex-col gap-2">
+            <TraceFieldGrid rows={rows} />
+            {failureText ? (
+                <div className="rounded-lg border border-border/50 bg-background/40 px-2 py-1.5">
+                    <div className="mb-1 text-[10px] font-medium text-muted-foreground">{t('failureReason')}</div>
+                    <div className="text-[11px] leading-relaxed text-foreground whitespace-pre-wrap wrap-break-word">
+                        {failureText}
+                    </div>
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
 function DeferredJsonContent({ content, fallbackText }: { content: string | undefined; fallbackText: string }) {
     const { resolvedTheme } = useTheme();
     const { isOpen } = useMorphingDialog();
@@ -537,6 +742,7 @@ export function LogCard({ log, siteTargets }: { log: RelayLog; siteTargets: LogS
     const hasError = !!log.error;
     const hasAttempts = (log.attempts?.length ?? 0) > 0;
     const hasMultipleAttempts = (log.attempts?.length ?? 0) > 1;
+    const hasTraceData = hasTraceSummary(log);
     const [isDiagnosticExpanded, setIsDiagnosticExpanded] = useState(false);
     const [confirmDisableOpen, setConfirmDisableOpen] = useState(false);
     const [activeDisableTarget, setActiveDisableTarget] = useState<LogSiteActionTarget | null>(null);
@@ -544,9 +750,9 @@ export function LogCard({ log, siteTargets }: { log: RelayLog; siteTargets: LogS
 
     const attemptTargets = siteTargets?.attemptTargets ?? [];
     const legacyErrorTarget = siteTargets?.legacyErrorTarget ?? null;
-    const showDiagnosticPanel = hasError || hasAttempts;
-    const diagnosticTitle = hasAttempts ? t('retryDetails') : t('errorInfo');
-    const diagnosticIcon = hasAttempts ? RotateCw : AlertCircle;
+    const showDiagnosticPanel = hasError || hasAttempts || hasTraceData;
+    const diagnosticTitle = hasAttempts || hasTraceData ? t('traceDetails') : t('errorInfo');
+    const diagnosticIcon = hasAttempts ? RotateCw : hasTraceData ? Info : AlertCircle;
     const DiagnosticIcon = diagnosticIcon;
 
     const openDisableDialog = (target: LogSiteActionTarget) => {
@@ -757,7 +963,7 @@ export function LogCard({ log, siteTargets }: { log: RelayLog; siteTargets: LogS
                                                                 : 'bg-secondary text-secondary-foreground',
                                                         )}
                                                     >
-                                                        {log.total_attempts || log.attempts!.length} {t('attempts')}
+                                                        {log.attempts_count || log.total_attempts || log.attempts!.length} {t('attempts')}
                                                     </Badge>
                                                 ) : null}
                                                 {isDiagnosticExpanded ? (
@@ -803,40 +1009,19 @@ export function LogCard({ log, siteTargets }: { log: RelayLog; siteTargets: LogS
                                                             </div>
                                                         ) : null}
 
+                                                        {hasTraceData ? (
+                                                            <TraceSummary log={log} />
+                                                        ) : null}
+
                                                         {hasAttempts ? (
                                                             <div className="flex flex-col gap-2">
                                                                 {(() => {
                                                                     const attemptsArr = log.attempts!;
-                                                                    const merged: Array<MergedAttempt & { originalIndex: number }> = [];
-                                                                    for (let i = 0; i < attemptsArr.length; i++) {
-                                                                        const a = attemptsArr[i];
-                                                                        const last = merged[merged.length - 1];
-                                                                        if (
-                                                                            last
-                                                                            && last.channel_id === a.channel_id
-                                                                            && last.channel_key_id === a.channel_key_id
-                                                                            && last.model_name === a.model_name
-                                                                            && last.status === a.status
-                                                                            && (last.msg ?? '') === (a.msg ?? '')
-                                                                        ) {
-                                                                            last.repeat += 1;
-                                                                            last.lastAttemptNum = a.attempt_num;
-                                                                            last.totalDuration += a.duration;
-                                                                            continue;
-                                                                        }
-                                                                        merged.push({
-                                                                            ...a,
-                                                                            repeat: 1,
-                                                                            lastAttemptNum: a.attempt_num,
-                                                                            totalDuration: a.duration,
-                                                                            originalIndex: i,
-                                                                        });
-                                                                    }
+                                                                    const merged = mergeAdjacentAttempts(attemptsArr);
                                                                     return merged.map((attempt, idx) => {
                                                                         const statusMeta = getAttemptStatusMeta(attempt.status, t);
                                                                         const attemptTarget = attemptTargets[attempt.originalIndex] ?? null;
                                                                         const canDisableAttempt = attempt.status === 'failed' && !!attemptTarget?.canDisableModel;
-                                                                        const sanitizedMsg = sanitizeErrorMessage(attempt.msg);
 
                                                                         return (
                                                                             <div
@@ -886,11 +1071,7 @@ export function LogCard({ log, siteTargets }: { log: RelayLog; siteTargets: LogS
                                                                                         ) : null}
                                                                                     </div>
                                                                                 </div>
-                                                                                {sanitizedMsg ? (
-                                                                                    <div className={cn('pl-2 border-l-2 text-[11px] leading-relaxed whitespace-pre-wrap wrap-break-word', statusMeta.messageClassName)}>
-                                                                                        {sanitizedMsg}
-                                                                                    </div>
-                                                                                ) : null}
+                                                                                <AttemptTraceDetails attempt={attempt} target={attemptTarget} />
                                                                             </div>
                                                                         );
                                                                     });

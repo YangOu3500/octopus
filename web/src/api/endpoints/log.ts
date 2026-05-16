@@ -19,11 +19,33 @@ export type RelayLogWSRecovery = 'reconnect' | 'replay' | 'downgrade';
 export interface ChannelAttempt {
     channel_id: number;
     channel_key_id?: number;
+    key_id?: number;
     channel_name: string;
+    site_id?: number;
+    site_account_id?: number;
+    account_id?: number;
+    base_url?: string;
     model_name: string;
+    upstream_model?: string;
+    request_protocol?: string;
+    upstream_protocol?: string;
+    response_protocol?: string;
     attempt_num: number;    // 第几次尝试
+    attempt_index?: number;
     status: AttemptStatus;
     duration: number;       // 耗时(毫秒)
+    duration_ms?: number;
+    ttfb_ms?: number;
+    total_ms?: number;
+    http_status?: number;
+    failure_reason?: string;
+    retryable?: boolean;
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_tokens?: number;
+    estimated_cost?: number;
+    error_summary?: string;
+    created_at?: number;
     sticky?: boolean;
     msg?: string;
 }
@@ -33,21 +55,33 @@ export interface ChannelAttempt {
  */
 export interface RelayLog {
     id: number;
+    trace_id?: string;
+    thread_id?: string;
+    client_api_key_id?: number;
+    group_id?: number;
     time: number;                // 时间戳
     request_model_name: string;  // 请求模型名称
     request_api_key_name?: string; // 请求使用的 API Key 名称
     channel: number;             // 实际使用的渠道ID
     channel_name: string;        // 渠道名称
     actual_model_name: string;   // 实际使用模型名称
+    final_status?: string;
+    final_channel_id?: number;
+    final_site_id?: number;
+    final_upstream_model?: string;
+    attempts_count?: number;
+    total_latency_ms?: number;
     input_tokens: number;        // 输入Token
     transport_input_tokens?: number | null; // 实际发送到上游请求体的 Token 估算
     bill_input_tokens?: number | null; // 按常规输入价格计费的 Token
     cache_read_tokens?: number | null; // 从缓存读取的 Token
     cache_write_tokens?: number | null; // 写入缓存的 Token
+    cache_tokens?: number;       // 缓存 Token
     output_tokens: number;       // 输出Token
     ftut: number;                // 首字时间(毫秒)
     use_time: number;            // 总用时(毫秒)
     cost: number;                // 消耗费用
+    estimated_cost?: number;     // 估算成本
     request_content: string;     // 请求内容
     response_content: string;    // 响应内容
     error: string;               // 错误信息
