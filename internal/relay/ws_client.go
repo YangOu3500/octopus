@@ -543,6 +543,7 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 		log.Infof("ws request model %s, forwarding to channel: %s model: %s (attempt %d/%d)",
 			req.requestModel, channel.Name, item.ModelName, req.iter.Index()+1, req.iter.Len())
 
+		streamGate := newStreamGateConfig(group.FirstTokenTimeOut)
 		var result attemptResult
 		for retryNum := 0; retryNum < maxSameChannelRetries; retryNum++ {
 			if retryNum > 0 {
@@ -567,7 +568,8 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 				outAdapter:           outAdapter,
 				channel:              channel,
 				usedKey:              usedKey,
-				firstTokenTimeOutSec: group.FirstTokenTimeOut,
+				firstTokenTimeOutSec: streamGate.firstValidTimeoutSec,
+				streamGate:           streamGate,
 			}
 
 			result = ra.attempt()

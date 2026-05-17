@@ -450,6 +450,26 @@
                     "label": "抖动比例",
                     "hint": "取值 0 到 1，用于错开探测时间"
                 }
+            },
+            "stream": {
+                "title": "流式首个有效输出门控",
+                "subtitle": "用于在首个可见输出前缓存流式内容，异常时继续尝试后续候选",
+                "timeout": {
+                    "label": "全局超时（秒）",
+                    "hint": "分组未单独配置时使用，0 表示不限制"
+                },
+                "buffer": {
+                    "label": "最大缓冲字节",
+                    "hint": "首个有效输出前最多缓存的 SSE 字节数，超过后判定为可重试失败"
+                },
+                "emptyDone": {
+                    "label": "仅 DONE 判失败",
+                    "hint": "开启后，上游只返回 [DONE] 且没有有效内容时会切换候选"
+                },
+                "invalidSSE": {
+                    "label": "无效 SSE 判失败",
+                    "hint": "开启后，首个有效输出前解析失败会切换候选"
+                }
             }
         }
     },
@@ -488,7 +508,7 @@
             "matchRegexPlaceholder": "留空则默认按分组名称模糊匹配",
             "matchRegexInvalid": "正则无效",
             "firstTokenTimeOut": "首个有效输出超时",
-            "firstTokenTimeOutHint": "单位秒，仅流式响应起效；会等待可见内容、工具调用或拒绝信息，0 表示不限制",
+            "firstTokenTimeOutHint": "单位秒，仅流式响应起效；会等待可见内容、工具调用或拒绝信息，0 表示使用全局默认",
             "sessionKeepTime": "会话保持",
             "sessionKeepTimeHint": "单位秒，会话期间保持使用同一渠道，0 表示禁用",
             "retryEnabled": "同通道重试",
@@ -512,6 +532,7 @@
             "firstValid": "首个有效输出",
             "retry": "同通道重试",
             "session": "会话保持",
+            "inheritGlobal": "全局默认",
             "off": "关闭"
         },
         "bulk": {

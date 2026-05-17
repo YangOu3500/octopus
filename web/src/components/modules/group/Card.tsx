@@ -387,7 +387,7 @@ export function GroupCard({ group }: { group: Group }) {
                 <Badge variant="outline" className="min-w-0 justify-start rounded-lg px-2 py-1 font-normal">
                     <Clock3 className="mr-1.5 size-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">
-                        {t('runtime.firstValid')}: {group.first_token_time_out && group.first_token_time_out > 0 ? `${group.first_token_time_out}s` : t('runtime.off')}
+                        {t('runtime.firstValid')}: {group.first_token_time_out && group.first_token_time_out > 0 ? `${group.first_token_time_out}s` : t('runtime.inheritGlobal')}
                     </span>
                 </Badge>
                 <Badge variant="outline" className="min-w-0 justify-start rounded-lg px-2 py-1 font-normal">

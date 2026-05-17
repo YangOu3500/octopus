@@ -103,6 +103,7 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 	metrics := NewRelayMetrics(apiKeyID, requestModel, rawBody, internalRequest)
 	metrics.SetGroupID(group.ID)
 	metrics.SetClientInfo(c.ClientIP(), "relay")
+	streamGate := newStreamGateConfig(group.FirstTokenTimeOut)
 	responsesPassthroughRequired := internalRequest.HasOpenAIResponsesPassthrough()
 	responsesPassthroughCapableFound := false
 
@@ -238,7 +239,8 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 				outAdapter:           outAdapter,
 				channel:              channel,
 				usedKey:              usedKey,
-				firstTokenTimeOutSec: group.FirstTokenTimeOut,
+				firstTokenTimeOutSec: streamGate.firstValidTimeoutSec,
+				streamGate:           streamGate,
 			}
 
 			result = ra.attempt()
@@ -637,6 +639,7 @@ func (ra *relayAttempt) clientRequestHeaders() http.Header {
 
 // handleWSStreamResponse processes events from an upstream WebSocket reader.
 func (ra *relayAttempt) handleWSStreamResponse(ctx context.Context, reader *wsUpstreamReader) error {
+	gateConfig := ra.resolvedStreamGateConfig()
 	// 交接早期心跳给本函数内层 ticker
 	ra.heartbeat.Hand()
 
@@ -657,8 +660,8 @@ func (ra *relayAttempt) handleWSStreamResponse(ctx context.Context, reader *wsUp
 	firstToken := true
 	var firstTokenTimer *time.Timer
 	var firstTokenC <-chan time.Time
-	if ra.firstTokenTimeOutSec > 0 {
-		firstTokenTimer = time.NewTimer(time.Duration(ra.firstTokenTimeOutSec) * time.Second)
+	if gateConfig.firstValidTimeoutSec > 0 {
+		firstTokenTimer = time.NewTimer(time.Duration(gateConfig.firstValidTimeoutSec) * time.Second)
 		firstTokenC = firstTokenTimer.C
 		defer func() {
 			if firstTokenTimer != nil {
@@ -693,8 +696,8 @@ func (ra *relayAttempt) handleWSStreamResponse(ctx context.Context, reader *wsUp
 			log.Infof("client disconnected during ws stream")
 			return nil
 		case <-firstTokenC:
-			log.Warnf("first token timeout (%ds) on ws stream, switching channel", ra.firstTokenTimeOutSec)
-			return fmt.Errorf("first token timeout (%ds)", ra.firstTokenTimeOutSec)
+			log.Warnf("first token timeout (%ds) on ws stream, switching channel", gateConfig.firstValidTimeoutSec)
+			return fmt.Errorf("first token timeout (%ds)", gateConfig.firstValidTimeoutSec)
 		case <-heartbeatC:
 			if err := writeSSEHeartbeat(writer); err != nil {
 				return err
@@ -921,6 +924,7 @@ func (ra *relayAttempt) sendRequest(req *http.Request) (*http.Response, error) {
 
 // handleStreamResponse 处理流式响应
 func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http.Response) error {
+	gateConfig := ra.resolvedStreamGateConfig()
 	if ct := response.Header.Get("Content-Type"); ct != "" && !strings.Contains(strings.ToLower(ct), "text/event-stream") {
 		body, _ := io.ReadAll(io.LimitReader(response.Body, 16*1024))
 		return fmt.Errorf("upstream returned non-SSE content-type %q for stream request: %s", ct, string(body))
@@ -963,8 +967,8 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 
 	var firstTokenTimer *time.Timer
 	var firstTokenC <-chan time.Time
-	if firstToken && ra.firstTokenTimeOutSec > 0 {
-		firstTokenTimer = time.NewTimer(time.Duration(ra.firstTokenTimeOutSec) * time.Second)
+	if firstToken && gateConfig.firstValidTimeoutSec > 0 {
+		firstTokenTimer = time.NewTimer(time.Duration(gateConfig.firstValidTimeoutSec) * time.Second)
 		firstTokenC = firstTokenTimer.C
 		defer func() {
 			if firstTokenTimer != nil {
@@ -986,9 +990,9 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 			log.Infof("client disconnected, stopping stream: written=%t first_token_seen=%t elapsed=%s", ra.streamPayloadWritten.Load(), !firstToken, time.Since(ra.metrics.StartTime))
 			return err
 		case <-firstTokenC:
-			log.Warnf("first token timeout (%ds), switching channel", ra.firstTokenTimeOutSec)
+			log.Warnf("first token timeout (%ds), switching channel", gateConfig.firstValidTimeoutSec)
 			_ = response.Body.Close()
-			return fmt.Errorf("first token timeout (%ds)", ra.firstTokenTimeOutSec)
+			return fmt.Errorf("first token timeout (%ds)", gateConfig.firstValidTimeoutSec)
 		case <-heartbeatC:
 			if firstToken {
 				continue
@@ -1006,6 +1010,9 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 			}
 			if r.err != nil {
 				log.Warnf("failed to read event: %v", r.err)
+				if !gateConfig.invalidSSEAsFailure && firstToken {
+					continue
+				}
 				return streamValidationDecodeError(r.err)
 			}
 
@@ -1013,16 +1020,34 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 				chunk, err := ra.decodeStreamGateChunk(ctx, r.data)
 				if err != nil {
 					log.Warnf("first valid chunk gate rejected stream from channel %s: %v", ra.channel.Name, err)
+					if !gateConfig.invalidSSEAsFailure {
+						continue
+					}
 					return err
 				}
 				if streamChunkIsDone(chunk) {
+					if !gateConfig.emptyDoneAsFailure {
+						data, err := ra.encodeStreamGateChunk(ctx, chunk)
+						if err != nil {
+							return err
+						}
+						if len(data) > 0 {
+							ra.streamPayloadWritten.Store(true)
+							if _, err := ra.getStreamWriter().Write(data); err != nil {
+								return err
+							}
+							ra.getStreamWriter().Flush()
+						}
+						ra.metrics.SetFirstTokenTime(time.Now())
+						return nil
+					}
 					return streamDoneWithoutContentError()
 				}
 				if !streamChunkIsEmpty(chunk) {
 					bufferedChunks = append(bufferedChunks, chunk)
 					bufferedSize += chunk.size
-					if bufferedSize > streamFirstValidMaxBufferBytes {
-						return streamBufferExceededError(bufferedSize)
+					if bufferedSize > gateConfig.maxBufferBytes {
+						return streamBufferExceededErrorWithLimit(bufferedSize, gateConfig.maxBufferBytes)
 					}
 				}
 				if !streamChunkHasValidContent(chunk) {
@@ -1080,6 +1105,7 @@ type passthroughStreamGateResult struct {
 }
 
 func (ra *relayAttempt) waitForPassthroughFirstValidChunk(ctx context.Context, response *http.Response, outAdapter model.Outbound, inAdapter model.Inbound) ([]byte, error) {
+	gateConfig := ra.resolvedStreamGateConfig()
 	results := make(chan passthroughStreamGateResult, 1)
 	safe.Go("relay-passthrough-first-valid-gate", func() {
 		var raw bytes.Buffer
@@ -1090,17 +1116,24 @@ func (ra *relayAttempt) waitForPassthroughFirstValidChunk(ctx context.Context, r
 				results <- passthroughStreamGateResult{err: streamValidationDecodeError(err)}
 				return
 			}
-			if raw.Len() > streamFirstValidMaxBufferBytes {
-				results <- passthroughStreamGateResult{err: streamBufferExceededError(raw.Len())}
+			if raw.Len() > gateConfig.maxBufferBytes {
+				results <- passthroughStreamGateResult{err: streamBufferExceededErrorWithLimit(raw.Len(), gateConfig.maxBufferBytes)}
 				return
 			}
 
 			chunk, err := decodeStreamGateChunk(ctx, ev.Data, outAdapter, inAdapter)
 			if err != nil {
+				if !gateConfig.invalidSSEAsFailure {
+					continue
+				}
 				results <- passthroughStreamGateResult{err: err}
 				return
 			}
 			if streamChunkIsDone(chunk) {
+				if !gateConfig.emptyDoneAsFailure {
+					results <- passthroughStreamGateResult{raw: append([]byte(nil), raw.Bytes()...)}
+					return
+				}
 				results <- passthroughStreamGateResult{err: streamDoneWithoutContentError()}
 				return
 			}
@@ -1111,8 +1144,8 @@ func (ra *relayAttempt) waitForPassthroughFirstValidChunk(ctx context.Context, r
 			results <- passthroughStreamGateResult{raw: append([]byte(nil), raw.Bytes()...)}
 			return
 		}
-		if raw.Len() > streamFirstValidMaxBufferBytes {
-			results <- passthroughStreamGateResult{err: streamBufferExceededError(raw.Len())}
+		if raw.Len() > gateConfig.maxBufferBytes {
+			results <- passthroughStreamGateResult{err: streamBufferExceededErrorWithLimit(raw.Len(), gateConfig.maxBufferBytes)}
 			return
 		}
 		results <- passthroughStreamGateResult{err: streamNoValidChunkError()}
@@ -1120,8 +1153,8 @@ func (ra *relayAttempt) waitForPassthroughFirstValidChunk(ctx context.Context, r
 
 	var firstTokenTimer *time.Timer
 	var firstTokenC <-chan time.Time
-	if ra.firstTokenTimeOutSec > 0 {
-		firstTokenTimer = time.NewTimer(time.Duration(ra.firstTokenTimeOutSec) * time.Second)
+	if gateConfig.firstValidTimeoutSec > 0 {
+		firstTokenTimer = time.NewTimer(time.Duration(gateConfig.firstValidTimeoutSec) * time.Second)
 		firstTokenC = firstTokenTimer.C
 		defer firstTokenTimer.Stop()
 	}
@@ -1131,9 +1164,9 @@ func (ra *relayAttempt) waitForPassthroughFirstValidChunk(ctx context.Context, r
 		_ = response.Body.Close()
 		return nil, contextError(ctx)
 	case <-firstTokenC:
-		log.Warnf("first token timeout (%ds), switching channel", ra.firstTokenTimeOutSec)
+		log.Warnf("first token timeout (%ds), switching channel", gateConfig.firstValidTimeoutSec)
 		_ = response.Body.Close()
-		return nil, fmt.Errorf("first token timeout (%ds)", ra.firstTokenTimeOutSec)
+		return nil, fmt.Errorf("first token timeout (%ds)", gateConfig.firstValidTimeoutSec)
 	case result := <-results:
 		if result.err != nil {
 			return nil, result.err

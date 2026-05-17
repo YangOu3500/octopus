@@ -119,6 +119,7 @@ type relayAttempt struct {
 	channel              *dbmodel.Channel
 	usedKey              dbmodel.ChannelKey
 	firstTokenTimeOutSec int
+	streamGate           streamGateConfig
 	retryAfter           time.Duration // forward() 提取后暂存
 }
 

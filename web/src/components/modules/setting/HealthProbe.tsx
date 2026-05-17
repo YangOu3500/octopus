@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Activity, Gauge, Hash, HeartPulse, HelpCircle, MessageSquare, Percent, Send, Shuffle, Thermometer, Timer, type LucideIcon } from 'lucide-react';
+import { Activity, FileWarning, Gauge, Hash, HeartPulse, HelpCircle, MessageSquare, Percent, Send, Shuffle, Thermometer, Timer, type LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useSettingList, useSetSetting, SettingKey } from '@/api/endpoints/setting';
@@ -22,12 +22,23 @@ type FieldConfig = {
     step?: string;
 };
 
+type SwitchConfig = {
+    key: RuntimeSettingKey;
+    icon: LucideIcon;
+    label: string;
+    hint: string;
+};
+
 const defaultValues: Record<string, string> = {
     [SettingKey.HealthScoreWindowMinutes]: '60',
     [SettingKey.HealthMinConfidentSample]: '10',
     [SettingKey.SuccessRatePenaltyWeight]: '70',
     [SettingKey.EmptyResponsePenaltyWeight]: '25',
     [SettingKey.LatencyPenaltyWeight]: '8',
+    [SettingKey.StreamFirstValidTimeout]: '15',
+    [SettingKey.StreamFirstValidMaxBuffer]: '65536',
+    [SettingKey.StreamEmptyDoneAsFailure]: 'true',
+    [SettingKey.StreamInvalidSSEAsFailure]: 'true',
     [SettingKey.ProbeSiteMinInterval]: '30',
     [SettingKey.ProbeModelMinInterval]: '12',
     [SettingKey.ProbeMaxConcurrency]: '1',
@@ -198,6 +209,40 @@ export function SettingHealthProbe() {
         },
     ];
 
+    const streamFields: FieldConfig[] = [
+        {
+            key: SettingKey.StreamFirstValidTimeout,
+            icon: Timer,
+            label: t('healthProbe.stream.timeout.label'),
+            hint: t('healthProbe.stream.timeout.hint'),
+            inputMode: 'numeric',
+            min: '0',
+        },
+        {
+            key: SettingKey.StreamFirstValidMaxBuffer,
+            icon: Hash,
+            label: t('healthProbe.stream.buffer.label'),
+            hint: t('healthProbe.stream.buffer.hint'),
+            inputMode: 'numeric',
+            min: '1',
+        },
+    ];
+
+    const streamSwitchFields: SwitchConfig[] = [
+        {
+            key: SettingKey.StreamEmptyDoneAsFailure,
+            icon: Activity,
+            label: t('healthProbe.stream.emptyDone.label'),
+            hint: t('healthProbe.stream.emptyDone.hint'),
+        },
+        {
+            key: SettingKey.StreamInvalidSSEAsFailure,
+            icon: FileWarning,
+            label: t('healthProbe.stream.invalidSSE.label'),
+            hint: t('healthProbe.stream.invalidSSE.hint'),
+        },
+    ];
+
     useEffect(() => {
         if (!settings) return;
 
@@ -230,6 +275,22 @@ export function SettingHealthProbe() {
         const initialValue = initialValues.current[key] ?? '';
         if (value === initialValue) return;
 
+        setSetting.mutate({ key, value }, {
+            onSuccess: () => {
+                toast.success(t('saved'));
+                initialValues.current = { ...initialValues.current, [key]: value };
+            },
+            onError: () => {
+                setValues(prev => ({ ...prev, [key]: initialValue }));
+            },
+        });
+    };
+
+    const handleSwitchSave = (key: string, checked: boolean) => {
+        const value = checked ? 'true' : 'false';
+        const initialValue = initialValues.current[key] ?? 'false';
+        if (value === initialValue) return;
+        setValues(prev => ({ ...prev, [key]: value }));
         setSetting.mutate({ key, value }, {
             onSuccess: () => {
                 toast.success(t('saved'));
@@ -284,6 +345,15 @@ export function SettingHealthProbe() {
         </SettingRow>
     );
 
+    const renderSwitchField = (field: SwitchConfig) => (
+        <SettingRow key={field.key} icon={field.icon} label={field.label} hint={field.hint}>
+            <Switch
+                checked={(values[field.key] ?? 'false') === 'true'}
+                onCheckedChange={(checked) => handleSwitchSave(field.key, checked)}
+            />
+        </SettingRow>
+    );
+
     return (
         <div className="rounded-3xl border border-border bg-card p-6 space-y-5">
             <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
@@ -304,6 +374,20 @@ export function SettingHealthProbe() {
                 </div>
                 <div className="space-y-4">
                     {healthFields.map(renderField)}
+                </div>
+            </div>
+
+            <div className="border-t border-border pt-5 space-y-4">
+                <div className="flex min-w-0 items-center gap-3">
+                    <Timer className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                        <div className="text-sm font-medium">{t('healthProbe.stream.title')}</div>
+                        <div className="text-xs text-muted-foreground">{t('healthProbe.stream.subtitle')}</div>
+                    </div>
+                </div>
+                <div className="space-y-4">
+                    {streamFields.map(renderField)}
+                    {streamSwitchFields.map(renderSwitchField)}
                 </div>
             </div>
 

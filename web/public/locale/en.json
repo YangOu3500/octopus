@@ -450,6 +450,26 @@
                     "label": "Jitter Ratio",
                     "hint": "Value from 0 to 1, used to spread probe timing."
                 }
+            },
+            "stream": {
+                "title": "Stream First Valid Output Gate",
+                "subtitle": "Buffers stream bytes before the first visible output and retries another candidate on bad streams.",
+                "timeout": {
+                    "label": "Global Timeout (seconds)",
+                    "hint": "Used when a group has no override. 0 means no limit."
+                },
+                "buffer": {
+                    "label": "Max Buffer Bytes",
+                    "hint": "Maximum SSE bytes buffered before the first valid output; exceeding it is a retryable failure."
+                },
+                "emptyDone": {
+                    "label": "Fail On DONE Only",
+                    "hint": "When enabled, an upstream that only returns [DONE] before valid content will fail over."
+                },
+                "invalidSSE": {
+                    "label": "Fail On Invalid SSE",
+                    "hint": "When enabled, parse errors before the first valid output will fail over."
+                }
             }
         }
     },
@@ -488,7 +508,7 @@
             "matchRegexPlaceholder": "Leave empty to use default fuzzy match by group name",
             "matchRegexInvalid": "Invalid regex",
             "firstTokenTimeOut": "First Valid Output Timeout",
-            "firstTokenTimeOutHint": "Unit: seconds, only effective for streaming responses; waits for visible text, tool calls, or refusal output, 0 = no limit",
+            "firstTokenTimeOutHint": "Unit: seconds, only effective for streaming responses; waits for visible text, tool calls, or refusal output, 0 = use global default",
             "sessionKeepTime": "Session Keep Time",
             "sessionKeepTimeHint": "Unit: seconds, keeps using the same channel within a session, 0 = disabled",
             "retryEnabled": "Same-Channel Retry",
@@ -512,6 +532,7 @@
             "firstValid": "First valid",
             "retry": "Same-channel retry",
             "session": "Session keep",
+            "inheritGlobal": "Global default",
             "off": "Off"
         },
         "bulk": {

@@ -27,6 +27,10 @@ export const SettingKey = {
     RelayWSUpgradeEnabled: 'relay_ws_upgrade_enabled',
     SSEHeartbeatInterval: 'sse_heartbeat_interval',
     SSEPreStreamHeartbeatDelay: 'sse_pre_stream_heartbeat_delay',
+    StreamFirstValidTimeout: 'stream_first_valid_timeout_seconds',
+    StreamFirstValidMaxBuffer: 'stream_first_valid_max_buffer_bytes',
+    StreamEmptyDoneAsFailure: 'stream_empty_done_as_failure',
+    StreamInvalidSSEAsFailure: 'stream_invalid_sse_as_failure',
     GroupHealthEnabled: 'group_health_enabled',
     HealthScoreEnabled: 'enable_health_score',
     HealthScoreWindowMinutes: 'health_score_window_minutes',
@@ -245,4 +249,3 @@ export function useImportDB() {
         },
     });
 }
-

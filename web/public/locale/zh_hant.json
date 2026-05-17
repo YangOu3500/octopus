@@ -450,6 +450,26 @@
                     "label": "抖動比例",
                     "hint": "取值 0 到 1，用於錯開探測時間"
                 }
+            },
+            "stream": {
+                "title": "串流首個有效輸出閘門",
+                "subtitle": "用於在首個可見輸出前暫存串流內容，異常時繼續嘗試後續候選",
+                "timeout": {
+                    "label": "全域逾時（秒）",
+                    "hint": "分組未單獨配置時使用，0 表示不限制"
+                },
+                "buffer": {
+                    "label": "最大緩衝位元組",
+                    "hint": "首個有效輸出前最多緩衝的 SSE 位元組數，超過後判定為可重試失敗"
+                },
+                "emptyDone": {
+                    "label": "僅 DONE 判失敗",
+                    "hint": "開啟後，上游只返回 [DONE] 且沒有有效內容時會切換候選"
+                },
+                "invalidSSE": {
+                    "label": "無效 SSE 判失敗",
+                    "hint": "開啟後，首個有效輸出前解析失敗會切換候選"
+                }
             }
         }
     },
@@ -488,7 +508,7 @@
             "matchRegexPlaceholder": "留空則預設按分組名稱模糊比對",
             "matchRegexInvalid": "正規無效",
             "firstTokenTimeOut": "首個有效輸出逾時",
-            "firstTokenTimeOutHint": "單位秒，僅串流響應起效；會等待可見內容、工具呼叫或拒絕資訊，0 表示不限制",
+            "firstTokenTimeOutHint": "單位秒，僅串流響應起效；會等待可見內容、工具呼叫或拒絕資訊，0 表示使用全域預設",
             "sessionKeepTime": "會話保持",
             "sessionKeepTimeHint": "單位秒，會話期間保持使用同一供應源，0 表示停用",
             "retryEnabled": "同通道重試",
@@ -512,6 +532,7 @@
             "firstValid": "首個有效輸出",
             "retry": "同通道重試",
             "session": "會話保持",
+            "inheritGlobal": "全域預設",
             "off": "關閉"
         },
         "bulk": {

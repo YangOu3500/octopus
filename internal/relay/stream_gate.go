@@ -10,8 +10,6 @@ import (
 	transformerModel "github.com/bestruirui/octopus/internal/transformer/model"
 )
 
-const streamFirstValidMaxBufferBytes = 64 * 1024
-
 type streamGateChunk struct {
 	useEvents bool
 	events    []transformerModel.StreamEvent
@@ -108,9 +106,13 @@ func streamDoneWithoutContentError() error {
 }
 
 func streamBufferExceededError(size int) error {
+	return streamBufferExceededErrorWithLimit(size, defaultStreamFirstValidMaxBufferBytes)
+}
+
+func streamBufferExceededErrorWithLimit(size, max int) error {
 	return streamValidationError(
 		gatewayvalidator.ReasonStreamBufferExceeded,
-		fmt.Sprintf("buffered=%d max=%d", size, streamFirstValidMaxBufferBytes),
+		fmt.Sprintf("buffered=%d max=%d", size, max),
 	)
 }
 
