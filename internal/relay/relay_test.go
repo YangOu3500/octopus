@@ -858,6 +858,26 @@ func TestHandlerStreamGateFallsBackForInvalidOpenAIChatStreams(t *testing.T) {
 			firstRawSSE:   "data: {not-json\n\n",
 			failureReason: "invalid_sse",
 		},
+		{
+			name: "reasoning_content_then_done",
+			firstRawSSE: strings.Join([]string{
+				`data: {"id":"bad-reasoning-content","object":"chat.completion.chunk","created":1,"model":"fallback-model","choices":[{"index":0,"delta":{"reasoning_content":"thinking only"}}]}`,
+				"",
+				"data: [DONE]",
+				"",
+			}, "\n"),
+			failureReason: "stream_done_without_content",
+		},
+		{
+			name: "reasoning_field_then_done",
+			firstRawSSE: strings.Join([]string{
+				`data: {"id":"bad-reasoning-field","object":"chat.completion.chunk","created":1,"model":"fallback-model","choices":[{"index":0,"delta":{"reasoning":"thinking only"}}]}`,
+				"",
+				"data: [DONE]",
+				"",
+			}, "\n"),
+			failureReason: "stream_done_without_content",
+		},
 	}
 
 	for _, tc := range cases {
@@ -961,7 +981,7 @@ func TestHandlerStreamGateFallsBackForInvalidOpenAIChatStreams(t *testing.T) {
 			if !strings.Contains(body, `"content":"ok"`) {
 				t.Fatalf("expected fallback stream content to be returned, got %s", body)
 			}
-			if strings.Contains(body, "bad-empty-delta") || strings.Contains(body, "not-json") {
+			if strings.Contains(body, "bad-empty-delta") || strings.Contains(body, "not-json") || strings.Contains(body, "thinking only") {
 				t.Fatalf("expected invalid stream bytes not to be written, got %s", body)
 			}
 

@@ -149,10 +149,6 @@ func streamEventsHaveValidContent(events []transformerModel.StreamEvent) bool {
 			if event.Delta != nil && (event.Delta.Text != "" || event.Delta.Refusal != "") {
 				return true
 			}
-		case transformerModel.StreamEventKindThinkingDelta:
-			if event.Delta != nil && event.Delta.Thinking != "" {
-				return true
-			}
 		case transformerModel.StreamEventKindToolCallStart, transformerModel.StreamEventKindToolCallDelta:
 			if event.ToolCall != nil {
 				return true
@@ -196,14 +192,6 @@ func messageHasValidStreamContent(message *transformerModel.Message) bool {
 	}
 	if len(message.ToolCalls) > 0 {
 		return true
-	}
-	if reasoning := message.GetReasoningContent(); reasoning != "" {
-		return true
-	}
-	for _, block := range message.ReasoningBlocks {
-		if block.Text != "" {
-			return true
-		}
 	}
 	return false
 }

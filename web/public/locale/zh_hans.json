@@ -356,6 +356,69 @@
             },
             "clearSuccess": "日志已清空",
             "clearFailed": "清空失败"
+        },
+        "healthProbe": {
+            "title": "网关健康调度",
+            "health": {
+                "title": "健康分调度",
+                "subtitle": "默认关闭，开启后会按真实请求反馈影响候选排序",
+                "window": {
+                    "label": "统计窗口（分钟）",
+                    "hint": "只统计窗口内的请求反馈"
+                },
+                "sample": {
+                    "label": "最低可信样本",
+                    "hint": "样本不足时会降低惩罚力度"
+                },
+                "failureWeight": {
+                    "label": "失败率惩罚权重",
+                    "hint": "值越高，近期失败候选越靠后"
+                },
+                "emptyWeight": {
+                    "label": "空响应惩罚权重",
+                    "hint": "值越高，空 choices / 空内容候选越靠后"
+                },
+                "latencyWeight": {
+                    "label": "延迟惩罚权重",
+                    "hint": "值越高，慢候选越靠后"
+                }
+            },
+            "probe": {
+                "title": "慢速主动探测",
+                "subtitle": "默认关闭，只用于 unknown / degraded / cooldown 到期候选",
+                "siteInterval": {
+                    "label": "同站点间隔（分钟）",
+                    "hint": "同一站点两次主动探测的最小间隔"
+                },
+                "modelInterval": {
+                    "label": "同站点同模型间隔（小时）",
+                    "hint": "同一站点同一模型两次主动探测的最小间隔"
+                },
+                "concurrency": {
+                    "label": "最大并发",
+                    "hint": "慢速探测任务的最大并发数"
+                },
+                "dailyBudget": {
+                    "label": "每日站点预算",
+                    "hint": "每个站点每天最多主动探测请求数"
+                },
+                "prompt": {
+                    "label": "探测提示词",
+                    "hint": "用于非流式探测的小提示词"
+                },
+                "maxTokens": {
+                    "label": "最大输出 token",
+                    "hint": "探测请求的最大输出 token"
+                },
+                "temperature": {
+                    "label": "温度",
+                    "hint": "取值 0 到 2"
+                },
+                "jitter": {
+                    "label": "抖动比例",
+                    "hint": "取值 0 到 1，用于错开探测时间"
+                }
+            }
         }
     },
     "group": {
@@ -390,8 +453,8 @@
             "matchRegex": "匹配正则",
             "matchRegexPlaceholder": "留空则默认按分组名称模糊匹配",
             "matchRegexInvalid": "正则无效",
-            "firstTokenTimeOut": "首字超时",
-            "firstTokenTimeOutHint": "单位秒，仅流式响应起效，0 表示不限制",
+            "firstTokenTimeOut": "首个有效输出超时",
+            "firstTokenTimeOutHint": "单位秒，仅流式响应起效；会等待可见内容、工具调用或拒绝信息，0 表示不限制",
             "sessionKeepTime": "会话保持",
             "sessionKeepTimeHint": "单位秒，会话期间保持使用同一渠道，0 表示禁用",
             "retryEnabled": "同通道重试",
@@ -483,6 +546,9 @@
             "traceDetails": "Trace 详情",
             "trace": "Trace",
             "traceId": "Trace ID",
+            "threadId": "Thread ID",
+            "clientApiKeyId": "客户端 Key",
+            "groupId": "模型组",
             "clientRequestModel": "客户端请求模型",
             "finalStatus": "最终状态",
             "attemptCount": "尝试数",
@@ -494,12 +560,14 @@
             "attemptIndex": "尝试序号",
             "site": "站点",
             "account": "账号",
+            "group": "模型组",
             "channel": "渠道",
             "key": "Key",
             "upstreamModel": "上游模型",
             "httpStatus": "HTTP 状态",
             "retryable": "可重试",
             "failureReason": "失败原因",
+            "errorSummary": "错误摘要",
             "tokenUsage": "Token 用量",
             "costIncurred": "Token 消耗",
             "inputCost": "输入费用",

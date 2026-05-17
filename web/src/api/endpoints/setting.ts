@@ -28,6 +28,21 @@ export const SettingKey = {
     SSEHeartbeatInterval: 'sse_heartbeat_interval',
     SSEPreStreamHeartbeatDelay: 'sse_pre_stream_heartbeat_delay',
     GroupHealthEnabled: 'group_health_enabled',
+    HealthScoreEnabled: 'enable_health_score',
+    HealthScoreWindowMinutes: 'health_score_window_minutes',
+    HealthMinConfidentSample: 'health_min_confident_sample',
+    SuccessRatePenaltyWeight: 'success_rate_penalty_weight',
+    EmptyResponsePenaltyWeight: 'empty_response_penalty_weight',
+    LatencyPenaltyWeight: 'latency_penalty_weight',
+    ProbeEnabled: 'probe.enabled',
+    ProbeSiteMinInterval: 'probe.site_min_interval_minutes',
+    ProbeModelMinInterval: 'probe.model_min_interval_hours',
+    ProbeMaxConcurrency: 'probe.max_concurrency',
+    ProbeDailyMaxRequests: 'probe.daily_max_requests_per_site',
+    ProbePrompt: 'probe.prompt',
+    ProbeMaxTokens: 'probe.max_tokens',
+    ProbeTemperature: 'probe.temperature',
+    ProbeJitterRatio: 'probe.jitter_ratio',
 } as const;
 
 /**
@@ -230,5 +245,4 @@ export function useImportDB() {
         },
     });
 }
-
 

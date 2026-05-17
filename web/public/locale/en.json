@@ -356,6 +356,69 @@
             },
             "clearSuccess": "Logs cleared",
             "clearFailed": "Failed to clear logs"
+        },
+        "healthProbe": {
+            "title": "Gateway Health Routing",
+            "health": {
+                "title": "Health Score Routing",
+                "subtitle": "Off by default. Uses real request feedback to influence candidate ordering.",
+                "window": {
+                    "label": "Stats Window (minutes)",
+                    "hint": "Only request feedback inside this window is counted."
+                },
+                "sample": {
+                    "label": "Min Confident Samples",
+                    "hint": "Penalties are dampened until enough samples are available."
+                },
+                "failureWeight": {
+                    "label": "Failure Penalty Weight",
+                    "hint": "Higher values push recently failing candidates lower."
+                },
+                "emptyWeight": {
+                    "label": "Empty Response Penalty",
+                    "hint": "Higher values push empty choices/content candidates lower."
+                },
+                "latencyWeight": {
+                    "label": "Latency Penalty Weight",
+                    "hint": "Higher values push slow candidates lower."
+                }
+            },
+            "probe": {
+                "title": "Slow Active Probe",
+                "subtitle": "Off by default. Only probes unknown, degraded, or cooldown-expired candidates.",
+                "siteInterval": {
+                    "label": "Site Interval (minutes)",
+                    "hint": "Minimum interval between active probes for the same site."
+                },
+                "modelInterval": {
+                    "label": "Site Model Interval (hours)",
+                    "hint": "Minimum interval between active probes for the same site and model."
+                },
+                "concurrency": {
+                    "label": "Max Concurrency",
+                    "hint": "Maximum concurrent slow probe jobs."
+                },
+                "dailyBudget": {
+                    "label": "Daily Site Budget",
+                    "hint": "Maximum active probe requests per site per day."
+                },
+                "prompt": {
+                    "label": "Probe Prompt",
+                    "hint": "Short prompt used for non-stream probes."
+                },
+                "maxTokens": {
+                    "label": "Max Output Tokens",
+                    "hint": "Maximum output tokens for probe requests."
+                },
+                "temperature": {
+                    "label": "Temperature",
+                    "hint": "Value from 0 to 2."
+                },
+                "jitter": {
+                    "label": "Jitter Ratio",
+                    "hint": "Value from 0 to 1, used to spread probe timing."
+                }
+            }
         }
     },
     "group": {
@@ -390,8 +453,8 @@
             "matchRegex": "Match Regex",
             "matchRegexPlaceholder": "Leave empty to use default fuzzy match by group name",
             "matchRegexInvalid": "Invalid regex",
-            "firstTokenTimeOut": "First Token Timeout",
-            "firstTokenTimeOutHint": "Unit: seconds, only effective for streaming response, 0 = no limit",
+            "firstTokenTimeOut": "First Valid Output Timeout",
+            "firstTokenTimeOutHint": "Unit: seconds, only effective for streaming responses; waits for visible text, tool calls, or refusal output, 0 = no limit",
             "sessionKeepTime": "Session Keep Time",
             "sessionKeepTimeHint": "Unit: seconds, keeps using the same channel within a session, 0 = disabled",
             "retryEnabled": "Same-Channel Retry",
@@ -483,6 +546,9 @@
             "traceDetails": "Trace Details",
             "trace": "Trace",
             "traceId": "Trace ID",
+            "threadId": "Thread ID",
+            "clientApiKeyId": "Client Key",
+            "groupId": "Group",
             "clientRequestModel": "Client Request Model",
             "finalStatus": "Final Status",
             "attemptCount": "Attempts",
@@ -494,12 +560,14 @@
             "attemptIndex": "Attempt",
             "site": "Site",
             "account": "Account",
+            "group": "Group",
             "channel": "Channel",
             "key": "Key",
             "upstreamModel": "Upstream Model",
             "httpStatus": "HTTP Status",
             "retryable": "Retryable",
             "failureReason": "Failure Reason",
+            "errorSummary": "Error Summary",
             "tokenUsage": "Token Usage",
             "costIncurred": "Token Cost Incurred",
             "inputCost": "Input Cost",

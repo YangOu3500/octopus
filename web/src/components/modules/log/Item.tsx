@@ -105,6 +105,7 @@ function sanitizeErrorMessage(raw: string | undefined | null): string {
 interface MergedAttempt extends ChannelAttempt {
     repeat: number;
     lastAttemptNum: number;
+    lastAttemptIndex: number;
     totalDuration: number;
     originalIndex: number;
 }
@@ -131,6 +132,7 @@ function mergeAdjacentAttempts(attempts: ChannelAttempt[]): MergedAttempt[] {
         if (last && sameAttemptGroup(last, a)) {
             last.repeat += 1;
             last.lastAttemptNum = a.attempt_num;
+            last.lastAttemptIndex = a.attempt_index || a.attempt_num;
             last.totalDuration += a.total_ms || a.duration_ms || a.duration;
             continue;
         }
@@ -138,6 +140,7 @@ function mergeAdjacentAttempts(attempts: ChannelAttempt[]): MergedAttempt[] {
             ...a,
             repeat: 1,
             lastAttemptNum: a.attempt_num,
+            lastAttemptIndex: a.attempt_index || a.attempt_num,
             totalDuration: a.total_ms || a.duration_ms || a.duration,
             originalIndex: i,
         });
@@ -189,7 +192,7 @@ function formatEntity(label: string, id: number | null | undefined, name?: strin
 
 function formatAttemptIndex(attempt: MergedAttempt) {
     const first = attempt.attempt_index || attempt.attempt_num || 0;
-    const last = attempt.lastAttemptNum || first;
+    const last = attempt.lastAttemptIndex || attempt.lastAttemptNum || first;
     if (!first) return '—';
     return attempt.repeat > 1 && last !== first ? `${first}-${last}` : String(first);
 }
@@ -263,13 +266,22 @@ function formatAttemptTokens(attempt: ChannelAttempt, t: LogCardTranslations) {
     return parts.length > 0 ? parts.join(' / ') : '—';
 }
 
-function getAttemptFailureText(attempt: ChannelAttempt) {
-    return sanitizeErrorMessage(attempt.failure_reason || attempt.error_summary || attempt.msg);
+function getAttemptFailureReason(attempt: ChannelAttempt) {
+    return sanitizeErrorMessage(attempt.failure_reason);
+}
+
+function getAttemptErrorSummary(attempt: ChannelAttempt) {
+    const summary = sanitizeErrorMessage(attempt.error_summary || attempt.msg);
+    const reason = getAttemptFailureReason(attempt);
+    return summary && summary !== reason ? summary : '';
 }
 
 function hasTraceSummary(log: RelayLog) {
     return Boolean(
         log.trace_id
+        || log.thread_id
+        || log.client_api_key_id
+        || log.group_id
         || log.final_status
         || log.final_channel_id
         || log.final_site_id
@@ -574,6 +586,9 @@ function TraceSummary({ log }: { log: RelayLog }) {
 
     const rows = [
         log.trace_id ? { label: t('traceId'), value: log.trace_id, title: log.trace_id } : null,
+        log.thread_id ? { label: t('threadId'), value: log.thread_id, title: log.thread_id } : null,
+        log.client_api_key_id ? { label: t('clientApiKeyId'), value: `${t('key')} #${log.client_api_key_id}` } : null,
+        log.group_id ? { label: t('groupId'), value: `${t('group')} #${log.group_id}` } : null,
         log.request_model_name ? { label: t('clientRequestModel'), value: log.request_model_name, title: log.request_model_name } : null,
         log.final_status ? { label: t('finalStatus'), value: formatFinalStatus(log.final_status, t), title: log.final_status } : null,
         log.attempts_count ? { label: t('attemptCount'), value: log.attempts_count.toLocaleString() } : null,
@@ -604,7 +619,8 @@ function TraceSummary({ log }: { log: RelayLog }) {
 
 function AttemptTraceDetails({ attempt, target }: { attempt: MergedAttempt; target: LogSiteActionTarget | null }) {
     const t = useTranslations('log.card');
-    const failureText = getAttemptFailureText(attempt);
+    const failureReason = getAttemptFailureReason(attempt);
+    const errorSummary = getAttemptErrorSummary(attempt);
     const totalMS = attempt.total_ms || attempt.duration_ms || attempt.totalDuration || attempt.duration;
     const rows = [
         { label: t('attemptIndex'), value: formatAttemptIndex(attempt) },
@@ -632,11 +648,19 @@ function AttemptTraceDetails({ attempt, target }: { attempt: MergedAttempt; targ
     return (
         <div className="flex flex-col gap-2">
             <TraceFieldGrid rows={rows} />
-            {failureText ? (
+            {failureReason ? (
                 <div className="rounded-lg border border-border/50 bg-background/40 px-2 py-1.5">
                     <div className="mb-1 text-[10px] font-medium text-muted-foreground">{t('failureReason')}</div>
                     <div className="text-[11px] leading-relaxed text-foreground whitespace-pre-wrap wrap-break-word">
-                        {failureText}
+                        {failureReason}
+                    </div>
+                </div>
+            ) : null}
+            {errorSummary ? (
+                <div className="rounded-lg border border-border/50 bg-background/40 px-2 py-1.5">
+                    <div className="mb-1 text-[10px] font-medium text-muted-foreground">{t('errorSummary')}</div>
+                    <div className="text-[11px] leading-relaxed text-foreground whitespace-pre-wrap wrap-break-word">
+                        {errorSummary}
                     </div>
                 </div>
             ) : null}
