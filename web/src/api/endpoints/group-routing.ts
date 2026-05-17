@@ -25,6 +25,7 @@ export interface GroupRoutingCandidate {
     rate_limit_count: number;
     avg_ttfb_ms: number;
     avg_total_ms: number;
+    active_selections: number;
     cooling_down: boolean;
     cooldown_remaining_ms: number;
     cooldown_reason?: string;
@@ -68,6 +69,7 @@ function normalizeCandidate(candidate: Partial<GroupRoutingCandidate>): GroupRou
         rate_limit_count: typeof candidate.rate_limit_count === 'number' ? candidate.rate_limit_count : 0,
         avg_ttfb_ms: typeof candidate.avg_ttfb_ms === 'number' ? candidate.avg_ttfb_ms : 0,
         avg_total_ms: typeof candidate.avg_total_ms === 'number' ? candidate.avg_total_ms : 0,
+        active_selections: typeof candidate.active_selections === 'number' ? candidate.active_selections : 0,
         cooling_down: candidate.cooling_down === true,
         cooldown_remaining_ms: typeof candidate.cooldown_remaining_ms === 'number' ? candidate.cooldown_remaining_ms : 0,
         cooldown_reason: candidate.cooldown_reason ?? '',

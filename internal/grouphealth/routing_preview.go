@@ -58,8 +58,12 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 		RateLimitCount:    stats.RateLimitCount,
 		AvgTTFBMS:         stats.AvgTTFBMS,
 		AvgTotalMS:        stats.AvgTotalMS,
+		ActiveSelections:  activeSelectionsForPreview(healthEnabled, item),
 		QuotaStatus:       "unknown",
 		Decision:          "ready",
+	}
+	if candidate.ActiveSelections > 0 {
+		candidate.Notes = append(candidate.Notes, "active selections: "+strconv.Itoa(candidate.ActiveSelections))
 	}
 
 	channel, err := op.ChannelGet(item.ChannelID, ctx)
@@ -205,6 +209,9 @@ func sortRoutingCandidates(mode model.GroupMode, healthEnabled bool, candidates 
 			if healthEnabled && candidates[i].HealthScore != candidates[j].HealthScore {
 				return candidates[i].HealthScore > candidates[j].HealthScore
 			}
+			if healthEnabled && candidates[i].ActiveSelections != candidates[j].ActiveSelections {
+				return candidates[i].ActiveSelections < candidates[j].ActiveSelections
+			}
 			if candidates[i].Weight != candidates[j].Weight {
 				return candidates[i].Weight > candidates[j].Weight
 			}
@@ -218,6 +225,9 @@ func sortRoutingCandidates(mode model.GroupMode, healthEnabled bool, candidates 
 				rightBand := healthBandForPreview(candidates[j].HealthScore)
 				if leftBand != rightBand {
 					return leftBand > rightBand
+				}
+				if candidates[i].ActiveSelections != candidates[j].ActiveSelections {
+					return candidates[i].ActiveSelections < candidates[j].ActiveSelections
 				}
 			}
 			if candidates[i].Priority != candidates[j].Priority {
@@ -239,6 +249,9 @@ func effectiveRoutingScore(mode model.GroupMode, healthEnabled bool, candidate m
 	weight := float64(normalizedWeight(candidate.Weight))
 	if candidate.Decision != "ready" {
 		score = score * 0.1
+	}
+	if healthEnabled && candidate.ActiveSelections > 0 {
+		score = score / float64(candidate.ActiveSelections+1)
 	}
 	switch mode {
 	case model.GroupModeWeighted:
@@ -267,4 +280,11 @@ func normalizedWeight(value int) int {
 		return 1
 	}
 	return value
+}
+
+func activeSelectionsForPreview(healthEnabled bool, item model.GroupItem) int {
+	if !healthEnabled {
+		return 0
+	}
+	return balancer.ActiveSelectionCount(item.ChannelID, item.ModelName)
 }

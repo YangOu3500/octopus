@@ -198,21 +198,23 @@ func (it *Iterator) SkipHealthCooldown(channelID, channelKeyID int, channelName,
 func (it *Iterator) StartAttempt(channelID, channelKeyID int, channelName string) *AttemptSpan {
 	it.count++
 	start := time.Now()
+	modelName := it.candidates[it.index].ModelName
 	return &AttemptSpan{
 		attempt: model.ChannelAttempt{
 			ChannelID:     channelID,
 			ChannelKeyID:  channelKeyID,
 			KeyID:         channelKeyID,
 			ChannelName:   channelName,
-			ModelName:     it.candidates[it.index].ModelName,
-			UpstreamModel: it.candidates[it.index].ModelName,
+			ModelName:     modelName,
+			UpstreamModel: modelName,
 			AttemptNum:    it.count,
 			AttemptIndex:  it.count,
 			CreatedAt:     start.UnixMilli(),
 			Sticky:        it.IsSticky(),
 		},
-		startTime: start,
-		iter:      it,
+		startTime:        start,
+		iter:             it,
+		releaseSelection: beginActiveSelection(channelID, modelName),
 	}
 }
 
@@ -223,10 +225,11 @@ func (it *Iterator) Attempts() []model.ChannelAttempt {
 
 // AttemptSpan 管理单次通道尝试的生命周期（计时、状态、结果）
 type AttemptSpan struct {
-	attempt   model.ChannelAttempt
-	startTime time.Time
-	iter      *Iterator
-	ended     bool
+	attempt          model.ChannelAttempt
+	startTime        time.Time
+	iter             *Iterator
+	ended            bool
+	releaseSelection func()
 }
 
 // End 结束尝试：设置状态，自动计算耗时，追加到 Iterator
@@ -235,6 +238,9 @@ func (s *AttemptSpan) End(status model.AttemptStatus, statusCode int, msg string
 		return
 	}
 	s.ended = true
+	if s.releaseSelection != nil {
+		defer s.releaseSelection()
+	}
 	s.attempt.Status = status
 	s.attempt.Duration = int(time.Since(s.startTime).Milliseconds())
 	s.attempt.DurationMS = s.attempt.Duration

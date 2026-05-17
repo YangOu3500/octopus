@@ -134,6 +134,10 @@ function CandidateRow({ candidate }: { candidate: GroupRoutingCandidate }) {
                 </div>
             </td>
             <td className="px-3 py-3 text-xs tabular-nums">
+                <div>{t('activeSelections')}: {candidate.active_selections || '-'}</div>
+                <div className="text-muted-foreground">{t('effectiveScore')}: {candidate.effective_score.toFixed(1)}</div>
+            </td>
+            <td className="px-3 py-3 text-xs tabular-nums">
                 <div>{t('latency')}: {formatMS(candidate.avg_total_ms)}</div>
                 <div className="text-muted-foreground">{t('ttfb')}: {formatMS(candidate.avg_ttfb_ms)}</div>
             </td>
@@ -252,13 +256,14 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                         </div>
 
                         <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-border">
-                            <table className="w-full min-w-[70rem] text-left">
+                            <table className="w-full min-w-[76rem] text-left">
                                 <thead className="sticky top-0 z-10 bg-muted/90 text-xs text-muted-foreground backdrop-blur">
                                     <tr className="border-b border-border">
                                         <th className="px-3 py-2">{t('table.rank')}</th>
                                         <th className="px-3 py-2">{t('table.candidate')}</th>
                                         <th className="px-3 py-2">{t('table.manual')}</th>
                                         <th className="px-3 py-2">{t('table.health')}</th>
+                                        <th className="px-3 py-2">{t('table.load')}</th>
                                         <th className="px-3 py-2">{t('table.latency')}</th>
                                         <th className="px-3 py-2">{t('table.failures')}</th>
                                         <th className="px-3 py-2">
@@ -275,7 +280,7 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                                         <CandidateRow key={`${candidate.group_item_id}-${candidate.channel_id}-${candidate.model_name}`} candidate={candidate} />
                                     )) : (
                                         <tr>
-                                            <td colSpan={8} className="px-3 py-12 text-center text-sm text-muted-foreground">
+                                            <td colSpan={9} className="px-3 py-12 text-center text-sm text-muted-foreground">
                                                 {t('empty')}
                                             </td>
                                         </tr>

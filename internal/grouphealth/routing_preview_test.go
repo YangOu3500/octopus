@@ -103,6 +103,75 @@ func TestBuildRoutingPreviewShowsHealthAndCooldown(t *testing.T) {
 	}
 }
 
+func TestBuildRoutingPreviewShowsActiveSelectionPenalty(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	balancer.Reset()
+	t.Cleanup(balancer.Reset)
+
+	if err := op.SettingSetString(model.SettingKeyHealthScoreEnabled, "true"); err != nil {
+		t.Fatalf("SettingSetString failed: %v", err)
+	}
+
+	firstChannel := &model.Channel{
+		Name:     "routing-active-first",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://active-first.example.test/v1"}},
+		Model:    "preview-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-first-secret"}},
+	}
+	if err := op.ChannelCreate(firstChannel, ctx); err != nil {
+		t.Fatalf("ChannelCreate first failed: %v", err)
+	}
+	secondChannel := &model.Channel{
+		Name:     "routing-active-second",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://active-second.example.test/v1"}},
+		Model:    "preview-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-second-secret"}},
+	}
+	if err := op.ChannelCreate(secondChannel, ctx); err != nil {
+		t.Fatalf("ChannelCreate second failed: %v", err)
+	}
+
+	group := &model.Group{Name: "preview-active-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: firstChannel.ID, ModelName: "preview-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd first failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: secondChannel.ID, ModelName: "preview-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd second failed: %v", err)
+	}
+
+	iteratorGroup, err := op.GroupGet(group.ID, ctx)
+	if err != nil {
+		t.Fatalf("GroupGet failed: %v", err)
+	}
+	iter := balancer.NewIterator(*iteratorGroup, 0, "preview-model")
+	if !iter.Next() {
+		t.Fatal("expected first candidate")
+	}
+	span := iter.StartAttempt(firstChannel.ID, firstChannel.Keys[0].ID, firstChannel.Name)
+	defer span.End(model.AttemptSuccess, 200, "")
+
+	preview, err := BuildRoutingPreview(ctx, group.ID)
+	if err != nil {
+		t.Fatalf("BuildRoutingPreview failed: %v", err)
+	}
+	if len(preview.Candidates) != 2 {
+		t.Fatalf("candidate count = %d, want 2", len(preview.Candidates))
+	}
+	if preview.Candidates[0].ChannelID != secondChannel.ID {
+		t.Fatalf("expected idle candidate first, got %+v", preview.Candidates[0])
+	}
+	if preview.Candidates[1].ChannelID != firstChannel.ID || preview.Candidates[1].ActiveSelections != 1 {
+		t.Fatalf("expected active selection count on first channel, got %+v", preview.Candidates[1])
+	}
+}
+
 func TestBuildRoutingPreviewShowsProjectedAccountQuotaStatus(t *testing.T) {
 	ctx := setupGroupHealthTestDB(t)
 

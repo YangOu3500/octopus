@@ -57,6 +57,75 @@ func TestHealthFailoverPrefersHealthierCandidateWithinPriority(t *testing.T) {
 	}
 }
 
+func TestHealthSchedulingActiveSelectionSpreadsBurstWithinTie(t *testing.T) {
+	Reset()
+	enableHealthForTest(t)
+
+	group := model.Group{
+		Mode: model.GroupModeFailover,
+		Items: []model.GroupItem{
+			{ID: 1, ChannelID: 1, ModelName: "gpt-test", Priority: 1, Weight: 1},
+			{ID: 2, ChannelID: 2, ModelName: "gpt-test", Priority: 1, Weight: 1},
+		},
+	}
+
+	first := NewIterator(group, 0, "gpt-test")
+	if !first.Next() {
+		t.Fatal("expected first candidate")
+	}
+	if got := first.Item().ChannelID; got != 1 {
+		t.Fatalf("first channel = %d, want 1", got)
+	}
+	span := first.StartAttempt(1, 11, "first")
+	if got := ActiveSelectionCount(1, "gpt-test"); got != 1 {
+		t.Fatalf("active selections for first = %d, want 1", got)
+	}
+
+	second := NewIterator(group, 0, "gpt-test")
+	if !second.Next() {
+		t.Fatal("expected second candidate")
+	}
+	if got := second.Item().ChannelID; got != 2 {
+		t.Fatalf("second channel = %d, want 2 while first is active", got)
+	}
+
+	span.End(model.AttemptSuccess, 200, "")
+	if got := ActiveSelectionCount(1, "gpt-test"); got != 0 {
+		t.Fatalf("active selections after end = %d, want 0", got)
+	}
+}
+
+func TestActiveSelectionTrackerDisabledWithoutHealthScheduling(t *testing.T) {
+	Reset()
+	t.Cleanup(Reset)
+
+	group := model.Group{
+		Mode: model.GroupModeFailover,
+		Items: []model.GroupItem{
+			{ID: 1, ChannelID: 1, ModelName: "gpt-test", Priority: 1, Weight: 1},
+			{ID: 2, ChannelID: 2, ModelName: "gpt-test", Priority: 1, Weight: 1},
+		},
+	}
+
+	first := NewIterator(group, 0, "gpt-test")
+	if !first.Next() {
+		t.Fatal("expected first candidate")
+	}
+	span := first.StartAttempt(1, 11, "first")
+	defer span.End(model.AttemptSuccess, 200, "")
+	if got := ActiveSelectionCount(1, "gpt-test"); got != 0 {
+		t.Fatalf("active selections with health disabled = %d, want 0", got)
+	}
+
+	second := NewIterator(group, 0, "gpt-test")
+	if !second.Next() {
+		t.Fatal("expected second candidate")
+	}
+	if got := second.Item().ChannelID; got != 1 {
+		t.Fatalf("second channel with health disabled = %d, want unchanged failover first channel", got)
+	}
+}
+
 func TestHealthCooldownUsesRetryAfterAndClearsOnSuccess(t *testing.T) {
 	Reset()
 	enableHealthForTest(t)

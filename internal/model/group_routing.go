@@ -31,6 +31,7 @@ type GroupRoutingCandidate struct {
 	RateLimitCount      int      `json:"rate_limit_count"`
 	AvgTTFBMS           int      `json:"avg_ttfb_ms"`
 	AvgTotalMS          int      `json:"avg_total_ms"`
+	ActiveSelections    int      `json:"active_selections"`
 	CoolingDown         bool     `json:"cooling_down"`
 	CooldownRemainingMS int64    `json:"cooldown_remaining_ms"`
 	CooldownReason      string   `json:"cooldown_reason,omitempty"`

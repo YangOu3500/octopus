@@ -441,6 +441,12 @@
                     "ui": "設定頁可調健康分權重並查看冷卻策略；分組調度預覽展示健康分、冷卻和決策原因。",
                     "gap": "已實現 key / channel / base_url 維度；site / account scope 和完整 quota status 仍待補。"
                 },
+                "selectionTracker": {
+                    "name": "突發選擇分散 / Selection Tracker",
+                    "desc": "健康調度開啟時記錄進行中的 channel+model 選擇，避免同級健康候選在突發請求中都壓到同一個渠道。",
+                    "ui": "分組調度預覽展示進行中選擇數和有效分，真實調度在同級候選間優先選擇目前負載更低的候選。",
+                    "gap": "目前是記憶體態執行期負載分散；完整 channel rate-limit queue 和 Provider quota resolver 仍待補。"
+                },
                 "slowProbe": {
                     "name": "慢速主動探測",
                     "desc": "預設關閉，低頻補充 unknown / degraded / cooldown 到期候選狀態，避免壓測公益站。",
@@ -780,6 +786,8 @@
             "latency": "耗時",
             "ttfb": "首字",
             "emptyRate": "空回應",
+            "activeSelections": "進行中",
+            "effectiveScore": "有效分",
             "cooldown": "冷卻中",
             "quota": {
                 "available": "餘額可用",
@@ -810,6 +818,7 @@
                 "candidate": "候選",
                 "manual": "手動",
                 "health": "健康分",
+                "load": "負載",
                 "latency": "延遲",
                 "failures": "失敗",
                 "quota": "額度",

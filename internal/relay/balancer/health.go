@@ -99,6 +99,9 @@ var (
 	healthByChannelModel = make(map[healthKey]*healthEntry)
 	cooldowns            = make(map[cooldownKey]*cooldownEntry)
 	healthConfigOverride *healthConfig
+
+	selectionMu             sync.Mutex
+	activeSelectionsByModel = make(map[healthKey]int)
 )
 
 func ListHealthCooldownPolicies() []HealthCooldownPolicy {
@@ -336,6 +339,39 @@ func GetHealthStats(channelID int, modelName string) HealthStats {
 	return stats
 }
 
+func ActiveSelectionCount(channelID int, modelName string) int {
+	if channelID <= 0 || strings.TrimSpace(modelName) == "" {
+		return 0
+	}
+	selectionMu.Lock()
+	defer selectionMu.Unlock()
+	return activeSelectionsByModel[healthKey{ChannelID: channelID, ModelName: strings.TrimSpace(modelName)}]
+}
+
+func beginActiveSelection(channelID int, modelName string) func() {
+	if !IsHealthSchedulingEnabled() || channelID <= 0 || strings.TrimSpace(modelName) == "" {
+		return func() {}
+	}
+	key := healthKey{ChannelID: channelID, ModelName: strings.TrimSpace(modelName)}
+	selectionMu.Lock()
+	activeSelectionsByModel[key]++
+	selectionMu.Unlock()
+
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			selectionMu.Lock()
+			defer selectionMu.Unlock()
+			count := activeSelectionsByModel[key]
+			if count <= 1 {
+				delete(activeSelectionsByModel, key)
+				return
+			}
+			activeSelectionsByModel[key] = count - 1
+		})
+	}
+}
+
 func healthCandidates(mode model.GroupMode, items []model.GroupItem) []model.GroupItem {
 	if len(items) == 0 {
 		return nil
@@ -352,6 +388,11 @@ func healthCandidates(mode model.GroupMode, items []model.GroupItem) []model.Gro
 			if left != right {
 				return left > right
 			}
+			leftActive := ActiveSelectionCount(result[i].ChannelID, result[i].ModelName)
+			rightActive := ActiveSelectionCount(result[j].ChannelID, result[j].ModelName)
+			if leftActive != rightActive {
+				return leftActive < rightActive
+			}
 			if result[i].Weight != result[j].Weight {
 				return result[i].Weight > result[j].Weight
 			}
@@ -363,13 +404,27 @@ func healthCandidates(mode model.GroupMode, items []model.GroupItem) []model.Gro
 	case model.GroupModeRandom:
 		result := (&Random{}).Candidates(items)
 		sort.SliceStable(result, func(i, j int) bool {
-			return healthBand(result[i]) > healthBand(result[j])
+			leftBand := healthBand(result[i])
+			rightBand := healthBand(result[j])
+			if leftBand != rightBand {
+				return leftBand > rightBand
+			}
+			leftActive := ActiveSelectionCount(result[i].ChannelID, result[i].ModelName)
+			rightActive := ActiveSelectionCount(result[j].ChannelID, result[j].ModelName)
+			return leftActive < rightActive
 		})
 		return result
 	case model.GroupModeRoundRobin:
 		result := (&RoundRobin{}).Candidates(items)
 		sort.SliceStable(result, func(i, j int) bool {
-			return healthBand(result[i]) > healthBand(result[j])
+			leftBand := healthBand(result[i])
+			rightBand := healthBand(result[j])
+			if leftBand != rightBand {
+				return leftBand > rightBand
+			}
+			leftActive := ActiveSelectionCount(result[i].ChannelID, result[i].ModelName)
+			rightActive := ActiveSelectionCount(result[j].ChannelID, result[j].ModelName)
+			return leftActive < rightActive
 		})
 		return result
 	default:
@@ -379,8 +434,11 @@ func healthCandidates(mode model.GroupMode, items []model.GroupItem) []model.Gro
 
 func weightedHealthCandidates(items []model.GroupItem) []model.GroupItem {
 	type weightedItem struct {
-		item  model.GroupItem
-		score float64
+		item       model.GroupItem
+		score      float64
+		weight     int
+		healthBand int
+		active     int
 	}
 	scored := make([]weightedItem, 0, len(items))
 	for _, item := range items {
@@ -389,12 +447,22 @@ func weightedHealthCandidates(items []model.GroupItem) []model.GroupItem {
 			weight = 1
 		}
 		health := math.Max(1, HealthScore(item.ChannelID, item.ModelName))
+		active := ActiveSelectionCount(item.ChannelID, item.ModelName)
+		activePenalty := float64(active + 1)
 		scored = append(scored, weightedItem{
-			item:  item,
-			score: rand.Float64() * float64(weight) * health / 100,
+			item:       item,
+			score:      rand.Float64() * float64(weight) * health / 100 / activePenalty,
+			weight:     weight,
+			healthBand: healthBand(item),
+			active:     active,
 		})
 	}
 	sort.Slice(scored, func(i, j int) bool {
+		if scored[i].weight == scored[j].weight &&
+			scored[i].healthBand == scored[j].healthBand &&
+			scored[i].active != scored[j].active {
+			return scored[i].active < scored[j].active
+		}
 		return scored[i].score > scored[j].score
 	})
 	result := make([]model.GroupItem, len(scored))
@@ -668,6 +736,10 @@ func resetHealthState() {
 	healthByChannelModel = make(map[healthKey]*healthEntry)
 	cooldowns = make(map[cooldownKey]*cooldownEntry)
 	healthConfigOverride = nil
+
+	selectionMu.Lock()
+	defer selectionMu.Unlock()
+	activeSelectionsByModel = make(map[healthKey]int)
 }
 
 func resetHealthByChannel(channelID int) {

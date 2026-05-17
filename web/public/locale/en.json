@@ -441,6 +441,12 @@
                     "ui": "Settings expose health weights and cooldown policy. Group routing preview shows health score, cooldown, and decisions.",
                     "gap": "Key / channel / base_url scopes are implemented. Site/account scope and full quota status are still pending."
                 },
+                "selectionTracker": {
+                    "name": "Burst Selection Spreading / Selection Tracker",
+                    "desc": "When health scheduling is enabled, in-flight channel+model selections are tracked so equal-health bursts do not all land on one channel.",
+                    "ui": "Group routing preview shows in-flight selections and effective score. Runtime routing prefers the lower-load peer among equal candidates.",
+                    "gap": "This is in-memory runtime spreading. Full channel rate-limit queue and provider quota resolver are still pending."
+                },
                 "slowProbe": {
                     "name": "Slow Active Probe",
                     "desc": "Off by default. Low-frequency probes supplement unknown, degraded, or cooldown-expired candidates without stressing upstreams.",
@@ -780,6 +786,8 @@
             "latency": "Latency",
             "ttfb": "TTFB",
             "emptyRate": "Empty",
+            "activeSelections": "In flight",
+            "effectiveScore": "Effective",
             "cooldown": "Cooling down",
             "quota": {
                 "available": "Balance Available",
@@ -810,6 +818,7 @@
                 "candidate": "Candidate",
                 "manual": "Manual",
                 "health": "Health",
+                "load": "Load",
                 "latency": "Latency",
                 "failures": "Failures",
                 "quota": "Quota",
