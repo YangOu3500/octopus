@@ -220,17 +220,15 @@ func (s *SlowProbeScheduler) planJobs(ctx context.Context, groups []model.Group,
 }
 
 func (s *SlowProbeScheduler) shouldProbeCandidate(ctx context.Context, cfg ProbeConfig, now time.Time, item model.GroupItem, channel model.Channel, usedKey model.ChannelKey, binding *model.SiteChannelBinding, latest *model.GroupHealthSnapshot) (bool, error) {
-	if binding != nil {
-		disabled, err := siteModelDisabled(ctx, *binding, item.ModelName)
-		if err != nil {
-			return false, err
-		}
-		if disabled {
-			return false, nil
-		}
+	runtimeState, err := EvaluateRuntimeCandidate(ctx, channel, item.ModelName)
+	if err != nil {
+		return false, err
+	}
+	if runtimeState.SkipReason != "" {
+		return false, nil
 	}
 
-	if cooling, _, _ := balancer.IsHealthCoolingDown(channel.ID, usedKey.ID, item.ModelName, channel.GetBaseUrl()); cooling {
+	if cooling, _, _ := balancer.IsHealthCoolingDownWithScope(channel.ID, usedKey.ID, runtimeState.SiteID, runtimeState.SiteAccountID, item.ModelName, channel.GetBaseUrl()); cooling {
 		return false, nil
 	}
 

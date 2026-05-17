@@ -118,6 +118,8 @@ type relayAttempt struct {
 	outAdapter           model.Outbound
 	channel              *dbmodel.Channel
 	usedKey              dbmodel.ChannelKey
+	siteID               int
+	siteAccountID        int
 	firstTokenTimeOutSec int
 	streamGate           streamGateConfig
 	retryAfter           time.Duration // forward() 提取后暂存

@@ -323,7 +323,7 @@ func finalizeChannelModelHealthRow(acc *channelModelHealthAccumulator, channels 
 	channel, ok := channels[row.ChannelID]
 	if ok {
 		usedKey := channel.GetChannelKey()
-		row.CoolingDown, row.CooldownRemainingMS, row.CooldownReason = channelModelCoolingState(channel.ID, usedKey.ID, row.ModelName, channel.GetBaseUrl())
+		row.CoolingDown, row.CooldownRemainingMS, row.CooldownReason = channelModelCoolingState(channel.ID, usedKey.ID, row.SiteID, row.SiteAccountID, row.ModelName, channel.GetBaseUrl())
 	}
 }
 
@@ -341,37 +341,30 @@ func applyChannelModelChannelMetadata(ctx context.Context, row *model.ChannelMod
 		}
 		return
 	}
-	row.Managed = true
-	row.SiteID = binding.SiteID
-	row.SiteAccountID = binding.SiteAccountID
-	if site, err := op.SiteGet(binding.SiteID, ctx); err == nil && site != nil {
-		row.SiteName = site.Name
-	}
-	account, err := op.SiteAccountGet(binding.SiteAccountID, ctx)
-	if err != nil || account == nil {
+	channel, ok := channels[row.ChannelID]
+	if !ok {
 		row.QuotaStatus = "unknown"
 		return
 	}
-	row.SiteAccountName = account.Name
-	row.QuotaBalance = account.Balance
-	row.QuotaUsed = account.BalanceUsed
-	if !account.Enabled {
-		row.QuotaStatus = "account_disabled"
+	state, err := EvaluateRuntimeCandidate(ctx, channel, row.ModelName)
+	if err != nil {
+		row.Managed = true
+		row.SiteID = binding.SiteID
+		row.SiteAccountID = binding.SiteAccountID
 		return
 	}
-	if account.Balance > 0 {
-		row.QuotaStatus = "available"
-		return
-	}
-	if account.LastSyncAt != nil || account.BalanceUsed > 0 {
-		row.QuotaStatus = "zero_balance"
-		return
-	}
-	row.QuotaStatus = "unknown"
+	row.Managed = state.Managed
+	row.SiteID = state.SiteID
+	row.SiteName = state.SiteName
+	row.SiteAccountID = state.SiteAccountID
+	row.SiteAccountName = state.SiteAccountName
+	row.QuotaStatus = state.QuotaStatus
+	row.QuotaBalance = state.QuotaBalance
+	row.QuotaUsed = state.QuotaUsed
 }
 
-func channelModelCoolingState(channelID, channelKeyID int, modelName, baseURL string) (bool, int64, string) {
-	cooling, remaining, reason := balancer.IsHealthCoolingDown(channelID, channelKeyID, modelName, baseURL)
+func channelModelCoolingState(channelID, channelKeyID, siteID, siteAccountID int, modelName, baseURL string) (bool, int64, string) {
+	cooling, remaining, reason := balancer.IsHealthCoolingDownWithScope(channelID, channelKeyID, siteID, siteAccountID, modelName, baseURL)
 	if remaining <= 0 {
 		return cooling, 0, reason
 	}

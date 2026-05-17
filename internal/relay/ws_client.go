@@ -339,6 +339,11 @@ func bestEffortWarmupUpstreamWS(
 			continue
 		}
 
+		runtimeState, ok := evaluateRuntimeCandidateForRelay(ctx, iter, channel, item.ModelName)
+		if !ok {
+			continue
+		}
+
 		selectOpts := dbmodel.ChannelKeySelectOptions{
 			ExcludeKeyIDs:  make(map[int]struct{}),
 			PreferredKeyID: iter.StickyKeyID(),
@@ -350,7 +355,7 @@ func bestEffortWarmupUpstreamWS(
 				break
 			}
 			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
-				iter.SkipHealthCooldown(channel.ID, usedKey.ID, channel.Name, channel.GetBaseUrl()) {
+				iter.SkipHealthCooldownWithScope(channel.ID, usedKey.ID, runtimeState.SiteID, runtimeState.SiteAccountID, channel.Name, channel.GetBaseUrl()) {
 				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
 				continue
 			}
@@ -512,6 +517,11 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 			continue
 		}
 
+		runtimeState, ok := evaluateRuntimeCandidateForRelay(relayCtx, req.iter, channel, item.ModelName)
+		if !ok {
+			continue
+		}
+
 		req.internalRequest.Model = item.ModelName
 
 		selectOpts := dbmodel.ChannelKeySelectOptions{
@@ -526,7 +536,7 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 				break
 			}
 			if req.iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
-				req.iter.SkipHealthCooldown(channel.ID, usedKey.ID, channel.Name, channel.GetBaseUrl()) {
+				req.iter.SkipHealthCooldownWithScope(channel.ID, usedKey.ID, runtimeState.SiteID, runtimeState.SiteAccountID, channel.Name, channel.GetBaseUrl()) {
 				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
 				usedKey = dbmodel.ChannelKey{}
 				continue
@@ -568,6 +578,8 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 				outAdapter:           outAdapter,
 				channel:              channel,
 				usedKey:              usedKey,
+				siteID:               runtimeState.SiteID,
+				siteAccountID:        runtimeState.SiteAccountID,
 				firstTokenTimeOutSec: streamGate.firstValidTimeoutSec,
 				streamGate:           streamGate,
 			}

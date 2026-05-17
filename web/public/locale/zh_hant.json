@@ -521,13 +521,13 @@
                     "name": "健康分 / 冷卻 / 智慧調度",
                     "desc": "結合真實請求回饋、成功率、空回應率、延遲和冷卻狀態影響候選排序或跳過。",
                     "ui": "設定頁可調健康分權重並查看冷卻策略；分組調度預覽展示健康分、冷卻和決策原因。",
-                    "gap": "已實現 key / channel / base_url 維度；site / account scope 和完整 quota status 仍待補。"
+                    "gap": "已實現 key / channel / base_url / site / account 冷卻範圍；後續可繼續補硬並發佇列。"
                 },
                 "selectionTracker": {
                     "name": "突發選擇分散 / Selection Tracker",
                     "desc": "健康調度開啟時記錄進行中的 channel+model 選擇，避免同級健康候選在突發請求中都壓到同一個渠道。",
                     "ui": "分組調度預覽展示進行中選擇數和有效分，真實調度在同級候選間優先選擇目前負載更低的候選。",
-                    "gap": "目前是記憶體態執行期負載分散；完整 channel rate-limit queue 和 Provider quota resolver 仍待補。"
+                    "gap": "目前是記憶體態執行期負載分散；完整 channel rate-limit queue 仍待補。"
                 },
                 "slowProbe": {
                     "name": "慢速主動探測",
@@ -568,8 +568,8 @@
                 "quotaStatus": {
                     "name": "額度 / 配額狀態解析",
                     "desc": "結合餘額、quota、錯誤類型解釋候選容量，並為後續提前過濾或降權提供依據。",
-                    "ui": "分組調度預覽已顯示 projected channel 的額度狀態、帳號名、餘額 / 已用；日誌和冷卻中也能看到 quota_error。",
-                    "gap": "目前是唯讀可見化，不改變真實路由；完整 quota 過濾、帳號 / 站點級配額推導仍待實作。"
+                    "ui": "分組調度預覽、渠道模型健康頁和真實 relay 會展示或執行帳號停用、已知零餘額、站點模型停用等執行期決策。",
+                    "gap": "已實現託管渠道執行期強過濾；後續可繼續補更複雜的 Provider quota 推導。"
                 }
             },
             "note": "這個面板是融合能力的 UI 對齊索引。它不替代具體功能頁面，但用於保證「已接入後端能力就必須能被使用者看到、理解和排障」。"
@@ -630,6 +630,8 @@
                 "scopes": {
                     "key": "Key",
                     "channel": "渠道",
+                    "site": "站點",
+                    "account": "帳號",
                     "base_url": "Base URL"
                 },
                 "reasons": {
@@ -893,7 +895,14 @@
                 "channelDisabled": "渠道禁用",
                 "noKey": "無可用 Key",
                 "channelMissing": "渠道缺失",
-                "circuitBreaker": "熔斷冷卻"
+                "circuitBreaker": "熔斷冷卻",
+                "runtimeCheckFailed": "執行期檢查失敗",
+                "siteMissing": "站點缺失",
+                "siteDisabled": "站點停用",
+                "accountMissing": "帳號缺失",
+                "accountDisabled": "帳號停用",
+                "zeroBalance": "已知零餘額",
+                "modelDisabled": "站點模型停用"
             },
             "table": {
                 "rank": "順序",

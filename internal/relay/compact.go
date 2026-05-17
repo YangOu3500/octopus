@@ -126,6 +126,11 @@ func HandleResponsesCompact(c *gin.Context) {
 			continue
 		}
 
+		runtimeState, ok := evaluateRuntimeCandidateForRelay(c.Request.Context(), iter, channel, item.ModelName)
+		if !ok {
+			continue
+		}
+
 		selectOpts := dbmodel.ChannelKeySelectOptions{
 			ExcludeKeyIDs:  make(map[int]struct{}),
 			PreferredKeyID: iter.StickyKeyID(),
@@ -137,7 +142,7 @@ func HandleResponsesCompact(c *gin.Context) {
 				break
 			}
 			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
-				iter.SkipHealthCooldown(channel.ID, usedKey.ID, channel.Name, channel.GetBaseUrl()) {
+				iter.SkipHealthCooldownWithScope(channel.ID, usedKey.ID, runtimeState.SiteID, runtimeState.SiteAccountID, channel.Name, channel.GetBaseUrl()) {
 				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
 				usedKey = dbmodel.ChannelKey{}
 				continue
@@ -184,12 +189,14 @@ func HandleResponsesCompact(c *gin.Context) {
 		if success {
 			balancer.RecordSuccess(channel.ID, usedKey.ID, requestModel)
 			balancer.RecordHealthAttempt(balancer.HealthAttempt{
-				ChannelID:    channel.ID,
-				ChannelKeyID: usedKey.ID,
-				ModelName:    requestModel,
-				BaseURL:      channel.GetBaseUrl(),
-				Status:       dbmodel.AttemptSuccess,
-				HTTPStatus:   statusCode,
+				ChannelID:     channel.ID,
+				ChannelKeyID:  usedKey.ID,
+				SiteID:        runtimeState.SiteID,
+				SiteAccountID: runtimeState.SiteAccountID,
+				ModelName:     requestModel,
+				BaseURL:       channel.GetBaseUrl(),
+				Status:        dbmodel.AttemptSuccess,
+				HTTPStatus:    statusCode,
 			})
 			balancer.SetSticky(apiKeyID, requestModel, channel.ID, usedKey.ID)
 			metrics.Save(c.Request.Context(), true, nil, iter.Attempts())
@@ -205,6 +212,8 @@ func HandleResponsesCompact(c *gin.Context) {
 		balancer.RecordHealthAttempt(balancer.HealthAttempt{
 			ChannelID:     channel.ID,
 			ChannelKeyID:  usedKey.ID,
+			SiteID:        runtimeState.SiteID,
+			SiteAccountID: runtimeState.SiteAccountID,
 			ModelName:     requestModel,
 			BaseURL:       channel.GetBaseUrl(),
 			Status:        dbmodel.AttemptFailed,

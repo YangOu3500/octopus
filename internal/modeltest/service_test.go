@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -185,6 +186,88 @@ func TestRunModelTestRedactsSensitiveResponseText(t *testing.T) {
 	}
 	if !strings.Contains(text, "[REDACTED]") {
 		t.Fatalf("response text was not redacted as expected: %s", text)
+	}
+}
+
+func TestRunModelTestSkipsKnownZeroBalanceManagedChannel(t *testing.T) {
+	ctx := setupModelTestDB(t)
+
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		http.Error(w, "zero-balance model test should not call upstream", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	channel := &model.Channel{
+		Name:     "model-test-zero-balance",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
+		Model:    "test-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-channel-secret", Remark: "zero"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	site := &model.Site{
+		Name:         "model-test-zero-site",
+		Platform:     model.SitePlatformOpenAI,
+		BaseURL:      server.URL,
+		Enabled:      true,
+		GlobalWeight: 1,
+	}
+	if err := op.SiteCreate(site, ctx); err != nil {
+		t.Fatalf("SiteCreate failed: %v", err)
+	}
+	now := time.Now()
+	account := &model.SiteAccount{
+		SiteID:         site.ID,
+		Name:           "model-test-zero-account",
+		CredentialType: model.SiteCredentialTypeAPIKey,
+		APIKey:         "fake-site-key",
+		Enabled:        true,
+		Balance:        0,
+		BalanceUsed:    1,
+		LastSyncAt:     &now,
+	}
+	if err := op.SiteAccountCreate(account, ctx); err != nil {
+		t.Fatalf("SiteAccountCreate failed: %v", err)
+	}
+	if err := dbpkg.GetDB().WithContext(ctx).Create(&model.SiteChannelBinding{
+		SiteID:        site.ID,
+		SiteAccountID: account.ID,
+		GroupKey:      model.SiteDefaultGroupKey,
+		ChannelID:     channel.ID,
+	}).Error; err != nil {
+		t.Fatalf("create binding failed: %v", err)
+	}
+	if err := dbpkg.GetDB().WithContext(ctx).Create(&model.SiteModel{
+		SiteAccountID: account.ID,
+		GroupKey:      model.SiteDefaultGroupKey,
+		ModelName:     "test-model",
+		RouteType:     model.SiteModelRouteTypeOpenAIChat,
+		RouteSource:   model.SiteModelRouteSourceSyncInferred,
+	}).Error; err != nil {
+		t.Fatalf("create site model failed: %v", err)
+	}
+
+	result, err := NewService(nil).Run(ctx, RunRequest{
+		Mode:        "channel",
+		Concurrency: 1,
+		Targets:     []RunTarget{{ChannelID: channel.ID, ModelName: "test-model"}},
+	})
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+	if hits.Load() != 0 {
+		t.Fatalf("expected zero-balance channel to be skipped before upstream call, got %d hits", hits.Load())
+	}
+	if result.Total != 1 || result.Success != 0 || result.Failed != 1 {
+		t.Fatalf("unexpected result summary: %+v", result)
+	}
+	if result.Results[0].FailureReason != "site_account_zero_balance" {
+		t.Fatalf("unexpected failure reason: %+v", result.Results[0])
 	}
 }
 

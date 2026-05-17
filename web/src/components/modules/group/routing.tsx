@@ -86,6 +86,20 @@ function decisionLabel(t: Translator, decision: string) {
             return t('decision.channelMissing');
         case 'circuit_breaker':
             return t('decision.circuitBreaker');
+        case 'managed_runtime_check_failed':
+            return t('decision.runtimeCheckFailed');
+        case 'site_missing':
+            return t('decision.siteMissing');
+        case 'site_disabled':
+            return t('decision.siteDisabled');
+        case 'site_account_missing':
+            return t('decision.accountMissing');
+        case 'site_account_disabled':
+            return t('decision.accountDisabled');
+        case 'site_account_zero_balance':
+            return t('decision.zeroBalance');
+        case 'site_model_disabled':
+            return t('decision.modelDisabled');
         default:
             return decision;
     }

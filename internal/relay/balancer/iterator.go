@@ -162,8 +162,12 @@ func (it *Iterator) SkipCircuitBreak(channelID, channelKeyID int, channelName st
 
 // SkipHealthCooldown 检查真实请求反馈产生的冷却状态。
 func (it *Iterator) SkipHealthCooldown(channelID, channelKeyID int, channelName, baseURL string) bool {
+	return it.SkipHealthCooldownWithScope(channelID, channelKeyID, 0, 0, channelName, baseURL)
+}
+
+func (it *Iterator) SkipHealthCooldownWithScope(channelID, channelKeyID, siteID, siteAccountID int, channelName, baseURL string) bool {
 	modelName := it.candidates[it.index].ModelName
-	cooling, remaining, reason := IsHealthCoolingDown(channelID, channelKeyID, modelName, baseURL)
+	cooling, remaining, reason := IsHealthCoolingDownWithScope(channelID, channelKeyID, siteID, siteAccountID, modelName, baseURL)
 	if !cooling {
 		return false
 	}

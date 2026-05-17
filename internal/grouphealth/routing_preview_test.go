@@ -221,6 +221,46 @@ func TestBuildRoutingPreviewShowsProjectedAccountQuotaStatus(t *testing.T) {
 	}
 }
 
+func TestBuildRoutingPreviewMarksRuntimeGuardedCandidates(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+
+	channel := &model.Channel{
+		Name:     "routing-disabled-model",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://disabled-model.example.test/v1"}},
+		Model:    "preview-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-disabled-model"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	group := &model.Group{Name: "preview-disabled-model-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "preview-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd failed: %v", err)
+	}
+	siteID, accountID := createProbeSite(t)
+	createProbeBinding(t, siteID, accountID, channel.ID, "preview-model", true)
+
+	preview, err := BuildRoutingPreview(ctx, group.ID)
+	if err != nil {
+		t.Fatalf("BuildRoutingPreview failed: %v", err)
+	}
+	if len(preview.Candidates) != 1 {
+		t.Fatalf("candidate count = %d, want 1", len(preview.Candidates))
+	}
+	candidate := preview.Candidates[0]
+	if candidate.Decision != "site_model_disabled" {
+		t.Fatalf("candidate decision = %q, want site_model_disabled: %+v", candidate.Decision, candidate)
+	}
+	if candidate.SiteID != siteID || candidate.SiteAccountID != accountID {
+		t.Fatalf("expected projected metadata, got %+v", candidate)
+	}
+}
+
 func TestBuildRoutingPreviewUsesNextReadyKeyWhenPreferredKeyCooling(t *testing.T) {
 	ctx := setupGroupHealthTestDB(t)
 	balancer.Reset()

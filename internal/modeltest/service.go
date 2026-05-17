@@ -256,6 +256,20 @@ func (s *Service) runTarget(ctx context.Context, req RunRequest, target RunTarge
 		return result
 	}
 
+	runtimeState, err := grouphealth.EvaluateRuntimeCandidate(ctx, *channel, target.ModelName)
+	if err != nil {
+		result.FailureReason = "managed_runtime_check_failed"
+		result.ErrorMessage = sanitizeText(err.Error())
+		s.recordResult(ctx, &result, channel, model.ChannelKey{}, req)
+		return result
+	}
+	if runtimeState.SkipReason != "" {
+		result.FailureReason = runtimeState.SkipReason
+		result.ErrorMessage = runtimeState.SkipReason
+		s.recordResult(ctx, &result, channel, model.ChannelKey{}, req)
+		return result
+	}
+
 	usedKey := channel.GetChannelKey()
 	result.ChannelKeyID = usedKey.ID
 	if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
@@ -366,6 +380,8 @@ func (s *Service) recordResult(ctx context.Context, result *RunResult, channel *
 	balancer.RecordHealthAttempt(balancer.HealthAttempt{
 		ChannelID:     result.ChannelID,
 		ChannelKeyID:  usedKey.ID,
+		SiteID:        attempt.SiteID,
+		SiteAccountID: attempt.SiteAccountID,
 		ModelName:     result.ModelName,
 		BaseURL:       attempt.BaseURL,
 		Status:        status,

@@ -202,6 +202,44 @@ func TestIteratorRecordsHealthCooldownSkip(t *testing.T) {
 	}
 }
 
+func TestHealthCooldownUsesManagedAccountAndSiteScopes(t *testing.T) {
+	Reset()
+	enableHealthForTest(t)
+
+	RecordHealthAttempt(HealthAttempt{
+		ChannelID:     1,
+		ChannelKeyID:  11,
+		SiteAccountID: 77,
+		ModelName:     "gpt-test",
+		Status:        model.AttemptFailed,
+		HTTPStatus:    402,
+		FailureReason: "insufficient_quota",
+	})
+
+	cooling, _, reason := IsHealthCoolingDownWithScope(2, 22, 0, 77, "gpt-test", "")
+	if !cooling || reason != "quota_error" {
+		t.Fatalf("expected account scoped quota cooldown, cooling=%v reason=%q", cooling, reason)
+	}
+	cooling, _, _ = IsHealthCoolingDownWithScope(2, 22, 0, 88, "gpt-test", "")
+	if cooling {
+		t.Fatal("did not expect quota cooldown for a different account")
+	}
+
+	RecordHealthAttempt(HealthAttempt{
+		ChannelID:     3,
+		ChannelKeyID:  33,
+		SiteID:        55,
+		ModelName:     "gpt-test",
+		Status:        model.AttemptFailed,
+		HTTPStatus:    503,
+		FailureReason: "server_error",
+	})
+	cooling, _, reason = IsHealthCoolingDownWithScope(4, 44, 55, 0, "gpt-test", "")
+	if !cooling || reason != "server_error" {
+		t.Fatalf("expected site scoped server cooldown, cooling=%v reason=%q", cooling, reason)
+	}
+}
+
 func TestListHealthCooldownPoliciesMatchesRuntimeRules(t *testing.T) {
 	policies := ListHealthCooldownPolicies()
 	if len(policies) == 0 {
@@ -247,11 +285,11 @@ func TestListHealthCooldownPoliciesMatchesRuntimeRules(t *testing.T) {
 		}
 	}
 
-	assertPolicy("auth_error", 300, []string{"key"}, false, false)
-	assertPolicy("quota_error", 1800, []string{"key"}, false, false)
+	assertPolicy("auth_error", 300, []string{"key", "account"}, false, false)
+	assertPolicy("quota_error", 1800, []string{"key", "account"}, false, false)
 	assertPolicy("rate_limit", 60, []string{"key"}, true, true)
-	assertPolicy("server_error", 120, []string{"channel", "base_url"}, false, true)
-	assertPolicy("timeout_error", 60, []string{"channel", "base_url"}, false, true)
+	assertPolicy("server_error", 120, []string{"channel", "site", "base_url"}, false, true)
+	assertPolicy("timeout_error", 60, []string{"channel", "site", "base_url"}, false, true)
 	assertPolicy("empty_choices", 30, []string{"channel"}, false, true)
 	assertPolicy("invalid_sse", 30, []string{"channel"}, false, true)
 	assertPolicy("html_or_login_page", 120, []string{"channel"}, false, true)

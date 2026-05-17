@@ -16,6 +16,8 @@ import (
 type HealthAttempt struct {
 	ChannelID     int
 	ChannelKeyID  int
+	SiteID        int
+	SiteAccountID int
 	ModelName     string
 	BaseURL       string
 	Status        model.AttemptStatus
@@ -67,11 +69,13 @@ type healthKey struct {
 }
 
 type cooldownKey struct {
-	Scope        string
-	ChannelID    int
-	ChannelKeyID int
-	ModelName    string
-	BaseURL      string
+	Scope         string
+	ChannelID     int
+	ChannelKeyID  int
+	SiteID        int
+	SiteAccountID int
+	ModelName     string
+	BaseURL       string
 }
 
 type healthWindowSample struct {
@@ -187,7 +191,7 @@ func RecordHealthAttempt(attempt HealthAttempt) {
 	entry.Samples = pruneHealthSamples(append(entry.Samples, sample), now, cfg.Window)
 
 	if attempt.Status == model.AttemptSuccess {
-		clearCooldownsLocked(attempt.ChannelID, attempt.ChannelKeyID, key.ModelName, attempt.BaseURL)
+		clearCooldownsLocked(attempt.ChannelID, attempt.ChannelKeyID, attempt.SiteID, attempt.SiteAccountID, key.ModelName, attempt.BaseURL)
 		return
 	}
 	if attempt.Status != model.AttemptFailed {
@@ -215,6 +219,10 @@ func RecordHealthAttempt(attempt HealthAttempt) {
 }
 
 func IsHealthCoolingDown(channelID, channelKeyID int, modelName, baseURL string) (bool, time.Duration, string) {
+	return IsHealthCoolingDownWithScope(channelID, channelKeyID, 0, 0, modelName, baseURL)
+}
+
+func IsHealthCoolingDownWithScope(channelID, channelKeyID, siteID, siteAccountID int, modelName, baseURL string) (bool, time.Duration, string) {
 	cfg := currentHealthConfig()
 	if !cfg.Enabled || channelID <= 0 || strings.TrimSpace(modelName) == "" {
 		return false, 0, ""
@@ -227,6 +235,12 @@ func IsHealthCoolingDown(channelID, channelKeyID int, modelName, baseURL string)
 	baseURL = normalizeHealthBaseURL(baseURL)
 	if baseURL != "" {
 		keys = append(keys, cooldownKey{Scope: "base_url", BaseURL: baseURL, ModelName: modelName})
+	}
+	if siteID > 0 {
+		keys = append(keys, cooldownKey{Scope: "site", SiteID: siteID, ModelName: modelName})
+	}
+	if siteAccountID > 0 {
+		keys = append(keys, cooldownKey{Scope: "account", SiteAccountID: siteAccountID, ModelName: modelName})
 	}
 
 	healthMu.Lock()
@@ -540,6 +554,8 @@ func cooldownKeysForFailure(attempt HealthAttempt, reason string) []cooldownKey 
 	key := cooldownKey{Scope: "key", ChannelID: attempt.ChannelID, ChannelKeyID: attempt.ChannelKeyID, ModelName: modelName}
 	channel := cooldownKey{Scope: "channel", ChannelID: attempt.ChannelID, ModelName: modelName}
 	base := cooldownKey{Scope: "base_url", BaseURL: baseURL, ModelName: modelName}
+	site := cooldownKey{Scope: "site", SiteID: attempt.SiteID, ModelName: modelName}
+	account := cooldownKey{Scope: "account", SiteAccountID: attempt.SiteAccountID, ModelName: modelName}
 
 	scopes := cooldownScopesForReason(reason, baseURL != "")
 	keys := make([]cooldownKey, 0, len(scopes))
@@ -550,7 +566,17 @@ func cooldownKeysForFailure(attempt HealthAttempt, reason string) []cooldownKey 
 		case "channel":
 			keys = append(keys, channel)
 		case "base_url":
-			keys = append(keys, base)
+			if base.BaseURL != "" {
+				keys = append(keys, base)
+			}
+		case "site":
+			if site.SiteID > 0 {
+				keys = append(keys, site)
+			}
+		case "account":
+			if account.SiteAccountID > 0 {
+				keys = append(keys, account)
+			}
 		}
 	}
 	return keys
@@ -558,13 +584,15 @@ func cooldownKeysForFailure(attempt HealthAttempt, reason string) []cooldownKey 
 
 func cooldownScopesForReason(reason string, hasBaseURL bool) []string {
 	switch reason {
-	case "auth_error", "quota_error", "rate_limit":
+	case "auth_error", "quota_error":
+		return []string{"key", "account"}
+	case "rate_limit":
 		return []string{"key"}
 	case "server_error", "timeout_error", "first_byte_timeout", "network_error":
 		if hasBaseURL {
-			return []string{"channel", "base_url"}
+			return []string{"channel", "site", "base_url"}
 		}
-		return []string{"channel"}
+		return []string{"channel", "site"}
 	default:
 		return []string{"channel"}
 	}
@@ -644,7 +672,7 @@ func classifyHealthFailure(statusCode int, failureReason string) string {
 		}
 		return "attempt_failed"
 	}
-	if strings.Contains(reason, "insufficient_quota") || strings.Contains(reason, "quota") {
+	if strings.Contains(reason, "insufficient_quota") || strings.Contains(reason, "quota") || strings.Contains(reason, "zero_balance") {
 		return "quota_error"
 	}
 	if strings.Contains(reason, "timeout") && strings.Contains(reason, "first") {
@@ -710,7 +738,7 @@ func isEmptyResponseFailure(reason string) bool {
 	}
 }
 
-func clearCooldownsLocked(channelID, channelKeyID int, modelName, baseURL string) {
+func clearCooldownsLocked(channelID, channelKeyID, siteID, siteAccountID int, modelName, baseURL string) {
 	baseURL = normalizeHealthBaseURL(baseURL)
 	for key := range cooldowns {
 		if key.ModelName != modelName {
@@ -725,6 +753,14 @@ func clearCooldownsLocked(channelID, channelKeyID int, modelName, baseURL string
 			continue
 		}
 		if key.Scope == "base_url" && baseURL != "" && key.BaseURL == baseURL {
+			delete(cooldowns, key)
+			continue
+		}
+		if key.Scope == "site" && siteID > 0 && key.SiteID == siteID {
+			delete(cooldowns, key)
+			continue
+		}
+		if key.Scope == "account" && siteAccountID > 0 && key.SiteAccountID == siteAccountID {
 			delete(cooldowns, key)
 		}
 	}

@@ -162,15 +162,30 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 			continue
 		}
 
-		usedKey := channel.GetChannelKey()
-		if usedKey.ChannelKey == "" {
-			iter.Skip(channel.ID, 0, channel.Name, "no available key")
+		runtimeState, ok := evaluateRuntimeCandidateForRelay(ctx, iter, channel, item.ModelName)
+		if !ok {
 			continue
 		}
 
-		// 熔断检查（熔断 key 使用 actualModel=item.ModelName）
-		if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
-			iter.SkipHealthCooldown(channel.ID, usedKey.ID, channel.Name, channel.GetBaseUrl()) {
+		selectOpts := model.ChannelKeySelectOptions{ExcludeKeyIDs: make(map[int]struct{})}
+		var usedKey model.ChannelKey
+		for {
+			usedKey = channel.GetChannelKey(selectOpts)
+			if usedKey.ChannelKey == "" {
+				break
+			}
+			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
+				iter.SkipHealthCooldownWithScope(channel.ID, usedKey.ID, runtimeState.SiteID, runtimeState.SiteAccountID, channel.Name, channel.GetBaseUrl()) {
+				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
+				usedKey = model.ChannelKey{}
+				continue
+			}
+			break
+		}
+		if usedKey.ChannelKey == "" {
+			if len(selectOpts.ExcludeKeyIDs) == 0 {
+				iter.Skip(channel.ID, 0, channel.Name, "no available key")
+			}
 			continue
 		}
 
@@ -209,13 +224,15 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 			// 熔断器：记录成功
 			balancer.RecordSuccess(channel.ID, usedKey.ID, item.ModelName)
 			balancer.RecordHealthAttempt(balancer.HealthAttempt{
-				ChannelID:    channel.ID,
-				ChannelKeyID: usedKey.ID,
-				ModelName:    item.ModelName,
-				BaseURL:      channel.GetBaseUrl(),
-				Status:       model.AttemptSuccess,
-				HTTPStatus:   statusCode,
-				TotalMS:      int(span.Duration().Milliseconds()),
+				ChannelID:     channel.ID,
+				ChannelKeyID:  usedKey.ID,
+				SiteID:        runtimeState.SiteID,
+				SiteAccountID: runtimeState.SiteAccountID,
+				ModelName:     item.ModelName,
+				BaseURL:       channel.GetBaseUrl(),
+				Status:        model.AttemptSuccess,
+				HTTPStatus:    statusCode,
+				TotalMS:       int(span.Duration().Milliseconds()),
 			})
 			// 会话保持：更新粘性记录
 			balancer.SetSticky(apiKeyID, requestModel, channel.ID, usedKey.ID)
@@ -239,6 +256,8 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 		balancer.RecordHealthAttempt(balancer.HealthAttempt{
 			ChannelID:     channel.ID,
 			ChannelKeyID:  usedKey.ID,
+			SiteID:        runtimeState.SiteID,
+			SiteAccountID: runtimeState.SiteAccountID,
 			ModelName:     item.ModelName,
 			BaseURL:       channel.GetBaseUrl(),
 			Status:        model.AttemptFailed,

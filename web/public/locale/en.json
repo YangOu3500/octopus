@@ -521,13 +521,13 @@
                     "name": "Health Score / Cooldown / Smart Routing",
                     "desc": "Uses real feedback, success rate, empty response rate, latency, and cooldown state to sort or skip candidates.",
                     "ui": "Settings expose health weights and cooldown policy. Group routing preview shows health score, cooldown, and decisions.",
-                    "gap": "Key / channel / base_url scopes are implemented. Site/account scope and full quota status are still pending."
+                    "gap": "Key / channel / base_url / site / account cooldown scopes are implemented. Hard concurrency queues can still be added later."
                 },
                 "selectionTracker": {
                     "name": "Burst Selection Spreading / Selection Tracker",
                     "desc": "When health scheduling is enabled, in-flight channel+model selections are tracked so equal-health bursts do not all land on one channel.",
                     "ui": "Group routing preview shows in-flight selections and effective score. Runtime routing prefers the lower-load peer among equal candidates.",
-                    "gap": "This is in-memory runtime spreading. Full channel rate-limit queue and provider quota resolver are still pending."
+                    "gap": "This is in-memory runtime spreading. Full channel rate-limit queue is still pending."
                 },
                 "slowProbe": {
                     "name": "Slow Active Probe",
@@ -568,8 +568,8 @@
                 "quotaStatus": {
                     "name": "Quota / Capacity Status Resolver",
                     "desc": "Explains candidate capacity from balance, quota, and error types, and prepares for later filtering or down-ranking.",
-                    "ui": "Group routing preview now shows projected-channel quota status, account name, balance / used values. Logs and cooldowns also show quota_error.",
-                    "gap": "This is read-only visibility and does not change real routing yet. Full quota filtering and account/site capacity inference are still pending."
+                    "ui": "Group routing preview, channel-model health, and real relay now expose or enforce account disabled, known zero balance, and disabled site-model decisions.",
+                    "gap": "Managed-channel runtime filtering is implemented. More complex provider quota inference can still be added later."
                 }
             },
             "note": "This panel is the UI parity index for Fusion capabilities. It does not replace the feature pages; it ensures fused backend capabilities remain visible, understandable, and diagnosable."
@@ -630,6 +630,8 @@
                 "scopes": {
                     "key": "Key",
                     "channel": "Channel",
+                    "site": "Site",
+                    "account": "Account",
                     "base_url": "Base URL"
                 },
                 "reasons": {
@@ -893,7 +895,14 @@
                 "channelDisabled": "Channel disabled",
                 "noKey": "No available key",
                 "channelMissing": "Channel missing",
-                "circuitBreaker": "Circuit breaker"
+                "circuitBreaker": "Circuit breaker",
+                "runtimeCheckFailed": "Runtime check failed",
+                "siteMissing": "Site missing",
+                "siteDisabled": "Site disabled",
+                "accountMissing": "Account missing",
+                "accountDisabled": "Account disabled",
+                "zeroBalance": "Known zero balance",
+                "modelDisabled": "Site model disabled"
             },
             "table": {
                 "rank": "Rank",

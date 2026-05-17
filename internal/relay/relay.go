@@ -181,6 +181,11 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 			continue
 		}
 
+		runtimeState, ok := evaluateRuntimeCandidateForRelay(c.Request.Context(), iter, channel, item.ModelName)
+		if !ok {
+			continue
+		}
+
 		// 设置实际模型
 		internalRequest.Model = item.ModelName
 
@@ -199,7 +204,7 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 				break
 			}
 			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
-				iter.SkipHealthCooldown(channel.ID, usedKey.ID, channel.Name, channel.GetBaseUrl()) {
+				iter.SkipHealthCooldownWithScope(channel.ID, usedKey.ID, runtimeState.SiteID, runtimeState.SiteAccountID, channel.Name, channel.GetBaseUrl()) {
 				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
 				usedKey = dbmodel.ChannelKey{}
 				continue
@@ -239,6 +244,8 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 				outAdapter:           outAdapter,
 				channel:              channel,
 				usedKey:              usedKey,
+				siteID:               runtimeState.SiteID,
+				siteAccountID:        runtimeState.SiteAccountID,
 				firstTokenTimeOutSec: streamGate.firstValidTimeoutSec,
 				streamGate:           streamGate,
 			}
@@ -336,14 +343,16 @@ func (ra *relayAttempt) attempt() attemptResult {
 
 		span.End(dbmodel.AttemptSuccess, statusCode, "")
 		balancer.RecordHealthAttempt(balancer.HealthAttempt{
-			ChannelID:    ra.channel.ID,
-			ChannelKeyID: ra.usedKey.ID,
-			ModelName:    ra.internalRequest.Model,
-			BaseURL:      ra.channel.GetBaseUrl(),
-			Status:       dbmodel.AttemptSuccess,
-			HTTPStatus:   statusCode,
-			TTFBMS:       span.FirstTokenDurationMS(ra.metrics.FirstTokenTime),
-			TotalMS:      int(span.Duration().Milliseconds()),
+			ChannelID:     ra.channel.ID,
+			ChannelKeyID:  ra.usedKey.ID,
+			SiteID:        ra.siteID,
+			SiteAccountID: ra.siteAccountID,
+			ModelName:     ra.internalRequest.Model,
+			BaseURL:       ra.channel.GetBaseUrl(),
+			Status:        dbmodel.AttemptSuccess,
+			HTTPStatus:    statusCode,
+			TTFBMS:        span.FirstTokenDurationMS(ra.metrics.FirstTokenTime),
+			TotalMS:       int(span.Duration().Milliseconds()),
 		})
 
 		// Channel 维度统计
@@ -371,6 +380,8 @@ func (ra *relayAttempt) attempt() attemptResult {
 		balancer.RecordHealthAttempt(balancer.HealthAttempt{
 			ChannelID:     ra.channel.ID,
 			ChannelKeyID:  ra.usedKey.ID,
+			SiteID:        ra.siteID,
+			SiteAccountID: ra.siteAccountID,
 			ModelName:     ra.internalRequest.Model,
 			BaseURL:       ra.channel.GetBaseUrl(),
 			Status:        dbmodel.AttemptFailed,
@@ -393,6 +404,8 @@ func (ra *relayAttempt) attempt() attemptResult {
 	balancer.RecordHealthAttempt(balancer.HealthAttempt{
 		ChannelID:     ra.channel.ID,
 		ChannelKeyID:  ra.usedKey.ID,
+		SiteID:        ra.siteID,
+		SiteAccountID: ra.siteAccountID,
 		ModelName:     ra.internalRequest.Model,
 		BaseURL:       ra.channel.GetBaseUrl(),
 		Status:        dbmodel.AttemptFailed,

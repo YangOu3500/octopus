@@ -132,19 +132,43 @@ func (s *Service) RunGroupHealth(ctx context.Context, groupID int) error {
 			continue
 		}
 
+		runtimeState, err := EvaluateRuntimeCandidate(ctx, *channel, item.ModelName)
+		if err != nil || runtimeState.SkipReason != "" {
+			message := runtimeState.SkipReason
+			if err != nil {
+				message = fmt.Sprintf("managed runtime check failed: %v", err)
+			}
+			appendErr := s.repo.AppendAttempt(ctx, snapshot.ID, model.GroupHealthAttempt{
+				GroupItemID:  item.ID,
+				ChannelID:    item.ChannelID,
+				ChannelName:  channel.Name,
+				ChannelKeyID: usedKey.ID,
+				KeyRemark:    usedKey.Remark,
+				ModelName:    item.ModelName,
+				Priority:     item.Priority,
+				Weight:       item.Weight,
+				Status:       model.GroupHealthAttemptStatusFailed,
+				ErrorMessage: message,
+			})
+			if appendErr != nil {
+				return appendErr
+			}
+			continue
+		}
+
 		result := s.prober.RunCandidate(ctx, *channel, usedKey, item.ModelName)
 		attempt := model.GroupHealthAttempt{
-			GroupItemID:   item.ID,
-			ChannelID:     item.ChannelID,
-			ChannelName:   channel.Name,
-			ChannelKeyID:  usedKey.ID,
-			KeyRemark:     usedKey.Remark,
-			ModelName:     item.ModelName,
-			Priority:      item.Priority,
-			Weight:        item.Weight,
-			HTTPStatus:    result.HTTPStatus,
-			DurationMS:    result.DurationMS,
-			ErrorMessage:  result.ErrorMessage,
+			GroupItemID:  item.ID,
+			ChannelID:    item.ChannelID,
+			ChannelName:  channel.Name,
+			ChannelKeyID: usedKey.ID,
+			KeyRemark:    usedKey.Remark,
+			ModelName:    item.ModelName,
+			Priority:     item.Priority,
+			Weight:       item.Weight,
+			HTTPStatus:   result.HTTPStatus,
+			DurationMS:   result.DurationMS,
+			ErrorMessage: result.ErrorMessage,
 		}
 		if result.Success {
 			attempt.Status = model.GroupHealthAttemptStatusSuccess

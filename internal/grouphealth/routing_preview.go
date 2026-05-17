@@ -78,19 +78,21 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 
 	candidate.ChannelName = channel.Name
 	candidate.Enabled = channel.Enabled
-	applyCandidateQuotaStatus(ctx, &candidate, binding)
+	applyCandidateRuntimeState(ctx, &candidate, *channel, item.ModelName, binding)
 	if !channel.Enabled {
 		candidate.Decision = "channel_disabled"
 		candidate.Notes = append(candidate.Notes, "channel disabled")
 	}
 
-	usedKey, skippedDecision, skippedRemaining, skippedReason, skippedCount := selectPreviewKey(channel, item.ModelName)
+	usedKey, skippedDecision, skippedRemaining, skippedReason, skippedCount := selectPreviewKey(channel, item.ModelName, candidate.SiteID, candidate.SiteAccountID)
 	candidate.ChannelKeyID = usedKey.ID
 	if skippedCount > 0 {
 		candidate.Notes = append(candidate.Notes, "skipped cooling keys: "+strconv.Itoa(skippedCount))
 	}
 	if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
-		if skippedDecision != "" {
+		if candidate.Decision != "ready" {
+			candidate.Notes = append(candidate.Notes, "no available key")
+		} else if skippedDecision != "" {
 			candidate.Decision = skippedDecision
 			candidate.CoolingDown = true
 			candidate.CooldownRemainingMS = skippedRemaining.Milliseconds()
@@ -103,14 +105,16 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 	}
 
 	if usedKey.ID > 0 {
-		cooling, remaining, reason := previewKeyCoolingState(channel.ID, usedKey.ID, item.ModelName, channel.GetBaseUrl())
+		cooling, remaining, reason := previewKeyCoolingState(channel.ID, usedKey.ID, candidate.SiteID, candidate.SiteAccountID, item.ModelName, channel.GetBaseUrl())
 		candidate.CoolingDown = cooling
 		if remaining > 0 {
 			candidate.CooldownRemainingMS = remaining.Milliseconds()
 		}
 		candidate.CooldownReason = reason
 		if cooling {
-			candidate.Decision = "health_cooldown"
+			if candidate.Decision == "ready" {
+				candidate.Decision = "health_cooldown"
+			}
 			candidate.Notes = append(candidate.Notes, "health cooldown active")
 		}
 	}
@@ -119,7 +123,7 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 	return candidate
 }
 
-func applyCandidateQuotaStatus(ctx context.Context, candidate *model.GroupRoutingCandidate, binding *model.SiteChannelBinding) {
+func applyCandidateRuntimeState(ctx context.Context, candidate *model.GroupRoutingCandidate, channel model.Channel, modelName string, binding *model.SiteChannelBinding) {
 	if candidate == nil {
 		return
 	}
@@ -127,35 +131,27 @@ func applyCandidateQuotaStatus(ctx context.Context, candidate *model.GroupRoutin
 	if binding == nil {
 		return
 	}
-	candidate.SiteID = binding.SiteID
-	candidate.SiteAccountID = binding.SiteAccountID
-	if site, err := op.SiteGet(binding.SiteID, ctx); err == nil && site != nil {
-		candidate.SiteName = site.Name
-	}
-	account, err := op.SiteAccountGet(binding.SiteAccountID, ctx)
-	if err != nil || account == nil {
-		candidate.Notes = append(candidate.Notes, "quota status unknown")
+
+	state, err := EvaluateRuntimeCandidate(ctx, channel, modelName)
+	if err != nil {
+		candidate.Decision = "managed_runtime_check_failed"
+		candidate.Notes = append(candidate.Notes, "managed runtime check failed")
 		return
 	}
-	candidate.SiteAccountName = account.Name
-	candidate.QuotaBalance = account.Balance
-	candidate.QuotaUsed = account.BalanceUsed
-	if !account.Enabled {
-		candidate.QuotaStatus = "account_disabled"
-		candidate.Notes = append(candidate.Notes, "site account disabled")
-		return
-	}
-	if account.Balance > 0 {
-		candidate.QuotaStatus = "available"
-		return
-	}
-	if account.LastSyncAt != nil || account.BalanceUsed > 0 {
-		candidate.QuotaStatus = "zero_balance"
-		candidate.Notes = append(candidate.Notes, "site account balance is zero")
+	candidate.SiteID = state.SiteID
+	candidate.SiteName = state.SiteName
+	candidate.SiteAccountID = state.SiteAccountID
+	candidate.SiteAccountName = state.SiteAccountName
+	candidate.QuotaStatus = state.QuotaStatus
+	candidate.QuotaBalance = state.QuotaBalance
+	candidate.QuotaUsed = state.QuotaUsed
+	if state.SkipReason != "" {
+		candidate.Decision = state.SkipReason
+		candidate.Notes = append(candidate.Notes, state.SkipReason)
 	}
 }
 
-func selectPreviewKey(channel *model.Channel, modelName string) (model.ChannelKey, string, time.Duration, string, int) {
+func selectPreviewKey(channel *model.Channel, modelName string, siteID int, siteAccountID int) (model.ChannelKey, string, time.Duration, string, int) {
 	exclude := map[int]struct{}{}
 	var lastDecision string
 	var lastRemaining time.Duration
@@ -177,7 +173,7 @@ func selectPreviewKey(channel *model.Channel, modelName string) (model.ChannelKe
 			continue
 		}
 
-		if cooling, remaining, reason := previewKeyCoolingState(channel.ID, usedKey.ID, modelName, channel.GetBaseUrl()); cooling {
+		if cooling, remaining, reason := previewKeyCoolingState(channel.ID, usedKey.ID, siteID, siteAccountID, modelName, channel.GetBaseUrl()); cooling {
 			exclude[usedKey.ID] = struct{}{}
 			lastDecision = "health_cooldown"
 			lastRemaining = remaining
@@ -190,8 +186,8 @@ func selectPreviewKey(channel *model.Channel, modelName string) (model.ChannelKe
 	}
 }
 
-func previewKeyCoolingState(channelID, channelKeyID int, modelName, baseURL string) (bool, time.Duration, string) {
-	return balancer.IsHealthCoolingDown(channelID, channelKeyID, modelName, baseURL)
+func previewKeyCoolingState(channelID, channelKeyID, siteID, siteAccountID int, modelName, baseURL string) (bool, time.Duration, string) {
+	return balancer.IsHealthCoolingDownWithScope(channelID, channelKeyID, siteID, siteAccountID, modelName, baseURL)
 }
 
 func sortRoutingCandidates(mode model.GroupMode, healthEnabled bool, candidates []model.GroupRoutingCandidate) {
