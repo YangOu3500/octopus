@@ -95,6 +95,16 @@
         }
     },
     "home": {
+        "dashboard": {
+            "totalRequests": "Total Requests",
+            "totalSub": "Failed in 24h {failed}",
+            "successRate": "Success Rate",
+            "successSub": "Failed requests {failed}",
+            "tokens": "Token Stats",
+            "tokenSub": "In {input} / Out {output} / Cache {cache}",
+            "todayRequests": "Today Requests",
+            "todaySub": "24h RPM {rpm}"
+        },
         "activity": {
             "requestCount": "Requests",
             "waitTime": "Wait Time",
@@ -469,9 +479,9 @@
                 },
                 "quotaStatus": {
                     "name": "Quota / Capacity Status Resolver",
-                    "desc": "Combines balance, quota, and error types to filter or down-rank candidates earlier.",
-                    "ui": "quota_error appears in logs and cooldowns, but there is no full quota status resolver or dedicated UI yet.",
-                    "gap": "Pending quota status parsing, candidate filtering explanation, and routing preview display."
+                    "desc": "Explains candidate capacity from balance, quota, and error types, and prepares for later filtering or down-ranking.",
+                    "ui": "Group routing preview now shows projected-channel quota status, account name, balance / used values. Logs and cooldowns also show quota_error.",
+                    "gap": "This is read-only visibility and does not change real routing yet. Full quota filtering and account/site capacity inference are still pending."
                 }
             },
             "note": "This panel is the UI parity index for Fusion capabilities. It does not replace the feature pages; it ensures fused backend capabilities remain visible, understandable, and diagnosable."
@@ -821,6 +831,8 @@
         "runFailed": "Model test failed",
         "emptySelection": "Select models or channels to test first",
         "viewLog": "Log detail",
+        "runOne": "Test this row",
+        "clearOne": "Clear this row result",
         "channel": "Channel",
         "model": "Model",
         "prompt": "Prompt",
@@ -833,6 +845,14 @@
         "searchChannel": "Search channels...",
         "emptyRows": "No test targets",
         "cache": "Cache",
+        "stats": {
+            "visible": "Visible targets",
+            "selected": "Selected",
+            "concurrency": "Concurrency",
+            "requestMode": "Request mode",
+            "stream": "Stream",
+            "nonStream": "Non-stream"
+        },
         "status": {
             "idle": "Idle",
             "success": "Success",
@@ -850,7 +870,8 @@
             "tokens": "Input / Output",
             "speed": "Tok/s",
             "cost": "Cost",
-            "response": "Response"
+            "response": "Response",
+            "actions": "Actions"
         }
     },
     "model": {

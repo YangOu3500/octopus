@@ -277,6 +277,12 @@ export function useLogs(options: {
     }, [logsQuery]);
 
     useEffect(() => {
+        if (!autoRefresh || pauseAutoRefresh) {
+            eventSourceRef.current?.close();
+            eventSourceRef.current = null;
+            return;
+        }
+
         let cancelled = false;
         let retryTimer: ReturnType<typeof setTimeout> | null = null;
         let retryAttempt = 0;
@@ -401,7 +407,7 @@ export function useLogs(options: {
             eventSourceRef.current = null;
             setIsConnected(false);
         };
-    }, [activeFilters, cleanFilters, pageSize, queryClient]);
+    }, [activeFilters, autoRefresh, cleanFilters, pageSize, pauseAutoRefresh, queryClient]);
 
     const clear = useCallback(() => {
         queryClient.removeQueries({ queryKey: logsInfiniteQueryKey(pageSize, cleanFilters) });

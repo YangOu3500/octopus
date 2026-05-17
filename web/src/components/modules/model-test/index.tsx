@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, Circle, FlaskConical, FileSearch, Play, RotateCcw, Search, XCircle } from 'lucide-react';
+import { CheckCircle2, Circle, FlaskConical, FileSearch, Play, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
 import { useChannelList, ChannelType, type Channel } from '@/api/endpoints/channel';
 import { useModelChannelList } from '@/api/endpoints/model';
 import { useRunModelTest, type ModelTestMode, type ModelTestResult, type ModelTestTarget } from '@/api/endpoints/model-test';
@@ -27,7 +27,7 @@ type TestRow = {
 
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
-const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.4fr) 7rem 9rem 5rem 6rem 6rem 9rem 6rem 7rem minmax(18rem,1.2fr)';
+const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.4fr) 7rem 9rem 5rem 6rem 6rem 9rem 6rem 7rem minmax(18rem,1.2fr) 8rem';
 
 function channelProtocol(type: ChannelType | undefined): string {
     switch (type) {
@@ -228,12 +228,12 @@ export function ModelTest() {
         });
     };
 
-    const handleRun = () => {
-        if (selectedRows.length === 0) {
+    const handleRunRows = (rowsToRun: TestRow[], runConcurrency = concurrency) => {
+        if (rowsToRun.length === 0) {
             toast.error(t('emptySelection'));
             return;
         }
-        const targets: ModelTestTarget[] = selectedRows.map((row) => ({
+        const targets: ModelTestTarget[] = rowsToRun.map((row) => ({
             channel_id: row.channelId,
             model_name: row.modelName,
         }));
@@ -243,15 +243,17 @@ export function ModelTest() {
             prompt,
             max_tokens: maxTokens,
             temperature: 0,
-            concurrency,
+            concurrency: runConcurrency,
             stream,
         }, {
             onSuccess: (data) => {
-                const nextResults = { ...results };
-                for (const item of data.results) {
-                    nextResults[rowKey(item.channel_id, item.model_name)] = item;
-                }
-                setResults(nextResults);
+                setResults((previous) => {
+                    const nextResults = { ...previous };
+                    for (const item of data.results) {
+                        nextResults[rowKey(item.channel_id, item.model_name)] = item;
+                    }
+                    return nextResults;
+                });
                 toast.success(t('runComplete', { success: data.success, failed: data.failed }));
             },
             onError: (error) => {
@@ -261,7 +263,17 @@ export function ModelTest() {
         });
     };
 
+    const handleRun = () => handleRunRows(selectedRows);
+
     const handleClear = () => setResults({});
+
+    const handleClearRow = (key: string) => {
+        setResults((previous) => {
+            const next = { ...previous };
+            delete next[key];
+            return next;
+        });
+    };
 
     const handleOpenLog = (result: ModelTestResult) => {
         if (!result.log_id && !result.trace_id) return;
@@ -403,6 +415,25 @@ export function ModelTest() {
                         </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
+                            <div className="text-xs text-muted-foreground">{t('stats.visible')}</div>
+                            <div className="mt-1 text-lg font-semibold tabular-nums">{rows.length}</div>
+                        </div>
+                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
+                            <div className="text-xs text-muted-foreground">{t('stats.selected')}</div>
+                            <div className="mt-1 text-lg font-semibold tabular-nums">{selectedRows.length}</div>
+                        </div>
+                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
+                            <div className="text-xs text-muted-foreground">{t('stats.concurrency')}</div>
+                            <div className="mt-1 text-lg font-semibold tabular-nums">{concurrency}</div>
+                        </div>
+                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
+                            <div className="text-xs text-muted-foreground">{t('stats.requestMode')}</div>
+                            <div className="mt-1 text-lg font-semibold">{stream ? t('stats.stream') : t('stats.nonStream')}</div>
+                        </div>
+                    </div>
+
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
@@ -437,6 +468,7 @@ export function ModelTest() {
                             <div className="px-3 py-3">{t('table.speed')}</div>
                             <div className="px-3 py-3">{t('table.cost')}</div>
                             <div className="px-3 py-3">{t('table.response')}</div>
+                            <div className="px-3 py-3">{t('table.actions')}</div>
                         </div>
                         {rows.length === 0 ? (
                             <div className="px-3 py-12 text-center text-muted-foreground">
@@ -523,16 +555,40 @@ export function ModelTest() {
                                                     <div className="line-clamp-3 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
                                                         {result?.response_text || result?.error_message || '-'}
                                                     </div>
+                                                </div>
+                                                <div className="flex items-start gap-1 px-3 py-3">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        title={t('runOne')}
+                                                        aria-label={t('runOne')}
+                                                        disabled={runModelTest.isPending || !row.enabled}
+                                                        onClick={() => handleRunRows([row], 1)}
+                                                    >
+                                                        <Play className="size-3.5" />
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        title={t('clearOne')}
+                                                        aria-label={t('clearOne')}
+                                                        disabled={!result}
+                                                        onClick={() => handleClearRow(row.key)}
+                                                    >
+                                                        <Trash2 className="size-3.5" />
+                                                    </Button>
                                                     {result?.log_id || result?.trace_id ? (
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
-                                                            size="sm"
-                                                            className="mt-2 h-7 px-2 text-xs"
+                                                            size="icon-sm"
+                                                            title={t('viewLog')}
+                                                            aria-label={t('viewLog')}
                                                             onClick={() => handleOpenLog(result)}
                                                         >
                                                             <FileSearch className="size-3.5" />
-                                                            {t('viewLog')}
                                                         </Button>
                                                     ) : null}
                                                 </div>

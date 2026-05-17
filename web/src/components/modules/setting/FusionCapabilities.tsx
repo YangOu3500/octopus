@@ -29,7 +29,7 @@ const capabilities: Capability[] = [
     { id: 'groupAutoGenerate', status: 'done', source: 'octopus', nav: 'group', icon: CheckCircle2 },
     { id: 'protocolTransform', status: 'partial', source: 'AxonHub', nav: 'log', icon: GitBranch },
     { id: 'liveDebug', status: 'planned', source: 'ccLoad', nav: 'log', icon: TriangleAlert },
-    { id: 'quotaStatus', status: 'planned', source: 'both', nav: 'group', icon: TriangleAlert },
+    { id: 'quotaStatus', status: 'partial', source: 'both', nav: 'group', icon: CircleDashed },
 ];
 
 function statusClass(status: CapabilityStatus) {
@@ -71,7 +71,7 @@ export function SettingFusionCapabilities() {
     );
 
     return (
-        <div className="rounded-3xl border border-border bg-card p-6">
+        <div className="rounded-lg border border-border bg-card p-6">
             <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                     <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
@@ -91,7 +91,7 @@ export function SettingFusionCapabilities() {
                 </div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-border">
+            <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full min-w-[920px] text-left text-xs">
                     <thead className="bg-muted/40 text-muted-foreground">
                         <tr>

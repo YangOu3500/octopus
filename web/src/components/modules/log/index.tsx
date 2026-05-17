@@ -216,6 +216,11 @@ export function Log() {
         pauseAutoRefresh: openDetailLogId !== null,
     });
 
+    useEffect(() => {
+        if (!autoRefresh || openDetailLogId !== null) return;
+        void refetch();
+    }, [autoRefresh, openDetailLogId, refetch]);
+
     const managedChannelMap = useMemo(() => {
         const next = new Map<number, ManagedChannelLookup>();
         for (const channel of channelsData ?? []) {
@@ -361,7 +366,7 @@ export function Log() {
                         <div className="ml-auto flex flex-wrap items-center gap-2">
                             <div className="flex items-center gap-2 rounded-md border px-2 py-1.5">
                                 <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
-                                <span className="text-sm text-muted-foreground">自动刷新</span>
+                                <span className="text-sm text-muted-foreground">实时刷新</span>
                             </div>
                             <Select value={refreshInterval} onValueChange={setRefreshInterval}>
                                 <SelectTrigger size="sm" className="w-[92px]">

@@ -95,6 +95,16 @@
         }
     },
     "home": {
+        "dashboard": {
+            "totalRequests": "總請求數",
+            "totalSub": "近 24 小時失敗 {failed}",
+            "successRate": "成功率",
+            "successSub": "失敗請求 {failed}",
+            "tokens": "詞元統計",
+            "tokenSub": "入 {input} / 出 {output} / 快取 {cache}",
+            "todayRequests": "今日請求",
+            "todaySub": "近 24 小時 RPM {rpm}"
+        },
         "activity": {
             "requestCount": "請求次數",
             "waitTime": "等待時間",
@@ -469,9 +479,9 @@
                 },
                 "quotaStatus": {
                     "name": "額度 / 配額狀態解析",
-                    "desc": "結合餘額、quota、錯誤類型提前過濾或降權候選。",
-                    "ui": "目前在日誌和冷卻中能看到 quota_error，但沒有完整 quota status resolver 和專門 UI。",
-                    "gap": "待補 quota status 解析、候選過濾說明和分組調度預覽展示。"
+                    "desc": "結合餘額、quota、錯誤類型解釋候選容量，並為後續提前過濾或降權提供依據。",
+                    "ui": "分組調度預覽已顯示 projected channel 的額度狀態、帳號名、餘額 / 已用；日誌和冷卻中也能看到 quota_error。",
+                    "gap": "目前是唯讀可見化，不改變真實路由；完整 quota 過濾、帳號 / 站點級配額推導仍待實作。"
                 }
             },
             "note": "這個面板是融合能力的 UI 對齊索引。它不替代具體功能頁面，但用於保證「已接入後端能力就必須能被使用者看到、理解和排障」。"
@@ -821,6 +831,8 @@
         "runFailed": "模型測試失敗",
         "emptySelection": "請先選擇要測試的模型或供應源",
         "viewLog": "日誌詳情",
+        "runOne": "測試此項",
+        "clearOne": "清除此項結果",
         "channel": "供應源",
         "model": "模型",
         "prompt": "測試內容",
@@ -833,6 +845,14 @@
         "searchChannel": "搜尋供應源名稱...",
         "emptyRows": "暫無可測試目標",
         "cache": "快取",
+        "stats": {
+            "visible": "目前目標",
+            "selected": "已選擇",
+            "concurrency": "並發",
+            "requestMode": "請求模式",
+            "stream": "串流",
+            "nonStream": "非串流"
+        },
         "status": {
             "idle": "未測試",
             "success": "成功",
@@ -850,7 +870,8 @@
             "tokens": "輸入 / 輸出",
             "speed": "Tok/s",
             "cost": "費用",
-            "response": "回應"
+            "response": "回應",
+            "actions": "操作"
         }
     },
     "model": {

@@ -2,10 +2,12 @@ package modeltest
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -306,5 +308,119 @@ func TestRunModelTestStreamEmptyDoneFails(t *testing.T) {
 	item := result.Results[0]
 	if item.Success || item.HTTPStatus != http.StatusOK || item.FailureReason != "stream_empty_response" {
 		t.Fatalf("unexpected empty stream result: %+v", item)
+	}
+}
+
+func TestRunModelTestConcurrencyOneRunsTargetsInOrder(t *testing.T) {
+	ctx := setupModelTestDB(t)
+
+	var mu sync.Mutex
+	active := 0
+	maxActive := 0
+	var order []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var payload map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&payload)
+		modelName, _ := payload["model"].(string)
+
+		mu.Lock()
+		active++
+		if active > maxActive {
+			maxActive = active
+		}
+		order = append(order, modelName)
+		mu.Unlock()
+
+		time.Sleep(20 * time.Millisecond)
+
+		mu.Lock()
+		active--
+		mu.Unlock()
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"ok","object":"chat.completion","choices":[{"message":{"role":"assistant","content":"OK"}}],"usage":{"prompt_tokens":5,"completion_tokens":1}}`))
+	}))
+	defer server.Close()
+
+	channel := &model.Channel{
+		Name:     "model-test-concurrency",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
+		Model:    "model-a,model-b,model-c",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-concurrency-secret", Remark: "concurrency"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+
+	result, err := NewService(nil).Run(ctx, RunRequest{
+		Mode:        "channel",
+		Concurrency: 1,
+		Targets: []RunTarget{
+			{ChannelID: channel.ID, ModelName: "model-a"},
+			{ChannelID: channel.ID, ModelName: "model-b"},
+			{ChannelID: channel.ID, ModelName: "model-c"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+	if result.Success != 3 || result.Failed != 0 {
+		t.Fatalf("unexpected summary: %+v", result)
+	}
+
+	mu.Lock()
+	gotMaxActive := maxActive
+	gotOrder := append([]string(nil), order...)
+	mu.Unlock()
+
+	if gotMaxActive != 1 {
+		t.Fatalf("expected at most one active request, got %d", gotMaxActive)
+	}
+	wantOrder := []string{"model-a", "model-b", "model-c"}
+	if strings.Join(gotOrder, ",") != strings.Join(wantOrder, ",") {
+		t.Fatalf("request order = %v, want %v", gotOrder, wantOrder)
+	}
+}
+
+func TestRunModelTestUnexpectedSSEErrorIsSummarized(t *testing.T) {
+	ctx := setupModelTestDB(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = w.Write([]byte(`data: {"error":{"message":"Chat upstream returned 403 (request id: test)","type":"upstream_error"}}` + "\n\n"))
+	}))
+	defer server.Close()
+
+	channel := &model.Channel{
+		Name:     "model-test-sse-error",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
+		Model:    "test-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "test-sse-secret", Remark: "sse-error"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+
+	result, err := NewService(nil).Run(ctx, RunRequest{
+		Mode:        "channel",
+		Concurrency: 1,
+		Targets:     []RunTarget{{ChannelID: channel.ID, ModelName: "test-model"}},
+	})
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+	item := result.Results[0]
+	if item.Success || item.HTTPStatus != http.StatusForbidden || item.FailureReason != "auth_error" {
+		t.Fatalf("unexpected SSE error result: %+v", item)
+	}
+	if strings.Contains(item.ResponseText, "data:") {
+		t.Fatalf("raw SSE leaked into response text: %q", item.ResponseText)
+	}
+	if !strings.Contains(item.ErrorMessage, "upstream returned 403") {
+		t.Fatalf("expected summarized upstream error, got %q", item.ErrorMessage)
 	}
 }

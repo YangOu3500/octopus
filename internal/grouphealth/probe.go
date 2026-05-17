@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -34,6 +35,8 @@ type ProbeUsage struct {
 	OutputTokens int
 	CacheTokens  int
 }
+
+var upstreamStatusPattern = regexp.MustCompile(`(?i)\b(?:returned|status)\s+([45][0-9]{2})\b`)
 
 type ProbeOptions struct {
 	Prompt      string
@@ -106,12 +109,15 @@ func (p *Prober) RunCandidateWithOptions(ctx context.Context, channel model.Chan
 	result.HTTPStatus = response.StatusCode
 	result.DurationMS = time.Since(startedAt).Milliseconds()
 
-	if options.Stream {
+	if options.Stream || isEventStreamHeader(response.Header) {
 		return readStreamProbeResponse(response, result, startedAt, channel.Type)
 	}
 
 	body, _ := io.ReadAll(io.LimitReader(response.Body, 32*1024))
 	result.ResponseBody = body
+	if looksLikeSSEBody(response.Header, body) {
+		return readStreamProbeBufferedResponse(response.Header, body, result, startedAt, channel.Type)
+	}
 
 	if provider, ok := validatorProviderForOutbound(channel.Type); ok {
 		validation := validator.ValidateNonStream(provider, validator.Response{
@@ -260,9 +266,31 @@ func normalizeProbeOptions(options ProbeOptions) ProbeOptions {
 	return options
 }
 
+func isEventStreamHeader(header http.Header) bool {
+	if header == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(header.Get("Content-Type")), "text/event-stream")
+}
+
+func looksLikeSSEBody(header http.Header, body []byte) bool {
+	if isEventStreamHeader(header) {
+		return true
+	}
+	return strings.HasPrefix(strings.TrimSpace(string(body)), "data:")
+}
+
 func readStreamProbeResponse(response *http.Response, result ProbeResult, startedAt time.Time, channelType outbound.OutboundType) ProbeResult {
+	return readStreamProbeReader(response.Body, response.Header, result, startedAt, channelType)
+}
+
+func readStreamProbeBufferedResponse(header http.Header, body []byte, result ProbeResult, startedAt time.Time, channelType outbound.OutboundType) ProbeResult {
+	return readStreamProbeReader(bytes.NewReader(body), header, result, startedAt, channelType)
+}
+
+func readStreamProbeReader(reader io.Reader, header http.Header, result ProbeResult, startedAt time.Time, channelType outbound.OutboundType) ProbeResult {
 	collector := &streamProbeCollector{}
-	scanner := bufio.NewScanner(io.LimitReader(response.Body, 256*1024))
+	scanner := bufio.NewScanner(io.LimitReader(reader, 256*1024))
 	scanner.Buffer(make([]byte, 0, 64*1024), 256*1024)
 
 	for scanner.Scan() {
@@ -287,8 +315,8 @@ func readStreamProbeResponse(response *http.Response, result ProbeResult, starte
 	if collector.dataLines == 0 && len(result.ResponseBody) > 0 {
 		if provider, ok := validatorProviderForOutbound(channelType); ok {
 			validation := validator.ValidateNonStream(provider, validator.Response{
-				StatusCode: response.StatusCode,
-				Header:     response.Header,
+				StatusCode: result.HTTPStatus,
+				Header:     header,
 				Body:       result.ResponseBody,
 			})
 			if validation.Status == validator.ValidationOK {
@@ -303,20 +331,21 @@ func readStreamProbeResponse(response *http.Response, result ProbeResult, starte
 			return result
 		}
 	}
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
+	if result.HTTPStatus < 200 || result.HTTPStatus >= 300 {
 		if msg := strings.TrimSpace(collector.errorMessage); msg != "" {
 			result.ErrorMessage = msg
 			return result
 		}
 		if snippet := strings.TrimSpace(collector.textString()); snippet != "" {
-			result.ErrorMessage = fmt.Sprintf("upstream error: %d: %s", response.StatusCode, snippet)
+			result.ErrorMessage = fmt.Sprintf("upstream error: %d: %s", result.HTTPStatus, snippet)
 			return result
 		}
-		result.ErrorMessage = fmt.Sprintf("upstream error: %d", response.StatusCode)
+		result.ErrorMessage = fmt.Sprintf("upstream error: %d", result.HTTPStatus)
 		return result
 	}
 	if msg := strings.TrimSpace(collector.errorMessage); msg != "" {
 		result.ErrorMessage = msg
+		result.HTTPStatus = inferUpstreamStatusFromMessage(result.HTTPStatus, msg)
 		return result
 	}
 	if !collector.hasText {
@@ -325,6 +354,24 @@ func readStreamProbeResponse(response *http.Response, result ProbeResult, starte
 	}
 	result.Success = true
 	return result
+}
+
+func inferUpstreamStatusFromMessage(current int, msg string) int {
+	if current != 0 && (current < 200 || current >= 300) {
+		return current
+	}
+	match := upstreamStatusPattern.FindStringSubmatch(msg)
+	if len(match) < 2 {
+		return current
+	}
+	var status int
+	if _, err := fmt.Sscanf(match[1], "%d", &status); err != nil {
+		return current
+	}
+	if status >= 400 && status <= 599 {
+		return status
+	}
+	return current
 }
 
 type streamProbeCollector struct {

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/bestruirui/octopus/internal/model"
@@ -108,5 +109,37 @@ func TestRunCandidateValidatesSuccessfulBody(t *testing.T) {
 	}
 	if !bytes.Contains([]byte(result.ErrorMessage), []byte("empty_choices")) {
 		t.Fatalf("expected empty_choices error, got %q", result.ErrorMessage)
+	}
+}
+
+func TestRunCandidateParsesUnexpectedSSEErrorBody(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = w.Write([]byte(`data: {"error":{"message":"Chat upstream returned 403 (request id: test)","type":"upstream_error"}}` + "\n\n"))
+	}))
+	defer server.Close()
+
+	channel := model.Channel{
+		Type:     outbound.OutboundTypeOpenAIChat,
+		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
+	}
+	usedKey := model.ChannelKey{ID: 1, ChannelKey: "sk-test"}
+
+	result := (&Prober{}).RunCandidateWithOptions(context.Background(), channel, usedKey, "gpt-5.4", ProbeOptions{
+		Prompt:    "只回复 OK",
+		MaxTokens: 8,
+		Stream:    false,
+	})
+	if result.Success {
+		t.Fatal("expected SSE error response to fail")
+	}
+	if result.HTTPStatus != http.StatusForbidden {
+		t.Fatalf("expected inferred http 403, got %d (%q)", result.HTTPStatus, result.ErrorMessage)
+	}
+	if !strings.Contains(result.ErrorMessage, "upstream returned 403") {
+		t.Fatalf("expected upstream error message, got %q", result.ErrorMessage)
+	}
+	if strings.TrimSpace(result.ResponseText) != "" {
+		t.Fatalf("expected no response text for error-only stream, got %q", result.ResponseText)
 	}
 }

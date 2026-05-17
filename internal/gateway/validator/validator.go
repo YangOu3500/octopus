@@ -341,13 +341,10 @@ func looksLikeCloudflarePage(header http.Header, body []byte) bool {
 		strings.Contains(text, "cloudflare tunnel error") {
 		return true
 	}
-	if header == nil {
-		return false
-	}
-	if header.Get("CF-Ray") != "" {
-		return true
-	}
-	return strings.Contains(strings.ToLower(header.Get("Server")), "cloudflare")
+	// Many API providers sit behind Cloudflare and return normal JSON/SSE with
+	// Cloudflare headers. Headers alone are not enough to classify the body as a
+	// Cloudflare challenge page.
+	return false
 }
 
 func looksLikeUpstreamErrorJSON(body []byte) bool {

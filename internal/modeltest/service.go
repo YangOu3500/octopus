@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"regexp"
 	"sort"
@@ -118,18 +119,25 @@ func (s *Service) Run(ctx context.Context, req RunRequest) (RunResponse, error) 
 	}
 
 	results := make([]RunResult, len(req.Targets))
-	sem := make(chan struct{}, req.Concurrency)
+	workerCount := req.Concurrency
+	if workerCount > len(req.Targets) {
+		workerCount = len(req.Targets)
+	}
+	jobs := make(chan int)
 	var wg sync.WaitGroup
-	for i, target := range req.Targets {
-		i, target := i, target
+	for worker := 0; worker < workerCount; worker++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			results[i] = s.runTarget(ctx, req, target, i+1)
+			for i := range jobs {
+				results[i] = s.runTarget(ctx, req, req.Targets[i], i+1)
+			}
 		}()
 	}
+	for i := range req.Targets {
+		jobs <- i
+	}
+	close(jobs)
 	wg.Wait()
 
 	success := 0
@@ -283,24 +291,23 @@ func (s *Service) runTarget(ctx context.Context, req RunRequest, target RunTarge
 		result.TokensPerSecond = float64(result.OutputTokens) / (float64(result.DurationMS) / 1000)
 	}
 
-	if req.Stream {
-		result.ResponseText = sanitizeText(probeResult.ResponseText)
-	} else {
-		result.ResponseText = sanitizeText(extractResponseText(channel.Type, probeResult.ResponseBody))
-	}
-	if result.ResponseText == "" && len(probeResult.ResponseBody) > 0 {
-		result.ResponseText = sanitizeText(snippet(string(probeResult.ResponseBody), responsePreviewSize))
-	}
-
 	if probeResult.Success {
 		result.Success = true
 		result.Status = string(model.AttemptSuccess)
 	} else {
-		result.FailureReason = slugReason(probeResult.ErrorMessage)
+		result.FailureReason = failureReasonForProbe(probeResult)
 		result.ErrorMessage = sanitizeText(probeResult.ErrorMessage)
 		if result.FailureReason == "" {
 			result.FailureReason = "attempt_failed"
 		}
+	}
+	if strings.TrimSpace(probeResult.ResponseText) != "" {
+		result.ResponseText = sanitizeText(probeResult.ResponseText)
+	} else if !req.Stream && result.Success {
+		result.ResponseText = sanitizeText(extractResponseText(channel.Type, probeResult.ResponseBody))
+	}
+	if result.ResponseText == "" && result.Success && len(probeResult.ResponseBody) > 0 {
+		result.ResponseText = sanitizeText(snippet(string(probeResult.ResponseBody), responsePreviewSize))
 	}
 
 	s.recordResult(ctx, &result, channel, usedKey, req)
@@ -684,6 +691,26 @@ func sanitizeText(value string) string {
 	value = sensitiveBearerPattern.ReplaceAllString(value, "Bearer [REDACTED]")
 	value = sensitiveAPIKeyPattern.ReplaceAllString(value, "sk-[REDACTED]")
 	return snippet(value, responsePreviewSize)
+}
+
+func failureReasonForProbe(result grouphealth.ProbeResult) string {
+	switch result.HTTPStatus {
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return "auth_error"
+	case http.StatusPaymentRequired:
+		return "quota_error"
+	case http.StatusTooManyRequests:
+		return "rate_limit"
+	}
+	if result.HTTPStatus >= http.StatusInternalServerError {
+		return "server_error"
+	}
+
+	message := strings.ToLower(strings.TrimSpace(result.ErrorMessage))
+	if strings.Contains(message, "upstream_error") || strings.Contains(message, "upstream returned") {
+		return "upstream_error"
+	}
+	return slugReason(result.ErrorMessage)
 }
 
 func slugReason(value string) string {

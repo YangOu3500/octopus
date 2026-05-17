@@ -365,6 +365,19 @@ func TestValidateNonStream_CommonFailures(t *testing.T) {
 			reason: ReasonUpstreamErrorJSON,
 		},
 		{
+			name: "cloudflare fronted upstream error json",
+			resp: Response{
+				StatusCode: http.StatusOK,
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+					"Server":       []string{"cloudflare"},
+					"CF-Ray":       []string{"abc123"},
+				},
+				Body: []byte(`{"error":{"message":"upstream failed","type":"upstream_error"}}`),
+			},
+			reason: ReasonUpstreamErrorJSON,
+		},
+		{
 			name: "invalid json",
 			resp: Response{
 				StatusCode: http.StatusOK,
@@ -390,6 +403,23 @@ func TestValidateNonStream_CommonFailures(t *testing.T) {
 				t.Fatalf("expected retryable result")
 			}
 		})
+	}
+}
+
+func TestValidateNonStream_CloudflareHeaderDoesNotFailValidJSON(t *testing.T) {
+	t.Parallel()
+
+	got := ValidateNonStream(ProviderOpenAIChat, Response{
+		StatusCode: http.StatusOK,
+		Header: http.Header{
+			"Content-Type": []string{"application/json"},
+			"Server":       []string{"cloudflare"},
+			"CF-Ray":       []string{"abc123"},
+		},
+		Body: []byte(`{"choices":[{"message":{"role":"assistant","content":"OK"}}],"usage":{"completion_tokens":1}}`),
+	})
+	if got.Status != ValidationOK {
+		t.Fatalf("status = %q reason = %q, want ok", got.Status, got.Reason)
 	}
 }
 

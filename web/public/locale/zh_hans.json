@@ -95,6 +95,16 @@
         }
     },
     "home": {
+        "dashboard": {
+            "totalRequests": "总请求数",
+            "totalSub": "近 24 小时失败 {failed}",
+            "successRate": "成功率",
+            "successSub": "失败请求 {failed}",
+            "tokens": "词元统计",
+            "tokenSub": "入 {input} / 出 {output} / 缓存 {cache}",
+            "todayRequests": "今日请求",
+            "todaySub": "近 24 小时 RPM {rpm}"
+        },
         "activity": {
             "requestCount": "请求次数",
             "waitTime": "等待时间",
@@ -469,9 +479,9 @@
                 },
                 "quotaStatus": {
                     "name": "额度 / 配额状态解析",
-                    "desc": "结合余额、quota、错误类型提前过滤或降权候选。",
-                    "ui": "当前在日志和冷却中能看到 quota_error，但没有完整 quota status resolver 和专门 UI。",
-                    "gap": "待补 quota status 解析、候选过滤说明和分组调度预览展示。"
+                    "desc": "结合余额、quota、错误类型解释候选容量，并为后续提前过滤或降权提供依据。",
+                    "ui": "分组调度预览已显示 projected channel 的额度状态、账号名、余额 / 已用；日志和冷却中也能看到 quota_error。",
+                    "gap": "当前是只读可见化，不改变真实路由；完整 quota 过滤、账号 / 站点级配额推导仍待实现。"
                 }
             },
             "note": "这个面板是融合能力的 UI 对齐索引。它不替代具体功能页面，但用于保证“已接入后端能力就必须能被用户看到、理解和排障”。"
@@ -821,6 +831,8 @@
         "runFailed": "模型测试失败",
         "emptySelection": "请先选择要测试的模型或渠道",
         "viewLog": "日志详情",
+        "runOne": "测试此项",
+        "clearOne": "清除此项结果",
         "channel": "渠道",
         "model": "模型",
         "prompt": "测试内容",
@@ -833,6 +845,14 @@
         "searchChannel": "搜索渠道名称...",
         "emptyRows": "暂无可测试目标",
         "cache": "缓存",
+        "stats": {
+            "visible": "当前目标",
+            "selected": "已选择",
+            "concurrency": "并发",
+            "requestMode": "请求模式",
+            "stream": "流式",
+            "nonStream": "非流式"
+        },
         "status": {
             "idle": "未测试",
             "success": "成功",
@@ -850,7 +870,8 @@
             "tokens": "输入 / 输出",
             "speed": "Tok/s",
             "cost": "费用",
-            "response": "响应"
+            "response": "响应",
+            "actions": "操作"
         }
     },
     "model": {
