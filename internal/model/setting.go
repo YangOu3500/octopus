@@ -45,6 +45,7 @@ const (
 	SettingKeyProbeMaxTokens             SettingKey = "probe.max_tokens"                    // 慢速探测最大输出 token
 	SettingKeyProbeTemperature           SettingKey = "probe.temperature"                   // 慢速探测温度
 	SettingKeyProbeJitterRatio           SettingKey = "probe.jitter_ratio"                  // 慢速探测抖动比例
+	SettingKeyProbeStreamEnabled         SettingKey = "probe.stream_enabled"                // 慢速探测是否使用流式请求
 	SettingKeyJWTSecret                  SettingKey = "jwt_secret"                          // JWT 签名密钥（自动生成）
 	SettingKeyStatsSiteModelBackfilled   SettingKey = "stats_site_model_backfilled"         // 站点渠道小时聚合是否已回填历史日志
 )
@@ -91,6 +92,7 @@ func DefaultSettings() []Setting {
 		{Key: SettingKeyProbeMaxTokens, Value: "8"},
 		{Key: SettingKeyProbeTemperature, Value: "0"},
 		{Key: SettingKeyProbeJitterRatio, Value: "0.25"},
+		{Key: SettingKeyProbeStreamEnabled, Value: "false"},
 		{Key: SettingKeyJWTSecret, Value: ""}, // 为空时自动生成
 		{Key: SettingKeyStatsSiteModelBackfilled, Value: "false"},
 	}
@@ -162,7 +164,7 @@ func (s *Setting) Validate() error {
 			return fmt.Errorf("setting value must be greater than 0")
 		}
 		return nil
-	case SettingKeyRelayLogKeepEnabled, SettingKeyRelayWSUpgradeEnabled, SettingKeyStreamEmptyDoneAsFailure, SettingKeyStreamInvalidSSEAsFailure, SettingKeyGroupHealthEnabled, SettingKeyHealthScoreEnabled, SettingKeyProbeEnabled:
+	case SettingKeyRelayLogKeepEnabled, SettingKeyRelayWSUpgradeEnabled, SettingKeyStreamEmptyDoneAsFailure, SettingKeyStreamInvalidSSEAsFailure, SettingKeyGroupHealthEnabled, SettingKeyHealthScoreEnabled, SettingKeyProbeEnabled, SettingKeyProbeStreamEnabled:
 		if s.Value != "true" && s.Value != "false" {
 			return fmt.Errorf("setting value must be true or false")
 		}

@@ -2,6 +2,8 @@ package grouphealth
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -35,6 +37,51 @@ func TestSlowProbeSchedulerDisabledDoesNothing(t *testing.T) {
 	}
 	if attempts := countGroupHealthAttempts(t); attempts != 0 {
 		t.Fatalf("expected no attempts, got %d", attempts)
+	}
+}
+
+func TestSlowProbeSchedulerCanUseStreamProbe(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	var sawStream bool
+	var bodyErr atomic.Value
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			bodyErr.Store("unmarshal probe body failed: " + err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		sawStream, _ = payload["stream"].(bool)
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = w.Write([]byte("data: {\"id\":\"chatcmpl_1\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"OK\"}}],\"usage\":{\"completion_tokens\":1}}\n\n"))
+		_, _ = w.Write([]byte("data: [DONE]\n\n"))
+	}))
+	defer server.Close()
+
+	createProbeGroupWithChannel(t, ctx, "stream-probe-group", "stream-probe-channel", server.URL)
+
+	scheduler := NewSlowProbeScheduler(op.NewGroupHealthRepository(), &Prober{CandidateTimeout: time.Second})
+	if err := scheduler.RunOnceWithConfig(ctx, ProbeConfig{
+		Enabled:                 true,
+		SiteMinInterval:         time.Minute,
+		ModelMinInterval:        time.Hour,
+		MaxConcurrency:          1,
+		DailyMaxRequestsPerSite: 20,
+		Prompt:                  "只回复 OK",
+		MaxTokens:               8,
+		Stream:                  true,
+	}); err != nil {
+		t.Fatalf("RunOnceWithConfig failed: %v", err)
+	}
+	if value := bodyErr.Load(); value != nil {
+		t.Fatal(value)
+	}
+	if !sawStream {
+		t.Fatal("expected slow probe request to set stream=true")
+	}
+	if attempts := countGroupHealthAttempts(t); attempts != 1 {
+		t.Fatalf("expected one attempt, got %d", attempts)
 	}
 }
 

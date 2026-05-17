@@ -28,6 +28,7 @@ type ProbeConfig struct {
 	MaxTokens               int64
 	Temperature             float64
 	JitterRatio             float64
+	Stream                  bool
 }
 
 type SlowProbeScheduler struct {
@@ -111,6 +112,7 @@ func ProbeConfigFromSettings() ProbeConfig {
 		MaxTokens:               int64(settingIntWithFallback(model.SettingKeyProbeMaxTokens, 8)),
 		Temperature:             settingFloat(model.SettingKeyProbeTemperature, 0),
 		JitterRatio:             settingFloat(model.SettingKeyProbeJitterRatio, 0.25),
+		Stream:                  settingBool(model.SettingKeyProbeStreamEnabled, false),
 	}
 }
 
@@ -298,6 +300,7 @@ func (s *SlowProbeScheduler) runJob(ctx context.Context, cfg ProbeConfig, job sl
 		Prompt:      cfg.Prompt,
 		MaxTokens:   cfg.MaxTokens,
 		Temperature: cfg.Temperature,
+		Stream:      cfg.Stream,
 	})
 	finishedAt := s.currentTime()
 

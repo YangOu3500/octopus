@@ -59,6 +59,7 @@ export const SettingKey = {
     ProbeMaxTokens: 'probe.max_tokens',
     ProbeTemperature: 'probe.temperature',
     ProbeJitterRatio: 'probe.jitter_ratio',
+    ProbeStreamEnabled: 'probe.stream_enabled',
 } as const;
 
 /**

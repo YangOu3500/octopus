@@ -434,8 +434,8 @@
                 "slowProbe": {
                     "name": "慢速主動探測",
                     "desc": "預設關閉，低頻補充 unknown / degraded / cooldown 到期候選狀態，避免壓測公益站。",
-                    "ui": "設定頁可配置開關、同站點間隔、同模型間隔、並發、每日預算、prompt、max tokens、temperature、jitter。",
-                    "gap": "目前是非流式探測，限速 / 預算 / 退避狀態為記憶體態；stream probe 待補。"
+                    "ui": "設定頁可配置開關、串流探測、同站點間隔、同模型間隔、並發、每日預算、prompt、max tokens、temperature、jitter。",
+                    "gap": "限速 / 預算 / 退避狀態仍為記憶體態，程序重啟會重置；仍需 NAS / Docker 實例驗證。"
                 },
                 "costUsage": {
                     "name": "Usage / Cost 統計增強",
@@ -610,6 +610,10 @@
                 "jitter": {
                     "label": "抖動比例",
                     "hint": "取值 0 到 1，用於錯開探測時間"
+                },
+                "stream": {
+                    "label": "使用串流探測",
+                    "hint": "開啟後慢速探測會送出 stream=true，並依 SSE 內容判斷是否有有效回覆；預設關閉，避免改變現有探測流量形態"
                 }
             },
             "stream": {

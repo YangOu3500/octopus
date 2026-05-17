@@ -48,6 +48,7 @@ const defaultValues: Record<string, string> = {
     [SettingKey.ProbeMaxTokens]: '8',
     [SettingKey.ProbeTemperature]: '0',
     [SettingKey.ProbeJitterRatio]: '0.25',
+    [SettingKey.ProbeStreamEnabled]: 'false',
 };
 
 function SettingRow({
@@ -208,6 +209,15 @@ export function SettingHealthProbe() {
             min: '0',
             max: '1',
             step: '0.05',
+        },
+    ];
+
+    const probeSwitchFields: SwitchConfig[] = [
+        {
+            key: SettingKey.ProbeStreamEnabled,
+            icon: Activity,
+            label: t('healthProbe.probe.stream.label'),
+            hint: t('healthProbe.probe.stream.hint'),
         },
     ];
 
@@ -477,6 +487,7 @@ export function SettingHealthProbe() {
                 </div>
                 <div className="space-y-4">
                     {probeFields.map(renderField)}
+                    {probeSwitchFields.map(renderSwitchField)}
                 </div>
             </div>
         </div>

@@ -434,8 +434,8 @@
                 "slowProbe": {
                     "name": "Slow Active Probe",
                     "desc": "Off by default. Low-frequency probes supplement unknown, degraded, or cooldown-expired candidates without stressing upstreams.",
-                    "ui": "Settings expose enablement, site interval, site-model interval, concurrency, daily budget, prompt, max tokens, temperature, and jitter.",
-                    "gap": "Probe is currently non-streaming, and rate-limit / budget / backoff state is in memory. Stream probe is pending."
+                    "ui": "Settings expose enablement, stream probe, site interval, site-model interval, concurrency, daily budget, prompt, max tokens, temperature, and jitter.",
+                    "gap": "Rate-limit / budget / backoff state is still in memory and resets on restart. NAS / Docker validation is still needed."
                 },
                 "costUsage": {
                     "name": "Usage / Cost Accounting",
@@ -610,6 +610,10 @@
                 "jitter": {
                     "label": "Jitter Ratio",
                     "hint": "Value from 0 to 1, used to spread probe timing."
+                },
+                "stream": {
+                    "label": "Use Stream Probe",
+                    "hint": "When enabled, slow probes send stream=true and judge valid replies from SSE content. Off by default to preserve the existing probe traffic shape."
                 }
             },
             "stream": {
