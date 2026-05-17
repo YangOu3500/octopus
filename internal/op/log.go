@@ -4,6 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,6 +22,12 @@ import (
 
 const relayLogMaxSize = 20
 const relayLogMaxSizeNoDB = 100 // 当不保存到数据库时，允许更大的缓存用于实时查询
+
+var (
+	relayLogBearerPattern = regexp.MustCompile(`(?i)bearer\s+[A-Za-z0-9._~+/=-]+`)
+	relayLogAPIKeyPattern = regexp.MustCompile(`(?i)\bsk-[A-Za-z0-9._-]{8,}`)
+	relayLogHeaderPattern = regexp.MustCompile(`(?i)(authorization|cookie|set-cookie|x-api-key|x-goog-api-key)\s*[:=]\s*[^\r\n,;]+`)
+)
 
 var relayLogCache = make([]model.RelayLog, 0, relayLogMaxSize)
 var relayLogCacheLock sync.Mutex
@@ -77,6 +86,7 @@ func notifySubscribers(relayLog model.RelayLog) {
 	relayLogSubscribersLock.RLock()
 	defer relayLogSubscribersLock.RUnlock()
 
+	relayLog = relayLogForList(relayLog)
 	for ch := range relayLogSubscribers {
 		select {
 		case ch <- relayLog:
@@ -198,11 +208,12 @@ func relayLogCleanup(ctx context.Context) error {
 // channelIDs 为 nil 或空时表示不限制渠道
 func RelayLogList(ctx context.Context, startTime, endTime *int, channelIDs []int, page, pageSize int) ([]model.RelayLog, error) {
 	result, err := RelayLogListWithQuery(ctx, model.RelayLogListQuery{
-		StartTime:  startTime,
-		EndTime:    endTime,
-		ChannelIDs: channelIDs,
-		Page:       page,
-		PageSize:   pageSize,
+		StartTime:   startTime,
+		EndTime:     endTime,
+		ChannelIDs:  channelIDs,
+		Page:        page,
+		PageSize:    pageSize,
+		IncludeBody: true,
 	})
 	if err != nil {
 		return nil, err
@@ -212,9 +223,42 @@ func RelayLogList(ctx context.Context, startTime, endTime *int, channelIDs []int
 
 func RelayLogListWithQuery(ctx context.Context, query model.RelayLogListQuery) (model.RelayLogListResult, error) {
 	query = normalizeRelayLogListQuery(query)
-	enabled, err := SettingGetBool(model.SettingKeyRelayLogKeepEnabled)
+	filtered, err := relayLogCollect(ctx, query)
 	if err != nil {
 		return model.RelayLogListResult{}, err
+	}
+
+	total := len(filtered)
+	offset := (query.Page - 1) * query.PageSize
+	if offset > total {
+		offset = total
+	}
+	end := offset + query.PageSize
+	if end > total {
+		end = total
+	}
+
+	items := make([]model.RelayLog, end-offset)
+	copy(items, filtered[offset:end])
+	if !query.IncludeBody {
+		for i := range items {
+			items[i] = relayLogForList(items[i])
+		}
+	}
+
+	return model.RelayLogListResult{
+		Items:    items,
+		Total:    total,
+		Page:     query.Page,
+		PageSize: query.PageSize,
+		HasMore:  end < total,
+	}, nil
+}
+
+func relayLogCollect(ctx context.Context, query model.RelayLogListQuery) ([]model.RelayLog, error) {
+	enabled, err := SettingGetBool(model.SettingKeyRelayLogKeepEnabled)
+	if err != nil {
+		return nil, err
 	}
 
 	relayLogCacheLock.Lock()
@@ -235,7 +279,7 @@ func RelayLogListWithQuery(ctx context.Context, query model.RelayLogListQuery) (
 		dbQuery := applyRelayLogBroadFilters(db.GetDB().WithContext(ctx).Model(&model.RelayLog{}), query)
 		var dbLogs []model.RelayLog
 		if err := dbQuery.Order("id DESC").Find(&dbLogs).Error; err != nil {
-			return model.RelayLogListResult{}, err
+			return nil, err
 		}
 		for _, relayLog := range dbLogs {
 			if relayLog.ID != 0 {
@@ -255,24 +299,7 @@ func RelayLogListWithQuery(ctx context.Context, query model.RelayLogListQuery) (
 		}
 	}
 	sortRelayLogs(filtered, query.SortBy, query.SortOrder)
-
-	total := len(filtered)
-	offset := (query.Page - 1) * query.PageSize
-	if offset > total {
-		offset = total
-	}
-	end := offset + query.PageSize
-	if end > total {
-		end = total
-	}
-
-	return model.RelayLogListResult{
-		Items:    filtered[offset:end],
-		Total:    total,
-		Page:     query.Page,
-		PageSize: query.PageSize,
-		HasMore:  end < total,
-	}, nil
+	return filtered, nil
 }
 
 func RelayLogListLegacy(ctx context.Context, startTime, endTime *int, channelIDs []int, page, pageSize int) ([]model.RelayLog, error) {
@@ -354,6 +381,41 @@ func RelayLogListLegacy(ctx context.Context, startTime, endTime *int, channelIDs
 	return result, nil
 }
 
+func RelayLogGet(ctx context.Context, id int64) (model.RelayLog, error) {
+	if id <= 0 {
+		return model.RelayLog{}, gorm.ErrRecordNotFound
+	}
+
+	relayLogCacheLock.Lock()
+	for i := len(relayLogCache) - 1; i >= 0; i-- {
+		if relayLogCache[i].ID == id {
+			relayLog := relayLogForDetail(relayLogCache[i])
+			relayLogCacheLock.Unlock()
+			return relayLog, nil
+		}
+	}
+	relayLogCacheLock.Unlock()
+
+	enabled, err := SettingGetBool(model.SettingKeyRelayLogKeepEnabled)
+	if err != nil {
+		return model.RelayLog{}, err
+	}
+	if !enabled {
+		return model.RelayLog{}, gorm.ErrRecordNotFound
+	}
+
+	var relayLog model.RelayLog
+	err = db.GetDB().WithContext(ctx).Where("id = ?", id).First(&relayLog).Error
+	if err != nil {
+		return model.RelayLog{}, err
+	}
+	return relayLogForDetail(relayLog), nil
+}
+
+func RelayLogIsNotFound(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound)
+}
+
 // logMatchesChannels 检查日志是否属于指定的渠道集合
 // 检查顶层 ChannelId 和 Attempts 中的 ChannelID
 func normalizeRelayLogListQuery(query model.RelayLogListQuery) model.RelayLogListQuery {
@@ -371,6 +433,7 @@ func normalizeRelayLogListQuery(query model.RelayLogListQuery) model.RelayLogLis
 	query.HTTPStatus = strings.ToLower(strings.TrimSpace(query.HTTPStatus))
 	query.FailureReason = strings.TrimSpace(query.FailureReason)
 	query.Protocol = strings.ToLower(strings.TrimSpace(query.Protocol))
+	query.Source = strings.ToLower(strings.TrimSpace(query.Source))
 	query.SortBy = strings.ToLower(strings.TrimSpace(query.SortBy))
 	query.SortOrder = strings.ToLower(strings.TrimSpace(query.SortOrder))
 	if query.SortOrder != "asc" {
@@ -427,6 +490,9 @@ func applyRelayLogBroadFilters(query *gorm.DB, filter model.RelayLogListQuery) *
 	if filter.Stream != nil {
 		query = query.Where("request_stream = ?", *filter.Stream)
 	}
+	if filter.Source != "" {
+		query = query.Where("request_source = ?", filter.Source)
+	}
 	return query
 }
 
@@ -462,6 +528,9 @@ func relayLogMatchesQuery(relayLog model.RelayLog, query model.RelayLogListQuery
 		return false
 	}
 	if query.Protocol != "" && !relayLogMatchesProtocol(relayLog, query.Protocol) {
+		return false
+	}
+	if query.Source != "" && !strings.EqualFold(strings.TrimSpace(relayLog.RequestSource), query.Source) {
 		return false
 	}
 	if query.Stream != nil && relayLog.RequestStream != *query.Stream {
@@ -597,6 +666,89 @@ func relayLogHasCacheHit(relayLog model.RelayLog) bool {
 	return relayLog.CacheTokens > 0 ||
 		(relayLog.CacheReadTokens != nil && *relayLog.CacheReadTokens > 0) ||
 		(relayLog.CacheWriteTokens != nil && *relayLog.CacheWriteTokens > 0)
+}
+
+func relayLogForList(relayLog model.RelayLog) model.RelayLog {
+	relayLog.RequestContent = ""
+	relayLog.ResponseContent = ""
+	return relayLog
+}
+
+func relayLogForDetail(relayLog model.RelayLog) model.RelayLog {
+	relayLog.RequestContent = sanitizeRelayLogContent(relayLog.RequestContent)
+	relayLog.ResponseContent = sanitizeRelayLogContent(relayLog.ResponseContent)
+	relayLog.Error = sanitizeRelayLogText(relayLog.Error)
+	for i := range relayLog.Attempts {
+		relayLog.Attempts[i].FailureReason = sanitizeRelayLogText(relayLog.Attempts[i].FailureReason)
+		relayLog.Attempts[i].ErrorSummary = sanitizeRelayLogText(relayLog.Attempts[i].ErrorSummary)
+		relayLog.Attempts[i].Msg = sanitizeRelayLogText(relayLog.Attempts[i].Msg)
+	}
+	return relayLog
+}
+
+func sanitizeRelayLogContent(content string) string {
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return ""
+	}
+
+	var value any
+	if err := json.Unmarshal([]byte(content), &value); err == nil {
+		sanitized := sanitizeRelayLogJSONValue(value)
+		if out, marshalErr := json.Marshal(sanitized); marshalErr == nil {
+			return string(out)
+		}
+	}
+	return sanitizeRelayLogText(content)
+}
+
+func sanitizeRelayLogJSONValue(value any) any {
+	switch typed := value.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(typed))
+		for key, child := range typed {
+			if isSensitiveRelayLogKey(key) {
+				out[key] = "[REDACTED]"
+				continue
+			}
+			out[key] = sanitizeRelayLogJSONValue(child)
+		}
+		return out
+	case []any:
+		out := make([]any, len(typed))
+		for i, child := range typed {
+			out[i] = sanitizeRelayLogJSONValue(child)
+		}
+		return out
+	case string:
+		return sanitizeRelayLogText(typed)
+	default:
+		return value
+	}
+}
+
+func isSensitiveRelayLogKey(key string) bool {
+	normalized := strings.NewReplacer("-", "", "_", "", ".", "").Replace(strings.ToLower(strings.TrimSpace(key)))
+	switch normalized {
+	case "authorization", "cookie", "setcookie", "xapikey", "xgoogapikey", "apikey", "accesstoken", "refreshtoken", "session", "jwt":
+		return true
+	default:
+		return false
+	}
+}
+
+func sanitizeRelayLogText(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	value = relayLogHeaderPattern.ReplaceAllString(value, "$1: [REDACTED]")
+	value = relayLogBearerPattern.ReplaceAllString(value, "Bearer [REDACTED]")
+	value = relayLogAPIKeyPattern.ReplaceAllString(value, "sk-[REDACTED]")
+	if len(value) > 32*1024 {
+		value = value[:32*1024]
+	}
+	return value
 }
 
 func textContains(text, needle string) bool {

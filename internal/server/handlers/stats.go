@@ -32,6 +32,10 @@ func init() {
 		AddRoute(
 			router.NewRoute("/apikey", http.MethodGet).
 				Handle(getStatsAPIKey),
+		).
+		AddRoute(
+			router.NewRoute("/observability", http.MethodGet).
+				Handle(getStatsObservability),
 		)
 }
 
@@ -58,4 +62,13 @@ func getStatsTotal(c *gin.Context) {
 
 func getStatsAPIKey(c *gin.Context) {
 	resp.Success(c, op.StatsAPIKeyList())
+}
+
+func getStatsObservability(c *gin.Context) {
+	stats, err := op.StatsObservability(c.Request.Context(), c.DefaultQuery("time_range", "24h"))
+	if err != nil {
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, stats)
 }

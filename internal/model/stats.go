@@ -43,6 +43,56 @@ type StatsAPIKey struct {
 	StatsMetrics
 }
 
+type StatsObservabilityFailure struct {
+	ID            int64  `json:"id"`
+	Time          int64  `json:"time"`
+	TraceID       string `json:"trace_id,omitempty"`
+	RequestModel  string `json:"request_model"`
+	UpstreamModel string `json:"upstream_model,omitempty"`
+	ChannelID     int    `json:"channel_id,omitempty"`
+	ChannelName   string `json:"channel_name,omitempty"`
+	HTTPStatus    int    `json:"http_status,omitempty"`
+	FailureReason string `json:"failure_reason,omitempty"`
+	DurationMS    int    `json:"duration_ms,omitempty"`
+	RequestSource string `json:"request_source,omitempty"`
+	ClientIP      string `json:"client_ip,omitempty"`
+	FinalStatus   string `json:"final_status,omitempty"`
+}
+
+type StatsObservabilityBreakdown struct {
+	ID           int     `json:"id,omitempty"`
+	Name         string  `json:"name"`
+	Requests     int     `json:"requests"`
+	Failures     int     `json:"failures"`
+	SuccessRate  float64 `json:"success_rate"`
+	AvgLatencyMS int     `json:"avg_latency_ms,omitempty"`
+	Cost         float64 `json:"cost,omitempty"`
+}
+
+type StatsObservability struct {
+	TimeRange         string                        `json:"time_range"`
+	StartTime         int64                         `json:"start_time"`
+	EndTime           int64                         `json:"end_time"`
+	TotalRequests     int                           `json:"total_requests"`
+	SuccessRequests   int                           `json:"success_requests"`
+	FailedRequests    int                           `json:"failed_requests"`
+	SuccessRate       float64                       `json:"success_rate"`
+	FailoverRequests  int                           `json:"failover_requests"`
+	FailoverRate      float64                       `json:"failover_rate"`
+	AvgTTFBMS         int                           `json:"avg_ttfb_ms"`
+	AvgLatencyMS      int                           `json:"avg_latency_ms"`
+	RPM               float64                       `json:"rpm"`
+	InputTokens       int                           `json:"input_tokens"`
+	OutputTokens      int                           `json:"output_tokens"`
+	CacheTokens       int                           `json:"cache_tokens"`
+	FinalSuccessCost  float64                       `json:"final_success_cost"`
+	TotalAttemptCost  float64                       `json:"total_attempt_cost"`
+	FailedAttemptCost float64                       `json:"failed_attempt_cost"`
+	RecentFailures    []StatsObservabilityFailure   `json:"recent_failures"`
+	TopChannels       []StatsObservabilityBreakdown `json:"top_channels"`
+	TopModels         []StatsObservabilityBreakdown `json:"top_models"`
+}
+
 // StatsSiteModelHourly 站点渠道按小时聚合的请求统计，
 // 用于站点渠道页折线图，覆盖任意时间跨度的可用性趋势。
 type StatsSiteModelHourly struct {

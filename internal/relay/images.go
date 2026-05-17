@@ -120,6 +120,8 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 
 	// 初始化 Metrics（Images 独立，避免 b64_json 内存膨胀）
 	metrics := newImagesRelayMetrics(apiKeyID, requestModel)
+	metrics.ClientIP = c.ClientIP()
+	metrics.RequestSource = "images"
 	metrics.RequestContent = buildImagesRequestContentForLog(isMultipart, bc, jsonPayload)
 
 	// === 早期心跳 ===
@@ -265,11 +267,13 @@ type imagesUsage struct {
 }
 
 type imagesRelayMetrics struct {
-	APIKeyID     int
-	RequestModel string
-	ActualModel  string
-	StartTime    time.Time
-	FirstToken   time.Time
+	APIKeyID      int
+	RequestModel  string
+	ActualModel   string
+	RequestSource string
+	ClientIP      string
+	StartTime     time.Time
+	FirstToken    time.Time
 
 	Stats model.StatsMetrics
 
@@ -347,6 +351,8 @@ func (m *imagesRelayMetrics) saveLog(ctx context.Context, err error, duration ti
 	relayLog := model.RelayLog{
 		Time:             m.StartTime.Unix(),
 		RequestModelName: m.RequestModel,
+		RequestSource:    m.RequestSource,
+		ClientIP:         m.ClientIP,
 		ChannelName:      channelName,
 		ChannelId:        channelID,
 		ActualModelName:  actualModel,

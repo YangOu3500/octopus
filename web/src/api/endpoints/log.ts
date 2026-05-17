@@ -1,5 +1,5 @@
 import type { InfiniteData } from '@tanstack/react-query';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { apiClient, API_BASE_URL } from '../client';
 import { logger } from '@/lib/logger';
@@ -59,6 +59,8 @@ export interface RelayLog {
     request_model_name: string;
     request_api_key_name?: string;
     request_stream?: boolean;
+    request_source?: string;
+    client_ip?: string;
     channel: number;
     channel_name: string;
     actual_model_name: string;
@@ -108,6 +110,7 @@ export interface LogListParams {
     http_status?: string;
     failure_reason?: string;
     protocol?: string;
+    source?: string;
     stream?: boolean;
     failover?: boolean;
     cache_hit?: boolean;
@@ -139,6 +142,18 @@ export function useClearLogs() {
         onError: (error) => {
             logger.error('failed to clear relay logs:', error);
         },
+    });
+}
+
+export function useLogDetail(logID: number | undefined, enabled: boolean) {
+    return useQuery({
+        queryKey: ['logs', 'detail', logID],
+        queryFn: async () => {
+            if (!logID) throw new Error('missing log id');
+            return apiClient.get<RelayLog>(`/api/v1/log/detail/${logID}`);
+        },
+        enabled: enabled && !!logID,
+        staleTime: 60000,
     });
 }
 

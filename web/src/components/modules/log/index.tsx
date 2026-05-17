@@ -117,7 +117,7 @@ function nonAll(value: string) {
 function LogTableHeader() {
     return (
         <div className="hidden lg:grid grid-cols-[1.05fr_1.6fr_1.2fr_0.8fr_0.8fr_0.75fr_0.85fr_1fr_0.9fr_0.55fr] gap-3 rounded-lg border bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
-            <span>时间 / Trace</span>
+            <span>时间 / Trace / 来源</span>
             <span>模型</span>
             <span>渠道 / 协议</span>
             <span>状态</span>
@@ -148,6 +148,7 @@ export function Log() {
     const [httpStatusFilter, setHTTPStatusFilter] = useState('');
     const [failureFilter, setFailureFilter] = useState('');
     const [protocolFilter, setProtocolFilter] = useState('all');
+    const [sourceFilter, setSourceFilter] = useState('all');
     const [streamFilter, setStreamFilter] = useState('all');
     const [failoverFilter, setFailoverFilter] = useState('all');
     const [cacheFilter, setCacheFilter] = useState('all');
@@ -155,6 +156,7 @@ export function Log() {
     const [sortOrder, setSortOrder] = useState('desc');
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [refreshInterval, setRefreshInterval] = useState('10000');
+    const [openDetailLogId, setOpenDetailLogId] = useState<number | null>(null);
     const { data: channelsData } = useChannelList();
     const { data: siteChannelsData } = useSiteChannelList();
 
@@ -168,6 +170,7 @@ export function Log() {
         http_status: httpStatusFilter.trim() || undefined,
         failure_reason: failureFilter.trim() || undefined,
         protocol: nonAll(protocolFilter),
+        source: nonAll(sourceFilter),
         stream: optionalBoolean(streamFilter),
         failover: optionalBoolean(failoverFilter),
         cache_hit: optionalBoolean(cacheFilter),
@@ -184,6 +187,7 @@ export function Log() {
         protocolFilter,
         sortBy,
         sortOrder,
+        sourceFilter,
         statusFilter,
         streamFilter,
         timeRange,
@@ -206,6 +210,7 @@ export function Log() {
         filters,
         autoRefresh,
         refreshIntervalMs: Number(refreshInterval),
+        pauseAutoRefresh: openDetailLogId !== null,
     });
 
     const managedChannelMap = useMemo(() => {
@@ -269,11 +274,19 @@ export function Log() {
         setHTTPStatusFilter('');
         setFailureFilter('');
         setProtocolFilter('all');
+        setSourceFilter('all');
         setStreamFilter('all');
         setFailoverFilter('all');
         setCacheFilter('all');
         setSortBy('time');
         setSortOrder('desc');
+    }, []);
+
+    const handleLogDialogOpenChange = useCallback((logId: number, open: boolean) => {
+        setOpenDetailLogId((current) => {
+            if (open) return logId;
+            return current === logId ? null : current;
+        });
     }, []);
 
     const footer = useMemo(() => {
@@ -390,6 +403,17 @@ export function Log() {
                                 <SelectItem value="ws">WebSocket</SelectItem>
                             </SelectContent>
                         </Select>
+                        <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">全部来源</SelectItem>
+                                <SelectItem value="relay">Relay</SelectItem>
+                                <SelectItem value="images">Images</SelectItem>
+                                <SelectItem value="probe">Probe</SelectItem>
+                            </SelectContent>
+                        </Select>
                         <Select value={streamFilter} onValueChange={setStreamFilter}>
                             <SelectTrigger className="w-full">
                                 <SelectValue />
@@ -462,7 +486,14 @@ export function Log() {
                     estimateItemHeight={72}
                     overscan={8}
                     getItemKey={(log) => `log-${log.id}`}
-                    renderItem={(log) => <LogCard log={log} siteTargets={siteActionTargets.get(log.id) ?? null} variant="row" />}
+                    renderItem={(log) => (
+                        <LogCard
+                            log={log}
+                            siteTargets={siteActionTargets.get(log.id) ?? null}
+                            variant="row"
+                            onDialogOpenChange={(open) => handleLogDialogOpenChange(log.id, open)}
+                        />
+                    )}
                     header={<LogTableHeader />}
                     footer={footer}
                     onReachEnd={handleReachEnd}

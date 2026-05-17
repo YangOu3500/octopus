@@ -102,6 +102,7 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 	// 初始化 Metrics
 	metrics := NewRelayMetrics(apiKeyID, requestModel, rawBody, internalRequest)
 	metrics.SetGroupID(group.ID)
+	metrics.SetClientInfo(c.ClientIP(), "relay")
 	responsesPassthroughRequired := internalRequest.HasOpenAIResponsesPassthrough()
 	responsesPassthroughCapableFound := false
 

@@ -20,6 +20,8 @@ type RelayMetrics struct {
 	GroupID       int
 	RequestModel  string
 	RequestStream bool
+	RequestSource string
+	ClientIP      string
 	StartTime     time.Time
 
 	// 首 Token 时间
@@ -85,6 +87,11 @@ func (m *RelayMetrics) SetWSRecovery(recovery model.RelayLogWSRecovery) {
 
 func (m *RelayMetrics) SetGroupID(groupID int) {
 	m.GroupID = groupID
+}
+
+func (m *RelayMetrics) SetClientInfo(clientIP string, requestSource string) {
+	m.ClientIP = strings.TrimSpace(clientIP)
+	m.RequestSource = strings.TrimSpace(requestSource)
 }
 
 // SetSelectedChannel 记录此次命中的通道 ID，用于 SetInternalResponse 时按站点 (账号, 分组) 查询价格。
@@ -193,6 +200,8 @@ func (m *RelayMetrics) saveLog(ctx context.Context, success bool, err error, dur
 		GroupID:            m.GroupID,
 		RequestModelName:   m.RequestModel,
 		RequestStream:      m.RequestStream,
+		RequestSource:      m.RequestSource,
+		ClientIP:           m.ClientIP,
 		ChannelName:        channelName,
 		ChannelId:          channelID,
 		ActualModelName:    actualModel,

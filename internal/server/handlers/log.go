@@ -29,6 +29,10 @@ func init() {
 		AddRoute(
 			router.NewRoute("/stream-token", http.MethodGet).
 				Handle(getStreamToken),
+		).
+		AddRoute(
+			router.NewRoute("/detail/:id", http.MethodGet).
+				Handle(getLogDetail),
 		)
 
 	router.NewGroupRouter("/api/v1/log").
@@ -81,6 +85,7 @@ func listLog(c *gin.Context) {
 		HTTPStatus:    c.Query("http_status"),
 		FailureReason: c.Query("failure_reason"),
 		Protocol:      c.Query("protocol"),
+		Source:        c.Query("source"),
 		SortBy:        c.Query("sort_by"),
 		SortOrder:     c.Query("sort_order"),
 	}
@@ -104,6 +109,25 @@ func listLog(c *gin.Context) {
 	}
 
 	resp.Success(c, logs)
+}
+
+func getLogDetail(c *gin.Context) {
+	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
+	if err != nil || id <= 0 {
+		resp.Error(c, http.StatusBadRequest, "invalid log id")
+		return
+	}
+
+	relayLog, err := op.RelayLogGet(c.Request.Context(), id)
+	if err != nil {
+		if op.RelayLogIsNotFound(err) {
+			resp.Error(c, http.StatusNotFound, "log not found")
+			return
+		}
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, relayLog)
 }
 
 func parseLogIntList(raw string) []int {

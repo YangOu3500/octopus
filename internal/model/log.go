@@ -74,6 +74,8 @@ type RelayLog struct {
 	RequestModelName     string              `json:"request_model_name"`
 	RequestAPIKeyName    string              `json:"request_api_key_name"`
 	RequestStream        bool                `json:"request_stream,omitempty" gorm:"index"`
+	RequestSource        string              `json:"request_source,omitempty" gorm:"index"`
+	ClientIP             string              `json:"client_ip,omitempty" gorm:"index"`
 	ChannelId            int                 `json:"channel" gorm:"index"`
 	ChannelName          string              `json:"channel_name"`
 	ActualModelName      string              `json:"actual_model_name"`
@@ -123,11 +125,13 @@ type RelayLogListQuery struct {
 	HTTPStatus    string
 	FailureReason string
 	Protocol      string
+	Source        string
 	Stream        *bool
 	Failover      *bool
 	CacheHit      *bool
 	SortBy        string
 	SortOrder     string
+	IncludeBody   bool
 }
 
 type RelayLogListResult struct {

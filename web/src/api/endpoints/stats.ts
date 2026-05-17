@@ -63,6 +63,56 @@ export interface StatsAPIKey extends StatsMetrics {
 export interface StatsAPIKeyFormatted extends StatsMetricsFormatted {
     api_key_id: number;
 }
+
+export interface StatsObservabilityFailure {
+    id: number;
+    time: number;
+    trace_id?: string;
+    request_model: string;
+    upstream_model?: string;
+    channel_id?: number;
+    channel_name?: string;
+    http_status?: number;
+    failure_reason?: string;
+    duration_ms?: number;
+    request_source?: string;
+    client_ip?: string;
+    final_status?: string;
+}
+
+export interface StatsObservabilityBreakdown {
+    id?: number;
+    name: string;
+    requests: number;
+    failures: number;
+    success_rate: number;
+    avg_latency_ms?: number;
+    cost?: number;
+}
+
+export interface StatsObservability {
+    time_range: string;
+    start_time: number;
+    end_time: number;
+    total_requests: number;
+    success_requests: number;
+    failed_requests: number;
+    success_rate: number;
+    failover_requests: number;
+    failover_rate: number;
+    avg_ttfb_ms: number;
+    avg_latency_ms: number;
+    rpm: number;
+    input_tokens: number;
+    output_tokens: number;
+    cache_tokens: number;
+    final_success_cost: number;
+    total_attempt_cost: number;
+    failed_attempt_cost: number;
+    recent_failures: StatsObservabilityFailure[];
+    top_channels: StatsObservabilityBreakdown[];
+    top_models: StatsObservabilityBreakdown[];
+}
 /**
  * 获取今日统计数据 Hook
  */
@@ -175,5 +225,17 @@ export function useStatsAPIKey() {
             request_count: formatCount(item.request_success + item.request_failed),
         })),
         refetchInterval: 30000,
+    });
+}
+
+export function useStatsObservability(timeRange = '24h') {
+    return useQuery({
+        queryKey: ['stats', 'observability', timeRange],
+        queryFn: async () => {
+            return apiClient.get<StatsObservability>('/api/v1/stats/observability', {
+                time_range: timeRange,
+            });
+        },
+        refetchInterval: 10000,
     });
 }

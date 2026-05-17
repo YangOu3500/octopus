@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Clock, Cpu, Zap, AlertCircle, ArrowDownToLine, ArrowUpFromLine, DollarSign, ArrowRight, ArrowDown, Send, MessageSquare, Loader2, RotateCw, ChevronDown, ChevronUp, Pin, KeyRound, CircleOff, Info, Link } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'motion/react';
@@ -8,7 +8,7 @@ import JsonView from '@uiw/react-json-view';
 import { githubDarkTheme } from '@uiw/react-json-view/githubDark';
 import { githubLightTheme } from '@uiw/react-json-view/githubLight';
 import { useTheme } from 'next-themes';
-import { type RelayLog, type RelayLogWSMode, type RelayLogWSRecovery, type ChannelAttempt, type AttemptStatus } from '@/api/endpoints/log';
+import { type RelayLog, type RelayLogWSMode, type RelayLogWSRecovery, type ChannelAttempt, type AttemptStatus, useLogDetail } from '@/api/endpoints/log';
 import { getModelIcon } from '@/lib/model-icons';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -220,6 +220,29 @@ function formatOptionalText(value: string | null | undefined) {
     return value?.trim() || '—';
 }
 
+function formatClientIP(value: string | null | undefined) {
+    const ip = value?.trim();
+    if (!ip) return '—';
+    const ipv4 = ip.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/);
+    if (ipv4) return `${ipv4[1]}.*`;
+    if (ip.includes(':') && ip.length > 24) return `${ip.slice(0, 20)}…`;
+    return ip;
+}
+
+function formatRequestSource(value: string | null | undefined) {
+    const source = value?.trim();
+    switch (source) {
+        case 'relay':
+            return 'Relay';
+        case 'images':
+            return 'Images';
+        case 'probe':
+            return 'Probe';
+        default:
+            return source || '—';
+    }
+}
+
 function formatCostIncurred(value: string | null | undefined, t: LogCardTranslations) {
     switch (value?.trim().toLowerCase()) {
         case 'yes':
@@ -282,6 +305,8 @@ function hasTraceSummary(log: RelayLog) {
         || log.thread_id
         || log.client_api_key_id
         || log.group_id
+        || log.client_ip
+        || log.request_source
         || log.final_status
         || log.final_channel_id
         || log.final_site_id
@@ -589,6 +614,8 @@ function TraceSummary({ log }: { log: RelayLog }) {
         log.thread_id ? { label: t('threadId'), value: log.thread_id, title: log.thread_id } : null,
         log.client_api_key_id ? { label: t('clientApiKeyId'), value: `${t('key')} #${log.client_api_key_id}` } : null,
         log.group_id ? { label: t('groupId'), value: `${t('group')} #${log.group_id}` } : null,
+        log.client_ip ? { label: t('clientIP'), value: formatClientIP(log.client_ip), title: log.client_ip } : null,
+        log.request_source ? { label: t('requestSource'), value: formatRequestSource(log.request_source), title: log.request_source } : null,
         log.request_model_name ? { label: t('clientRequestModel'), value: log.request_model_name, title: log.request_model_name } : null,
         log.final_status ? { label: t('finalStatus'), value: formatFinalStatus(log.final_status, t), title: log.final_status } : null,
         log.attempts_count ? { label: t('attemptCount'), value: log.attempts_count.toLocaleString() } : null,
@@ -798,6 +825,16 @@ function AttemptDisableButton({
     );
 }
 
+function DialogOpenBridge({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
+    const { isOpen } = useMorphingDialog();
+
+    useEffect(() => {
+        onOpenChange?.(isOpen);
+    }, [isOpen, onOpenChange]);
+
+    return null;
+}
+
 function getLogAttemptCount(log: RelayLog) {
     return log.attempts_count || log.total_attempts || log.attempts?.length || 0;
 }
@@ -873,6 +910,9 @@ function LogRowTriggerContent({
                 <div className="truncate font-mono text-xs text-muted-foreground" title={log.trace_id || String(log.id)}>
                     {log.trace_id || `#${log.id}`}
                 </div>
+                <div className="truncate text-xs text-muted-foreground" title={log.client_ip || log.request_source || undefined}>
+                    {formatClientIP(log.client_ip)} · {formatRequestSource(log.request_source)}
+                </div>
             </div>
             <div className="min-w-0">
                 <div className="truncate font-semibold text-foreground" title={log.request_model_name}>
@@ -933,8 +973,21 @@ function LogRowTriggerContent({
     );
 }
 
-export function LogCard({ log, siteTargets, variant = 'card' }: { log: RelayLog; siteTargets: LogSiteActionTargets | null; variant?: 'card' | 'row' }) {
+export function LogCard({
+    log,
+    siteTargets,
+    variant = 'card',
+    onDialogOpenChange,
+}: {
+    log: RelayLog;
+    siteTargets: LogSiteActionTargets | null;
+    variant?: 'card' | 'row';
+    onDialogOpenChange?: (open: boolean) => void;
+}) {
     const t = useTranslations('log.card');
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const detailQuery = useLogDetail(log.id, isDialogOpen);
+    const detailLog = detailQuery.data ?? log;
     const displayActualModelName = useMemo(
         () => log.actual_model_name?.trim() || log.request_model_name?.trim() || '',
         [log.actual_model_name, log.request_model_name],
@@ -961,6 +1014,10 @@ export function LogCard({ log, siteTargets, variant = 'card' }: { log: RelayLog;
     const diagnosticTitle = hasAttempts || hasTraceData ? t('traceDetails') : t('errorInfo');
     const diagnosticIcon = hasAttempts ? RotateCw : hasTraceData ? Info : AlertCircle;
     const DiagnosticIcon = diagnosticIcon;
+    const handleDialogOpenChange = useCallback((open: boolean) => {
+        setIsDialogOpen(open);
+        onDialogOpenChange?.(open);
+    }, [onDialogOpenChange]);
 
     const openDisableDialog = (target: LogSiteActionTarget) => {
         if (!target.canDisableModel || target.modelDisabled) return;
@@ -1019,6 +1076,7 @@ export function LogCard({ log, siteTargets, variant = 'card' }: { log: RelayLog;
     return (
         <TooltipProvider>
             <MorphingDialog>
+                <DialogOpenBridge onOpenChange={handleDialogOpenChange} />
                 <MorphingDialogTrigger
                     className={cn(
                         variant === 'row'
@@ -1314,7 +1372,10 @@ export function LogCard({ log, siteTargets, variant = 'card' }: { log: RelayLog;
                                                 </Badge>
                                             </div>
                                             <div className="flex-1 overflow-auto min-h-0">
-                                                <DeferredJsonContent content={log.request_content} fallbackText={t('noRequestContent')} />
+                                                <DeferredJsonContent
+                                                    content={detailLog.request_content}
+                                                    fallbackText={detailQuery.isFetching ? t('loadingDetails') : t('noRequestContent')}
+                                                />
                                             </div>
                                         </div>
                                         <div className="flex flex-col rounded-2xl border border-border bg-muted/30 overflow-hidden min-h-0">
@@ -1326,7 +1387,10 @@ export function LogCard({ log, siteTargets, variant = 'card' }: { log: RelayLog;
                                                 </Badge>
                                             </div>
                                             <div className="flex-1 overflow-auto min-h-0">
-                                                <DeferredJsonContent content={log.response_content} fallbackText={t('noResponseContent')} />
+                                                <DeferredJsonContent
+                                                    content={detailLog.response_content}
+                                                    fallbackText={detailQuery.isFetching ? t('loadingDetails') : t('noResponseContent')}
+                                                />
                                             </div>
                                         </div>
                                     </div>
