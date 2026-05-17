@@ -14,10 +14,10 @@ type Group struct {
 	Name              string      `json:"name" gorm:"unique;not null"`
 	Mode              GroupMode   `json:"mode" gorm:"not null"`
 	MatchRegex        string      `json:"match_regex"`
-	FirstTokenTimeOut int         `json:"first_token_time_out"` // 单个渠道首个Token响应超时时间(秒)
-	SessionKeepTime   int         `json:"session_keep_time"`    // 会话保持时间(秒) 0 为禁用
-	RetryEnabled      bool        `json:"retry_enabled" gorm:"default:false"`       // 启用同通道重试+透传429/503
-	MaxRetries        int         `json:"max_retries" gorm:"default:3"`             // 同通道最大重试次数(RetryEnabled启用时生效)
+	FirstTokenTimeOut int         `json:"first_token_time_out"`               // 单个渠道首个Token响应超时时间(秒)
+	SessionKeepTime   int         `json:"session_keep_time"`                  // 会话保持时间(秒) 0 为禁用
+	RetryEnabled      bool        `json:"retry_enabled" gorm:"default:false"` // 启用同通道重试+透传429/503
+	MaxRetries        int         `json:"max_retries" gorm:"default:3"`       // 同通道最大重试次数(RetryEnabled启用时生效)
 	Items             []GroupItem `json:"items,omitempty" gorm:"foreignKey:GroupID"`
 }
 
@@ -62,4 +62,52 @@ type GroupItemUpdateRequest struct {
 type GroupIDAndLLMName struct {
 	ChannelID int
 	ModelName string
+}
+
+type GroupAutoGenerateRequest struct {
+	All               bool       `json:"all"`
+	ModelNames        []string   `json:"model_names,omitempty"`
+	Mode              *GroupMode `json:"mode,omitempty"`
+	FirstTokenTimeOut int        `json:"first_token_time_out,omitempty"`
+	SessionKeepTime   int        `json:"session_keep_time,omitempty"`
+	RetryEnabled      bool       `json:"retry_enabled,omitempty"`
+	MaxRetries        int        `json:"max_retries,omitempty"`
+}
+
+type GroupAutoGeneratePreview struct {
+	TotalModels    int                            `json:"total_models"`
+	SelectedModels int                            `json:"selected_models"`
+	Items          []GroupAutoGeneratePreviewItem `json:"items"`
+}
+
+type GroupAutoGeneratePreviewItem struct {
+	ModelName             string `json:"model_name"`
+	CandidateCount        int    `json:"candidate_count"`
+	ExistingGroupID       int    `json:"existing_group_id,omitempty"`
+	ExistingItemCount     int    `json:"existing_item_count"`
+	MissingCandidateCount int    `json:"missing_candidate_count"`
+	WillCreate            bool   `json:"will_create"`
+	WillAddCount          int    `json:"will_add_count"`
+	SkippedReason         string `json:"skipped_reason,omitempty"`
+}
+
+type GroupAutoGenerateResult struct {
+	TotalModels    int                           `json:"total_models"`
+	SelectedModels int                           `json:"selected_models"`
+	CreatedGroups  int                           `json:"created_groups"`
+	UpdatedGroups  int                           `json:"updated_groups"`
+	SkippedGroups  int                           `json:"skipped_groups"`
+	AddedItems     int                           `json:"added_items"`
+	FailedGroups   int                           `json:"failed_groups"`
+	Items          []GroupAutoGenerateResultItem `json:"items"`
+}
+
+type GroupAutoGenerateResultItem struct {
+	ModelName      string `json:"model_name"`
+	GroupID        int    `json:"group_id,omitempty"`
+	Created        bool   `json:"created"`
+	AddedItems     int    `json:"added_items"`
+	CandidateCount int    `json:"candidate_count"`
+	SkippedReason  string `json:"skipped_reason,omitempty"`
+	Error          string `json:"error,omitempty"`
 }

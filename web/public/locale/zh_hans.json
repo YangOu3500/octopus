@@ -428,7 +428,9 @@
             "updated": "更新成功",
             "updateFailed": "更新失败",
             "deleted": "删除成功",
-            "autoAddFailed": "自动添加失败"
+            "autoAddFailed": "自动添加失败",
+            "bulkGenerated": "批量生成完成：新建 {created} 个，补齐 {updated} 个，新增候选 {added} 个",
+            "bulkGenerateFailed": "批量生成失败"
         },
         "create": {
             "title": "创建分组",
@@ -473,6 +475,45 @@
             "random": "随机",
             "failover": "故障转移",
             "weighted": "加权分配"
+        },
+        "bulk": {
+            "trigger": "批量生成",
+            "title": "批量生成分组",
+            "description": "按已获取模型名生成模型分组，同名模型自动收纳到同一分组。",
+            "scope": {
+                "all": "全部模型名",
+                "selected": "选择模型名"
+            },
+            "summary": {
+                "models": "将处理模型名",
+                "createFill": "新建 / 补齐分组",
+                "items": "将新增候选"
+            },
+            "searchPlaceholder": "搜索模型名",
+            "refresh": "刷新",
+            "filters": {
+                "allSites": "全部站点",
+                "allChannels": "全部渠道",
+                "manualChannels": "普通渠道"
+            },
+            "selectFiltered": "选择当前结果",
+            "invertFiltered": "反选当前结果",
+            "clearSelected": "清空选择",
+            "loading": "正在生成预览...",
+            "empty": "暂无可生成模型名",
+            "row": {
+                "candidates": "{count} 个候选",
+                "create": "将新建分组",
+                "fill": "补齐 {count} 个候选",
+                "skip": "已完整"
+            },
+            "close": "关闭",
+            "generate": "生成",
+            "generating": "生成中...",
+            "toast": {
+                "generated": "批量生成完成：新建 {created} 个，补齐 {updated} 个，新增候选 {added} 个",
+                "failed": "批量生成失败"
+            }
         },
         "health": {
             "title": "健康",

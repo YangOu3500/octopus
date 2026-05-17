@@ -428,7 +428,9 @@
             "updated": "Updated successfully",
             "updateFailed": "Update failed",
             "deleted": "Deleted successfully",
-            "autoAddFailed": "Auto add failed"
+            "autoAddFailed": "Auto add failed",
+            "bulkGenerated": "Bulk generation completed: created {created}, filled {updated}, added {added} candidates",
+            "bulkGenerateFailed": "Bulk generation failed"
         },
         "create": {
             "title": "Create Group",
@@ -473,6 +475,45 @@
             "random": "Random",
             "failover": "Failover",
             "weighted": "Weighted"
+        },
+        "bulk": {
+            "trigger": "Bulk Generate",
+            "title": "Bulk Generate Groups",
+            "description": "Generate model groups from discovered model names. Identical model names are grouped together.",
+            "scope": {
+                "all": "All Model Names",
+                "selected": "Selected Names"
+            },
+            "summary": {
+                "models": "Model names to process",
+                "createFill": "Create / fill groups",
+                "items": "Candidates to add"
+            },
+            "searchPlaceholder": "Search model names",
+            "refresh": "Refresh",
+            "filters": {
+                "allSites": "All Sites",
+                "allChannels": "All Channels",
+                "manualChannels": "Manual Channels"
+            },
+            "selectFiltered": "Select Results",
+            "invertFiltered": "Invert Results",
+            "clearSelected": "Clear Selection",
+            "loading": "Building preview...",
+            "empty": "No model names available",
+            "row": {
+                "candidates": "{count} candidates",
+                "create": "Will create group",
+                "fill": "Fill {count} candidates",
+                "skip": "Already complete"
+            },
+            "close": "Close",
+            "generate": "Generate",
+            "generating": "Generating...",
+            "toast": {
+                "generated": "Bulk generation completed: created {created}, filled {updated}, added {added} candidates",
+                "failed": "Bulk generation failed"
+            }
         },
         "health": {
             "title": "Health",

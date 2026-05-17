@@ -86,6 +86,54 @@ export interface GroupUpdateRequest {
  * 
  * groups?.forEach(group => console.log(group.name, group.items));
  */
+export interface GroupAutoGenerateRequest {
+    all?: boolean;
+    model_names?: string[];
+    mode?: GroupMode;
+    first_token_time_out?: number;
+    session_keep_time?: number;
+    retry_enabled?: boolean;
+    max_retries?: number;
+}
+
+export interface GroupAutoGeneratePreviewItem {
+    model_name: string;
+    candidate_count: number;
+    existing_group_id?: number;
+    existing_item_count: number;
+    missing_candidate_count: number;
+    will_create: boolean;
+    will_add_count: number;
+    skipped_reason?: string;
+}
+
+export interface GroupAutoGeneratePreview {
+    total_models: number;
+    selected_models: number;
+    items: GroupAutoGeneratePreviewItem[];
+}
+
+export interface GroupAutoGenerateResultItem {
+    model_name: string;
+    group_id?: number;
+    created: boolean;
+    added_items: number;
+    candidate_count: number;
+    skipped_reason?: string;
+    error?: string;
+}
+
+export interface GroupAutoGenerateResult {
+    total_models: number;
+    selected_models: number;
+    created_groups: number;
+    updated_groups: number;
+    skipped_groups: number;
+    added_items: number;
+    failed_groups: number;
+    items: GroupAutoGenerateResultItem[];
+}
+
 export function useGroupList() {
     return useQuery({
         queryKey: ['groups', 'list'],
@@ -140,6 +188,35 @@ export function useCreateGroup() {
  *   items_to_delete: [2, 3],
  * });
  */
+export function usePreviewAutoGenerateGroups() {
+    return useMutation({
+        mutationFn: async (data: GroupAutoGenerateRequest) => {
+            return apiClient.post<GroupAutoGeneratePreview>('/api/v1/group/auto-generate/preview', data);
+        },
+        onError: (error) => {
+            logger.error('group auto-generate preview failed:', error);
+        },
+    });
+}
+
+export function useAutoGenerateGroups() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (data: GroupAutoGenerateRequest) => {
+            return apiClient.post<GroupAutoGenerateResult>('/api/v1/group/auto-generate', data);
+        },
+        onSuccess: (data) => {
+            logger.log('group auto-generate succeeded:', data);
+            queryClient.invalidateQueries({ queryKey: ['groups', 'list'] });
+            queryClient.invalidateQueries({ queryKey: ['models', 'channel'] });
+        },
+        onError: (error) => {
+            logger.error('group auto-generate failed:', error);
+        },
+    });
+}
+
 export function useUpdateGroup() {
     const queryClient = useQueryClient();
 
@@ -208,4 +285,3 @@ export function useDeleteGroup() {
 //         },
 //     });
 // }
-

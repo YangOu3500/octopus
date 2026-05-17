@@ -5,6 +5,7 @@ import { GroupCard } from './Card';
 import { useGroupList } from '@/api/endpoints/group';
 import { useSearchStore, useToolbarViewOptionsStore } from '@/components/modules/toolbar';
 import { VirtualizedGrid } from '@/components/common/VirtualizedGrid';
+import { GroupBulkGenerateDialog } from './BulkGenerate';
 
 export function Group() {
     const { data: groups } = useGroupList();
@@ -35,12 +36,19 @@ export function Group() {
     }, [sortedGroups, searchTerm, filter]);
 
     return (
-        <VirtualizedGrid
-            items={visibleGroups}
-            columns={{ default: 1, md: 2, lg: 3 }}
-            estimateItemHeight={520}
-            getItemKey={(group, index) => group.id ?? `group-${index}`}
-            renderItem={(group) => <GroupCard group={group} />}
-        />
+        <div className="flex h-full min-h-0 flex-col gap-4">
+            <div className="flex shrink-0 justify-end">
+                <GroupBulkGenerateDialog />
+            </div>
+            <div className="min-h-0 flex-1">
+                <VirtualizedGrid
+                    items={visibleGroups}
+                    columns={{ default: 1, md: 2, lg: 3 }}
+                    estimateItemHeight={520}
+                    getItemKey={(group, index) => group.id ?? `group-${index}`}
+                    renderItem={(group) => <GroupCard group={group} />}
+                />
+            </div>
+        </div>
     );
 }

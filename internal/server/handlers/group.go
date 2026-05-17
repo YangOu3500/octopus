@@ -27,6 +27,14 @@ func init() {
 				Handle(createGroup),
 		).
 		AddRoute(
+			router.NewRoute("/auto-generate/preview", http.MethodPost).
+				Handle(previewAutoGenerateGroups),
+		).
+		AddRoute(
+			router.NewRoute("/auto-generate", http.MethodPost).
+				Handle(autoGenerateGroups),
+		).
+		AddRoute(
 			router.NewRoute("/update", http.MethodPost).
 				Handle(updateGroup),
 		).
@@ -63,6 +71,34 @@ func createGroup(c *gin.Context) {
 		return
 	}
 	resp.Success(c, group)
+}
+
+func previewAutoGenerateGroups(c *gin.Context) {
+	var req model.GroupAutoGenerateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.InvalidJSON(c)
+		return
+	}
+	preview, err := op.GroupAutoGeneratePreview(&req, c.Request.Context())
+	if err != nil {
+		resp.ErrorWithAppError(c, http.StatusInternalServerError, groupError(codeGroupCreateFailed, "group auto-generate preview failed", err))
+		return
+	}
+	resp.Success(c, preview)
+}
+
+func autoGenerateGroups(c *gin.Context) {
+	var req model.GroupAutoGenerateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.InvalidJSON(c)
+		return
+	}
+	result, err := op.GroupAutoGenerate(&req, c.Request.Context())
+	if err != nil {
+		resp.ErrorWithAppError(c, http.StatusInternalServerError, groupError(codeGroupCreateFailed, "group auto-generate failed", err))
+		return
+	}
+	resp.Success(c, result)
 }
 
 func updateGroup(c *gin.Context) {
