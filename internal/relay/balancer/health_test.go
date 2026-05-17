@@ -132,3 +132,59 @@ func TestIteratorRecordsHealthCooldownSkip(t *testing.T) {
 		t.Fatalf("failure reason = %q, want health_cooldown_active", attempts[0].FailureReason)
 	}
 }
+
+func TestListHealthCooldownPoliciesMatchesRuntimeRules(t *testing.T) {
+	policies := ListHealthCooldownPolicies()
+	if len(policies) == 0 {
+		t.Fatal("expected cooldown policies")
+	}
+
+	byReason := make(map[string]HealthCooldownPolicy, len(policies))
+	for _, policy := range policies {
+		byReason[policy.Reason] = policy
+		if !policy.ModelScoped {
+			t.Fatalf("policy %s should be model-scoped", policy.Reason)
+		}
+		if !policy.HealthScoreRequired {
+			t.Fatalf("policy %s should require health score scheduling", policy.Reason)
+		}
+		if !policy.ClearedOnSuccess {
+			t.Fatalf("policy %s should clear on success", policy.Reason)
+		}
+	}
+
+	assertPolicy := func(reason string, baseSeconds int, scopes []string, usesRetryAfter bool, backoff bool) {
+		t.Helper()
+		policy, ok := byReason[reason]
+		if !ok {
+			t.Fatalf("missing policy for %s", reason)
+		}
+		if policy.BaseSeconds != baseSeconds {
+			t.Fatalf("%s base seconds = %d, want %d", reason, policy.BaseSeconds, baseSeconds)
+		}
+		if policy.UsesRetryAfter != usesRetryAfter {
+			t.Fatalf("%s uses retry-after = %v, want %v", reason, policy.UsesRetryAfter, usesRetryAfter)
+		}
+		if policy.ExponentialBackoff != backoff {
+			t.Fatalf("%s backoff = %v, want %v", reason, policy.ExponentialBackoff, backoff)
+		}
+		if len(policy.Scopes) != len(scopes) {
+			t.Fatalf("%s scopes = %v, want %v", reason, policy.Scopes, scopes)
+		}
+		for i := range scopes {
+			if policy.Scopes[i] != scopes[i] {
+				t.Fatalf("%s scopes = %v, want %v", reason, policy.Scopes, scopes)
+			}
+		}
+	}
+
+	assertPolicy("auth_error", 300, []string{"key"}, false, false)
+	assertPolicy("quota_error", 1800, []string{"key"}, false, false)
+	assertPolicy("rate_limit", 60, []string{"key"}, true, true)
+	assertPolicy("server_error", 120, []string{"channel", "base_url"}, false, true)
+	assertPolicy("timeout_error", 60, []string{"channel", "base_url"}, false, true)
+	assertPolicy("empty_choices", 30, []string{"channel"}, false, true)
+	assertPolicy("invalid_sse", 30, []string{"channel"}, false, true)
+	assertPolicy("html_or_login_page", 120, []string{"channel"}, false, true)
+	assertPolicy("attempt_failed", 30, []string{"channel"}, false, true)
+}

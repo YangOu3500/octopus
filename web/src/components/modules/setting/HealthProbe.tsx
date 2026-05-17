@@ -2,12 +2,13 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Activity, FileWarning, Gauge, Hash, HeartPulse, HelpCircle, MessageSquare, Percent, Send, Shuffle, Thermometer, Timer, type LucideIcon } from 'lucide-react';
+import { Activity, FileWarning, Gauge, Hash, HeartPulse, HelpCircle, MessageSquare, Percent, Send, ShieldAlert, Shuffle, Thermometer, Timer, type LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { useSettingList, useSetSetting, SettingKey } from '@/api/endpoints/setting';
+import { useHealthCooldownPolicy, useSettingList, useSetSetting, SettingKey } from '@/api/endpoints/setting';
 import { toast } from '@/components/common/Toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/animate-ui/components/animate/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 type RuntimeSettingKey = typeof SettingKey[keyof typeof SettingKey];
 
@@ -86,6 +87,7 @@ function SettingRow({
 export function SettingHealthProbe() {
     const t = useTranslations('setting');
     const { data: settings } = useSettingList();
+    const { data: cooldownPolicies = [] } = useHealthCooldownPolicy();
     const setSetting = useSetSetting();
 
     const [values, setValues] = useState<Record<string, string>>(defaultValues);
@@ -354,6 +356,16 @@ export function SettingHealthProbe() {
         </SettingRow>
     );
 
+    const formatSeconds = (seconds: number) => {
+        if (seconds >= 60 && seconds % 60 === 0) {
+            return t('healthProbe.cooldown.minutes', { value: seconds / 60 });
+        }
+        return t('healthProbe.cooldown.seconds', { value: seconds });
+    };
+
+    const reasonLabel = (reason: string) => t(`healthProbe.cooldown.reasons.${reason}`);
+    const scopeLabel = (scope: string) => t(`healthProbe.cooldown.scopes.${scope}`);
+
     return (
         <div className="rounded-3xl border border-border bg-card p-6 space-y-5">
             <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
@@ -375,6 +387,67 @@ export function SettingHealthProbe() {
                 <div className="space-y-4">
                     {healthFields.map(renderField)}
                 </div>
+            </div>
+
+            <div className="border-t border-border pt-5 space-y-4">
+                <div className="flex min-w-0 items-center gap-3">
+                    <ShieldAlert className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                        <div className="text-sm font-medium">{t('healthProbe.cooldown.title')}</div>
+                        <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.subtitle')}</div>
+                    </div>
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-border">
+                    <table className="w-full min-w-[680px] text-left text-xs">
+                        <thead className="bg-muted/40 text-muted-foreground">
+                            <tr>
+                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.reason')}</th>
+                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.scope')}</th>
+                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.base')}</th>
+                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.backoff')}</th>
+                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.lifecycle')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {cooldownPolicies.map(policy => (
+                                <tr key={policy.reason} className="border-t border-border align-top">
+                                    <td className="px-3 py-2">
+                                        <div className="font-medium text-card-foreground">{reasonLabel(policy.reason)}</div>
+                                        <div className="font-mono text-[11px] text-muted-foreground">{policy.reason}</div>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <div className="flex flex-wrap gap-1">
+                                            {policy.scopes.map(scope => (
+                                                <Badge key={`${policy.reason}-${scope}`} variant="outline">
+                                                    {scopeLabel(scope)}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </td>
+                                    <td className="px-3 py-2 text-muted-foreground">
+                                        <div>{formatSeconds(policy.base_seconds)}</div>
+                                        <div>{t('healthProbe.cooldown.max', { value: formatSeconds(policy.max_seconds) })}</div>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <div className="flex flex-wrap gap-1">
+                                            {policy.uses_retry_after && (
+                                                <Badge variant="secondary">{t('healthProbe.cooldown.retryAfter')}</Badge>
+                                            )}
+                                            {policy.exponential_backoff && (
+                                                <Badge variant="outline">{t('healthProbe.cooldown.exponential')}</Badge>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-3 py-2 text-muted-foreground">
+                                        <div>{policy.model_scoped ? t('healthProbe.cooldown.modelScoped') : t('healthProbe.cooldown.notModelScoped')}</div>
+                                        <div>{policy.cleared_on_success ? t('healthProbe.cooldown.clearedOnSuccess') : t('healthProbe.cooldown.notClearedOnSuccess')}</div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.note')}</div>
             </div>
 
             <div className="border-t border-border pt-5 space-y-4">

@@ -415,6 +415,63 @@
                     "hint": "值越高，慢候选越靠后"
                 }
             },
+            "cooldown": {
+                "title": "冷却策略",
+                "subtitle": "只读展示失败原因、冷却范围和退避规则，便于理解候选为什么被跳过",
+                "columns": {
+                    "reason": "失败原因",
+                    "scope": "冷却范围",
+                    "base": "基础时长",
+                    "backoff": "退避",
+                    "lifecycle": "生效条件"
+                },
+                "scopes": {
+                    "key": "Key",
+                    "channel": "渠道",
+                    "base_url": "Base URL"
+                },
+                "reasons": {
+                    "auth_error": "认证错误",
+                    "quota_error": "额度错误",
+                    "rate_limit": "限速",
+                    "server_error": "上游服务错误",
+                    "timeout_error": "请求超时",
+                    "first_byte_timeout": "首字超时",
+                    "network_error": "网络错误",
+                    "invalid_json": "无效 JSON",
+                    "invalid_sse": "无效 SSE",
+                    "empty_body": "空响应体",
+                    "empty_choices": "空 choices",
+                    "missing_choices": "缺少 choices",
+                    "empty_content": "空内容",
+                    "zero_completion_tokens": "输出 token 为 0",
+                    "empty_output": "空 output",
+                    "no_valid_output": "无有效 output",
+                    "zero_output_tokens": "输出 token 为 0",
+                    "stop_without_content": "停止但无内容",
+                    "empty_candidates": "空 candidates",
+                    "candidate_without_parts": "candidate 无 parts",
+                    "no_valid_candidate": "无有效 candidate",
+                    "blocked_no_valid_reply": "被拦截且无有效回复",
+                    "stream_no_valid_chunk": "流式无有效片段",
+                    "stream_done_without_content": "流式仅 DONE",
+                    "stream_buffer_exceeded": "流式缓冲超限",
+                    "html_or_login_page": "HTML / 登录页",
+                    "cloudflare_page": "Cloudflare 页面",
+                    "upstream_error_json": "上游 error JSON",
+                    "attempt_failed": "尝试失败"
+                },
+                "seconds": "{value} 秒",
+                "minutes": "{value} 分钟",
+                "max": "最大 {value}",
+                "retryAfter": "优先 Retry-After",
+                "exponential": "指数退避",
+                "modelScoped": "按模型隔离",
+                "notModelScoped": "不按模型隔离",
+                "clearedOnSuccess": "成功后清除",
+                "notClearedOnSuccess": "成功后不清除",
+                "note": "健康分调度关闭时不会按这些健康冷却规则跳过候选；熔断器仍使用单独的熔断设置。"
+            },
             "probe": {
                 "title": "慢速主动探测",
                 "subtitle": "默认关闭，只用于 unknown / degraded / cooldown 到期候选",

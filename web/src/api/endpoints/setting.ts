@@ -11,6 +11,18 @@ export interface Setting {
     value: string;
 }
 
+export interface HealthCooldownPolicy {
+    reason: string;
+    scopes: string[];
+    base_seconds: number;
+    max_seconds: number;
+    uses_retry_after: boolean;
+    exponential_backoff: boolean;
+    model_scoped: boolean;
+    cleared_on_success: boolean;
+    health_score_required: boolean;
+}
+
 export const SettingKey = {
     ProxyURL: 'proxy_url',
     StatsSaveInterval: 'stats_save_interval',
@@ -67,6 +79,16 @@ export function useSettingList() {
             return apiClient.get<Setting[]>('/api/v1/setting/list');
         },
         refetchInterval: 30000,
+    });
+}
+
+export function useHealthCooldownPolicy() {
+    return useQuery({
+        queryKey: ['settings', 'health-cooldown-policy'],
+        queryFn: async () => {
+            return apiClient.get<HealthCooldownPolicy[]>('/api/v1/setting/health-cooldown-policy');
+        },
+        staleTime: 5 * 60 * 1000,
     });
 }
 

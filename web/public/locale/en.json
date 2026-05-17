@@ -415,6 +415,63 @@
                     "hint": "Higher values push slow candidates lower."
                 }
             },
+            "cooldown": {
+                "title": "Cooldown Policy",
+                "subtitle": "Read-only view of failure reasons, cooldown scopes, and backoff rules so skipped candidates are explainable.",
+                "columns": {
+                    "reason": "Failure Reason",
+                    "scope": "Cooldown Scope",
+                    "base": "Base Duration",
+                    "backoff": "Backoff",
+                    "lifecycle": "Lifecycle"
+                },
+                "scopes": {
+                    "key": "Key",
+                    "channel": "Channel",
+                    "base_url": "Base URL"
+                },
+                "reasons": {
+                    "auth_error": "Auth Error",
+                    "quota_error": "Quota Error",
+                    "rate_limit": "Rate Limit",
+                    "server_error": "Upstream Server Error",
+                    "timeout_error": "Request Timeout",
+                    "first_byte_timeout": "First Byte Timeout",
+                    "network_error": "Network Error",
+                    "invalid_json": "Invalid JSON",
+                    "invalid_sse": "Invalid SSE",
+                    "empty_body": "Empty Body",
+                    "empty_choices": "Empty Choices",
+                    "missing_choices": "Missing Choices",
+                    "empty_content": "Empty Content",
+                    "zero_completion_tokens": "Zero Completion Tokens",
+                    "empty_output": "Empty Output",
+                    "no_valid_output": "No Valid Output",
+                    "zero_output_tokens": "Zero Output Tokens",
+                    "stop_without_content": "Stopped Without Content",
+                    "empty_candidates": "Empty Candidates",
+                    "candidate_without_parts": "Candidate Without Parts",
+                    "no_valid_candidate": "No Valid Candidate",
+                    "blocked_no_valid_reply": "Blocked With No Valid Reply",
+                    "stream_no_valid_chunk": "Stream Without Valid Chunk",
+                    "stream_done_without_content": "Stream DONE Only",
+                    "stream_buffer_exceeded": "Stream Buffer Exceeded",
+                    "html_or_login_page": "HTML / Login Page",
+                    "cloudflare_page": "Cloudflare Page",
+                    "upstream_error_json": "Upstream Error JSON",
+                    "attempt_failed": "Attempt Failed"
+                },
+                "seconds": "{value} sec",
+                "minutes": "{value} min",
+                "max": "Max {value}",
+                "retryAfter": "Prefer Retry-After",
+                "exponential": "Exponential",
+                "modelScoped": "Model-scoped",
+                "notModelScoped": "Not model-scoped",
+                "clearedOnSuccess": "Cleared on success",
+                "notClearedOnSuccess": "Not cleared on success",
+                "note": "These health cooldown rules only skip candidates when health score routing is enabled; the circuit breaker still uses its own settings."
+            },
             "probe": {
                 "title": "Slow Active Probe",
                 "subtitle": "Off by default. Only probes unknown, degraded, or cooldown-expired candidates.",

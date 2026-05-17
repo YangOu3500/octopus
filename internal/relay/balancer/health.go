@@ -40,6 +40,18 @@ type HealthStats struct {
 	AvgTotalMS        int     `json:"avg_total_ms"`
 }
 
+type HealthCooldownPolicy struct {
+	Reason              string   `json:"reason"`
+	Scopes              []string `json:"scopes"`
+	BaseSeconds         int      `json:"base_seconds"`
+	MaxSeconds          int      `json:"max_seconds"`
+	UsesRetryAfter      bool     `json:"uses_retry_after"`
+	ExponentialBackoff  bool     `json:"exponential_backoff"`
+	ModelScoped         bool     `json:"model_scoped"`
+	ClearedOnSuccess    bool     `json:"cleared_on_success"`
+	HealthScoreRequired bool     `json:"health_score_required"`
+}
+
 type healthConfig struct {
 	Enabled                    bool
 	Window                     time.Duration
@@ -88,6 +100,55 @@ var (
 	cooldowns            = make(map[cooldownKey]*cooldownEntry)
 	healthConfigOverride *healthConfig
 )
+
+func ListHealthCooldownPolicies() []HealthCooldownPolicy {
+	reasons := []string{
+		"auth_error",
+		"quota_error",
+		"rate_limit",
+		"server_error",
+		"timeout_error",
+		"first_byte_timeout",
+		"network_error",
+		"invalid_json",
+		"invalid_sse",
+		"empty_body",
+		"empty_choices",
+		"missing_choices",
+		"empty_content",
+		"zero_completion_tokens",
+		"empty_output",
+		"no_valid_output",
+		"zero_output_tokens",
+		"stop_without_content",
+		"empty_candidates",
+		"candidate_without_parts",
+		"no_valid_candidate",
+		"blocked_no_valid_reply",
+		"stream_no_valid_chunk",
+		"stream_done_without_content",
+		"stream_buffer_exceeded",
+		"html_or_login_page",
+		"cloudflare_page",
+		"upstream_error_json",
+		"attempt_failed",
+	}
+	policies := make([]HealthCooldownPolicy, 0, len(reasons))
+	for _, reason := range reasons {
+		policies = append(policies, HealthCooldownPolicy{
+			Reason:              reason,
+			Scopes:              cooldownScopesForReason(reason, true),
+			BaseSeconds:         int(cooldownPolicy(reason, 0).Seconds()),
+			MaxSeconds:          int((30 * time.Minute).Seconds()),
+			UsesRetryAfter:      reason == "rate_limit",
+			ExponentialBackoff:  cooldownPolicyUsesBackoff(reason),
+			ModelScoped:         true,
+			ClearedOnSuccess:    true,
+			HealthScoreRequired: true,
+		})
+	}
+	return policies
+}
 
 func IsHealthSchedulingEnabled() bool {
 	return currentHealthConfig().Enabled
@@ -412,16 +473,32 @@ func cooldownKeysForFailure(attempt HealthAttempt, reason string) []cooldownKey 
 	channel := cooldownKey{Scope: "channel", ChannelID: attempt.ChannelID, ModelName: modelName}
 	base := cooldownKey{Scope: "base_url", BaseURL: baseURL, ModelName: modelName}
 
+	scopes := cooldownScopesForReason(reason, baseURL != "")
+	keys := make([]cooldownKey, 0, len(scopes))
+	for _, scope := range scopes {
+		switch scope {
+		case "key":
+			keys = append(keys, key)
+		case "channel":
+			keys = append(keys, channel)
+		case "base_url":
+			keys = append(keys, base)
+		}
+	}
+	return keys
+}
+
+func cooldownScopesForReason(reason string, hasBaseURL bool) []string {
 	switch reason {
 	case "auth_error", "quota_error", "rate_limit":
-		return []cooldownKey{key}
+		return []string{"key"}
 	case "server_error", "timeout_error", "first_byte_timeout", "network_error":
-		if baseURL != "" {
-			return []cooldownKey{channel, base}
+		if hasBaseURL {
+			return []string{"channel", "base_url"}
 		}
-		return []cooldownKey{channel}
+		return []string{"channel"}
 	default:
-		return []cooldownKey{channel}
+		return []string{"channel"}
 	}
 }
 
@@ -470,6 +547,15 @@ func applyCooldownBackoff(base time.Duration, failures int, reason string, retry
 		return maxCooldown
 	}
 	return cooldown
+}
+
+func cooldownPolicyUsesBackoff(reason string) bool {
+	switch reason {
+	case "auth_error", "quota_error":
+		return false
+	default:
+		return true
+	}
 }
 
 func classifyHealthFailure(statusCode int, failureReason string) string {

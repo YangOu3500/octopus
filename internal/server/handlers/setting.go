@@ -10,6 +10,7 @@ import (
 
 	"github.com/bestruirui/octopus/internal/model"
 	"github.com/bestruirui/octopus/internal/op"
+	"github.com/bestruirui/octopus/internal/relay/balancer"
 	"github.com/bestruirui/octopus/internal/server/middleware"
 	"github.com/bestruirui/octopus/internal/server/resp"
 	"github.com/bestruirui/octopus/internal/server/router"
@@ -24,6 +25,10 @@ func init() {
 		AddRoute(
 			router.NewRoute("/list", http.MethodGet).
 				Handle(getSettingList),
+		).
+		AddRoute(
+			router.NewRoute("/health-cooldown-policy", http.MethodGet).
+				Handle(getHealthCooldownPolicy),
 		).
 		AddRoute(
 			router.NewRoute("/set", http.MethodPost).
@@ -47,6 +52,10 @@ func getSettingList(c *gin.Context) {
 		return
 	}
 	resp.Success(c, settings)
+}
+
+func getHealthCooldownPolicy(c *gin.Context) {
+	resp.Success(c, balancer.ListHealthCooldownPolicies())
 }
 
 func setSetting(c *gin.Context) {
