@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, Circle, FlaskConical, Play, RotateCcw, Search, XCircle } from 'lucide-react';
+import { CheckCircle2, Circle, FlaskConical, FileSearch, Play, RotateCcw, Search, XCircle } from 'lucide-react';
 import { useChannelList, ChannelType, type Channel } from '@/api/endpoints/channel';
 import { useModelChannelList } from '@/api/endpoints/model';
 import { useRunModelTest, type ModelTestMode, type ModelTestResult, type ModelTestTarget } from '@/api/endpoints/model-test';
+import { useNavStore } from '@/components/modules/navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -109,6 +110,7 @@ export function ModelTest() {
     const { data: channelsData } = useChannelList();
     const { data: modelChannels } = useModelChannelList();
     const runModelTest = useRunModelTest();
+    const openLogTarget = useNavStore((state) => state.openLogTarget);
 
     const channels = useMemo(() => (channelsData || []).map((item) => item.raw), [channelsData]);
     const channelById = useMemo(() => {
@@ -258,6 +260,15 @@ export function ModelTest() {
     };
 
     const handleClear = () => setResults({});
+
+    const handleOpenLog = (result: ModelTestResult) => {
+        if (!result.log_id && !result.trace_id) return;
+        openLogTarget({
+            logId: result.log_id,
+            traceId: result.trace_id,
+            source: 'model_test',
+        });
+    };
 
     const summary = useMemo(() => {
         const values = Object.values(results);
@@ -499,6 +510,18 @@ export function ModelTest() {
                                             <div className="line-clamp-3 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
                                                 {result?.response_text || result?.error_message || '-'}
                                             </div>
+                                            {result?.log_id || result?.trace_id ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="mt-2 h-7 px-2 text-xs"
+                                                    onClick={() => handleOpenLog(result)}
+                                                >
+                                                    <FileSearch className="size-3.5" />
+                                                    {t('viewLog')}
+                                                </Button>
+                                            ) : null}
                                         </td>
                                     </tr>
                                 );

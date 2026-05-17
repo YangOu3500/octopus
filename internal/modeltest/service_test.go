@@ -110,6 +110,11 @@ func TestRunModelTestRecordsResultsLogsAndHealth(t *testing.T) {
 	if !result.Results[1].Success || result.Results[1].ResponseText != "OK" {
 		t.Fatalf("expected second target OK: %+v", result.Results[1])
 	}
+	for _, item := range result.Results {
+		if item.LogID == 0 || item.TraceID == "" {
+			t.Fatalf("expected log metadata on model test result: %+v", item)
+		}
+	}
 
 	logs, err := op.RelayLogListWithQuery(ctx, model.RelayLogListQuery{
 		Source:      "model_test",
@@ -234,6 +239,9 @@ func TestRunModelTestStreamRecordsTTFBUsageAndLog(t *testing.T) {
 	if item.InputTokens != 4 || item.OutputTokens != 1 {
 		t.Fatalf("unexpected stream usage: %+v", item)
 	}
+	if item.LogID == 0 || item.TraceID == "" {
+		t.Fatalf("expected stream result log metadata: %+v", item)
+	}
 
 	logs, err := op.RelayLogListWithQuery(ctx, model.RelayLogListQuery{
 		Source:      "model_test",
@@ -253,6 +261,9 @@ func TestRunModelTestStreamRecordsTTFBUsageAndLog(t *testing.T) {
 	}
 	if log.Ftut <= 0 {
 		t.Fatalf("expected ttfb in log: %+v", log)
+	}
+	if log.ID != item.LogID || log.TraceID != item.TraceID {
+		t.Fatalf("expected result to point to saved log: result=%+v log=%+v", item, log)
 	}
 	if strings.Contains(log.RequestContent, "test-stream-secret") || strings.Contains(log.ResponseContent, "test-stream-secret") {
 		t.Fatalf("model test log leaked key: request=%s response=%s", log.RequestContent, log.ResponseContent)

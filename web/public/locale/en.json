@@ -647,6 +647,7 @@
         "runComplete": "Model test completed: {success} success, {failed} failed",
         "runFailed": "Model test failed",
         "emptySelection": "Select models or channels to test first",
+        "viewLog": "Log detail",
         "channel": "Channel",
         "model": "Model",
         "prompt": "Prompt",

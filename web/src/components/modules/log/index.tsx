@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type LogListFilters, useLogs } from '@/api/endpoints/log';
 import { LogCard, type LogSiteActionTarget, type LogSiteActionTargets } from './Item';
 import { Loader2, RefreshCw, Search, X } from 'lucide-react';
@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { VirtualizedGrid } from '@/components/common/VirtualizedGrid';
 import { useChannelList } from '@/api/endpoints/channel';
 import { useSiteChannelList } from '@/api/endpoints/site-channel';
+import { useNavStore } from '@/components/modules/navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -157,6 +158,8 @@ export function Log() {
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [refreshInterval, setRefreshInterval] = useState('10000');
     const [openDetailLogId, setOpenDetailLogId] = useState<number | null>(null);
+    const pendingLogTarget = useNavStore((state) => state.pendingLogTarget);
+    const clearLogTarget = useNavStore((state) => state.clearLogTarget);
     const { data: channelsData } = useChannelList();
     const { data: siteChannelsData } = useSiteChannelList();
 
@@ -288,6 +291,38 @@ export function Log() {
             return current === logId ? null : current;
         });
     }, []);
+
+    useEffect(() => {
+        if (!pendingLogTarget) return;
+        const timer = window.setTimeout(() => {
+            if (pendingLogTarget.traceId) {
+                setTraceFilter(pendingLogTarget.traceId);
+            }
+            if (pendingLogTarget.source) {
+                setSourceFilter(pendingLogTarget.source);
+            }
+            if (pendingLogTarget.logId) {
+                setOpenDetailLogId(pendingLogTarget.logId);
+            }
+        }, 0);
+        return () => window.clearTimeout(timer);
+    }, [pendingLogTarget]);
+
+    const pendingAutoOpenLogId = useMemo(() => {
+        if (!pendingLogTarget) return 0;
+        if (pendingLogTarget.logId) return pendingLogTarget.logId;
+        if (!pendingLogTarget.traceId) return 0;
+        return logs.find((log) => log.trace_id === pendingLogTarget.traceId)?.id ?? 0;
+    }, [logs, pendingLogTarget]);
+
+    const pendingAutoOpenToken = pendingLogTarget && pendingAutoOpenLogId
+        ? `${pendingAutoOpenLogId}:${pendingLogTarget.nonce}`
+        : '';
+
+    const handlePendingLogTargetConsumed = useCallback(() => {
+        if (!pendingLogTarget) return;
+        clearLogTarget(pendingLogTarget.nonce);
+    }, [clearLogTarget, pendingLogTarget]);
 
     const footer = useMemo(() => {
         if (hasMore && (isLoading || isLoadingMore)) {
@@ -492,6 +527,8 @@ export function Log() {
                             log={log}
                             siteTargets={siteActionTargets.get(log.id) ?? null}
                             variant="row"
+                            autoOpenToken={log.id === pendingAutoOpenLogId ? pendingAutoOpenToken : undefined}
+                            onAutoOpenConsumed={log.id === pendingAutoOpenLogId ? handlePendingLogTargetConsumed : undefined}
                             onDialogOpenChange={(open) => handleLogDialogOpenChange(log.id, open)}
                         />
                     )}

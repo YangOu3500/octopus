@@ -647,6 +647,7 @@
         "runComplete": "模型測試完成：成功 {success}，失敗 {failed}",
         "runFailed": "模型測試失敗",
         "emptySelection": "請先選擇要測試的模型或供應源",
+        "viewLog": "日誌詳情",
         "channel": "供應源",
         "model": "模型",
         "prompt": "測試內容",

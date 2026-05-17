@@ -93,6 +93,8 @@ type RunResult struct {
 	OutputCost      float64 `json:"output_cost,omitempty"`
 	EstimatedCost   float64 `json:"estimated_cost,omitempty"`
 	ResponseText    string  `json:"response_text,omitempty"`
+	LogID           int64   `json:"log_id,omitempty"`
+	TraceID         string  `json:"trace_id,omitempty"`
 }
 
 type Service struct {
@@ -227,7 +229,7 @@ func (s *Service) runTarget(ctx context.Context, req RunRequest, target RunTarge
 		result.FailureReason = "channel_not_found"
 		result.ErrorMessage = sanitizeText(err.Error())
 		result.DurationMS = 0
-		s.recordResult(ctx, result, nil, model.ChannelKey{}, req)
+		s.recordResult(ctx, &result, nil, model.ChannelKey{}, req)
 		return result
 	}
 
@@ -236,13 +238,13 @@ func (s *Service) runTarget(ctx context.Context, req RunRequest, target RunTarge
 	if !channel.Enabled {
 		result.FailureReason = "channel_disabled"
 		result.ErrorMessage = "channel is disabled"
-		s.recordResult(ctx, result, channel, model.ChannelKey{}, req)
+		s.recordResult(ctx, &result, channel, model.ChannelKey{}, req)
 		return result
 	}
 	if !outbound.IsChatChannelType(channel.Type) {
 		result.FailureReason = "unsupported_channel_type"
 		result.ErrorMessage = "channel type does not support chat model test"
-		s.recordResult(ctx, result, channel, model.ChannelKey{}, req)
+		s.recordResult(ctx, &result, channel, model.ChannelKey{}, req)
 		return result
 	}
 
@@ -251,7 +253,7 @@ func (s *Service) runTarget(ctx context.Context, req RunRequest, target RunTarge
 	if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
 		result.FailureReason = "no_available_key"
 		result.ErrorMessage = "no available key"
-		s.recordResult(ctx, result, channel, usedKey, req)
+		s.recordResult(ctx, &result, channel, usedKey, req)
 		return result
 	}
 
@@ -301,11 +303,14 @@ func (s *Service) runTarget(ctx context.Context, req RunRequest, target RunTarge
 		}
 	}
 
-	s.recordResult(ctx, result, channel, usedKey, req)
+	s.recordResult(ctx, &result, channel, usedKey, req)
 	return result
 }
 
-func (s *Service) recordResult(ctx context.Context, result RunResult, channel *model.Channel, usedKey model.ChannelKey, req RunRequest) {
+func (s *Service) recordResult(ctx context.Context, result *RunResult, channel *model.Channel, usedKey model.ChannelKey, req RunRequest) {
+	if result == nil {
+		return
+	}
 	status := model.AttemptFailed
 	if result.Success {
 		status = model.AttemptSuccess
@@ -336,8 +341,8 @@ func (s *Service) recordResult(ctx context.Context, result RunResult, channel *m
 		InputCost:        result.InputCost,
 		OutputCost:       result.OutputCost,
 		EstimatedCost:    result.EstimatedCost,
-		CostIncurred:     costIncurred(result),
-		CostSource:       costSource(result),
+		CostIncurred:     costIncurred(*result),
+		CostSource:       costSource(*result),
 		ErrorSummary:     result.ErrorMessage,
 		CreatedAt:        time.Now().UnixMilli(),
 		Msg:              result.ErrorMessage,
@@ -385,15 +390,19 @@ func (s *Service) recordResult(ctx context.Context, result RunResult, channel *m
 		CacheTokens:        result.CacheTokens,
 		Cost:               result.EstimatedCost,
 		EstimatedCost:      result.EstimatedCost,
-		FinalSuccessCost:   successCost(result),
+		FinalSuccessCost:   successCost(*result),
 		TotalAttemptCost:   result.EstimatedCost,
 		Attempts:           []model.ChannelAttempt{attempt},
 		TotalAttempts:      1,
-		RequestContent:     modelTestRequestLogContent(req, result),
-		ResponseContent:    modelTestResponseLogContent(result),
+		RequestContent:     modelTestRequestLogContent(req, *result),
+		ResponseContent:    modelTestResponseLogContent(*result),
 		Error:              result.ErrorMessage,
 	}
-	_ = op.RelayLogAdd(ctx, relayLog)
+	saved, err := op.RelayLogAddWithResult(ctx, relayLog)
+	if err == nil {
+		result.LogID = saved.ID
+		result.TraceID = saved.TraceID
+	}
 }
 
 type usageSummary struct {

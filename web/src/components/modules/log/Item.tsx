@@ -835,6 +835,24 @@ function DialogOpenBridge({ onOpenChange }: { onOpenChange?: (open: boolean) => 
     return null;
 }
 
+function DialogAutoOpenBridge({
+    token,
+    onConsumed,
+}: {
+    token?: string;
+    onConsumed?: () => void;
+}) {
+    const { setIsOpen } = useMorphingDialog();
+
+    useEffect(() => {
+        if (!token) return;
+        setIsOpen(true);
+        onConsumed?.();
+    }, [onConsumed, setIsOpen, token]);
+
+    return null;
+}
+
 function getLogAttemptCount(log: RelayLog) {
     return log.attempts_count || log.total_attempts || log.attempts?.length || 0;
 }
@@ -978,11 +996,15 @@ export function LogCard({
     siteTargets,
     variant = 'card',
     onDialogOpenChange,
+    autoOpenToken,
+    onAutoOpenConsumed,
 }: {
     log: RelayLog;
     siteTargets: LogSiteActionTargets | null;
     variant?: 'card' | 'row';
     onDialogOpenChange?: (open: boolean) => void;
+    autoOpenToken?: string;
+    onAutoOpenConsumed?: () => void;
 }) {
     const t = useTranslations('log.card');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -1077,6 +1099,7 @@ export function LogCard({
         <TooltipProvider>
             <MorphingDialog>
                 <DialogOpenBridge onOpenChange={handleDialogOpenChange} />
+                <DialogAutoOpenBridge token={autoOpenToken} onConsumed={onAutoOpenConsumed} />
                 <MorphingDialogTrigger
                     className={cn(
                         variant === 'row'

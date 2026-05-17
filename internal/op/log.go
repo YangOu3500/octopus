@@ -129,15 +129,22 @@ func relayLogFlushToDB(ctx context.Context) error {
 }
 
 func RelayLogAdd(ctx context.Context, relayLog model.RelayLog) error {
+	_, err := RelayLogAddWithResult(ctx, relayLog)
+	return err
+}
+
+func RelayLogAddWithResult(ctx context.Context, relayLog model.RelayLog) (model.RelayLog, error) {
 	enabled, err := SettingGetBool(model.SettingKeyRelayLogKeepEnabled)
 	if err != nil {
-		return err
+		return model.RelayLog{}, err
 	}
 	maxSize := relayLogMaxSize
 	if !enabled {
 		maxSize = relayLogMaxSizeNoDB
 	}
-	relayLog.ID = snowflake.GenerateID()
+	if relayLog.ID == 0 {
+		relayLog.ID = snowflake.GenerateID()
+	}
 	if relayLog.TraceID == "" {
 		relayLog.TraceID = "trace_" + strconv.FormatInt(relayLog.ID, 10)
 	}
@@ -148,7 +155,7 @@ func RelayLogAdd(ctx context.Context, relayLog model.RelayLog) error {
 	if len(relayLogCache) >= maxSize {
 		if enabled {
 			relayLogCacheLock.Unlock()
-			return relayLogFlushToDB(ctx)
+			return relayLog, relayLogFlushToDB(ctx)
 		}
 		// 如果未启用日志保存，移除最旧的日志，保留最新的日志用于实时查询
 		keepSize := maxSize / 2
@@ -157,7 +164,7 @@ func RelayLogAdd(ctx context.Context, relayLog model.RelayLog) error {
 		}
 	}
 	relayLogCacheLock.Unlock()
-	return nil
+	return relayLog, nil
 }
 
 func RelayLogSaveDBTask(ctx context.Context) error {

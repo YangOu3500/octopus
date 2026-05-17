@@ -45,6 +45,8 @@ export interface ModelTestResult {
     output_cost?: number;
     estimated_cost?: number;
     response_text?: string;
+    log_id?: number;
+    trace_id?: string;
 }
 
 export interface ModelTestRunResponse {
