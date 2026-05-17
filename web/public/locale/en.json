@@ -103,7 +103,11 @@
             "tokens": "Token Stats",
             "tokenSub": "In {input} / Out {output} / Cache {cache}",
             "todayRequests": "Today Requests",
-            "todaySub": "24h RPM {rpm}"
+            "todaySub": "24h RPM {rpm}",
+            "failureRequests": "Failed Requests",
+            "failureSub": "24h / total {total}",
+            "failoverRequests": "Failover",
+            "failoverSub": "Rate {rate}"
         },
         "activity": {
             "requestCount": "Requests",
@@ -175,10 +179,88 @@
             "recentFailures": "Recent Failures",
             "topChannels": "Top Failing Channels",
             "topModels": "Top Failing Models",
+            "topApiKeys": "Top API Keys",
+            "sourceBreakdown": "Request Sources",
             "breakdownMeta": "{requests} requests / {failures} failures / {rate}",
             "noData": "No data",
             "noFailures": "No failures",
             "unknown": "Unknown"
+        },
+        "operations": {
+            "title": "Gateway Workbench",
+            "description": "Brings AxonHub-style Dashboard / Requests / Traces organization into the Octopus home page for request, trace, channel, model, API key, and performance operations.",
+            "window": "Stream {stream} / model test {modelTest}",
+            "empty": "No data",
+            "apiKeyBreakdown": "API Key Analysis",
+            "sourceBreakdown": "Source Analysis",
+            "breakdownMeta": "{requests} requests / {failures} failures / {rate}",
+            "capabilityTitle": "Fusion Capability Entry",
+            "capabilityDescription": "Fused capabilities show status and entry points on Home; the full index remains in Settings.",
+            "allCapabilities": "All capabilities",
+            "status": {
+                "done": "Integrated",
+                "partial": "Partial"
+            },
+            "items": {
+                "requests": {
+                    "label": "Requests",
+                    "sub": "{failover} requests used failover"
+                },
+                "traces": {
+                    "label": "Traces / Attempts",
+                    "sub": "Max {max} attempts per request"
+                },
+                "channels": {
+                    "label": "Channel Analysis",
+                    "sub": "{failed} failed requests"
+                },
+                "models": {
+                    "label": "Model Analysis",
+                    "empty": "No model samples"
+                },
+                "apiKeys": {
+                    "label": "API Key Analysis",
+                    "empty": "No API key samples"
+                },
+                "performance": {
+                    "label": "Performance Analysis",
+                    "sub": "TTFB {ttfb}"
+                }
+            },
+            "capabilities": {
+                "validator": {
+                    "label": "Soft Error Detection",
+                    "entry": "Log detail / model test"
+                },
+                "failover": {
+                    "label": "Failover / Retry",
+                    "entry": "Log attempt chain"
+                },
+                "streamGate": {
+                    "label": "Stream First Valid Output",
+                    "entry": "Settings / group strategy"
+                },
+                "trace": {
+                    "label": "Trace / Attempts",
+                    "entry": "Log detail / home observability"
+                },
+                "health": {
+                    "label": "Health Score / Cooldown",
+                    "entry": "Settings / routing preview"
+                },
+                "selection": {
+                    "label": "Selection Tracker",
+                    "entry": "Group routing preview"
+                },
+                "probe": {
+                    "label": "Slow Active Probe",
+                    "entry": "Settings"
+                },
+                "quota": {
+                    "label": "Quota Status",
+                    "entry": "Group routing preview"
+                }
+            }
         }
     },
     "setting": {

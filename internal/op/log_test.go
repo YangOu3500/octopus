@@ -239,6 +239,8 @@ func TestStatsObservabilityAggregatesRelayLogs(t *testing.T) {
 		{
 			Time:               now - 60,
 			TraceID:            "trace-failover-ok",
+			ClientAPIKeyID:     11,
+			RequestAPIKeyName:  "ops-key",
 			RequestModelName:   "gpt-4o",
 			ActualModelName:    "gpt-4o",
 			FinalStatus:        "success",
@@ -286,10 +288,12 @@ func TestStatsObservabilityAggregatesRelayLogs(t *testing.T) {
 		{
 			Time:             now - 30,
 			TraceID:          "trace-failed",
+			ClientAPIKeyID:   12,
 			RequestModelName: "claude-3",
 			ActualModelName:  "claude-3",
 			FinalStatus:      "failed",
-			RequestSource:    "relay",
+			RequestSource:    "model_test",
+			RequestStream:    true,
 			ChannelId:        3,
 			ChannelName:      "server",
 			Ftut:             0,
@@ -334,6 +338,12 @@ func TestStatsObservabilityAggregatesRelayLogs(t *testing.T) {
 	if summary.FailoverRequests != 1 {
 		t.Fatalf("expected one failover request, got %+v", summary)
 	}
+	if summary.StreamRequests != 1 || summary.NonStreamRequests != 1 || summary.ModelTestRequests != 1 || summary.RelayRequests != 1 {
+		t.Fatalf("unexpected source/stream summary: %+v", summary)
+	}
+	if summary.TotalAttempts != 3 || summary.MaxAttempts != 2 {
+		t.Fatalf("unexpected attempt summary: %+v", summary)
+	}
 	if summary.InputTokens != 100 || summary.OutputTokens != 50 || summary.CacheTokens != 5 {
 		t.Fatalf("unexpected token summary: %+v", summary)
 	}
@@ -345,6 +355,12 @@ func TestStatsObservabilityAggregatesRelayLogs(t *testing.T) {
 	}
 	if len(summary.TopChannels) == 0 || summary.TopChannels[0].Failures == 0 {
 		t.Fatalf("expected top failing channels, got %+v", summary.TopChannels)
+	}
+	if len(summary.TopAPIKeys) == 0 || summary.TopAPIKeys[0].Name == "" {
+		t.Fatalf("expected API key breakdown, got %+v", summary.TopAPIKeys)
+	}
+	if len(summary.SourceBreakdown) < 2 {
+		t.Fatalf("expected source breakdown, got %+v", summary.SourceBreakdown)
 	}
 }
 

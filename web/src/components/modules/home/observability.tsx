@@ -53,7 +53,7 @@ function MetricTile({
 }) {
     return (
         <div className={cn(
-            'rounded-lg border bg-background/40 px-3 py-2.5',
+            'rounded-md border bg-background/40 px-3 py-2.5',
             tone === 'success' && 'border-primary/30 bg-primary/5',
             tone === 'warning' && 'border-amber-500/25 bg-amber-500/5',
             tone === 'danger' && 'border-destructive/25 bg-destructive/5',
@@ -69,7 +69,7 @@ function BreakdownList({ title, items }: { title: string; items: StatsObservabil
     const t = useTranslations('home.observability');
 
     return (
-        <div className="rounded-lg border bg-background/40 p-3">
+        <div className="rounded-md border bg-background/40 p-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                 <Server className="size-4 text-muted-foreground" />
                 <span>{title}</span>
@@ -104,7 +104,7 @@ function RecentFailureList({ items }: { items: StatsObservabilityFailure[] }) {
     const t = useTranslations('home.observability');
 
     return (
-        <div className="rounded-lg border bg-background/40 p-3">
+        <div className="rounded-md border bg-background/40 p-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                 <AlertTriangle className="size-4 text-destructive" />
                 <span>{t('recentFailures')}</span>
@@ -156,7 +156,7 @@ export function ObservabilityPanel() {
     const failoverRequests = data?.failover_requests ?? 0;
 
     return (
-        <section className="rounded-3xl bg-card border-card-border border text-card-foreground custom-shadow p-4">
+        <section className="rounded-lg bg-card border-card-border border text-card-foreground shadow-sm p-4">
             <header className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                     <div className="flex items-center gap-2">
@@ -202,7 +202,7 @@ export function ObservabilityPanel() {
             </div>
 
             <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
-                <div className="rounded-lg border bg-background/40 p-3">
+                <div className="rounded-md border bg-background/40 p-3">
                     <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                         <Sigma className="size-4 text-muted-foreground" />
                         <span>{t('tokens')}</span>
@@ -222,7 +222,7 @@ export function ObservabilityPanel() {
                         </div>
                     </div>
                 </div>
-                <div className="rounded-lg border bg-background/40 p-3">
+                <div className="rounded-md border bg-background/40 p-3">
                     <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                         <Clock3 className="size-4 text-muted-foreground" />
                         <span>{t('window')}</span>
@@ -235,7 +235,7 @@ export function ObservabilityPanel() {
                         <span>{t('sourceHint')}</span>
                     </div>
                 </div>
-                <div className="rounded-lg border bg-background/40 p-3">
+                <div className="rounded-md border bg-background/40 p-3">
                     <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                         <GitBranch className="size-4 text-muted-foreground" />
                         <span>{t('chain')}</span>
@@ -249,10 +249,12 @@ export function ObservabilityPanel() {
                 </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-2 xl:grid-cols-3">
+            <div className="mt-3 grid grid-cols-1 gap-2 xl:grid-cols-5">
                 <RecentFailureList items={data?.recent_failures ?? []} />
                 <BreakdownList title={t('topChannels')} items={data?.top_channels ?? []} />
                 <BreakdownList title={t('topModels')} items={data?.top_models ?? []} />
+                <BreakdownList title={t('topApiKeys')} items={data?.top_api_keys ?? []} />
+                <BreakdownList title={t('sourceBreakdown')} items={data?.source_breakdown ?? []} />
             </div>
         </section>
     );

@@ -3,6 +3,7 @@ package op
 import (
 	"context"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,6 +61,8 @@ func StatsObservability(ctx context.Context, timeRange string) (model.StatsObser
 	}
 	channelAgg := make(map[int]*observabilityAccumulator)
 	modelAgg := make(map[string]*observabilityAccumulator)
+	apiKeyAgg := make(map[int]*observabilityAccumulator)
+	sourceAgg := make(map[string]*observabilityAccumulator)
 
 	var ttfbSum, ttfbCount int
 	var latencySum, latencyCount int
@@ -73,6 +76,26 @@ func StatsObservability(ctx context.Context, timeRange string) (model.StatsObser
 		}
 		if relayLogHasFailover(relayLog) {
 			summary.FailoverRequests++
+		}
+		if relayLog.RequestStream {
+			summary.StreamRequests++
+		} else {
+			summary.NonStreamRequests++
+		}
+		sourceName := observabilitySourceName(relayLog.RequestSource)
+		if strings.EqualFold(sourceName, "model_test") {
+			summary.ModelTestRequests++
+		}
+		if strings.EqualFold(sourceName, "relay") {
+			summary.RelayRequests++
+		}
+		attemptCount := relayLogAttemptCount(relayLog)
+		if attemptCount <= 0 {
+			attemptCount = 1
+		}
+		summary.TotalAttempts += attemptCount
+		if attemptCount > summary.MaxAttempts {
+			summary.MaxAttempts = attemptCount
 		}
 
 		if relayLog.Ftut > 0 {
@@ -99,6 +122,7 @@ func StatsObservability(ctx context.Context, timeRange string) (model.StatsObser
 		}
 
 		recordObservabilityBreakdowns(channelAgg, modelAgg, relayLog)
+		recordObservabilityRequestBreakdowns(apiKeyAgg, sourceAgg, relayLog)
 	}
 
 	if summary.TotalRequests > 0 {
@@ -116,6 +140,8 @@ func StatsObservability(ctx context.Context, timeRange string) (model.StatsObser
 	}
 	summary.TopChannels = observabilityBreakdownList(channelAgg, 5)
 	summary.TopModels = observabilityBreakdownList(modelAgg, 5)
+	summary.TopAPIKeys = observabilityBreakdownList(apiKeyAgg, 5)
+	summary.SourceBreakdown = observabilityBreakdownList(sourceAgg, 5)
 	return summary, nil
 }
 
@@ -234,6 +260,24 @@ func recordObservabilityBreakdowns(channelAgg map[int]*observabilityAccumulator,
 	}
 }
 
+func recordObservabilityRequestBreakdowns(apiKeyAgg map[int]*observabilityAccumulator, sourceAgg map[string]*observabilityAccumulator, relayLog model.RelayLog) {
+	failed := !relayLogFinalSuccess(relayLog)
+	latency := relayLogDuration(relayLog)
+	cost := observabilityTotalAttemptCost(relayLog)
+
+	sourceName := observabilitySourceName(relayLog.RequestSource)
+	recordAccumulator(getAccumulator(sourceAgg, sourceName, sourceName), failed, latency, cost)
+
+	apiKeyName := strings.TrimSpace(relayLog.RequestAPIKeyName)
+	if apiKeyName == "" && relayLog.ClientAPIKeyID > 0 {
+		apiKeyName = "API Key #" + strconv.Itoa(relayLog.ClientAPIKeyID)
+	}
+	if relayLog.ClientAPIKeyID <= 0 && apiKeyName == "" {
+		return
+	}
+	recordAccumulator(getAccumulator(apiKeyAgg, relayLog.ClientAPIKeyID, apiKeyName), failed, latency, cost)
+}
+
 func getAccumulator[K comparable](m map[K]*observabilityAccumulator, key K, name string) *observabilityAccumulator {
 	if acc, ok := m[key]; ok {
 		if acc.name == "" {
@@ -324,6 +368,14 @@ func observabilityFirstNonEmptyString(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func observabilitySourceName(source string) string {
+	source = strings.TrimSpace(source)
+	if source == "" {
+		return "relay"
+	}
+	return source
 }
 
 func observabilityFirstPositiveInt(values ...int) int {

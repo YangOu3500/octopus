@@ -103,7 +103,11 @@
             "tokens": "词元统计",
             "tokenSub": "入 {input} / 出 {output} / 缓存 {cache}",
             "todayRequests": "今日请求",
-            "todaySub": "近 24 小时 RPM {rpm}"
+            "todaySub": "近 24 小时 RPM {rpm}",
+            "failureRequests": "失败请求",
+            "failureSub": "近 24 小时 / 总计 {total}",
+            "failoverRequests": "故障转移",
+            "failoverSub": "占比 {rate}"
         },
         "activity": {
             "requestCount": "请求次数",
@@ -175,10 +179,88 @@
             "recentFailures": "最近失败",
             "topChannels": "Top 故障渠道",
             "topModels": "Top 故障模型",
+            "topApiKeys": "Top API Key",
+            "sourceBreakdown": "请求来源",
             "breakdownMeta": "{requests} 请求 / {failures} 失败 / {rate}",
             "noData": "暂无数据",
             "noFailures": "暂无失败",
             "unknown": "未知"
+        },
+        "operations": {
+            "title": "网关工作台",
+            "description": "把 AxonHub 的 Dashboard / Requests / Traces 组织方式落到 Octopus 首页，直接进入请求、链路、渠道、模型、API Key 与性能排障。",
+            "window": "流式 {stream} / 模型测试 {modelTest}",
+            "empty": "暂无数据",
+            "apiKeyBreakdown": "API Key 分析",
+            "sourceBreakdown": "来源分析",
+            "breakdownMeta": "{requests} 请求 / {failures} 失败 / {rate}",
+            "capabilityTitle": "Fusion 能力入口",
+            "capabilityDescription": "已融合能力在首页显示状态与入口；完整索引仍保留在设置页。",
+            "allCapabilities": "全部能力",
+            "status": {
+                "done": "已接入",
+                "partial": "部分接入"
+            },
+            "items": {
+                "requests": {
+                    "label": "请求 / Requests",
+                    "sub": "{failover} 个请求发生故障转移"
+                },
+                "traces": {
+                    "label": "追踪 / Attempts",
+                    "sub": "单请求最多 {max} 次尝试"
+                },
+                "channels": {
+                    "label": "渠道分析",
+                    "sub": "{failed} 个失败请求"
+                },
+                "models": {
+                    "label": "模型分析",
+                    "empty": "暂无模型样本"
+                },
+                "apiKeys": {
+                    "label": "API Key 分析",
+                    "empty": "暂无 API Key 样本"
+                },
+                "performance": {
+                    "label": "性能分析",
+                    "sub": "TTFB {ttfb}"
+                }
+            },
+            "capabilities": {
+                "validator": {
+                    "label": "软错误检测",
+                    "entry": "日志详情 / 模型测试"
+                },
+                "failover": {
+                    "label": "Failover / Retry",
+                    "entry": "日志 attempt 链路"
+                },
+                "streamGate": {
+                    "label": "流式首个有效输出",
+                    "entry": "设置页 / 分组策略"
+                },
+                "trace": {
+                    "label": "Trace / Attempts",
+                    "entry": "日志详情 / 首页观测"
+                },
+                "health": {
+                    "label": "健康分 / 冷却",
+                    "entry": "设置页 / 调度预览"
+                },
+                "selection": {
+                    "label": "Selection Tracker",
+                    "entry": "分组调度预览"
+                },
+                "probe": {
+                    "label": "慢速主动探测",
+                    "entry": "设置页"
+                },
+                "quota": {
+                    "label": "额度状态",
+                    "entry": "分组调度预览"
+                }
+            }
         }
     },
     "setting": {

@@ -103,6 +103,12 @@ export interface StatsObservability {
     avg_ttfb_ms: number;
     avg_latency_ms: number;
     rpm: number;
+    stream_requests: number;
+    non_stream_requests: number;
+    model_test_requests: number;
+    relay_requests: number;
+    total_attempts: number;
+    max_attempts: number;
     input_tokens: number;
     output_tokens: number;
     cache_tokens: number;
@@ -112,6 +118,8 @@ export interface StatsObservability {
     recent_failures: StatsObservabilityFailure[];
     top_channels: StatsObservabilityBreakdown[];
     top_models: StatsObservabilityBreakdown[];
+    top_api_keys: StatsObservabilityBreakdown[];
+    source_breakdown: StatsObservabilityBreakdown[];
 }
 /**
  * 获取今日统计数据 Hook

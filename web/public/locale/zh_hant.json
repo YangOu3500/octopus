@@ -103,7 +103,11 @@
             "tokens": "詞元統計",
             "tokenSub": "入 {input} / 出 {output} / 快取 {cache}",
             "todayRequests": "今日請求",
-            "todaySub": "近 24 小時 RPM {rpm}"
+            "todaySub": "近 24 小時 RPM {rpm}",
+            "failureRequests": "失敗請求",
+            "failureSub": "近 24 小時 / 總計 {total}",
+            "failoverRequests": "故障轉移",
+            "failoverSub": "占比 {rate}"
         },
         "activity": {
             "requestCount": "請求次數",
@@ -175,10 +179,88 @@
             "recentFailures": "最近失敗",
             "topChannels": "Top 故障渠道",
             "topModels": "Top 故障模型",
+            "topApiKeys": "Top API Key",
+            "sourceBreakdown": "請求來源",
             "breakdownMeta": "{requests} 請求 / {failures} 失敗 / {rate}",
             "noData": "暫無資料",
             "noFailures": "暫無失敗",
             "unknown": "未知"
+        },
+        "operations": {
+            "title": "閘道工作台",
+            "description": "把 AxonHub 的 Dashboard / Requests / Traces 組織方式落到 Octopus 首頁，直接進入請求、鏈路、渠道、模型、API Key 與效能排障。",
+            "window": "串流 {stream} / 模型測試 {modelTest}",
+            "empty": "暫無資料",
+            "apiKeyBreakdown": "API Key 分析",
+            "sourceBreakdown": "來源分析",
+            "breakdownMeta": "{requests} 請求 / {failures} 失敗 / {rate}",
+            "capabilityTitle": "Fusion 能力入口",
+            "capabilityDescription": "已融合能力在首頁顯示狀態與入口；完整索引仍保留在設定頁。",
+            "allCapabilities": "全部能力",
+            "status": {
+                "done": "已接入",
+                "partial": "部分接入"
+            },
+            "items": {
+                "requests": {
+                    "label": "請求 / Requests",
+                    "sub": "{failover} 個請求發生故障轉移"
+                },
+                "traces": {
+                    "label": "追蹤 / Attempts",
+                    "sub": "單請求最多 {max} 次嘗試"
+                },
+                "channels": {
+                    "label": "渠道分析",
+                    "sub": "{failed} 個失敗請求"
+                },
+                "models": {
+                    "label": "模型分析",
+                    "empty": "暫無模型樣本"
+                },
+                "apiKeys": {
+                    "label": "API Key 分析",
+                    "empty": "暫無 API Key 樣本"
+                },
+                "performance": {
+                    "label": "效能分析",
+                    "sub": "TTFB {ttfb}"
+                }
+            },
+            "capabilities": {
+                "validator": {
+                    "label": "軟錯誤檢測",
+                    "entry": "日誌詳情 / 模型測試"
+                },
+                "failover": {
+                    "label": "Failover / Retry",
+                    "entry": "日誌 attempt 鏈路"
+                },
+                "streamGate": {
+                    "label": "串流首個有效輸出",
+                    "entry": "設定頁 / 分組策略"
+                },
+                "trace": {
+                    "label": "Trace / Attempts",
+                    "entry": "日誌詳情 / 首頁觀測"
+                },
+                "health": {
+                    "label": "健康分 / 冷卻",
+                    "entry": "設定頁 / 調度預覽"
+                },
+                "selection": {
+                    "label": "Selection Tracker",
+                    "entry": "分組調度預覽"
+                },
+                "probe": {
+                    "label": "慢速主動探測",
+                    "entry": "設定頁"
+                },
+                "quota": {
+                    "label": "額度狀態",
+                    "entry": "分組調度預覽"
+                }
+            }
         }
     },
     "setting": {

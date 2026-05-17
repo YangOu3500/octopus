@@ -82,6 +82,12 @@ type StatsObservability struct {
 	AvgTTFBMS         int                           `json:"avg_ttfb_ms"`
 	AvgLatencyMS      int                           `json:"avg_latency_ms"`
 	RPM               float64                       `json:"rpm"`
+	StreamRequests    int                           `json:"stream_requests"`
+	NonStreamRequests int                           `json:"non_stream_requests"`
+	ModelTestRequests int                           `json:"model_test_requests"`
+	RelayRequests     int                           `json:"relay_requests"`
+	TotalAttempts     int                           `json:"total_attempts"`
+	MaxAttempts       int                           `json:"max_attempts"`
 	InputTokens       int                           `json:"input_tokens"`
 	OutputTokens      int                           `json:"output_tokens"`
 	CacheTokens       int                           `json:"cache_tokens"`
@@ -91,6 +97,8 @@ type StatsObservability struct {
 	RecentFailures    []StatsObservabilityFailure   `json:"recent_failures"`
 	TopChannels       []StatsObservabilityBreakdown `json:"top_channels"`
 	TopModels         []StatsObservabilityBreakdown `json:"top_models"`
+	TopAPIKeys        []StatsObservabilityBreakdown `json:"top_api_keys"`
+	SourceBreakdown   []StatsObservabilityBreakdown `json:"source_breakdown"`
 }
 
 // StatsSiteModelHourly 站点渠道按小时聚合的请求统计，
