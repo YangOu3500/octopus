@@ -101,3 +101,72 @@ func TestBuildRoutingPreviewShowsHealthAndCooldown(t *testing.T) {
 		t.Fatalf("cooldown remaining too large: %+v", preview.Candidates[1])
 	}
 }
+
+func TestBuildRoutingPreviewUsesNextReadyKeyWhenPreferredKeyCooling(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	balancer.Reset()
+	t.Cleanup(balancer.Reset)
+
+	if err := op.SettingSetString(model.SettingKeyHealthScoreEnabled, "true"); err != nil {
+		t.Fatalf("SettingSetString failed: %v", err)
+	}
+
+	channel := &model.Channel{
+		Name:     "routing-multi-key",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://multi-key.example.test/v1"}},
+		Model:    "preview-model",
+		Keys: []model.ChannelKey{
+			{Enabled: true, ChannelKey: "sk-low-cost-secret", TotalCost: 1},
+			{Enabled: true, ChannelKey: "sk-fallback-secret", TotalCost: 100},
+		},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	storedChannel, err := op.ChannelGet(channel.ID, ctx)
+	if err != nil {
+		t.Fatalf("ChannelGet failed: %v", err)
+	}
+	if len(storedChannel.Keys) != 2 {
+		t.Fatalf("key count = %d, want 2", len(storedChannel.Keys))
+	}
+
+	group := &model.Group{Name: "preview-multi-key-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "preview-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd failed: %v", err)
+	}
+
+	lowCostKey := storedChannel.GetChannelKey()
+	balancer.RecordHealthAttempt(balancer.HealthAttempt{
+		ChannelID:     channel.ID,
+		ChannelKeyID:  lowCostKey.ID,
+		ModelName:     "preview-model",
+		Status:        model.AttemptFailed,
+		HTTPStatus:    429,
+		FailureReason: "rate_limit",
+		RetryAfter:    10 * time.Second,
+	})
+
+	preview, err := BuildRoutingPreview(ctx, group.ID)
+	if err != nil {
+		t.Fatalf("BuildRoutingPreview failed: %v", err)
+	}
+	if len(preview.Candidates) != 1 {
+		t.Fatalf("candidate count = %d, want 1", len(preview.Candidates))
+	}
+	candidate := preview.Candidates[0]
+	if candidate.Decision != "ready" {
+		t.Fatalf("candidate decision = %q, want ready: %+v", candidate.Decision, candidate)
+	}
+	if candidate.ChannelKeyID == lowCostKey.ID {
+		t.Fatalf("expected preview to skip cooling key %d, got %+v", lowCostKey.ID, candidate)
+	}
+	if candidate.CoolingDown {
+		t.Fatalf("fallback key should not be marked cooling down: %+v", candidate)
+	}
+}

@@ -66,6 +66,8 @@ function decisionLabel(t: Translator, decision: string) {
             return t('decision.noKey');
         case 'channel_missing':
             return t('decision.channelMissing');
+        case 'circuit_breaker':
+            return t('decision.circuitBreaker');
         default:
             return decision;
     }

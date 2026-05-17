@@ -593,7 +593,8 @@
                 "healthCooldown": "Health cooldown",
                 "channelDisabled": "Channel disabled",
                 "noKey": "No available key",
-                "channelMissing": "Channel missing"
+                "channelMissing": "Channel missing",
+                "circuitBreaker": "Circuit breaker"
             },
             "table": {
                 "rank": "Rank",

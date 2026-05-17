@@ -593,7 +593,8 @@
                 "healthCooldown": "健康冷卻",
                 "channelDisabled": "渠道禁用",
                 "noKey": "無可用 Key",
-                "channelMissing": "渠道缺失"
+                "channelMissing": "渠道缺失",
+                "circuitBreaker": "熔斷冷卻"
             },
             "table": {
                 "rank": "順序",

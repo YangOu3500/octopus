@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bestruirui/octopus/internal/model"
 	"github.com/bestruirui/octopus/internal/op"
@@ -73,15 +74,26 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 		candidate.Notes = append(candidate.Notes, "channel disabled")
 	}
 
-	usedKey := channel.GetChannelKey()
+	usedKey, skippedDecision, skippedRemaining, skippedReason, skippedCount := selectPreviewKey(channel, item.ModelName)
 	candidate.ChannelKeyID = usedKey.ID
+	if skippedCount > 0 {
+		candidate.Notes = append(candidate.Notes, "skipped cooling keys: "+strconv.Itoa(skippedCount))
+	}
 	if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
-		candidate.Decision = "no_available_key"
-		candidate.Notes = append(candidate.Notes, "no available key")
+		if skippedDecision != "" {
+			candidate.Decision = skippedDecision
+			candidate.CoolingDown = true
+			candidate.CooldownRemainingMS = skippedRemaining.Milliseconds()
+			candidate.CooldownReason = skippedReason
+			candidate.Notes = append(candidate.Notes, skippedDecision)
+		} else {
+			candidate.Decision = "no_available_key"
+			candidate.Notes = append(candidate.Notes, "no available key")
+		}
 	}
 
 	if usedKey.ID > 0 {
-		cooling, remaining, reason := balancer.IsHealthCoolingDown(channel.ID, usedKey.ID, item.ModelName, channel.GetBaseUrl())
+		cooling, remaining, reason := previewKeyCoolingState(channel.ID, usedKey.ID, item.ModelName, channel.GetBaseUrl())
 		candidate.CoolingDown = cooling
 		if remaining > 0 {
 			candidate.CooldownRemainingMS = remaining.Milliseconds()
@@ -95,6 +107,45 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 
 	candidate.EffectiveScore = effectiveRoutingScore(mode, healthEnabled, candidate)
 	return candidate
+}
+
+func selectPreviewKey(channel *model.Channel, modelName string) (model.ChannelKey, string, time.Duration, string, int) {
+	exclude := map[int]struct{}{}
+	var lastDecision string
+	var lastRemaining time.Duration
+	var lastReason string
+	var skipped int
+
+	for {
+		usedKey := channel.GetChannelKey(model.ChannelKeySelectOptions{ExcludeKeyIDs: exclude})
+		if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
+			return model.ChannelKey{}, lastDecision, lastRemaining, lastReason, skipped
+		}
+
+		if tripped, remaining := balancer.IsTripped(channel.ID, usedKey.ID, modelName); tripped {
+			exclude[usedKey.ID] = struct{}{}
+			lastDecision = "circuit_breaker"
+			lastRemaining = remaining
+			lastReason = "circuit_breaker"
+			skipped++
+			continue
+		}
+
+		if cooling, remaining, reason := previewKeyCoolingState(channel.ID, usedKey.ID, modelName, channel.GetBaseUrl()); cooling {
+			exclude[usedKey.ID] = struct{}{}
+			lastDecision = "health_cooldown"
+			lastRemaining = remaining
+			lastReason = reason
+			skipped++
+			continue
+		}
+
+		return usedKey, lastDecision, lastRemaining, lastReason, skipped
+	}
+}
+
+func previewKeyCoolingState(channelID, channelKeyID int, modelName, baseURL string) (bool, time.Duration, string) {
+	return balancer.IsHealthCoolingDown(channelID, channelKeyID, modelName, baseURL)
 }
 
 func sortRoutingCandidates(mode model.GroupMode, healthEnabled bool, candidates []model.GroupRoutingCandidate) {
