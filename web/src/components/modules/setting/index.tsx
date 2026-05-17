@@ -13,6 +13,7 @@ import { SettingLog } from './Log';
 import { SettingBackup } from './Backup';
 import { SettingCircuitBreaker } from './CircuitBreaker';
 import { SettingHealthProbe } from './HealthProbe';
+import { SettingFusionCapabilities } from './FusionCapabilities';
 
 export function Setting() {
     return (
@@ -22,6 +23,9 @@ export function Setting() {
                 className="grid grid-cols-1 gap-4 pb-24 md:pb-4 2xl:grid-cols-2"
             >
                 <SettingInfo key="setting-info" />
+                <div key="setting-fusion-capabilities" className="2xl:col-span-2">
+                    <SettingFusionCapabilities />
+                </div>
                 <SettingAppearance key="setting-appearance" />
                 <SettingAccount key="setting-account" />
                 <SettingSystem key="setting-system" />

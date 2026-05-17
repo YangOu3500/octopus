@@ -372,6 +372,110 @@
             "updateSuccess": "Update successful, service will restart shortly",
             "updateFailed": "Update failed"
         },
+        "fusionCapabilities": {
+            "title": "Fusion Capability Visibility",
+            "subtitle": "UI parity for AxonHub / ccLoad ideas: fused capabilities must be configurable, observable, explainable, or diagnosable in Octopus. Unfinished work is listed explicitly so users do not have to infer behavior from code or defaults.",
+            "sources": {
+                "both": "AxonHub / ccLoad"
+            },
+            "status": {
+                "done": "Integrated",
+                "partial": "Partial",
+                "planned": "Planned"
+            },
+            "columns": {
+                "capability": "Capability",
+                "source": "Reference",
+                "ui": "Current UI",
+                "gap": "Remaining Gap",
+                "entry": "Entry"
+            },
+            "nav": {
+                "home": "Home",
+                "site": "Sites",
+                "channel": "Channels",
+                "group": "Groups",
+                "modelTest": "Model Test",
+                "model": "Models",
+                "log": "Logs",
+                "setting": "Settings"
+            },
+            "items": {
+                "responseValidator": {
+                    "name": "Response Validator / Soft Error Detection",
+                    "desc": "Detects soft failures such as HTTP 200 with empty choices/output/content, HTML login pages, Cloudflare pages, and upstream error JSON.",
+                    "ui": "Log detail and attempt timeline show failure reasons. Model test results also show failure_reason directly.",
+                    "gap": "Validator rules are safe defaults and intentionally not user-toggleable to avoid returning bad upstream responses."
+                },
+                "failoverRetry": {
+                    "name": "Failover / Retry Chain",
+                    "desc": "Bad candidates can fail over to later candidates. Same-channel retry and candidate failover are recorded as attempts.",
+                    "ui": "Group cards show runtime strategy. Log detail shows the full attempt chain, HTTP status, latency, and retryable state.",
+                    "gap": "Same-channel retry details can be made more compact and visual later."
+                },
+                "streamGate": {
+                    "name": "Stream First Valid Chunk Gate",
+                    "desc": "Stream requests buffer before the first valid output, allowing empty streams, DONE-only streams, and invalid SSE to fail over.",
+                    "ui": "Settings expose global timeout, max buffer, DONE-only, and invalid SSE behavior. Group cards show first valid output timeout.",
+                    "gap": "Still needs NAS / Docker fake-upstream validation that bad streams are not written to clients before failover."
+                },
+                "traceAttempts": {
+                    "name": "Trace / Attempt Logs",
+                    "desc": "A client request can contain multiple upstream attempts with channel, model, status, error, TTFB, duration, usage, and cost.",
+                    "ui": "Available from log list, log detail, model-test log jump, and the home observability dashboard.",
+                    "gap": "Currently uses RelayLog / ChannelAttempt JSON. Separate request_traces / request_attempts tables are not implemented yet."
+                },
+                "healthCooldown": {
+                    "name": "Health Score / Cooldown / Smart Routing",
+                    "desc": "Uses real feedback, success rate, empty response rate, latency, and cooldown state to sort or skip candidates.",
+                    "ui": "Settings expose health weights and cooldown policy. Group routing preview shows health score, cooldown, and decisions.",
+                    "gap": "Key / channel / base_url scopes are implemented. Site/account scope and full quota status are still pending."
+                },
+                "slowProbe": {
+                    "name": "Slow Active Probe",
+                    "desc": "Off by default. Low-frequency probes supplement unknown, degraded, or cooldown-expired candidates without stressing upstreams.",
+                    "ui": "Settings expose enablement, site interval, site-model interval, concurrency, daily budget, prompt, max tokens, temperature, and jitter.",
+                    "gap": "Probe is currently non-streaming, and rate-limit / budget / backoff state is in memory. Stream probe is pending."
+                },
+                "costUsage": {
+                    "name": "Usage / Cost Accounting",
+                    "desc": "Records final success cost, failed attempt estimated cost, total failover-chain cost, cache tokens, and service tier.",
+                    "ui": "Home observability, log list, and log detail attempt rows show tokens, cache, cost, and cost source.",
+                    "gap": "For very large logs, this may later need dedicated stats tables or incremental caches."
+                },
+                "modelTest": {
+                    "name": "Real Request Model Test",
+                    "desc": "User-triggered short-prompt testing with channel/model modes, concurrency, stream mode, TTFB, duration, tokens, cost, and response summary.",
+                    "ui": "The Model Test page provides the operation panel, result table, and log-detail jump.",
+                    "gap": "Needs NAS / Docker validation with many real models for scrolling, filtering, selection, and log jump behavior."
+                },
+                "groupAutoGenerate": {
+                    "name": "One-click Model Group Generation",
+                    "desc": "Creates or fills groups from discovered model names, grouping identical model names together.",
+                    "ui": "The Groups page provides bulk generation, selected generation, preview, filters, and result summaries.",
+                    "gap": "Still recommended to validate once with synced site models and once with regular channels."
+                },
+                "protocolTransform": {
+                    "name": "Protocol Transform Compatibility",
+                    "desc": "Preserves transformer and passthrough support for OpenAI Chat / Responses / Anthropic / Gemini / Codex.",
+                    "ui": "Channel type, model-test protocol, and log attempt protocol path are visible.",
+                    "gap": "No standalone transformer inspector yet. Codex / Gemini still appear through existing entries and outbound channel types."
+                },
+                "liveDebug": {
+                    "name": "Live Debug / Active Requests",
+                    "desc": "ccLoad has stronger active request and debug snapshot views for in-flight troubleshooting.",
+                    "ui": "Auto-refresh logs and details exist, but there is no in-flight debug snapshot yet.",
+                    "gap": "Pending active request panel, debug event stream, or in-progress request snapshots."
+                },
+                "quotaStatus": {
+                    "name": "Quota / Capacity Status Resolver",
+                    "desc": "Combines balance, quota, and error types to filter or down-rank candidates earlier.",
+                    "ui": "quota_error appears in logs and cooldowns, but there is no full quota status resolver or dedicated UI yet.",
+                    "gap": "Pending quota status parsing, candidate filtering explanation, and routing preview display."
+                }
+            },
+            "note": "This panel is the UI parity index for Fusion capabilities. It does not replace the feature pages; it ensures fused backend capabilities remain visible, understandable, and diagnosable."
+        },
         "log": {
             "title": "Log Settings",
             "enabled": {

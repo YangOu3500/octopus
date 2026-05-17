@@ -372,6 +372,110 @@
             "updateSuccess": "更新成功，服务即将重启",
             "updateFailed": "更新失败"
         },
+        "fusionCapabilities": {
+            "title": "Fusion 能力可见性",
+            "subtitle": "对齐 AxonHub / ccLoad 的 UI 体现：已融合的能力必须在 Octopus 中可配置、可观察、可解释或可排障；未完成的能力也要明确标记，避免用户只能从代码或默认值猜测。",
+            "sources": {
+                "both": "AxonHub / ccLoad"
+            },
+            "status": {
+                "done": "已接入",
+                "partial": "部分接入",
+                "planned": "待补齐"
+            },
+            "columns": {
+                "capability": "能力",
+                "source": "参考来源",
+                "ui": "当前 UI 体现",
+                "gap": "剩余缺口",
+                "entry": "入口"
+            },
+            "nav": {
+                "home": "首页观测",
+                "site": "站点",
+                "channel": "渠道",
+                "group": "模型分组",
+                "modelTest": "模型测试",
+                "model": "模型",
+                "log": "日志",
+                "setting": "设置"
+            },
+            "items": {
+                "responseValidator": {
+                    "name": "Response Validator / 软错误检测",
+                    "desc": "识别 HTTP 200 但 choices / output / content 为空、HTML 登录页、Cloudflare 页、上游 error JSON 等软失败。",
+                    "ui": "日志详情和 attempt 时间线展示失败原因；模型测试结果也直接显示 failure_reason。",
+                    "gap": "校验规则目前是安全默认规则，不做用户自定义开关，避免误关导致坏响应直出。"
+                },
+                "failoverRetry": {
+                    "name": "Failover / Retry 链路",
+                    "desc": "坏候选可继续尝试后续候选，同通道 retry 和候选 failover 会进入 attempt 记录。",
+                    "ui": "模型分组卡片显示运行策略；日志详情展示完整 attempt 链路、HTTP 状态、耗时和是否可重试。",
+                    "gap": "后续可继续把同通道 retry 的每次细节做成更紧凑的可视化。"
+                },
+                "streamGate": {
+                    "name": "流式 First Valid Chunk Gate",
+                    "desc": "流式请求在首个有效输出前先缓冲，空流、仅 DONE、无效 SSE 可以切换候选。",
+                    "ui": "设置页可配置全局超时、缓冲大小、空 DONE / 无效 SSE 判定；分组卡片显示首个有效输出超时。",
+                    "gap": "仍需 NAS / Docker fake upstream 实测坏流不写客户端并切换候选。"
+                },
+                "traceAttempts": {
+                    "name": "Trace / Attempt 日志",
+                    "desc": "一次客户端请求下记录多个上游尝试，展示渠道、上游模型、状态、错误、TTFB、耗时、usage 和成本。",
+                    "ui": "日志列表、日志详情、模型测试跳转日志详情、首页观测台均可查看。",
+                    "gap": "当前复用 RelayLog / ChannelAttempt JSON，尚未拆独立 request_traces / request_attempts 表。"
+                },
+                "healthCooldown": {
+                    "name": "健康分 / 冷却 / 智能调度",
+                    "desc": "结合真实请求反馈、成功率、空响应率、延迟和冷却状态影响候选排序或跳过。",
+                    "ui": "设置页可调健康分权重并查看冷却策略；分组调度预览展示健康分、冷却和决策原因。",
+                    "gap": "已实现 key / channel / base_url 维度；site / account scope 和完整 quota status 仍待补。"
+                },
+                "slowProbe": {
+                    "name": "慢速主动探测",
+                    "desc": "默认关闭，低频补充 unknown / degraded / cooldown 到期候选状态，避免压测公益站。",
+                    "ui": "设置页可配置开关、同站点间隔、同模型间隔、并发、每日预算、prompt、max tokens、temperature、jitter。",
+                    "gap": "目前是非流式探测，限速 / 预算 / 退避状态为内存态；stream probe 待补。"
+                },
+                "costUsage": {
+                    "name": "Usage / Cost 统计增强",
+                    "desc": "记录最终成功成本、失败尝试估算成本、整条 failover 链路成本、cache token 和 service tier。",
+                    "ui": "首页观测台、日志列表、日志详情 attempt 明细展示 token、缓存、成本和成本来源。",
+                    "gap": "大规模日志量下后续可考虑独立统计表或增量缓存。"
+                },
+                "modelTest": {
+                    "name": "真实请求模型测试",
+                    "desc": "用户主动发起短问题测试，支持按渠道 / 按模型、并发、流式、TTFB、耗时、token、成本和响应摘要。",
+                    "ui": "模型测试页提供完整操作面板、结果表格和日志详情跳转。",
+                    "gap": "仍需 NAS / Docker 中用真实大量模型验证滚动、筛选、选择和日志跳转体验。"
+                },
+                "groupAutoGenerate": {
+                    "name": "模型分组一键生成",
+                    "desc": "按已获取模型名自动生成或补齐同名分组，相同模型名归入同一组。",
+                    "ui": "模型分组页提供批量生成、选择生成、预览、筛选和结果摘要。",
+                    "gap": "仍建议在真实同步站点模型和普通渠道各验证一次。"
+                },
+                "protocolTransform": {
+                    "name": "协议转换与兼容链路",
+                    "desc": "保留 OpenAI Chat / Responses / Anthropic / Gemini / Codex 相关 transformer 和 passthrough 能力。",
+                    "ui": "渠道类型、模型测试协议、日志 attempt 协议路径可见。",
+                    "gap": "还没有独立 transformer inspector；Codex / Gemini 仍按现有入口和出站类型体现。"
+                },
+                "liveDebug": {
+                    "name": "实时 debug / 活跃请求视图",
+                    "desc": "ccLoad 有更强的活跃请求和调试快照体验，适合排查未结束请求。",
+                    "ui": "当前已有自动刷新日志和详情，但未做到请求未结束时的实时 debug 快照。",
+                    "gap": "待补活跃请求面板、debug 事件流或请求进行中快照。"
+                },
+                "quotaStatus": {
+                    "name": "额度 / 配额状态解析",
+                    "desc": "结合余额、quota、错误类型提前过滤或降权候选。",
+                    "ui": "当前在日志和冷却中能看到 quota_error，但没有完整 quota status resolver 和专门 UI。",
+                    "gap": "待补 quota status 解析、候选过滤说明和分组调度预览展示。"
+                }
+            },
+            "note": "这个面板是融合能力的 UI 对齐索引。它不替代具体功能页面，但用于保证“已接入后端能力就必须能被用户看到、理解和排障”。"
+        },
         "log": {
             "title": "日志设置",
             "enabled": {
