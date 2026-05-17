@@ -17,7 +17,10 @@ import { SettingHealthProbe } from './HealthProbe';
 export function Setting() {
     return (
         <div className="h-full min-h-0 overflow-y-auto overscroll-contain rounded-t-3xl">
-            <PageWrapper className="columns-1 gap-4 pb-24 md:columns-2 md:pb-4 *:mb-4 *:min-w-0 *:break-inside-avoid">
+            <PageWrapper
+                childLayout={false}
+                className="grid grid-cols-1 gap-4 pb-24 md:pb-4 2xl:grid-cols-2"
+            >
                 <SettingInfo key="setting-info" />
                 <SettingAppearance key="setting-appearance" />
                 <SettingAccount key="setting-account" />
@@ -28,7 +31,9 @@ export function Setting() {
                 <SettingLLMSync key="setting-llmsync" />
                 <SettingSiteAutomation key="setting-site-automation" />
                 <SettingCircuitBreaker key="setting-circuit-breaker" />
-                <SettingHealthProbe key="setting-health-probe" />
+                <div key="setting-health-probe" className="2xl:col-span-2">
+                    <SettingHealthProbe />
+                </div>
                 <SettingBackup key="setting-backup" />
             </PageWrapper>
         </div>
