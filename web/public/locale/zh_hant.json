@@ -671,6 +671,7 @@
             "protocol": "協議",
             "status": "狀態",
             "http": "HTTP",
+            "ttfb": "首字",
             "duration": "耗時",
             "tokens": "輸入 / 輸出",
             "speed": "Tok/s",

@@ -218,8 +218,8 @@ export function AppContainer() {
             key="main-app"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="mx-auto flex h-dvh max-w-6xl flex-col overflow-hidden px-3 md:grid md:grid-cols-[auto_1fr] md:gap-6 md:px-6"
+            transition={{ duration: 0.16 }}
+            className="flex h-dvh w-full max-w-none flex-col overflow-hidden px-3 md:grid md:grid-cols-[auto_minmax(0,1fr)] md:gap-4 md:px-4 xl:px-6"
         >
             <NavBar />
             <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
@@ -247,7 +247,7 @@ export function AppContainer() {
                                 initial="initial"
                                 animate="animate"
                                 exit="exit"
-                                transition={{ duration: 0.3 }}
+                                transition={{ duration: 0.15 }}
                                 className="flex items-baseline gap-6"
                             >
                                 <span className="text-3xl font-bold mt-1">{t(activeItem)}</span>
@@ -260,7 +260,7 @@ export function AppContainer() {
                         <Toolbar />
                     </div>
                 </header>
-                <AnimatePresence mode="wait" initial={false}>
+                <AnimatePresence mode="sync" initial={false}>
                     <motion.div
                         key={activeItem}
                         variants={ENTRANCE_VARIANTS.content}
@@ -268,9 +268,9 @@ export function AppContainer() {
                         animate="animate"
                         exit={{
                             opacity: 0,
-                            scale: 0.98,
+                            scale: 0.995,
                         }}
-                        transition={{ duration: 0.25 }}
+                        transition={{ duration: 0.12 }}
                         className="h-full min-h-0 flex-1"
                     >
                         <ContentLoader activeRoute={activeItem} />

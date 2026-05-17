@@ -410,6 +410,7 @@ export function Log() {
                             <SelectContent>
                                 <SelectItem value="all">全部来源</SelectItem>
                                 <SelectItem value="relay">Relay</SelectItem>
+                                <SelectItem value="model_test">Model Test</SelectItem>
                                 <SelectItem value="images">Images</SelectItem>
                                 <SelectItem value="probe">Probe</SelectItem>
                             </SelectContent>

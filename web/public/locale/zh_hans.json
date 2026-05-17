@@ -671,6 +671,7 @@
             "protocol": "协议",
             "status": "状态",
             "http": "HTTP",
+            "ttfb": "首字",
             "duration": "耗时",
             "tokens": "输入 / 输出",
             "speed": "Tok/s",

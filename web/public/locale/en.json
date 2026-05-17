@@ -671,6 +671,7 @@
             "protocol": "Protocol",
             "status": "Status",
             "http": "HTTP",
+            "ttfb": "TTFB",
             "duration": "Duration",
             "tokens": "Input / Output",
             "speed": "Tok/s",

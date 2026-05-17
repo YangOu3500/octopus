@@ -266,9 +266,9 @@ export function ModelTest() {
     }, [results]);
 
     return (
-        <div className="flex h-full min-h-0 flex-col gap-4">
-            <div className="shrink-0 rounded-xl border border-border bg-card p-4">
-                <div className="flex flex-col gap-4">
+        <div className="flex h-full min-h-0 flex-col gap-3">
+            <div className="shrink-0 rounded-lg border border-border bg-card p-3">
+                <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex flex-wrap items-center gap-2">
                             <button
@@ -307,7 +307,7 @@ export function ModelTest() {
                         </div>
                     </div>
 
-                    <div className="grid gap-3 lg:grid-cols-[minmax(12rem,18rem)_minmax(16rem,1fr)_8rem_8rem_auto]">
+                    <div className="grid gap-3 lg:grid-cols-[minmax(12rem,18rem)_minmax(20rem,1fr)_8rem_8rem_auto]">
                         {mode === 'channel' ? (
                             <label className="grid gap-1">
                                 <span className="text-xs font-medium text-muted-foreground">{t('channel')}</span>
@@ -384,7 +384,7 @@ export function ModelTest() {
                                 </Select>
                             </label>
                             <label className="flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground">
-                                <Switch checked={stream} onCheckedChange={setStream} disabled />
+                                <Switch checked={stream} onCheckedChange={setStream} />
                                 {t('stream')}
                             </label>
                         </div>
@@ -402,9 +402,9 @@ export function ModelTest() {
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
+            <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-card">
                 <div className="h-full overflow-auto">
-                    <table className="w-full min-w-[68rem] text-sm">
+                    <table className="w-full min-w-[76rem] text-sm">
                         <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur">
                             <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
                                 <th className="w-10 px-3 py-3">
@@ -416,6 +416,7 @@ export function ModelTest() {
                                 <th className="px-3 py-3">{t('table.protocol')}</th>
                                 <th className="px-3 py-3">{t('table.status')}</th>
                                 <th className="px-3 py-3">{t('table.http')}</th>
+                                <th className="px-3 py-3">{t('table.ttfb')}</th>
                                 <th className="px-3 py-3">{t('table.duration')}</th>
                                 <th className="px-3 py-3">{t('table.tokens')}</th>
                                 <th className="px-3 py-3">{t('table.speed')}</th>
@@ -426,7 +427,7 @@ export function ModelTest() {
                         <tbody>
                             {rows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={10} className="px-3 py-12 text-center text-muted-foreground">
+                                    <td colSpan={11} className="px-3 py-12 text-center text-muted-foreground">
                                         <FlaskConical className="mx-auto mb-2 size-6" />
                                         {t('emptyRows')}
                                     </td>
@@ -486,6 +487,7 @@ export function ModelTest() {
                                             )}
                                         </td>
                                         <td className="px-3 py-3 tabular-nums">{result?.http_status || '-'}</td>
+                                        <td className="px-3 py-3 tabular-nums">{formatMS(result?.ttfb_ms)}</td>
                                         <td className="px-3 py-3 tabular-nums">{formatMS(result?.duration_ms)}</td>
                                         <td className="px-3 py-3 tabular-nums">
                                             <div>{formatCount(result?.input_tokens)} / {formatCount(result?.output_tokens)}</div>

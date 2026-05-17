@@ -189,9 +189,6 @@ func validateRunRequest(req RunRequest) error {
 	default:
 		return fmt.Errorf("%w: unsupported mode", ErrInvalidRequest)
 	}
-	if req.Stream {
-		return fmt.Errorf("%w: stream model test is not supported yet", ErrInvalidRequest)
-	}
 	if len(req.Targets) == 0 {
 		return fmt.Errorf("%w: targets are required", ErrInvalidRequest)
 	}
@@ -262,11 +259,20 @@ func (s *Service) runTarget(ctx context.Context, req RunRequest, target RunTarge
 		Prompt:      req.Prompt,
 		MaxTokens:   req.MaxTokens,
 		Temperature: req.Temperature,
+		Stream:      req.Stream,
 	})
 	result.HTTPStatus = probeResult.HTTPStatus
 	result.DurationMS = probeResult.DurationMS
+	result.TTFBMS = probeResult.TTFBMS
 
 	usage := extractUsage(channel.Type, probeResult.ResponseBody)
+	if req.Stream {
+		usage = usageSummary{
+			InputTokens:  probeResult.Usage.InputTokens,
+			OutputTokens: probeResult.Usage.OutputTokens,
+			CacheTokens:  probeResult.Usage.CacheTokens,
+		}
+	}
 	result.InputTokens = usage.InputTokens
 	result.OutputTokens = usage.OutputTokens
 	result.CacheTokens = usage.CacheTokens
@@ -275,7 +281,11 @@ func (s *Service) runTarget(ctx context.Context, req RunRequest, target RunTarge
 		result.TokensPerSecond = float64(result.OutputTokens) / (float64(result.DurationMS) / 1000)
 	}
 
-	result.ResponseText = sanitizeText(extractResponseText(channel.Type, probeResult.ResponseBody))
+	if req.Stream {
+		result.ResponseText = sanitizeText(probeResult.ResponseText)
+	} else {
+		result.ResponseText = sanitizeText(extractResponseText(channel.Type, probeResult.ResponseBody))
+	}
 	if result.ResponseText == "" && len(probeResult.ResponseBody) > 0 {
 		result.ResponseText = sanitizeText(snippet(string(probeResult.ResponseBody), responsePreviewSize))
 	}
@@ -568,6 +578,7 @@ func modelTestResponseLogContent(result RunResult) string {
 	payload := map[string]any{
 		"success":        result.Success,
 		"http_status":    result.HTTPStatus,
+		"ttfb_ms":        result.TTFBMS,
 		"duration_ms":    result.DurationMS,
 		"failure_reason": result.FailureReason,
 		"response_text":  result.ResponseText,

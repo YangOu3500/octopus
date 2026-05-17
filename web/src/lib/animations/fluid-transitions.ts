@@ -52,16 +52,15 @@ export const ENTRANCE_VARIANTS = {
     // 主内容进入
     content: {
         initial: {
-            scale: 0.8,
+            scale: 0.985,
             opacity: 0,
         },
         animate: {
             scale: 1,
             opacity: 1,
             transition: {
-                duration: 0.5,
-                ease: EASING.easeOutExpo,
-                delay: 0.1,
+                duration: 0.14,
+                ease: EASING.easeOutCubic,
             },
         },
     } as Variants,
@@ -86,4 +85,3 @@ export const ENTRANCE_VARIANTS = {
     } as Variants,
 
 };
-

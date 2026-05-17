@@ -180,3 +180,120 @@ func TestRunModelTestRedactsSensitiveResponseText(t *testing.T) {
 		t.Fatalf("response text was not redacted as expected: %s", text)
 	}
 }
+
+func TestRunModelTestStreamRecordsTTFBUsageAndLog(t *testing.T) {
+	ctx := setupModelTestDB(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		flusher, _ := w.(http.Flusher)
+		_, _ = w.Write([]byte(`data: {"id":"chunk-1","object":"chat.completion.chunk","choices":[{"delta":{"role":"assistant"}}]}` + "\n\n"))
+		if flusher != nil {
+			flusher.Flush()
+		}
+		time.Sleep(20 * time.Millisecond)
+		_, _ = w.Write([]byte(`data: {"id":"chunk-2","object":"chat.completion.chunk","choices":[{"delta":{"content":"OK"}}]}` + "\n\n"))
+		_, _ = w.Write([]byte(`data: {"id":"chunk-3","object":"chat.completion.chunk","choices":[],"usage":{"prompt_tokens":4,"completion_tokens":1}}` + "\n\n"))
+		_, _ = w.Write([]byte("data: [DONE]\n\n"))
+	}))
+	defer server.Close()
+
+	channel := &model.Channel{
+		Name:     "model-test-stream",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
+		Model:    "test-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "test-stream-secret", Remark: "stream"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+
+	service := NewService(nil)
+	service.prober.CandidateTimeout = 5 * time.Second
+	result, err := service.Run(ctx, RunRequest{
+		Mode:        "channel",
+		Concurrency: 1,
+		Stream:      true,
+		Targets:     []RunTarget{{ChannelID: channel.ID, ModelName: "test-model"}},
+	})
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+	if result.Total != 1 || result.Success != 1 || result.Failed != 0 {
+		t.Fatalf("unexpected summary: %+v", result)
+	}
+	item := result.Results[0]
+	if !item.Success || item.ResponseText != "OK" {
+		t.Fatalf("expected stream OK result: %+v", item)
+	}
+	if item.TTFBMS <= 0 {
+		t.Fatalf("expected positive stream ttfb: %+v", item)
+	}
+	if item.InputTokens != 4 || item.OutputTokens != 1 {
+		t.Fatalf("unexpected stream usage: %+v", item)
+	}
+
+	logs, err := op.RelayLogListWithQuery(ctx, model.RelayLogListQuery{
+		Source:      "model_test",
+		Page:        1,
+		PageSize:    10,
+		IncludeBody: true,
+	})
+	if err != nil {
+		t.Fatalf("RelayLogListWithQuery failed: %v", err)
+	}
+	if len(logs.Items) != 1 {
+		t.Fatalf("expected 1 model_test log, got %d", len(logs.Items))
+	}
+	log := logs.Items[0]
+	if !log.RequestStream {
+		t.Fatalf("expected model test stream log: %+v", log)
+	}
+	if log.Ftut <= 0 {
+		t.Fatalf("expected ttfb in log: %+v", log)
+	}
+	if strings.Contains(log.RequestContent, "test-stream-secret") || strings.Contains(log.ResponseContent, "test-stream-secret") {
+		t.Fatalf("model test log leaked key: request=%s response=%s", log.RequestContent, log.ResponseContent)
+	}
+}
+
+func TestRunModelTestStreamEmptyDoneFails(t *testing.T) {
+	ctx := setupModelTestDB(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = w.Write([]byte("data: [DONE]\n\n"))
+	}))
+	defer server.Close()
+
+	channel := &model.Channel{
+		Name:     "model-test-stream-empty",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
+		Model:    "test-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "test-empty-secret", Remark: "empty"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+
+	result, err := NewService(nil).Run(ctx, RunRequest{
+		Mode:        "channel",
+		Concurrency: 1,
+		Stream:      true,
+		Targets:     []RunTarget{{ChannelID: channel.ID, ModelName: "test-model"}},
+	})
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+	if result.Success != 0 || result.Failed != 1 {
+		t.Fatalf("expected stream empty failure: %+v", result)
+	}
+	item := result.Results[0]
+	if item.Success || item.HTTPStatus != http.StatusOK || item.FailureReason != "stream_empty_response" {
+		t.Fatalf("unexpected empty stream result: %+v", item)
+	}
+}
