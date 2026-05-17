@@ -49,6 +49,7 @@
         "channel": "供應源",
         "group": "分組",
         "key": "金鑰",
+        "modelTest": "模型測試",
         "model": "價格",
         "log": "日誌",
         "setting": "設定"
@@ -561,6 +562,49 @@
             "noHttpStatus": "無 HTTP 狀態"
         },
         "empty": "暫無分組，點擊左上角按鈕建立"
+    },
+    "modelTest": {
+        "mode": {
+            "channel": "按供應源測試",
+            "model": "按模型測試"
+        },
+        "summary": "已測 {total} · 成功 {success} · 失敗 {failed}",
+        "clear": "清空結果",
+        "running": "測試中...",
+        "runSelected": "測試 {count} 項",
+        "runComplete": "模型測試完成：成功 {success}，失敗 {failed}",
+        "runFailed": "模型測試失敗",
+        "emptySelection": "請先選擇要測試的模型或供應源",
+        "channel": "供應源",
+        "model": "模型",
+        "prompt": "測試內容",
+        "maxTokens": "最大輸出",
+        "concurrency": "並發",
+        "protocol": "協議",
+        "protocolAuto": "自動",
+        "stream": "串流",
+        "searchModel": "搜尋模型名稱...",
+        "searchChannel": "搜尋供應源名稱...",
+        "emptyRows": "暫無可測試目標",
+        "cache": "快取",
+        "status": {
+            "idle": "未測試",
+            "success": "成功",
+            "failed": "失敗",
+            "disabled": "已停用"
+        },
+        "table": {
+            "model": "模型",
+            "channel": "供應源",
+            "protocol": "協議",
+            "status": "狀態",
+            "http": "HTTP",
+            "duration": "耗時",
+            "tokens": "輸入 / 輸出",
+            "speed": "Tok/s",
+            "cost": "費用",
+            "response": "回應"
+        }
     },
     "model": {
         "create": {

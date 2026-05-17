@@ -49,6 +49,7 @@
         "channel": "渠道",
         "group": "分组",
         "key": "密钥",
+        "modelTest": "模型测试",
         "model": "价格",
         "log": "日志",
         "setting": "设置"
@@ -561,6 +562,49 @@
             "noHttpStatus": "无 HTTP 状态"
         },
         "empty": "暂无分组，点击左上角按钮创建"
+    },
+    "modelTest": {
+        "mode": {
+            "channel": "按渠道测试",
+            "model": "按模型测试"
+        },
+        "summary": "已测 {total} · 成功 {success} · 失败 {failed}",
+        "clear": "清空结果",
+        "running": "测试中...",
+        "runSelected": "测试 {count} 项",
+        "runComplete": "模型测试完成：成功 {success}，失败 {failed}",
+        "runFailed": "模型测试失败",
+        "emptySelection": "请先选择要测试的模型或渠道",
+        "channel": "渠道",
+        "model": "模型",
+        "prompt": "测试内容",
+        "maxTokens": "最大输出",
+        "concurrency": "并发",
+        "protocol": "协议",
+        "protocolAuto": "自动",
+        "stream": "流式",
+        "searchModel": "搜索模型名称...",
+        "searchChannel": "搜索渠道名称...",
+        "emptyRows": "暂无可测试目标",
+        "cache": "缓存",
+        "status": {
+            "idle": "未测试",
+            "success": "成功",
+            "failed": "失败",
+            "disabled": "已禁用"
+        },
+        "table": {
+            "model": "模型",
+            "channel": "渠道",
+            "protocol": "协议",
+            "status": "状态",
+            "http": "HTTP",
+            "duration": "耗时",
+            "tokens": "输入 / 输出",
+            "speed": "Tok/s",
+            "cost": "费用",
+            "response": "响应"
+        }
     },
     "model": {
         "create": {

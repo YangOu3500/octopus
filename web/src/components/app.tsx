@@ -137,6 +137,21 @@ export function AppContainer() {
                     );
                     break;
                 }
+                case 'modelTest': {
+                    prefetches.push(
+                        queryClient.prefetchQuery({
+                            queryKey: ['models', 'channel'],
+                            queryFn: async () => apiClient.get('/api/v1/model/channel'),
+                        })
+                    );
+                    prefetches.push(
+                        queryClient.prefetchQuery({
+                            queryKey: ['channels', 'list'],
+                            queryFn: async () => apiClient.get('/api/v1/channel/list'),
+                        })
+                    );
+                    break;
+                }
                 case 'model': {
                     prefetches.push(
                         queryClient.prefetchQuery({
@@ -265,4 +280,3 @@ export function AppContainer() {
         </motion.div>
     );
 }
-

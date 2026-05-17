@@ -22,6 +22,7 @@ type ProbeResult struct {
 	HTTPStatus   int
 	DurationMS   int64
 	ErrorMessage string
+	ResponseBody []byte
 }
 
 type ProbeOptions struct {
@@ -95,6 +96,7 @@ func (p *Prober) RunCandidateWithOptions(ctx context.Context, channel model.Chan
 	result.DurationMS = time.Since(startedAt).Milliseconds()
 
 	body, _ := io.ReadAll(io.LimitReader(response.Body, 32*1024))
+	result.ResponseBody = body
 
 	if provider, ok := validatorProviderForOutbound(channel.Type); ok {
 		validation := validator.ValidateNonStream(provider, validator.Response{

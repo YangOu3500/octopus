@@ -49,6 +49,7 @@
         "channel": "Channel",
         "group": "Group",
         "key": "Key",
+        "modelTest": "Model Test",
         "model": "Price",
         "log": "Log",
         "setting": "Setting"
@@ -561,6 +562,49 @@
             "noHttpStatus": "No HTTP status"
         },
         "empty": "No groups yet, click the button above to create one"
+    },
+    "modelTest": {
+        "mode": {
+            "channel": "By channel",
+            "model": "By model"
+        },
+        "summary": "Tested {total} · Success {success} · Failed {failed}",
+        "clear": "Clear",
+        "running": "Running...",
+        "runSelected": "Test {count}",
+        "runComplete": "Model test completed: {success} success, {failed} failed",
+        "runFailed": "Model test failed",
+        "emptySelection": "Select models or channels to test first",
+        "channel": "Channel",
+        "model": "Model",
+        "prompt": "Prompt",
+        "maxTokens": "Max output",
+        "concurrency": "Concurrency",
+        "protocol": "Protocol",
+        "protocolAuto": "Auto",
+        "stream": "Stream",
+        "searchModel": "Search models...",
+        "searchChannel": "Search channels...",
+        "emptyRows": "No test targets",
+        "cache": "Cache",
+        "status": {
+            "idle": "Idle",
+            "success": "Success",
+            "failed": "Failed",
+            "disabled": "Disabled"
+        },
+        "table": {
+            "model": "Model",
+            "channel": "Channel",
+            "protocol": "Protocol",
+            "status": "Status",
+            "http": "HTTP",
+            "duration": "Duration",
+            "tokens": "Input / Output",
+            "speed": "Tok/s",
+            "cost": "Cost",
+            "response": "Response"
+        }
     },
     "model": {
         "create": {
