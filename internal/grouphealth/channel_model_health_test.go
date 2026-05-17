@@ -1,0 +1,176 @@
+package grouphealth
+
+import (
+	"testing"
+	"time"
+
+	"github.com/bestruirui/octopus/internal/model"
+	"github.com/bestruirui/octopus/internal/op"
+	"github.com/bestruirui/octopus/internal/relay/balancer"
+	"github.com/bestruirui/octopus/internal/transformer/outbound"
+)
+
+func TestBuildChannelModelHealthAggregatesAttemptsAndRuntimeHealth(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	balancer.Reset()
+	t.Cleanup(balancer.Reset)
+
+	if err := op.RelayLogClear(ctx); err != nil {
+		t.Fatalf("RelayLogClear failed: %v", err)
+	}
+	if err := op.SettingSetString(model.SettingKeyHealthScoreEnabled, "true"); err != nil {
+		t.Fatalf("SettingSetString failed: %v", err)
+	}
+
+	channel := &model.Channel{
+		Name:     "health-openai",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://health.example.test/v1"}},
+		Model:    "gpt-4o",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-health-secret"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	storedChannel, err := op.ChannelGet(channel.ID, ctx)
+	if err != nil {
+		t.Fatalf("ChannelGet failed: %v", err)
+	}
+	usedKey := storedChannel.GetChannelKey()
+
+	balancer.RecordHealthAttempt(balancer.HealthAttempt{
+		ChannelID:    channel.ID,
+		ChannelKeyID: usedKey.ID,
+		ModelName:    "gpt-4o",
+		Status:       model.AttemptSuccess,
+		HTTPStatus:   200,
+		TTFBMS:       90,
+		TotalMS:      300,
+	})
+	balancer.RecordHealthAttempt(balancer.HealthAttempt{
+		ChannelID:     channel.ID,
+		ChannelKeyID:  usedKey.ID,
+		ModelName:     "gpt-4o",
+		BaseURL:       storedChannel.GetBaseUrl(),
+		Status:        model.AttemptFailed,
+		HTTPStatus:    200,
+		FailureReason: "response validation failed: empty_choices",
+		TotalMS:       1200,
+	})
+
+	now := time.Now().Unix()
+	entry := model.RelayLog{
+		Time:             now,
+		TraceID:          "trace-channel-health",
+		RequestModelName: "gpt-4o",
+		ActualModelName:  "gpt-4o",
+		FinalStatus:      "success",
+		RequestSource:    "relay",
+		ChannelId:        channel.ID,
+		ChannelName:      channel.Name,
+		AttemptsCount:    2,
+		Attempts: []model.ChannelAttempt{
+			{
+				AttemptIndex:  1,
+				ChannelID:     channel.ID,
+				ChannelName:   channel.Name,
+				ModelName:     "gpt-4o",
+				Status:        model.AttemptFailed,
+				HTTPStatus:    200,
+				FailureReason: "empty_choices",
+				TTFBMS:        80,
+				TotalMS:       250,
+				InputTokens:   20,
+				EstimatedCost: 0.001,
+			},
+			{
+				AttemptIndex:  2,
+				ChannelID:     channel.ID,
+				ChannelName:   channel.Name,
+				ModelName:     "gpt-4o",
+				Status:        model.AttemptSuccess,
+				HTTPStatus:    200,
+				TTFBMS:        100,
+				TotalMS:       500,
+				InputTokens:   30,
+				OutputTokens:  15,
+				CacheTokens:   5,
+				EstimatedCost: 0.003,
+			},
+		},
+	}
+	if err := op.RelayLogAdd(ctx, entry); err != nil {
+		t.Fatalf("RelayLogAdd failed: %v", err)
+	}
+
+	result, err := BuildChannelModelHealth(ctx, model.ChannelModelHealthQuery{TimeRange: "all"})
+	if err != nil {
+		t.Fatalf("BuildChannelModelHealth failed: %v", err)
+	}
+	if !result.Summary.HealthScoreEnabled || result.Summary.LoadBalancingStrategy != "health_score" {
+		t.Fatalf("expected health score strategy summary, got %+v", result.Summary)
+	}
+
+	row := findChannelModelHealthRow(result.Rows, channel.ID, "gpt-4o")
+	if row == nil {
+		t.Fatalf("expected channel/model row, got %+v", result.Rows)
+	}
+	if row.RequestCount != 2 || row.SuccessCount != 1 || row.FailureCount != 1 {
+		t.Fatalf("unexpected row counts: %+v", row)
+	}
+	if row.InputTokens != 50 || row.OutputTokens != 15 || row.CacheTokens != 5 {
+		t.Fatalf("unexpected token totals: %+v", row)
+	}
+	if row.HealthSampleCount != 2 || row.HealthSuccessCount != 1 || row.HealthFailureCount != 1 {
+		t.Fatalf("unexpected health samples: %+v", row)
+	}
+	if !row.CoolingDown || row.CooldownRemainingMS <= 0 || row.CooldownReason == "" {
+		t.Fatalf("expected active cooldown state: %+v", row)
+	}
+	if row.AvgTTFBMS != 90 || row.AvgTotalMS != 375 {
+		t.Fatalf("unexpected latency averages: %+v", row)
+	}
+}
+
+func TestBuildChannelModelHealthShowsProjectedQuotaMetadata(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+
+	channel := &model.Channel{
+		Name:     "health-managed",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://managed-health.example.test/v1"}},
+		Model:    "managed-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-managed-secret"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	siteID, accountID := createProbeSite(t)
+	createProbeBinding(t, siteID, accountID, channel.ID, "managed-model", false)
+
+	result, err := BuildChannelModelHealth(ctx, model.ChannelModelHealthQuery{TimeRange: "all"})
+	if err != nil {
+		t.Fatalf("BuildChannelModelHealth failed: %v", err)
+	}
+	row := findChannelModelHealthRow(result.Rows, channel.ID, "managed-model")
+	if row == nil {
+		t.Fatalf("expected managed row, got %+v", result.Rows)
+	}
+	if !row.Managed || row.SiteID != siteID || row.SiteAccountID != accountID {
+		t.Fatalf("expected managed site/account metadata, got %+v", row)
+	}
+	if row.QuotaStatus != "unknown" {
+		t.Fatalf("quota status = %q, want unknown for unsynced zero account", row.QuotaStatus)
+	}
+}
+
+func findChannelModelHealthRow(rows []model.ChannelModelHealthRow, channelID int, modelName string) *model.ChannelModelHealthRow {
+	for i := range rows {
+		if rows[i].ChannelID == channelID && rows[i].ModelName == modelName {
+			return &rows[i]
+		}
+	}
+	return nil
+}

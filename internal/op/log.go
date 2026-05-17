@@ -262,6 +262,18 @@ func RelayLogListWithQuery(ctx context.Context, query model.RelayLogListQuery) (
 	}, nil
 }
 
+func RelayLogCollectWithQuery(ctx context.Context, query model.RelayLogListQuery) ([]model.RelayLog, error) {
+	query = normalizeRelayLogListQuery(query)
+	logs, err := relayLogCollect(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	for i := range logs {
+		logs[i] = relayLogForList(logs[i])
+	}
+	return logs, nil
+}
+
 func relayLogCollect(ctx context.Context, query model.RelayLogListQuery) ([]model.RelayLog, error) {
 	enabled, err := SettingGetBool(model.SettingKeyRelayLogKeepEnabled)
 	if err != nil {

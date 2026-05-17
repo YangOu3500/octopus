@@ -1099,7 +1099,83 @@
     "channel": {
         "tabs": {
             "site": "站點供應源",
-            "manual": "一般供應源"
+            "manual": "一般供應源",
+            "health": "模型健康"
+        },
+        "health": {
+            "title": "渠道模型健康",
+            "healthEnabled": "健康調度已啟用",
+            "healthDisabled": "健康調度未啟用",
+            "managed": "託管",
+            "refresh": "重新整理",
+            "loading": "正在載入渠道模型健康度...",
+            "loadFailed": "渠道模型健康度載入失敗",
+            "empty": "目前篩選條件下沒有渠道模型健康記錄",
+            "searchModel": "搜尋模型",
+            "channelAll": "全部渠道",
+            "cooldown": "冷卻中",
+            "noCooldown": "無冷卻",
+            "requests": "請求",
+            "ttfb": "首字",
+            "duration": "耗時",
+            "tokenIn": "輸入",
+            "tokenOut": "輸出",
+            "tokenCache": "快取",
+            "activeSelections": "活躍選擇",
+            "healthSamples": "{success}/{total} · {rate}",
+            "noSamples": "暫無健康樣本",
+            "emptyRate": "空回應",
+            "callMeta": "成功 {success} / 失敗 {failed} · {rate}",
+            "range": {
+                "1h": "1 小時",
+                "24h": "24 小時",
+                "7d": "7 天",
+                "30d": "30 天",
+                "all": "全部"
+            },
+            "source": {
+                "all": "全部來源",
+                "relay": "真實請求",
+                "modelTest": "模型測試",
+                "probe": "慢探測"
+            },
+            "strategy": {
+                "healthScore": "健康分參與負載均衡",
+                "staticGroupMode": "按分組模式調度"
+            },
+            "quota": {
+                "available": "配額可用",
+                "zeroBalance": "餘額不足",
+                "accountDisabled": "帳號停用",
+                "unknown": "配額未知"
+            },
+            "status": {
+                "cooldown": "冷卻",
+                "failed": "失敗",
+                "active": "活躍",
+                "idle": "閒置"
+            },
+            "stats": {
+                "rows": "渠道模型",
+                "rowsSub": "{requests} 次請求樣本",
+                "successRate": "成功率",
+                "successSub": "成功 {success} / 失敗 {failed}",
+                "healthScore": "平均健康分",
+                "load": "目前負載",
+                "loadSub": "{cooldown} 個冷卻中"
+            },
+            "table": {
+                "channel": "渠道 / 模型",
+                "health": "健康度",
+                "calls": "調用",
+                "latency": "延遲",
+                "throughput": "吞吐",
+                "tokens": "Token",
+                "cost": "成本",
+                "load": "負載 / 冷卻",
+                "quota": "配額",
+                "lastFailure": "最近失敗"
+            }
         },
         "card": {
             "requestCount": "請求次數",

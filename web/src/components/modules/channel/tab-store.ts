@@ -6,7 +6,7 @@ import {
     useJumpStore,
 } from '@/stores/jump';
 
-export type ChannelTab = 'site' | 'manual';
+export type ChannelTab = 'site' | 'manual' | 'health';
 
 const STORAGE_KEY = 'octopus:channel-tab';
 
@@ -24,7 +24,7 @@ function readInitialTab(): ChannelTab {
     if (typeof window === 'undefined') return 'site';
     try {
         const stored = window.sessionStorage.getItem(STORAGE_KEY);
-        return stored === 'manual' ? 'manual' : 'site';
+        return stored === 'manual' || stored === 'health' ? stored : 'site';
     } catch {
         return 'site';
     }

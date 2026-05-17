@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bestruirui/octopus/internal/grouphealth"
 	"github.com/bestruirui/octopus/internal/helper"
 	"github.com/bestruirui/octopus/internal/model"
 	"github.com/bestruirui/octopus/internal/op"
@@ -51,6 +52,10 @@ func init() {
 		AddRoute(
 			router.NewRoute("/sync", http.MethodPost).
 				Handle(syncChannel),
+		).
+		AddRoute(
+			router.NewRoute("/model-health", http.MethodGet).
+				Handle(getChannelModelHealth),
 		).
 		AddRoute(
 			router.NewRoute("/last-sync-time", http.MethodGet).
@@ -191,4 +196,27 @@ func syncChannel(c *gin.Context) {
 func getLastSyncTime(c *gin.Context) {
 	time := task.GetLastSyncModelsTime()
 	resp.Success(c, time)
+}
+
+func getChannelModelHealth(c *gin.Context) {
+	var channelID int
+	if value := strings.TrimSpace(c.Query("channel_id")); value != "" && value != "all" {
+		id, err := strconv.Atoi(value)
+		if err != nil {
+			resp.InvalidParam(c)
+			return
+		}
+		channelID = id
+	}
+	result, err := grouphealth.BuildChannelModelHealth(c.Request.Context(), model.ChannelModelHealthQuery{
+		TimeRange: c.DefaultQuery("time_range", "24h"),
+		ChannelID: channelID,
+		Model:     c.Query("model"),
+		Source:    c.Query("source"),
+	})
+	if err != nil {
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, result)
 }

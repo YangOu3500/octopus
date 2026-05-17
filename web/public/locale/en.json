@@ -1099,7 +1099,83 @@
     "channel": {
         "tabs": {
             "site": "Site Channels",
-            "manual": "Manual Channels"
+            "manual": "Manual Channels",
+            "health": "Model Health"
+        },
+        "health": {
+            "title": "Channel Model Health",
+            "healthEnabled": "Health routing enabled",
+            "healthDisabled": "Health routing disabled",
+            "managed": "Managed",
+            "refresh": "Refresh",
+            "loading": "Loading channel model health...",
+            "loadFailed": "Failed to load channel model health",
+            "empty": "No channel model health rows match the current filters",
+            "searchModel": "Search models",
+            "channelAll": "All channels",
+            "cooldown": "Cooling down",
+            "noCooldown": "No cooldown",
+            "requests": "Requests",
+            "ttfb": "TTFB",
+            "duration": "Duration",
+            "tokenIn": "Input",
+            "tokenOut": "Output",
+            "tokenCache": "Cache",
+            "activeSelections": "Active selections",
+            "healthSamples": "{success}/{total} · {rate}",
+            "noSamples": "No health samples",
+            "emptyRate": "Empty",
+            "callMeta": "Success {success} / Failed {failed} · {rate}",
+            "range": {
+                "1h": "1 hour",
+                "24h": "24 hours",
+                "7d": "7 days",
+                "30d": "30 days",
+                "all": "All"
+            },
+            "source": {
+                "all": "All sources",
+                "relay": "Relay",
+                "modelTest": "Model test",
+                "probe": "Slow probe"
+            },
+            "strategy": {
+                "healthScore": "Health score load balancing",
+                "staticGroupMode": "Group mode routing"
+            },
+            "quota": {
+                "available": "Quota available",
+                "zeroBalance": "Zero balance",
+                "accountDisabled": "Account disabled",
+                "unknown": "Quota unknown"
+            },
+            "status": {
+                "cooldown": "Cooldown",
+                "failed": "Failed",
+                "active": "Active",
+                "idle": "Idle"
+            },
+            "stats": {
+                "rows": "Channel models",
+                "rowsSub": "{requests} request samples",
+                "successRate": "Success rate",
+                "successSub": "Success {success} / Failed {failed}",
+                "healthScore": "Avg health score",
+                "load": "Current load",
+                "loadSub": "{cooldown} cooling down"
+            },
+            "table": {
+                "channel": "Channel / Model",
+                "health": "Health",
+                "calls": "Calls",
+                "latency": "Latency",
+                "throughput": "Throughput",
+                "tokens": "Tokens",
+                "cost": "Cost",
+                "load": "Load / Cooldown",
+                "quota": "Quota",
+                "lastFailure": "Last failure"
+            }
         },
         "card": {
             "requestCount": "Requests",

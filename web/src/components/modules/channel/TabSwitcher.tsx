@@ -3,15 +3,16 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion } from 'motion/react';
-import { useChannelList } from '@/api/endpoints/channel';
+import { useChannelList, useChannelModelHealth } from '@/api/endpoints/channel';
 import { useSiteChannelList } from '@/api/endpoints/site-channel';
 import { SiteChannelCompletionAction } from '@/components/modules/site-channel';
 import { cn } from '@/lib/utils';
 import { useChannelTabStore, type ChannelTab } from './tab-store';
 
-const TABS: { value: ChannelTab; key: 'site' | 'manual' }[] = [
+const TABS: { value: ChannelTab; key: 'site' | 'manual' | 'health' }[] = [
     { value: 'site', key: 'site' },
     { value: 'manual', key: 'manual' },
+    { value: 'health', key: 'health' },
 ];
 
 type Props = { className?: string };
@@ -22,13 +23,15 @@ export function ChannelTabSwitcher({ className }: Props) {
     const setActiveTab = useChannelTabStore((s) => s.setActiveTab);
     const { data: channelsData } = useChannelList();
     const { data: siteChannelsData } = useSiteChannelList();
+    const { data: modelHealthData } = useChannelModelHealth({ timeRange: '24h' });
 
     const counts = useMemo(
         () => ({
             site: (siteChannelsData ?? []).filter((card) => card.account_count > 0).length,
             manual: (channelsData ?? []).filter((c) => !c.raw.managed).length,
+            health: modelHealthData?.summary.total_rows ?? 0,
         }),
-        [channelsData, siteChannelsData],
+        [channelsData, modelHealthData, siteChannelsData],
     );
 
     return (

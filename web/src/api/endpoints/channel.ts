@@ -84,6 +84,75 @@ type ChannelServer = Omit<Channel, 'base_urls' | 'custom_header' | 'keys'> & {
     keys: ChannelKey[] | null;
 };
 
+export type ChannelModelHealthRow = {
+    channel_id: number;
+    channel_name: string;
+    managed: boolean;
+    site_id?: number;
+    site_name?: string;
+    site_account_id?: number;
+    site_account_name?: string;
+    model_name: string;
+    request_count: number;
+    success_count: number;
+    failure_count: number;
+    success_rate: number;
+    rpm: number;
+    avg_ttfb_ms: number;
+    avg_total_ms: number;
+    tokens_per_second: number;
+    input_tokens: number;
+    output_tokens: number;
+    cache_tokens: number;
+    estimated_cost: number;
+    health_score: number;
+    health_sample_count: number;
+    health_success_count: number;
+    health_failure_count: number;
+    health_success_rate: number;
+    empty_response_rate: number;
+    rate_limit_count: number;
+    active_selections: number;
+    cooling_down: boolean;
+    cooldown_remaining_ms: number;
+    cooldown_reason?: string;
+    quota_status: string;
+    quota_balance?: number;
+    quota_used?: number;
+    last_http_status?: number;
+    last_failure_reason?: string;
+    last_seen_time?: number;
+};
+
+export type ChannelModelHealthSummary = {
+    time_range: string;
+    start_time: number;
+    end_time: number;
+    health_score_enabled: boolean;
+    load_balancing_strategy: string;
+    total_rows: number;
+    total_requests: number;
+    success_count: number;
+    failure_count: number;
+    avg_success_rate: number;
+    avg_health_score: number;
+    cooling_down_count: number;
+    active_selections: number;
+    estimated_cost: number;
+};
+
+export type ChannelModelHealthResult = {
+    summary: ChannelModelHealthSummary;
+    rows: ChannelModelHealthRow[];
+};
+
+export type ChannelModelHealthParams = {
+    timeRange?: string;
+    channelId?: number | null;
+    model?: string;
+    source?: string;
+};
+
 /**
  * 创建渠道请求：必填字段 + 可选字段
  */
@@ -177,6 +246,87 @@ export function useChannelList() {
                 wait_time: formatTime(item.stats.wait_time),
             }
         })) as Array<{ raw: Channel; formatted: StatsMetricsFormatted }>,
+        refetchInterval: 30000,
+    });
+}
+
+function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): ChannelModelHealthResult {
+    const summary: Partial<ChannelModelHealthSummary> = data.summary ?? {};
+    return {
+        summary: {
+            time_range: summary.time_range ?? '24h',
+            start_time: typeof summary.start_time === 'number' ? summary.start_time : 0,
+            end_time: typeof summary.end_time === 'number' ? summary.end_time : 0,
+            health_score_enabled: summary.health_score_enabled === true,
+            load_balancing_strategy: summary.load_balancing_strategy ?? 'static_group_mode',
+            total_rows: typeof summary.total_rows === 'number' ? summary.total_rows : 0,
+            total_requests: typeof summary.total_requests === 'number' ? summary.total_requests : 0,
+            success_count: typeof summary.success_count === 'number' ? summary.success_count : 0,
+            failure_count: typeof summary.failure_count === 'number' ? summary.failure_count : 0,
+            avg_success_rate: typeof summary.avg_success_rate === 'number' ? summary.avg_success_rate : 0,
+            avg_health_score: typeof summary.avg_health_score === 'number' ? summary.avg_health_score : 100,
+            cooling_down_count: typeof summary.cooling_down_count === 'number' ? summary.cooling_down_count : 0,
+            active_selections: typeof summary.active_selections === 'number' ? summary.active_selections : 0,
+            estimated_cost: typeof summary.estimated_cost === 'number' ? summary.estimated_cost : 0,
+        },
+        rows: (data.rows ?? []).map((row) => ({
+            channel_id: typeof row.channel_id === 'number' ? row.channel_id : 0,
+            channel_name: row.channel_name ?? '',
+            managed: row.managed === true,
+            site_id: typeof row.site_id === 'number' ? row.site_id : undefined,
+            site_name: row.site_name ?? '',
+            site_account_id: typeof row.site_account_id === 'number' ? row.site_account_id : undefined,
+            site_account_name: row.site_account_name ?? '',
+            model_name: row.model_name ?? '',
+            request_count: typeof row.request_count === 'number' ? row.request_count : 0,
+            success_count: typeof row.success_count === 'number' ? row.success_count : 0,
+            failure_count: typeof row.failure_count === 'number' ? row.failure_count : 0,
+            success_rate: typeof row.success_rate === 'number' ? row.success_rate : 0,
+            rpm: typeof row.rpm === 'number' ? row.rpm : 0,
+            avg_ttfb_ms: typeof row.avg_ttfb_ms === 'number' ? row.avg_ttfb_ms : 0,
+            avg_total_ms: typeof row.avg_total_ms === 'number' ? row.avg_total_ms : 0,
+            tokens_per_second: typeof row.tokens_per_second === 'number' ? row.tokens_per_second : 0,
+            input_tokens: typeof row.input_tokens === 'number' ? row.input_tokens : 0,
+            output_tokens: typeof row.output_tokens === 'number' ? row.output_tokens : 0,
+            cache_tokens: typeof row.cache_tokens === 'number' ? row.cache_tokens : 0,
+            estimated_cost: typeof row.estimated_cost === 'number' ? row.estimated_cost : 0,
+            health_score: typeof row.health_score === 'number' ? row.health_score : 100,
+            health_sample_count: typeof row.health_sample_count === 'number' ? row.health_sample_count : 0,
+            health_success_count: typeof row.health_success_count === 'number' ? row.health_success_count : 0,
+            health_failure_count: typeof row.health_failure_count === 'number' ? row.health_failure_count : 0,
+            health_success_rate: typeof row.health_success_rate === 'number' ? row.health_success_rate : 0,
+            empty_response_rate: typeof row.empty_response_rate === 'number' ? row.empty_response_rate : 0,
+            rate_limit_count: typeof row.rate_limit_count === 'number' ? row.rate_limit_count : 0,
+            active_selections: typeof row.active_selections === 'number' ? row.active_selections : 0,
+            cooling_down: row.cooling_down === true,
+            cooldown_remaining_ms: typeof row.cooldown_remaining_ms === 'number' ? row.cooldown_remaining_ms : 0,
+            cooldown_reason: row.cooldown_reason ?? '',
+            quota_status: row.quota_status ?? 'unknown',
+            quota_balance: typeof row.quota_balance === 'number' ? row.quota_balance : undefined,
+            quota_used: typeof row.quota_used === 'number' ? row.quota_used : undefined,
+            last_http_status: typeof row.last_http_status === 'number' ? row.last_http_status : undefined,
+            last_failure_reason: row.last_failure_reason ?? '',
+            last_seen_time: typeof row.last_seen_time === 'number' ? row.last_seen_time : undefined,
+        })),
+    };
+}
+
+export function useChannelModelHealth(params: ChannelModelHealthParams = {}) {
+    const timeRange = params.timeRange || '24h';
+    const channelId = params.channelId ?? null;
+    const model = params.model?.trim() ?? '';
+    const source = params.source?.trim() ?? '';
+
+    return useQuery({
+        queryKey: ['channels', 'model-health', timeRange, channelId, model, source],
+        queryFn: async () => {
+            const search = new URLSearchParams({ time_range: timeRange });
+            if (channelId && channelId > 0) search.set('channel_id', String(channelId));
+            if (model) search.set('model', model);
+            if (source && source !== 'all') search.set('source', source);
+            return apiClient.get<ChannelModelHealthResult>(`/api/v1/channel/model-health?${search.toString()}`);
+        },
+        select: normalizeChannelModelHealth,
         refetchInterval: 30000,
     });
 }
