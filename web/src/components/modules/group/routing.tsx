@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Activity, Clock3, Gauge, GitBranch, LoaderCircle, ShieldAlert, Thermometer } from 'lucide-react';
+import { Activity, Clock3, Gauge, GitBranch, LoaderCircle, ShieldAlert, Thermometer, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,10 +35,28 @@ function formatCooldown(value: number | undefined) {
     return `${minutes}m`;
 }
 
+function formatQuota(value: number | undefined) {
+    if (typeof value !== 'number') return '-';
+    return Math.abs(value) >= 1 ? value.toFixed(2) : value.toFixed(4);
+}
+
 function scoreTone(score: number) {
     if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
     if (score >= 50) return 'text-amber-600 dark:text-amber-400';
     return 'text-destructive';
+}
+
+function quotaTone(status: string) {
+    switch (status) {
+        case 'available':
+            return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+        case 'zero_balance':
+            return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300';
+        case 'account_disabled':
+            return 'border-destructive/20 bg-destructive/10 text-destructive';
+        default:
+            return 'border-muted-foreground/20 bg-muted text-muted-foreground';
+    }
 }
 
 function decisionTone(decision: string) {
@@ -70,6 +88,19 @@ function decisionLabel(t: Translator, decision: string) {
             return t('decision.circuitBreaker');
         default:
             return decision;
+    }
+}
+
+function quotaLabel(t: Translator, status: string) {
+    switch (status) {
+        case 'available':
+            return t('quota.available');
+        case 'zero_balance':
+            return t('quota.zeroBalance');
+        case 'account_disabled':
+            return t('quota.accountDisabled');
+        default:
+            return t('quota.unknown');
     }
 }
 
@@ -109,6 +140,18 @@ function CandidateRow({ candidate }: { candidate: GroupRoutingCandidate }) {
             <td className="px-3 py-3 text-xs tabular-nums">
                 <div>{t('emptyRate')}: {formatPercent(candidate.empty_response_rate)}</div>
                 <div className="text-muted-foreground">429: {candidate.rate_limit_count || '-'}</div>
+            </td>
+            <td className="px-3 py-3 text-xs">
+                <Badge variant="outline" className={cn('rounded-md text-[11px]', quotaTone(candidate.quota_status))}>
+                    {quotaLabel(t, candidate.quota_status)}
+                </Badge>
+                <div className="mt-1 truncate text-muted-foreground" title={candidate.site_account_name || candidate.site_name || ''}>
+                    {candidate.site_account_name || candidate.site_name || '-'}
+                </div>
+                <div className="text-muted-foreground">
+                    {t('quota.balance')}: {formatQuota(candidate.quota_balance)}
+                    {candidate.quota_used !== undefined ? ` / ${formatQuota(candidate.quota_used)}` : ''}
+                </div>
             </td>
             <td className="px-3 py-3">
                 <Badge variant="outline" className={cn('rounded-md text-[11px]', decisionTone(candidate.decision))}>
@@ -209,7 +252,7 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                         </div>
 
                         <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-border">
-                            <table className="w-full min-w-[62rem] text-left">
+                            <table className="w-full min-w-[70rem] text-left">
                                 <thead className="sticky top-0 z-10 bg-muted/90 text-xs text-muted-foreground backdrop-blur">
                                     <tr className="border-b border-border">
                                         <th className="px-3 py-2">{t('table.rank')}</th>
@@ -218,6 +261,12 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                                         <th className="px-3 py-2">{t('table.health')}</th>
                                         <th className="px-3 py-2">{t('table.latency')}</th>
                                         <th className="px-3 py-2">{t('table.failures')}</th>
+                                        <th className="px-3 py-2">
+                                            <div className="flex items-center gap-1">
+                                                <Wallet className="size-3.5" />
+                                                {t('table.quota')}
+                                            </div>
+                                        </th>
                                         <th className="px-3 py-2">{t('table.decision')}</th>
                                     </tr>
                                 </thead>
@@ -226,7 +275,7 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                                         <CandidateRow key={`${candidate.group_item_id}-${candidate.channel_id}-${candidate.model_name}`} candidate={candidate} />
                                     )) : (
                                         <tr>
-                                            <td colSpan={7} className="px-3 py-12 text-center text-sm text-muted-foreground">
+                                            <td colSpan={8} className="px-3 py-12 text-center text-sm text-muted-foreground">
                                                 {t('empty')}
                                             </td>
                                         </tr>

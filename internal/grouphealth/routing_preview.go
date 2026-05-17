@@ -17,6 +17,10 @@ func BuildRoutingPreview(ctx context.Context, groupID int) (*model.GroupRoutingP
 	if err != nil {
 		return nil, err
 	}
+	bindings, err := bindingsByItems(ctx, group.Items)
+	if err != nil {
+		return nil, err
+	}
 
 	preview := &model.GroupRoutingPreview{
 		GroupID:            group.ID,
@@ -27,7 +31,7 @@ func BuildRoutingPreview(ctx context.Context, groupID int) (*model.GroupRoutingP
 	}
 
 	for _, item := range group.Items {
-		preview.Candidates = append(preview.Candidates, routingCandidate(ctx, group.Mode, preview.HealthScoreEnabled, item))
+		preview.Candidates = append(preview.Candidates, routingCandidate(ctx, group.Mode, preview.HealthScoreEnabled, item, bindingPointer(bindings, item.ChannelID)))
 	}
 
 	sortRoutingCandidates(preview.GroupMode, preview.HealthScoreEnabled, preview.Candidates)
@@ -37,7 +41,7 @@ func BuildRoutingPreview(ctx context.Context, groupID int) (*model.GroupRoutingP
 	return preview, nil
 }
 
-func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled bool, item model.GroupItem) model.GroupRoutingCandidate {
+func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled bool, item model.GroupItem, binding *model.SiteChannelBinding) model.GroupRoutingCandidate {
 	stats := balancer.GetHealthStats(item.ChannelID, item.ModelName)
 	candidate := model.GroupRoutingCandidate{
 		GroupItemID:       item.ID,
@@ -54,6 +58,7 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 		RateLimitCount:    stats.RateLimitCount,
 		AvgTTFBMS:         stats.AvgTTFBMS,
 		AvgTotalMS:        stats.AvgTotalMS,
+		QuotaStatus:       "unknown",
 		Decision:          "ready",
 	}
 
@@ -69,6 +74,7 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 
 	candidate.ChannelName = channel.Name
 	candidate.Enabled = channel.Enabled
+	applyCandidateQuotaStatus(ctx, &candidate, binding)
 	if !channel.Enabled {
 		candidate.Decision = "channel_disabled"
 		candidate.Notes = append(candidate.Notes, "channel disabled")
@@ -107,6 +113,42 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 
 	candidate.EffectiveScore = effectiveRoutingScore(mode, healthEnabled, candidate)
 	return candidate
+}
+
+func applyCandidateQuotaStatus(ctx context.Context, candidate *model.GroupRoutingCandidate, binding *model.SiteChannelBinding) {
+	if candidate == nil {
+		return
+	}
+	candidate.QuotaStatus = "unknown"
+	if binding == nil {
+		return
+	}
+	candidate.SiteID = binding.SiteID
+	candidate.SiteAccountID = binding.SiteAccountID
+	if site, err := op.SiteGet(binding.SiteID, ctx); err == nil && site != nil {
+		candidate.SiteName = site.Name
+	}
+	account, err := op.SiteAccountGet(binding.SiteAccountID, ctx)
+	if err != nil || account == nil {
+		candidate.Notes = append(candidate.Notes, "quota status unknown")
+		return
+	}
+	candidate.SiteAccountName = account.Name
+	candidate.QuotaBalance = account.Balance
+	candidate.QuotaUsed = account.BalanceUsed
+	if !account.Enabled {
+		candidate.QuotaStatus = "account_disabled"
+		candidate.Notes = append(candidate.Notes, "site account disabled")
+		return
+	}
+	if account.Balance > 0 {
+		candidate.QuotaStatus = "available"
+		return
+	}
+	if account.LastSyncAt != nil || account.BalanceUsed > 0 {
+		candidate.QuotaStatus = "zero_balance"
+		candidate.Notes = append(candidate.Notes, "site account balance is zero")
+	}
 }
 
 func selectPreviewKey(channel *model.Channel, modelName string) (model.ChannelKey, string, time.Duration, string, int) {

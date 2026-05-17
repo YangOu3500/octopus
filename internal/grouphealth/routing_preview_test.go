@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	dbpkg "github.com/bestruirui/octopus/internal/db"
 	"github.com/bestruirui/octopus/internal/model"
 	"github.com/bestruirui/octopus/internal/op"
 	"github.com/bestruirui/octopus/internal/relay/balancer"
@@ -99,6 +100,55 @@ func TestBuildRoutingPreviewShowsHealthAndCooldown(t *testing.T) {
 	}
 	if preview.Candidates[1].CooldownRemainingMS > int64((31 * time.Second).Milliseconds()) {
 		t.Fatalf("cooldown remaining too large: %+v", preview.Candidates[1])
+	}
+}
+
+func TestBuildRoutingPreviewShowsProjectedAccountQuotaStatus(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+
+	channel := &model.Channel{
+		Name:     "routing-quota",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://quota.example.test/v1"}},
+		Model:    "preview-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-quota-secret"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	group := &model.Group{Name: "preview-quota-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "preview-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd failed: %v", err)
+	}
+	siteID, accountID := createProbeSite(t)
+	createProbeBinding(t, siteID, accountID, channel.ID, "preview-model", false)
+	if err := dbpkg.GetDB().WithContext(ctx).
+		Model(&model.SiteAccount{}).
+		Where("id = ?", accountID).
+		Updates(map[string]any{"balance": 12.5, "balance_used": 3.5}).Error; err != nil {
+		t.Fatalf("update account balance failed: %v", err)
+	}
+
+	preview, err := BuildRoutingPreview(ctx, group.ID)
+	if err != nil {
+		t.Fatalf("BuildRoutingPreview failed: %v", err)
+	}
+	if len(preview.Candidates) != 1 {
+		t.Fatalf("candidate count = %d, want 1", len(preview.Candidates))
+	}
+	candidate := preview.Candidates[0]
+	if candidate.SiteID != siteID || candidate.SiteAccountID != accountID {
+		t.Fatalf("expected projected site/account ids, got %+v", candidate)
+	}
+	if candidate.QuotaStatus != "available" {
+		t.Fatalf("quota status = %q, want available: %+v", candidate.QuotaStatus, candidate)
+	}
+	if candidate.QuotaBalance != 12.5 || candidate.QuotaUsed != 3.5 {
+		t.Fatalf("unexpected quota values: %+v", candidate)
 	}
 }
 

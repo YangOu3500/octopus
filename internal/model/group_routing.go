@@ -14,6 +14,10 @@ type GroupRoutingCandidate struct {
 	ChannelID           int      `json:"channel_id"`
 	ChannelName         string   `json:"channel_name"`
 	ChannelKeyID        int      `json:"channel_key_id,omitempty"`
+	SiteID              int      `json:"site_id,omitempty"`
+	SiteName            string   `json:"site_name,omitempty"`
+	SiteAccountID       int      `json:"site_account_id,omitempty"`
+	SiteAccountName     string   `json:"site_account_name,omitempty"`
 	ModelName           string   `json:"model_name"`
 	Priority            int      `json:"priority"`
 	Weight              int      `json:"weight"`
@@ -30,6 +34,9 @@ type GroupRoutingCandidate struct {
 	CoolingDown         bool     `json:"cooling_down"`
 	CooldownRemainingMS int64    `json:"cooldown_remaining_ms"`
 	CooldownReason      string   `json:"cooldown_reason,omitempty"`
+	QuotaStatus         string   `json:"quota_status"`
+	QuotaBalance        float64  `json:"quota_balance,omitempty"`
+	QuotaUsed           float64  `json:"quota_used,omitempty"`
 	EffectiveScore      float64  `json:"effective_score"`
 	Decision            string   `json:"decision"`
 	Notes               []string `json:"notes,omitempty"`

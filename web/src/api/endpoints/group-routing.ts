@@ -8,6 +8,10 @@ export interface GroupRoutingCandidate {
     channel_id: number;
     channel_name: string;
     channel_key_id?: number;
+    site_id?: number;
+    site_name?: string;
+    site_account_id?: number;
+    site_account_name?: string;
     model_name: string;
     priority: number;
     weight: number;
@@ -24,6 +28,9 @@ export interface GroupRoutingCandidate {
     cooling_down: boolean;
     cooldown_remaining_ms: number;
     cooldown_reason?: string;
+    quota_status: string;
+    quota_balance?: number;
+    quota_used?: number;
     effective_score: number;
     decision: string;
     notes?: string[];
@@ -44,6 +51,10 @@ function normalizeCandidate(candidate: Partial<GroupRoutingCandidate>): GroupRou
         channel_id: typeof candidate.channel_id === 'number' ? candidate.channel_id : 0,
         channel_name: candidate.channel_name ?? '',
         channel_key_id: typeof candidate.channel_key_id === 'number' ? candidate.channel_key_id : undefined,
+        site_id: typeof candidate.site_id === 'number' ? candidate.site_id : undefined,
+        site_name: candidate.site_name ?? '',
+        site_account_id: typeof candidate.site_account_id === 'number' ? candidate.site_account_id : undefined,
+        site_account_name: candidate.site_account_name ?? '',
         model_name: candidate.model_name ?? '',
         priority: typeof candidate.priority === 'number' ? candidate.priority : 0,
         weight: typeof candidate.weight === 'number' ? candidate.weight : 1,
@@ -60,6 +71,9 @@ function normalizeCandidate(candidate: Partial<GroupRoutingCandidate>): GroupRou
         cooling_down: candidate.cooling_down === true,
         cooldown_remaining_ms: typeof candidate.cooldown_remaining_ms === 'number' ? candidate.cooldown_remaining_ms : 0,
         cooldown_reason: candidate.cooldown_reason ?? '',
+        quota_status: candidate.quota_status ?? 'unknown',
+        quota_balance: typeof candidate.quota_balance === 'number' ? candidate.quota_balance : undefined,
+        quota_used: typeof candidate.quota_used === 'number' ? candidate.quota_used : undefined,
         effective_score: typeof candidate.effective_score === 'number' ? candidate.effective_score : 0,
         decision: candidate.decision ?? 'ready',
         notes: candidate.notes ?? [],

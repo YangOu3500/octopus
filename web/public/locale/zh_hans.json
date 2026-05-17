@@ -771,6 +771,13 @@
             "ttfb": "首字",
             "emptyRate": "空响应",
             "cooldown": "冷却中",
+            "quota": {
+                "available": "余额可用",
+                "zeroBalance": "余额为 0",
+                "accountDisabled": "账号禁用",
+                "unknown": "未知",
+                "balance": "余额 / 已用"
+            },
             "noSamples": "暂无样本",
             "sampleMeta": "{success}/{total} · {rate}",
             "empty": "暂无候选。",
@@ -795,6 +802,7 @@
                 "health": "健康分",
                 "latency": "延迟",
                 "failures": "失败",
+                "quota": "额度",
                 "decision": "决策"
             }
         },

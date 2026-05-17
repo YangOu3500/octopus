@@ -771,6 +771,13 @@
             "ttfb": "TTFB",
             "emptyRate": "Empty",
             "cooldown": "Cooling down",
+            "quota": {
+                "available": "Balance Available",
+                "zeroBalance": "Zero Balance",
+                "accountDisabled": "Account Disabled",
+                "unknown": "Unknown",
+                "balance": "Balance / Used"
+            },
             "noSamples": "No samples",
             "sampleMeta": "{success}/{total} / {rate}",
             "empty": "No candidates.",
@@ -795,6 +802,7 @@
                 "health": "Health",
                 "latency": "Latency",
                 "failures": "Failures",
+                "quota": "Quota",
                 "decision": "Decision"
             }
         },
