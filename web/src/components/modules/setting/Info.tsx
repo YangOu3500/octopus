@@ -8,6 +8,11 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/common/Toast';
 import { isOctopusCacheName, isFontCacheName, SW_MESSAGE_TYPE } from '@/lib/sw';
 
+function isComparableVersion(version: string) {
+    const value = version.trim().toLowerCase();
+    return value !== '' && value !== 'dev' && value !== 'unknown';
+}
+
 export function SettingInfo() {
     const t = useTranslations('setting');
     const latestInfoQuery = useLatestInfo();
@@ -18,9 +23,10 @@ export function SettingInfo() {
     const latestVersion = latestInfoQuery.data?.tag_name || '';
 
     // 前端版本与后端当前版本不一致 → 浏览器缓存问题
-    const isCacheMismatch = !!backendNowVersion && backendNowVersion !== APP_VERSION;
+    const canCompareBuildVersions = isComparableVersion(backendNowVersion) && isComparableVersion(APP_VERSION);
+    const isCacheMismatch = canCompareBuildVersions && backendNowVersion !== APP_VERSION;
     // 最新版本与后端当前版本不一致 → 有新版本可更新
-    const hasNewVersion = latestVersion && backendNowVersion && latestVersion !== backendNowVersion;
+    const hasNewVersion = isComparableVersion(backendNowVersion) && latestVersion && latestVersion !== backendNowVersion;
 
     const clearCacheAndReload = async () => {
         // 通知 Service Worker 清理缓存
@@ -176,4 +182,3 @@ export function SettingInfo() {
         </div>
     );
 }
-
