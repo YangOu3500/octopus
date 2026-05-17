@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/common/Toast';
 import { cn } from '@/lib/utils';
+import { VirtualizedGrid } from '@/components/common/VirtualizedGrid';
 
 type TestRow = {
     key: string;
@@ -26,6 +27,7 @@ type TestRow = {
 
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
+const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.4fr) 7rem 9rem 5rem 6rem 6rem 9rem 6rem 7rem minmax(18rem,1.2fr)';
 
 function channelProtocol(type: ChannelType | undefined): string {
     switch (type) {
@@ -414,120 +416,133 @@ export function ModelTest() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-card">
-                <div className="h-full overflow-auto">
-                    <table className="w-full min-w-[76rem] text-sm">
-                        <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur">
-                            <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                                <th className="w-10 px-3 py-3">
-                                    <button type="button" onClick={handleToggleAll} className="flex size-5 items-center justify-center rounded border border-border">
-                                        {allVisibleSelected && <Circle className="size-3 fill-current" />}
-                                    </button>
-                                </th>
-                                <th className="px-3 py-3">{mode === 'channel' ? t('table.model') : t('table.channel')}</th>
-                                <th className="px-3 py-3">{t('table.protocol')}</th>
-                                <th className="px-3 py-3">{t('table.status')}</th>
-                                <th className="px-3 py-3">{t('table.http')}</th>
-                                <th className="px-3 py-3">{t('table.ttfb')}</th>
-                                <th className="px-3 py-3">{t('table.duration')}</th>
-                                <th className="px-3 py-3">{t('table.tokens')}</th>
-                                <th className="px-3 py-3">{t('table.speed')}</th>
-                                <th className="px-3 py-3">{t('table.cost')}</th>
-                                <th className="px-3 py-3">{t('table.response')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.length === 0 ? (
-                                <tr>
-                                    <td colSpan={11} className="px-3 py-12 text-center text-muted-foreground">
-                                        <FlaskConical className="mx-auto mb-2 size-6" />
-                                        {t('emptyRows')}
-                                    </td>
-                                </tr>
-                            ) : rows.map((row) => {
-                                const result = results[row.key];
-                                const status = resultStatus(result);
-                                return (
-                                    <tr key={row.key} className="border-b border-border/60 align-top last:border-0">
-                                        <td className="px-3 py-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => row.enabled && handleToggleRow(row.key)}
-                                                disabled={!row.enabled}
-                                                className={cn(
-                                                    'flex size-5 items-center justify-center rounded border border-border',
-                                                    selectedKeys.has(row.key) && 'border-primary bg-primary text-primary-foreground',
-                                                    !row.enabled && 'cursor-not-allowed opacity-40'
-                                                )}
+                <div className="h-full overflow-x-auto">
+                    <div className="flex h-full min-w-[76rem] flex-col">
+                        <div
+                            className="grid border-b border-border bg-muted/90 text-left text-xs uppercase text-muted-foreground backdrop-blur"
+                            style={{ gridTemplateColumns: MODEL_TEST_GRID_COLUMNS }}
+                        >
+                            <div className="px-3 py-3">
+                                <button type="button" onClick={handleToggleAll} className="flex size-5 items-center justify-center rounded border border-border">
+                                    {allVisibleSelected && <Circle className="size-3 fill-current" />}
+                                </button>
+                            </div>
+                            <div className="px-3 py-3">{mode === 'channel' ? t('table.model') : t('table.channel')}</div>
+                            <div className="px-3 py-3">{t('table.protocol')}</div>
+                            <div className="px-3 py-3">{t('table.status')}</div>
+                            <div className="px-3 py-3">{t('table.http')}</div>
+                            <div className="px-3 py-3">{t('table.ttfb')}</div>
+                            <div className="px-3 py-3">{t('table.duration')}</div>
+                            <div className="px-3 py-3">{t('table.tokens')}</div>
+                            <div className="px-3 py-3">{t('table.speed')}</div>
+                            <div className="px-3 py-3">{t('table.cost')}</div>
+                            <div className="px-3 py-3">{t('table.response')}</div>
+                        </div>
+                        {rows.length === 0 ? (
+                            <div className="px-3 py-12 text-center text-muted-foreground">
+                                <FlaskConical className="mx-auto mb-2 size-6" />
+                                {t('emptyRows')}
+                            </div>
+                        ) : (
+                            <div className="min-h-0 flex-1">
+                                <VirtualizedGrid
+                                    items={rows}
+                                    layout="list"
+                                    columns={{ default: 1 }}
+                                    estimateItemHeight={86}
+                                    gap={0}
+                                    overscan={12}
+                                    getItemKey={(row) => row.key}
+                                    renderItem={(row) => {
+                                        const result = results[row.key];
+                                        const status = resultStatus(result);
+                                        return (
+                                            <div
+                                                className="grid border-b border-border/60 text-sm align-top last:border-0"
+                                                style={{ gridTemplateColumns: MODEL_TEST_GRID_COLUMNS }}
                                             >
-                                                {selectedKeys.has(row.key) && <Circle className="size-3 fill-current" />}
-                                            </button>
-                                        </td>
-                                        <td className="max-w-[18rem] px-3 py-3">
-                                            <div className="font-medium text-foreground">
-                                                {mode === 'channel' ? row.modelName : row.channelName}
-                                            </div>
-                                            <div className="mt-1 truncate text-xs text-muted-foreground">
-                                                {mode === 'channel' ? modelSourceLabel(row) : row.modelName}
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-3">
-                                            <Badge variant="outline" className="rounded-md">
-                                                {protocolLabel(row.protocol)}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-3 py-3">
-                                            {status === 'success' ? (
-                                                <Badge className="rounded-md bg-emerald-600 text-white">
-                                                    <CheckCircle2 className="size-3" />
-                                                    {t('status.success')}
-                                                </Badge>
-                                            ) : status === 'failed' ? (
-                                                <Badge variant="destructive" className="rounded-md">
-                                                    <XCircle className="size-3" />
-                                                    {t('status.failed')}
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="rounded-md">
-                                                    {row.enabled ? t('status.idle') : t('status.disabled')}
-                                                </Badge>
-                                            )}
-                                            {result?.failure_reason && (
-                                                <div className="mt-1 max-w-40 truncate text-xs text-destructive" title={result.failure_reason}>
-                                                    {result.failure_reason}
+                                                <div className="px-3 py-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => row.enabled && handleToggleRow(row.key)}
+                                                        disabled={!row.enabled}
+                                                        className={cn(
+                                                            'flex size-5 items-center justify-center rounded border border-border',
+                                                            selectedKeys.has(row.key) && 'border-primary bg-primary text-primary-foreground',
+                                                            !row.enabled && 'cursor-not-allowed opacity-40'
+                                                        )}
+                                                    >
+                                                        {selectedKeys.has(row.key) && <Circle className="size-3 fill-current" />}
+                                                    </button>
                                                 </div>
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-3 tabular-nums">{result?.http_status || '-'}</td>
-                                        <td className="px-3 py-3 tabular-nums">{formatMS(result?.ttfb_ms)}</td>
-                                        <td className="px-3 py-3 tabular-nums">{formatMS(result?.duration_ms)}</td>
-                                        <td className="px-3 py-3 tabular-nums">
-                                            <div>{formatCount(result?.input_tokens)} / {formatCount(result?.output_tokens)}</div>
-                                            <div className="text-xs text-muted-foreground">{t('cache')}: {formatCount(result?.cache_tokens)}</div>
-                                        </td>
-                                        <td className="px-3 py-3 tabular-nums">{formatSpeed(result?.tokens_per_second)}</td>
-                                        <td className="px-3 py-3 tabular-nums">{formatCost(result?.estimated_cost)}</td>
-                                        <td className="max-w-[22rem] px-3 py-3">
-                                            <div className="line-clamp-3 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
-                                                {result?.response_text || result?.error_message || '-'}
+                                                <div className="min-w-0 px-3 py-3">
+                                                    <div className="truncate font-medium text-foreground">
+                                                        {mode === 'channel' ? row.modelName : row.channelName}
+                                                    </div>
+                                                    <div className="mt-1 truncate text-xs text-muted-foreground">
+                                                        {mode === 'channel' ? modelSourceLabel(row) : row.modelName}
+                                                    </div>
+                                                </div>
+                                                <div className="px-3 py-3">
+                                                    <Badge variant="outline" className="rounded-md">
+                                                        {protocolLabel(row.protocol)}
+                                                    </Badge>
+                                                </div>
+                                                <div className="px-3 py-3">
+                                                    {status === 'success' ? (
+                                                        <Badge className="rounded-md bg-emerald-600 text-white">
+                                                            <CheckCircle2 className="size-3" />
+                                                            {t('status.success')}
+                                                        </Badge>
+                                                    ) : status === 'failed' ? (
+                                                        <Badge variant="destructive" className="rounded-md">
+                                                            <XCircle className="size-3" />
+                                                            {t('status.failed')}
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="rounded-md">
+                                                            {row.enabled ? t('status.idle') : t('status.disabled')}
+                                                        </Badge>
+                                                    )}
+                                                    {result?.failure_reason && (
+                                                        <div className="mt-1 max-w-40 truncate text-xs text-destructive" title={result.failure_reason}>
+                                                            {result.failure_reason}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="px-3 py-3 tabular-nums">{result?.http_status || '-'}</div>
+                                                <div className="px-3 py-3 tabular-nums">{formatMS(result?.ttfb_ms)}</div>
+                                                <div className="px-3 py-3 tabular-nums">{formatMS(result?.duration_ms)}</div>
+                                                <div className="px-3 py-3 tabular-nums">
+                                                    <div>{formatCount(result?.input_tokens)} / {formatCount(result?.output_tokens)}</div>
+                                                    <div className="text-xs text-muted-foreground">{t('cache')}: {formatCount(result?.cache_tokens)}</div>
+                                                </div>
+                                                <div className="px-3 py-3 tabular-nums">{formatSpeed(result?.tokens_per_second)}</div>
+                                                <div className="px-3 py-3 tabular-nums">{formatCost(result?.estimated_cost)}</div>
+                                                <div className="min-w-0 px-3 py-3">
+                                                    <div className="line-clamp-3 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
+                                                        {result?.response_text || result?.error_message || '-'}
+                                                    </div>
+                                                    {result?.log_id || result?.trace_id ? (
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="mt-2 h-7 px-2 text-xs"
+                                                            onClick={() => handleOpenLog(result)}
+                                                        >
+                                                            <FileSearch className="size-3.5" />
+                                                            {t('viewLog')}
+                                                        </Button>
+                                                    ) : null}
+                                                </div>
                                             </div>
-                                            {result?.log_id || result?.trace_id ? (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="mt-2 h-7 px-2 text-xs"
-                                                    onClick={() => handleOpenLog(result)}
-                                                >
-                                                    <FileSearch className="size-3.5" />
-                                                    {t('viewLog')}
-                                                </Button>
-                                            ) : null}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                                        );
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
