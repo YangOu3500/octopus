@@ -276,6 +276,7 @@ export type MorphingDialogContainerProps = {
 function MorphingDialogContainer({ children }: MorphingDialogContainerProps) {
   const { isOpen, uniqueId } = useMorphingDialog();
   const [mounted, setMounted] = useState(false);
+  const [shouldRenderPortal, setShouldRenderPortal] = useState(false);
 
   useEffect(() => {
     // Schedule state update for next tick to avoid synchronous update warning
@@ -286,10 +287,23 @@ function MorphingDialogContainer({ children }: MorphingDialogContainerProps) {
     };
   }, []);
 
-  if (!mounted) return null;
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const rafId = window.requestAnimationFrame(() => {
+      setShouldRenderPortal(true);
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isOpen]);
+
+  if (!mounted || !shouldRenderPortal) return null;
 
   return createPortal(
-    <AnimatePresence initial={false} mode='sync'>
+    <AnimatePresence
+      initial={false}
+      mode='sync'
+      onExitComplete={() => setShouldRenderPortal(false)}
+    >
       {isOpen && (
         <>
           <motion.div

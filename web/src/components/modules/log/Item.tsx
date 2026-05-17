@@ -701,25 +701,40 @@ function DeferredJsonContent({ content, fallbackText }: { content: string | unde
     const [shouldRender, setShouldRender] = useState(false);
 
     const parsed = useMemo(() => {
-        if (!content) return { isJson: false, data: null };
+        if (!shouldRender || !content) return { isJson: false, data: null };
         try {
             return { isJson: true, data: JSON.parse(content) };
         } catch {
             return { isJson: false, data: content };
         }
-    }, [content]);
+    }, [content, shouldRender]);
 
     useEffect(() => {
-        if (isOpen) {
-            const timer = setTimeout(() => setShouldRender(true), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [isOpen]);
+        let resetTimer: number | undefined;
+        let renderTimer: number | undefined;
 
-    if (!isOpen) {
-        if (shouldRender) setShouldRender(false);
-        return null;
-    }
+        if (!isOpen) {
+            resetTimer = window.setTimeout(() => setShouldRender(false), 0);
+            return () => {
+                if (resetTimer !== undefined) window.clearTimeout(resetTimer);
+            };
+        }
+        if (!content) {
+            renderTimer = window.setTimeout(() => setShouldRender(true), 0);
+            return () => {
+                if (renderTimer !== undefined) window.clearTimeout(renderTimer);
+            };
+        }
+
+        resetTimer = window.setTimeout(() => setShouldRender(false), 0);
+        renderTimer = window.setTimeout(() => setShouldRender(true), 300);
+        return () => {
+            if (resetTimer !== undefined) window.clearTimeout(resetTimer);
+            if (renderTimer !== undefined) window.clearTimeout(renderTimer);
+        };
+    }, [content, isOpen]);
+
+    if (!isOpen) return null;
 
     if (!content) {
         return (
