@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Trash2, X, Pencil } from 'lucide-react';
+import { Clock3, Pencil, Pin, Repeat2, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { type Group, useDeleteGroup, useUpdateGroup } from '@/api/endpoints/group';
 import { useModelChannelList } from '@/api/endpoints/model';
@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/common/Toast';
 import { CopyIconButton } from '@/components/common/CopyButton';
+import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/animate-ui/components/animate/tooltip';
 import type { SelectedMember } from './ItemList';
 import { MemberList } from './ItemList';
@@ -380,6 +381,27 @@ export function GroupCard({ group }: { group: Group }) {
                         {t(`mode.${MODE_LABELS[m]}`)}
                     </button>
                 ))}
+            </div>
+
+            <div className="mb-3 grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-3">
+                <Badge variant="outline" className="min-w-0 justify-start rounded-lg px-2 py-1 font-normal">
+                    <Clock3 className="mr-1.5 size-3.5 shrink-0 text-muted-foreground" />
+                    <span className="truncate">
+                        {t('runtime.firstValid')}: {group.first_token_time_out && group.first_token_time_out > 0 ? `${group.first_token_time_out}s` : t('runtime.off')}
+                    </span>
+                </Badge>
+                <Badge variant="outline" className="min-w-0 justify-start rounded-lg px-2 py-1 font-normal">
+                    <Repeat2 className="mr-1.5 size-3.5 shrink-0 text-muted-foreground" />
+                    <span className="truncate">
+                        {t('runtime.retry')}: {group.retry_enabled ? `${group.max_retries ?? 3}x` : t('runtime.off')}
+                    </span>
+                </Badge>
+                <Badge variant="outline" className="min-w-0 justify-start rounded-lg px-2 py-1 font-normal">
+                    <Pin className="mr-1.5 size-3.5 shrink-0 text-muted-foreground" />
+                    <span className="truncate">
+                        {t('runtime.session')}: {group.session_keep_time && group.session_keep_time > 0 ? `${group.session_keep_time}s` : t('runtime.off')}
+                    </span>
+                </Badge>
             </div>
 
             <GroupRoutingBadge groupId={group.id} />

@@ -508,6 +508,12 @@
             "failover": "Failover",
             "weighted": "Weighted"
         },
+        "runtime": {
+            "firstValid": "First valid",
+            "retry": "Same-channel retry",
+            "session": "Session keep",
+            "off": "Off"
+        },
         "bulk": {
             "trigger": "Bulk Generate",
             "title": "Bulk Generate Groups",

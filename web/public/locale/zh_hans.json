@@ -508,6 +508,12 @@
             "failover": "故障转移",
             "weighted": "加权分配"
         },
+        "runtime": {
+            "firstValid": "首个有效输出",
+            "retry": "同通道重试",
+            "session": "会话保持",
+            "off": "关闭"
+        },
         "bulk": {
             "trigger": "批量生成",
             "title": "批量生成分组",
