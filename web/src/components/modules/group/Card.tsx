@@ -14,6 +14,7 @@ import type { SelectedMember } from './ItemList';
 import { MemberList } from './ItemList';
 import { GroupEditor, type GroupEditorValues } from './Editor';
 import { GroupHealthBadge } from './health';
+import { GroupRoutingBadge } from './routing';
 import { modelChannelKey, MODE_LABELS } from './utils';
 import { GroupMode, type GroupUpdateRequest } from '@/api/endpoints/group';
 import {
@@ -380,6 +381,8 @@ export function GroupCard({ group }: { group: Group }) {
                     </button>
                 ))}
             </div>
+
+            <GroupRoutingBadge groupId={group.id} />
 
             <GroupHealthBadge groupId={group.id} />
 

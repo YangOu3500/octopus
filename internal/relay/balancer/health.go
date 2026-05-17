@@ -26,6 +26,20 @@ type HealthAttempt struct {
 	TotalMS       int
 }
 
+type HealthStats struct {
+	ChannelID         int     `json:"channel_id"`
+	ModelName         string  `json:"model_name"`
+	HealthScore       float64 `json:"health_score"`
+	SampleCount       int     `json:"sample_count"`
+	SuccessCount      int     `json:"success_count"`
+	FailureCount      int     `json:"failure_count"`
+	SuccessRate       float64 `json:"success_rate"`
+	EmptyResponseRate float64 `json:"empty_response_rate"`
+	RateLimitCount    int     `json:"rate_limit_count"`
+	AvgTTFBMS         int     `json:"avg_ttfb_ms"`
+	AvgTotalMS        int     `json:"avg_total_ms"`
+}
+
 type healthConfig struct {
 	Enabled                    bool
 	Window                     time.Duration
@@ -192,6 +206,73 @@ func HealthScore(channelID int, modelName string) float64 {
 	}
 	entry.Samples = pruneHealthSamples(entry.Samples, now, cfg.Window)
 	return scoreSamples(entry.Samples, cfg)
+}
+
+func GetHealthStats(channelID int, modelName string) HealthStats {
+	modelName = strings.TrimSpace(modelName)
+	stats := HealthStats{
+		ChannelID:   channelID,
+		ModelName:   modelName,
+		HealthScore: HealthScore(channelID, modelName),
+	}
+	if channelID <= 0 || modelName == "" {
+		return stats
+	}
+
+	cfg := currentHealthConfig()
+	now := time.Now()
+	key := healthKey{ChannelID: channelID, ModelName: modelName}
+
+	healthMu.Lock()
+	defer healthMu.Unlock()
+
+	entry := healthByChannelModel[key]
+	if entry == nil || len(entry.Samples) == 0 {
+		return stats
+	}
+	entry.Samples = pruneHealthSamples(entry.Samples, now, cfg.Window)
+	if len(entry.Samples) == 0 {
+		return stats
+	}
+
+	var emptyFailures int
+	var totalTTFB int
+	var ttfbSamples int
+	var totalLatency int
+	var latencySamples int
+	for _, sample := range entry.Samples {
+		stats.SampleCount++
+		if sample.Success {
+			stats.SuccessCount++
+		} else {
+			stats.FailureCount++
+		}
+		if sample.EmptyResponse {
+			emptyFailures++
+		}
+		if sample.RateLimited {
+			stats.RateLimitCount++
+		}
+		if sample.TTFBMS > 0 {
+			totalTTFB += sample.TTFBMS
+			ttfbSamples++
+		}
+		if sample.TotalMS > 0 {
+			totalLatency += sample.TotalMS
+			latencySamples++
+		}
+	}
+	if stats.SampleCount > 0 {
+		stats.SuccessRate = float64(stats.SuccessCount) / float64(stats.SampleCount)
+		stats.EmptyResponseRate = float64(emptyFailures) / float64(stats.SampleCount)
+	}
+	if ttfbSamples > 0 {
+		stats.AvgTTFBMS = totalTTFB / ttfbSamples
+	}
+	if latencySamples > 0 {
+		stats.AvgTotalMS = totalLatency / latencySamples
+	}
+	return stats
 }
 
 func healthCandidates(mode model.GroupMode, items []model.GroupItem) []model.GroupItem {

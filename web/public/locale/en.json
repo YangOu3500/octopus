@@ -561,6 +561,50 @@
             "errorDetails": "Error details",
             "noHttpStatus": "No HTTP status"
         },
+        "routing": {
+            "trigger": "Routing Preview",
+            "title": "Smart Routing Preview",
+            "description": "Shows how group candidates, manual priority / weight, health score, and cooldown state affect scheduling. It does not change routing settings.",
+            "loading": "Loading routing data...",
+            "loadFailed": "Failed to load routing data",
+            "modeLabel": "Group mode",
+            "healthSwitch": "Health scheduling",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "ready": "Ready candidates",
+            "cooling": "Cooldown / avg score",
+            "priority": "Priority",
+            "weight": "Weight",
+            "latency": "Latency",
+            "ttfb": "TTFB",
+            "emptyRate": "Empty",
+            "cooldown": "Cooling down",
+            "noSamples": "No samples",
+            "sampleMeta": "{success}/{total} / {rate}",
+            "empty": "No candidates.",
+            "mode": {
+                "roundRobin": "Round robin",
+                "random": "Random",
+                "failover": "Failover",
+                "weighted": "Weighted"
+            },
+            "decision": {
+                "ready": "Ready",
+                "healthCooldown": "Health cooldown",
+                "channelDisabled": "Channel disabled",
+                "noKey": "No available key",
+                "channelMissing": "Channel missing"
+            },
+            "table": {
+                "rank": "Rank",
+                "candidate": "Candidate",
+                "manual": "Manual",
+                "health": "Health",
+                "latency": "Latency",
+                "failures": "Failures",
+                "decision": "Decision"
+            }
+        },
         "empty": "No groups yet, click the button above to create one"
     },
     "modelTest": {

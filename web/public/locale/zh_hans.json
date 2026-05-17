@@ -561,6 +561,50 @@
             "errorDetails": "错误详情",
             "noHttpStatus": "无 HTTP 状态"
         },
+        "routing": {
+            "trigger": "调度预览",
+            "title": "智能调度预览",
+            "description": "基于当前分组候选、手动优先级 / 权重、健康分和冷却状态展示调度影响，不会修改路由配置。",
+            "loading": "正在加载调度数据...",
+            "loadFailed": "调度数据加载失败",
+            "modeLabel": "分组模式",
+            "healthSwitch": "健康调度",
+            "enabled": "已启用",
+            "disabled": "未启用",
+            "ready": "可用候选",
+            "cooling": "冷却 / 平均分",
+            "priority": "优先级",
+            "weight": "权重",
+            "latency": "耗时",
+            "ttfb": "首字",
+            "emptyRate": "空响应",
+            "cooldown": "冷却中",
+            "noSamples": "暂无样本",
+            "sampleMeta": "{success}/{total} · {rate}",
+            "empty": "暂无候选。",
+            "mode": {
+                "roundRobin": "轮询",
+                "random": "随机",
+                "failover": "故障转移",
+                "weighted": "加权分配"
+            },
+            "decision": {
+                "ready": "可参与",
+                "healthCooldown": "健康冷却",
+                "channelDisabled": "渠道禁用",
+                "noKey": "无可用 Key",
+                "channelMissing": "渠道缺失"
+            },
+            "table": {
+                "rank": "顺序",
+                "candidate": "候选",
+                "manual": "手动",
+                "health": "健康分",
+                "latency": "延迟",
+                "failures": "失败",
+                "decision": "决策"
+            }
+        },
         "empty": "暂无分组，点击左上角按钮创建"
     },
     "modelTest": {
