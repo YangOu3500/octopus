@@ -1,21 +1,15 @@
 import type { InfiniteData } from '@tanstack/react-query';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { apiClient, API_BASE_URL } from '../client';
 import { logger } from '@/lib/logger';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-/**
- * 尝试状态
- */
 export type AttemptStatus = 'success' | 'failed' | 'circuit_break' | 'skipped';
 
 export type RelayLogWSMode = 'fresh' | 'continuation' | 'replay';
 
 export type RelayLogWSRecovery = 'reconnect' | 'replay' | 'downgrade';
 
-/**
- * 单次渠道尝试信息
- */
 export interface ChannelAttempt {
     channel_id: number;
     channel_key_id?: number;
@@ -30,10 +24,10 @@ export interface ChannelAttempt {
     request_protocol?: string;
     upstream_protocol?: string;
     response_protocol?: string;
-    attempt_num: number;    // 第几次尝试
+    attempt_num: number;
     attempt_index?: number;
     status: AttemptStatus;
-    duration: number;       // 耗时(毫秒)
+    duration: number;
     duration_ms?: number;
     ttfb_ms?: number;
     total_ms?: number;
@@ -55,70 +49,82 @@ export interface ChannelAttempt {
     msg?: string;
 }
 
-/**
- * 日志数据
- */
 export interface RelayLog {
     id: number;
     trace_id?: string;
     thread_id?: string;
     client_api_key_id?: number;
     group_id?: number;
-    time: number;                // 时间戳
-    request_model_name: string;  // 请求模型名称
-    request_api_key_name?: string; // 请求使用的 API Key 名称
-    channel: number;             // 实际使用的渠道ID
-    channel_name: string;        // 渠道名称
-    actual_model_name: string;   // 实际使用模型名称
+    time: number;
+    request_model_name: string;
+    request_api_key_name?: string;
+    request_stream?: boolean;
+    channel: number;
+    channel_name: string;
+    actual_model_name: string;
     final_status?: string;
     final_channel_id?: number;
     final_site_id?: number;
     final_upstream_model?: string;
     attempts_count?: number;
     total_latency_ms?: number;
-    input_tokens: number;        // 输入Token
-    transport_input_tokens?: number | null; // 实际发送到上游请求体的 Token 估算
-    bill_input_tokens?: number | null; // 按常规输入价格计费的 Token
-    cache_read_tokens?: number | null; // 从缓存读取的 Token
-    cache_write_tokens?: number | null; // 写入缓存的 Token
-    cache_tokens?: number;       // 缓存 Token
-    output_tokens: number;       // 输出Token
-    ftut: number;                // 首字时间(毫秒)
-    use_time: number;            // 总用时(毫秒)
-    cost: number;                // 消耗费用
-    estimated_cost?: number;     // 估算成本
-    final_success_cost?: number; // 最终成功 attempt 成本
-    total_attempt_cost?: number; // 整个故障转移链路成本
-    failed_attempt_estimated_cost?: number; // 失败 attempt 估算成本
-    service_tier?: string;       // 服务层级
-    request_content: string;     // 请求内容
-    response_content: string;    // 响应内容
-    error: string;               // 错误信息
-    attempts?: ChannelAttempt[]; // 所有尝试记录
-    total_attempts?: number;     // 总尝试次数
-    used_ws?: boolean;           // 是否使用了上游WebSocket
-    ws_mode?: RelayLogWSMode | null; // 上游 WebSocket 模式
-    ws_recovery?: RelayLogWSRecovery | null; // 本次请求触发的恢复动作
+    input_tokens: number;
+    transport_input_tokens?: number | null;
+    bill_input_tokens?: number | null;
+    cache_read_tokens?: number | null;
+    cache_write_tokens?: number | null;
+    cache_tokens?: number;
+    output_tokens: number;
+    ftut: number;
+    use_time: number;
+    cost: number;
+    estimated_cost?: number;
+    final_success_cost?: number;
+    total_attempt_cost?: number;
+    failed_attempt_estimated_cost?: number;
+    service_tier?: string;
+    request_content: string;
+    response_content: string;
+    error: string;
+    attempts?: ChannelAttempt[];
+    total_attempts?: number;
+    used_ws?: boolean;
+    ws_mode?: RelayLogWSMode | null;
+    ws_recovery?: RelayLogWSRecovery | null;
 }
 
-/**
- * 日志列表查询参数
- */
 export interface LogListParams {
     page?: number;
     page_size?: number;
     start_time?: number;
     end_time?: number;
+    time_range?: string;
+    channel_ids?: string;
+    model?: string;
+    trace_id?: string;
+    api_key?: string;
+    api_key_id?: number;
+    status?: string;
+    http_status?: string;
+    failure_reason?: string;
+    protocol?: string;
+    stream?: boolean;
+    failover?: boolean;
+    cache_hit?: boolean;
+    sort_by?: string;
+    sort_order?: string;
 }
 
-/**
- * 清空日志 Hook
- * 
- * @example
- * const clearLogs = useClearLogs();
- * 
- * clearLogs.mutate();
- */
+export type LogListFilters = Omit<LogListParams, 'page' | 'page_size'>;
+
+export interface LogListResponse {
+    items: RelayLog[];
+    total: number;
+    page: number;
+    page_size: number;
+    has_more: boolean;
+}
+
 export function useClearLogs() {
     const queryClient = useQueryClient();
 
@@ -127,56 +133,107 @@ export function useClearLogs() {
             return apiClient.delete<null>('/api/v1/log/clear');
         },
         onSuccess: () => {
-            logger.log('日志清空成功');
+            logger.log('relay logs cleared');
             queryClient.invalidateQueries({ queryKey: ['logs'] });
         },
         onError: (error) => {
-            logger.error('日志清空失败:', error);
+            logger.error('failed to clear relay logs:', error);
         },
     });
 }
 
-const logsInfiniteQueryKey = (pageSize: number) => ['logs', 'infinite', pageSize] as const;
+const logsInfiniteQueryKey = (pageSize: number, filters: LogListFilters) => ['logs', 'infinite', pageSize, filters] as const;
 
-/**
- * 日志管理 Hook
- * 整合初始加载、SSE 实时推送、滚动加载更多
- * 
- * @example
- * const { logs, isConnected, hasMore, isLoadingMore, loadMore, clear } = useLogs();
- * 
- * // logs 自动包含历史日志和实时日志，按时间倒序
- * logs.forEach(log => console.log(log.request_model_name));
- * 
- * // 滚动到底部时加载更多
- * if (hasMore && !isLoadingMore) loadMore();
- */
-export function useLogs(options: { pageSize?: number } = {}) {
-    const { pageSize = 20 } = options;
+function cleanLogFilters(filters: LogListFilters = {}): LogListFilters {
+    const out: Record<string, string | number | boolean> = {};
+    for (const [key, value] of Object.entries(filters)) {
+        if (value === undefined || value === null || value === '') continue;
+        out[key] = value as string | number | boolean;
+    }
+    return out as LogListFilters;
+}
 
+function buildLogParams(page: number, pageSize: number, filters: LogListFilters): Record<string, string | number | boolean> {
+    return {
+        ...filters,
+        page,
+        page_size: pageSize,
+    };
+}
+
+function normalizeLogListResponse(result: RelayLog[] | LogListResponse | null | undefined, page: number, pageSize: number): LogListResponse {
+    if (Array.isArray(result)) {
+        return {
+            items: result,
+            total: result.length,
+            page,
+            page_size: pageSize,
+            has_more: result.length >= pageSize,
+        };
+    }
+    if (!result) {
+        return { items: [], total: 0, page, page_size: pageSize, has_more: false };
+    }
+    return {
+        items: result.items ?? [],
+        total: result.total ?? 0,
+        page: result.page ?? page,
+        page_size: result.page_size ?? pageSize,
+        has_more: Boolean(result.has_more),
+    };
+}
+
+function hasActiveLogFilters(filters: LogListFilters) {
+    return Object.entries(filters).some(([key, value]) => {
+        if (value === undefined || value === null || value === '') return false;
+        if (key === 'sort_by' && value === 'time') return false;
+        if (key === 'sort_order' && value === 'desc') return false;
+        return true;
+    });
+}
+
+export function useLogs(options: {
+    pageSize?: number;
+    filters?: LogListFilters;
+    autoRefresh?: boolean;
+    refreshIntervalMs?: number;
+    pauseAutoRefresh?: boolean;
+} = {}) {
+    const {
+        pageSize = 20,
+        filters = {},
+        autoRefresh = false,
+        refreshIntervalMs = 10000,
+        pauseAutoRefresh = false,
+    } = options;
+
+    const cleanFilters = useMemo(() => cleanLogFilters(filters), [filters]);
+    const activeFilters = useMemo(() => hasActiveLogFilters(cleanFilters), [cleanFilters]);
+    const queryClient = useQueryClient();
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const eventSourceRef = useRef<EventSource | null>(null);
 
-    const queryClient = useQueryClient();
-
     const logsQuery = useInfiniteQuery({
-        queryKey: logsInfiniteQueryKey(pageSize),
+        queryKey: logsInfiniteQueryKey(pageSize, cleanFilters),
         initialPageParam: 1,
         queryFn: async ({ pageParam }) => {
-            const params = new URLSearchParams();
-            params.set('page', String(pageParam));
-            params.set('page_size', String(pageSize));
-            const result = await apiClient.get<RelayLog[] | null>(`/api/v1/log/list?${params.toString()}`);
-            return result ?? [];
+            const page = Number(pageParam);
+            const result = await apiClient.get<RelayLog[] | LogListResponse | null>(
+                '/api/v1/log/list',
+                buildLogParams(page, pageSize, cleanFilters),
+            );
+            return normalizeLogListResponse(result, page, pageSize);
         },
         getNextPageParam: (lastPage, allPages) => {
-            if (!lastPage || lastPage.length < pageSize) return undefined;
+            if (!lastPage?.has_more) return undefined;
             return allPages.length + 1;
         },
         staleTime: 0,
         refetchOnMount: 'always',
         refetchOnWindowFocus: true,
+        refetchInterval: autoRefresh && !pauseAutoRefresh ? refreshIntervalMs : false,
+        refetchIntervalInBackground: false,
     });
 
     const logs = useMemo(() => {
@@ -185,25 +242,22 @@ export function useLogs(options: { pageSize?: number } = {}) {
         const merged: RelayLog[] = [];
 
         for (const page of pages) {
-            for (const log of page) {
+            for (const log of page.items) {
                 if (seen.has(log.id)) continue;
                 seen.add(log.id);
                 merged.push(log);
             }
         }
 
-        merged.sort((a, b) => b.time - a.time);
         return merged;
     }, [logsQuery.data]);
 
     const loadMore = useCallback(async () => {
-        if (!logsQuery.hasNextPage) return;
-        if (logsQuery.isFetchingNextPage) return;
-
+        if (!logsQuery.hasNextPage || logsQuery.isFetchingNextPage) return;
         try {
             await logsQuery.fetchNextPage();
         } catch (e) {
-            logger.error('加载更多日志失败:', e);
+            logger.error('failed to load more relay logs:', e);
         }
     }, [logsQuery]);
 
@@ -211,6 +265,8 @@ export function useLogs(options: { pageSize?: number } = {}) {
         let cancelled = false;
         let retryTimer: ReturnType<typeof setTimeout> | null = null;
         let retryAttempt = 0;
+
+        const queryKey = logsInfiniteQueryKey(pageSize, cleanFilters);
 
         const scheduleReconnect = () => {
             if (cancelled) return;
@@ -235,52 +291,88 @@ export function useLogs(options: { pageSize?: number } = {}) {
                     setIsConnected(true);
                     setError(null);
                     if (isReconnect) {
-                        queryClient.invalidateQueries({ queryKey: logsInfiniteQueryKey(pageSize) });
+                        queryClient.invalidateQueries({ queryKey });
                     }
                 };
 
                 eventSource.onmessage = (event) => {
                     try {
                         const log: RelayLog = JSON.parse(event.data);
+                        if (activeFilters) {
+                            queryClient.invalidateQueries({ queryKey });
+                            return;
+                        }
                         queryClient.setQueryData(
-                            logsInfiniteQueryKey(pageSize),
-                            (old: InfiniteData<RelayLog[], number> | undefined) => {
+                            queryKey,
+                            (old: InfiniteData<LogListResponse, number> | undefined) => {
                                 if (!old) {
-                                    return { pages: [[log]], pageParams: [1] };
-                                }
-
-                                const exists = old.pages.some((p) => p?.some((x) => x.id === log.id));
-                                if (exists) return old;
-
-                                const firstPage = old.pages[0] ?? [];
-                                const prepended = [log, ...firstPage];
-                                if (prepended.length > pageSize && old.pages.length > 1) {
-                                    // 首页溢出：截断到 pageSize，后续分页可能已偏移，触发重拉
-                                    queryClient.invalidateQueries({ queryKey: logsInfiniteQueryKey(pageSize) });
                                     return {
-                                        ...old,
-                                        pages: [prepended.slice(0, pageSize), ...old.pages.slice(1)],
+                                        pages: [{
+                                            items: [log],
+                                            total: 1,
+                                            page: 1,
+                                            page_size: pageSize,
+                                            has_more: false,
+                                        }],
+                                        pageParams: [1],
                                     };
                                 }
-                                return { ...old, pages: [prepended, ...old.pages.slice(1)] };
-                            }
+
+                                const exists = old.pages.some((page) => page.items.some((item) => item.id === log.id));
+                                if (exists) return old;
+
+                                const first = old.pages[0] ?? {
+                                    items: [],
+                                    total: 0,
+                                    page: 1,
+                                    page_size: pageSize,
+                                    has_more: false,
+                                };
+                                const prepended = [log, ...first.items];
+                                if (prepended.length > pageSize && old.pages.length > 1) {
+                                    queryClient.invalidateQueries({ queryKey });
+                                    return {
+                                        ...old,
+                                        pages: [
+                                            {
+                                                ...first,
+                                                items: prepended.slice(0, pageSize),
+                                                total: first.total + 1,
+                                                has_more: true,
+                                            },
+                                            ...old.pages.slice(1),
+                                        ],
+                                    };
+                                }
+                                return {
+                                    ...old,
+                                    pages: [
+                                        {
+                                            ...first,
+                                            items: prepended,
+                                            total: first.total + 1,
+                                        },
+                                        ...old.pages.slice(1),
+                                    ],
+                                };
+                            },
                         );
                     } catch (e) {
-                        logger.error('解析日志数据失败:', e);
+                        logger.error('failed to parse relay log stream event:', e);
                     }
                 };
 
                 eventSource.onerror = () => {
                     setIsConnected(false);
-                    setError(new Error('SSE 连接断开'));
+                    setError(new Error('relay log stream disconnected'));
                     eventSource.close();
                     eventSourceRef.current = null;
                     scheduleReconnect();
                 };
             } catch (e) {
                 if (cancelled) return;
-                setError(e instanceof Error ? e : new Error('获取 stream token 失败'));
-                logger.error('获取 stream token 失败:', e);
+                setError(e instanceof Error ? e : new Error('failed to create relay log stream'));
+                logger.error('failed to create relay log stream:', e);
                 scheduleReconnect();
             }
         };
@@ -294,20 +386,23 @@ export function useLogs(options: { pageSize?: number } = {}) {
             eventSourceRef.current = null;
             setIsConnected(false);
         };
-    }, [pageSize, queryClient]);
+    }, [activeFilters, cleanFilters, pageSize, queryClient]);
 
     const clear = useCallback(() => {
-        queryClient.removeQueries({ queryKey: logsInfiniteQueryKey(pageSize) });
-    }, [pageSize, queryClient]);
+        queryClient.removeQueries({ queryKey: logsInfiniteQueryKey(pageSize, cleanFilters) });
+    }, [cleanFilters, pageSize, queryClient]);
 
     return {
         logs,
+        total: logsQuery.data?.pages[0]?.total ?? 0,
         isConnected,
         error,
         hasMore: !!logsQuery.hasNextPage,
         isLoading: logsQuery.isLoading,
+        isFetching: logsQuery.isFetching,
         isLoadingMore: logsQuery.isFetchingNextPage,
         loadMore,
+        refetch: logsQuery.refetch,
         clear,
     };
 }

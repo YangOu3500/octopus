@@ -73,6 +73,7 @@ type RelayLog struct {
 	Time                 int64               `json:"time"`
 	RequestModelName     string              `json:"request_model_name"`
 	RequestAPIKeyName    string              `json:"request_api_key_name"`
+	RequestStream        bool                `json:"request_stream,omitempty" gorm:"index"`
 	ChannelId            int                 `json:"channel" gorm:"index"`
 	ChannelName          string              `json:"channel_name"`
 	ActualModelName      string              `json:"actual_model_name"`
@@ -105,4 +106,34 @@ type RelayLog struct {
 	UsedWS               bool                `json:"used_ws" gorm:"default:false"`
 	WSMode               *RelayLogWSMode     `json:"ws_mode,omitempty"`
 	WSRecovery           *RelayLogWSRecovery `json:"ws_recovery,omitempty"`
+}
+
+type RelayLogListQuery struct {
+	Page          int
+	PageSize      int
+	StartTime     *int
+	EndTime       *int
+	TimeRange     string
+	ChannelIDs    []int
+	Model         string
+	TraceID       string
+	APIKey        string
+	APIKeyID      *int
+	Status        string
+	HTTPStatus    string
+	FailureReason string
+	Protocol      string
+	Stream        *bool
+	Failover      *bool
+	CacheHit      *bool
+	SortBy        string
+	SortOrder     string
+}
+
+type RelayLogListResult struct {
+	Items    []RelayLog `json:"items"`
+	Total    int        `json:"total"`
+	Page     int        `json:"page"`
+	PageSize int        `json:"page_size"`
+	HasMore  bool       `json:"has_more"`
 }

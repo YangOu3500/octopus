@@ -16,10 +16,11 @@ import (
 
 // RelayMetrics 负责最终的日志收集与持久化
 type RelayMetrics struct {
-	APIKeyID     int
-	GroupID      int
-	RequestModel string
-	StartTime    time.Time
+	APIKeyID      int
+	GroupID       int
+	RequestModel  string
+	RequestStream bool
+	StartTime     time.Time
 
 	// 首 Token 时间
 	FirstTokenTime time.Time
@@ -45,9 +46,11 @@ type RelayMetrics struct {
 }
 
 func NewRelayMetrics(apiKeyID int, requestModel string, rawBody []byte, req *transformerModel.InternalLLMRequest) *RelayMetrics {
+	requestStream := req != nil && req.Stream != nil && *req.Stream
 	return &RelayMetrics{
 		APIKeyID:        apiKeyID,
 		RequestModel:    requestModel,
+		RequestStream:   requestStream,
 		StartTime:       time.Now(),
 		RawRequest:      rawBody,
 		InternalRequest: req,
@@ -189,6 +192,7 @@ func (m *RelayMetrics) saveLog(ctx context.Context, success bool, err error, dur
 		ClientAPIKeyID:     m.APIKeyID,
 		GroupID:            m.GroupID,
 		RequestModelName:   m.RequestModel,
+		RequestStream:      m.RequestStream,
 		ChannelName:        channelName,
 		ChannelId:          channelID,
 		ActualModelName:    actualModel,

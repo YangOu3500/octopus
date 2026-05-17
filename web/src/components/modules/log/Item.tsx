@@ -798,7 +798,142 @@ function AttemptDisableButton({
     );
 }
 
-export function LogCard({ log, siteTargets }: { log: RelayLog; siteTargets: LogSiteActionTargets | null }) {
+function getLogAttemptCount(log: RelayLog) {
+    return log.attempts_count || log.total_attempts || log.attempts?.length || 0;
+}
+
+function getLogHTTPStatus(log: RelayLog) {
+    const attempts = log.attempts ?? [];
+    for (let index = attempts.length - 1; index >= 0; index -= 1) {
+        const status = attempts[index]?.http_status ?? 0;
+        if (status > 0) return status;
+    }
+    return 0;
+}
+
+function getLogFailureReason(log: RelayLog) {
+    const attempts = log.attempts ?? [];
+    for (const attempt of attempts) {
+        const reason = getAttemptFailureReason(attempt);
+        if (reason) return reason;
+    }
+    return sanitizeErrorMessage(log.error);
+}
+
+function getLogProtocol(log: RelayLog) {
+    const attempts = log.attempts ?? [];
+    for (let index = attempts.length - 1; index >= 0; index -= 1) {
+        const attempt = attempts[index];
+        const protocol = [attempt.request_protocol, attempt.upstream_protocol, attempt.response_protocol]
+            .map((part) => part?.trim())
+            .filter(Boolean)
+            .join(' -> ');
+        if (protocol) return protocol;
+    }
+    return log.used_ws ? 'ws' : '—';
+}
+
+function getLogCost(log: RelayLog) {
+    if (hasNumber(log.total_attempt_cost) && log.total_attempt_cost > 0) return log.total_attempt_cost;
+    if (hasNumber(log.final_success_cost) && log.final_success_cost > 0) return log.final_success_cost;
+    return log.cost;
+}
+
+function formatTokPerSecond(log: RelayLog) {
+    const duration = log.total_latency_ms || log.use_time;
+    if (!duration || duration <= 0) return '—';
+    const tokens = (log.output_tokens ?? 0) + (log.input_tokens ?? 0);
+    if (tokens <= 0) return '—';
+    return `${(tokens / (duration / 1000)).toFixed(1)}/s`;
+}
+
+function LogRowTriggerContent({
+    log,
+    displayActualModelName,
+    requestAPIKeyName,
+    hasError,
+}: {
+    log: RelayLog;
+    displayActualModelName: string;
+    requestAPIKeyName: string;
+    hasError: boolean;
+}) {
+    const t = useTranslations('log.card');
+    const statusLabel = formatFinalStatus(log.final_status || (hasError ? 'failed' : 'success'), t);
+    const httpStatus = getLogHTTPStatus(log);
+    const failureReason = getLogFailureReason(log);
+    const attemptCount = getLogAttemptCount(log);
+    const inputTokens = getHeadlineInputTokens(log);
+    const cacheTokens = log.cache_tokens || log.cache_read_tokens || log.cache_write_tokens || 0;
+
+    return (
+        <div className="grid gap-3 px-3 py-2.5 text-sm lg:grid-cols-[1.05fr_1.6fr_1.2fr_0.8fr_0.8fr_0.75fr_0.85fr_1fr_0.9fr_0.55fr] lg:items-center">
+            <div className="min-w-0">
+                <div className="tabular-nums text-xs text-muted-foreground">{formatTime(log.time)}</div>
+                <div className="truncate font-mono text-xs text-muted-foreground" title={log.trace_id || String(log.id)}>
+                    {log.trace_id || `#${log.id}`}
+                </div>
+            </div>
+            <div className="min-w-0">
+                <div className="truncate font-semibold text-foreground" title={log.request_model_name}>
+                    {log.request_model_name}
+                </div>
+                <div className="truncate text-xs text-muted-foreground" title={displayActualModelName}>
+                    {displayActualModelName}
+                </div>
+            </div>
+            <div className="min-w-0">
+                <div className="truncate font-medium" title={log.channel_name}>
+                    {log.channel_name || `#${log.channel}`}
+                </div>
+                <div className="truncate text-xs text-muted-foreground" title={getLogProtocol(log)}>
+                    {getLogProtocol(log)} · {log.request_stream ? 'stream' : 'nonstream'}
+                </div>
+            </div>
+            <div className="flex min-w-0 items-center gap-1.5">
+                <Badge
+                    variant="secondary"
+                    className={cn(
+                        'shrink-0 px-1.5 py-0 text-xs',
+                        hasError ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary',
+                    )}
+                >
+                    {statusLabel}
+                </Badge>
+            </div>
+            <div className="tabular-nums text-muted-foreground">{httpStatus || '—'}</div>
+            <div className="tabular-nums text-muted-foreground">{formatOptionalDuration(log.ftut)}</div>
+            <div className="min-w-0 text-muted-foreground">
+                <div className="tabular-nums">{formatOptionalDuration(log.total_latency_ms || log.use_time)}</div>
+                <div className="text-xs tabular-nums">{formatTokPerSecond(log)}</div>
+            </div>
+            <div className="min-w-0 text-muted-foreground">
+                <div className="tabular-nums">
+                    {inputTokens.toLocaleString()} / {log.output_tokens.toLocaleString()}
+                </div>
+                <div className="text-xs tabular-nums">cache {cacheTokens.toLocaleString()}</div>
+            </div>
+            <div className="min-w-0">
+                <div className="tabular-nums text-emerald-600 dark:text-emerald-400">{getLogCost(log).toFixed(6)}</div>
+                <div className="truncate text-xs text-muted-foreground" title={requestAPIKeyName}>
+                    {requestAPIKeyName || '—'}
+                </div>
+            </div>
+            <div className="min-w-0">
+                <Badge variant="outline" className="px-1.5 py-0 text-xs tabular-nums">
+                    {attemptCount || 1}
+                </Badge>
+                {failureReason ? (
+                    <div className="mt-1 line-clamp-1 text-xs text-destructive" title={failureReason}>
+                        {failureReason}
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+export function LogCard({ log, siteTargets, variant = 'card' }: { log: RelayLog; siteTargets: LogSiteActionTargets | null; variant?: 'card' | 'row' }) {
     const t = useTranslations('log.card');
     const displayActualModelName = useMemo(
         () => log.actual_model_name?.trim() || log.request_model_name?.trim() || '',
@@ -886,13 +1021,23 @@ export function LogCard({ log, siteTargets }: { log: RelayLog; siteTargets: LogS
             <MorphingDialog>
                 <MorphingDialogTrigger
                     className={cn(
-                        'rounded-3xl border bg-card w-full text-left',
+                        variant === 'row'
+                            ? 'rounded-lg border bg-card w-full text-left transition hover:bg-muted/40'
+                            : 'rounded-3xl border bg-card w-full text-left',
                         hasError ? 'border-destructive/40' : 'border-border',
                     )}
                 >
-                    <div className={cn('p-4 grid grid-cols-[auto_1fr] gap-4', hasError ? 'items-start' : 'items-center')}>
-                        <ModelAvatar size={40} />
-                        <div className="min-w-0 flex flex-col gap-3">
+                    {variant === 'row' ? (
+                        <LogRowTriggerContent
+                            log={log}
+                            displayActualModelName={displayActualModelName}
+                            requestAPIKeyName={requestAPIKeyName}
+                            hasError={hasError}
+                        />
+                    ) : (
+                        <div className={cn('p-4 grid grid-cols-[auto_1fr] gap-4', hasError ? 'items-start' : 'items-center')}>
+                            <ModelAvatar size={40} />
+                            <div className="min-w-0 flex flex-col gap-3">
                             <div className="flex items-start gap-3 min-w-0">
                                 <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
                                     <span className="font-semibold text-card-foreground truncate" title={log.request_model_name}>
@@ -967,8 +1112,9 @@ export function LogCard({ log, siteTargets }: { log: RelayLog; siteTargets: LogS
                                     <p className="text-xs text-destructive line-clamp-2">{sanitizeErrorMessage(log.error)}</p>
                                 </div>
                             ) : null}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </MorphingDialogTrigger>
 
                 <MorphingDialogContainer>

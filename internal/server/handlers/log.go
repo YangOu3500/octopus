@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"github.com/bestruirui/octopus/internal/model"
 	"github.com/bestruirui/octopus/internal/op"
 	"github.com/bestruirui/octopus/internal/server/middleware"
 	"github.com/bestruirui/octopus/internal/server/resp"
@@ -65,13 +67,84 @@ func listLog(c *gin.Context) {
 		endTime = &et
 	}
 
-	logs, err := op.RelayLogList(c.Request.Context(), startTime, endTime, nil, page, pageSize)
+	query := model.RelayLogListQuery{
+		Page:          page,
+		PageSize:      pageSize,
+		StartTime:     startTime,
+		EndTime:       endTime,
+		TimeRange:     c.Query("time_range"),
+		ChannelIDs:    parseLogIntList(c.Query("channel_ids")),
+		Model:         c.Query("model"),
+		TraceID:       c.Query("trace_id"),
+		APIKey:        c.Query("api_key"),
+		Status:        c.Query("status"),
+		HTTPStatus:    c.Query("http_status"),
+		FailureReason: c.Query("failure_reason"),
+		Protocol:      c.Query("protocol"),
+		SortBy:        c.Query("sort_by"),
+		SortOrder:     c.Query("sort_order"),
+	}
+	if apiKeyID := parseOptionalLogInt(c.Query("api_key_id")); apiKeyID != nil {
+		query.APIKeyID = apiKeyID
+	}
+	if stream := parseOptionalLogBool(c.Query("stream")); stream != nil {
+		query.Stream = stream
+	}
+	if failover := parseOptionalLogBool(c.Query("failover")); failover != nil {
+		query.Failover = failover
+	}
+	if cacheHit := parseOptionalLogBool(c.Query("cache_hit")); cacheHit != nil {
+		query.CacheHit = cacheHit
+	}
+
+	logs, err := op.RelayLogListWithQuery(c.Request.Context(), query)
 	if err != nil {
 		resp.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	resp.Success(c, logs)
+}
+
+func parseLogIntList(raw string) []int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]int, 0, len(parts))
+	for _, part := range parts {
+		value, err := strconv.Atoi(strings.TrimSpace(part))
+		if err == nil && value > 0 {
+			out = append(out, value)
+		}
+	}
+	return out
+}
+
+func parseOptionalLogInt(raw string) *int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil {
+		return nil
+	}
+	return &value
+}
+
+func parseOptionalLogBool(raw string) *bool {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "true", "1", "yes", "stream":
+		value := true
+		return &value
+	case "false", "0", "no", "nonstream":
+		value := false
+		return &value
+	default:
+		return nil
+	}
 }
 
 func clearLog(c *gin.Context) {
