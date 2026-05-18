@@ -1073,6 +1073,14 @@
         "refresh": "刷新",
         "reset": "重置筛选",
         "empty": "当前筛选条件下没有 request trace",
+        "export": {
+            "page": "导出当前页",
+            "detail": "导出详情",
+            "empty": "没有可导出的 trace",
+            "success": "导出已开始",
+            "failed": "导出失败",
+            "safe": "仅包含脱敏结构化字段"
+        },
         "summary": {
             "total": "Trace 总数",
             "page": "当前页 {count} 条",

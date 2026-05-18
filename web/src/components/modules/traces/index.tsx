@@ -6,6 +6,7 @@ import {
     ArrowLeft,
     ArrowRight,
     Database,
+    Download,
     GitBranch,
     Loader2,
     RefreshCw,
@@ -23,6 +24,7 @@ import {
     useRequestTraces,
 } from '@/api/endpoints/traces';
 import { useNavStore } from '@/components/modules/navbar';
+import { toast } from '@/components/common/Toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +39,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 25;
+const TRACE_EXPORT_VERSION = 1;
 
 function optionalBoolean(value: string): boolean | undefined {
     if (value === 'true') return true;
@@ -130,6 +133,132 @@ function protocolPath(attempt: RequestAttempt) {
         .map((item) => item?.trim())
         .filter(Boolean);
     return parts.length > 0 ? parts.join(' -> ') : '-';
+}
+
+function compactObject<T extends Record<string, unknown>>(input: T) {
+    return Object.fromEntries(
+        Object.entries(input).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+    );
+}
+
+function sanitizeTraceForExport(trace: RequestTrace) {
+    return compactObject({
+        id: trace.id,
+        trace_id: trace.trace_id,
+        relay_log_id: trace.relay_log_id,
+        thread_id: trace.thread_id,
+        client_api_key_id: trace.client_api_key_id,
+        group_id: trace.group_id,
+        client_model: trace.client_model,
+        request_source: trace.request_source,
+        request_stream: trace.request_stream,
+        final_status: trace.final_status,
+        final_channel_id: trace.final_channel_id,
+        final_site_id: trace.final_site_id,
+        final_upstream_model: trace.final_upstream_model,
+        attempts_count: trace.attempts_count,
+        total_latency_ms: trace.total_latency_ms,
+        input_tokens: trace.input_tokens,
+        output_tokens: trace.output_tokens,
+        cache_tokens: trace.cache_tokens,
+        estimated_cost: trace.estimated_cost,
+        final_success_cost: trace.final_success_cost,
+        total_attempt_cost: trace.total_attempt_cost,
+        failed_attempt_estimated_cost: trace.failed_attempt_estimated_cost,
+        service_tier: trace.service_tier,
+        used_ws: trace.used_ws,
+        ws_mode: trace.ws_mode,
+        ws_recovery: trace.ws_recovery,
+        created_at: trace.created_at,
+    });
+}
+
+function sanitizeAttemptForExport(attempt: RequestAttempt) {
+    return compactObject({
+        id: attempt.id,
+        trace_id: attempt.trace_id,
+        relay_log_id: attempt.relay_log_id,
+        attempt_index: attempt.attempt_index,
+        attempt_num: attempt.attempt_num,
+        channel_id: attempt.channel_id,
+        channel_key_id: attempt.channel_key_id,
+        key_id: attempt.key_id,
+        channel_name: attempt.channel_name,
+        site_id: attempt.site_id,
+        site_account_id: attempt.site_account_id,
+        account_id: attempt.account_id,
+        base_url: attempt.base_url,
+        model_name: attempt.model_name,
+        upstream_model: attempt.upstream_model,
+        request_protocol: attempt.request_protocol,
+        upstream_protocol: attempt.upstream_protocol,
+        response_protocol: attempt.response_protocol,
+        status: attempt.status,
+        http_status: attempt.http_status,
+        failure_reason: attempt.failure_reason,
+        retryable: attempt.retryable,
+        duration_ms: attempt.duration_ms,
+        ttfb_ms: attempt.ttfb_ms,
+        total_ms: attempt.total_ms,
+        input_tokens: attempt.input_tokens,
+        output_tokens: attempt.output_tokens,
+        cache_tokens: attempt.cache_tokens,
+        input_cost: attempt.input_cost,
+        output_cost: attempt.output_cost,
+        estimated_cost: attempt.estimated_cost,
+        cost_incurred: attempt.cost_incurred,
+        cost_source: attempt.cost_source,
+        service_tier: attempt.service_tier,
+        error_summary: attempt.error_summary,
+        sticky: attempt.sticky,
+        created_at: attempt.created_at,
+    });
+}
+
+function sanitizeTraceParamsForExport(params: RequestTraceListParams) {
+    return compactObject({
+        time_range: params.time_range,
+        start_time: params.start_time,
+        end_time: params.end_time,
+        model: params.model,
+        trace_id: params.trace_id,
+        api_key_id: params.api_key_id,
+        channel_ids: params.channel_ids,
+        status: params.status,
+        http_status: params.http_status,
+        failure_reason: params.failure_reason,
+        protocol: params.protocol,
+        source: params.source,
+        stream: params.stream,
+        failover: params.failover,
+        sort_by: params.sort_by,
+        sort_order: params.sort_order,
+    });
+}
+
+function exportTimestamp() {
+    return new Date().toISOString();
+}
+
+function exportFilenameTimestamp() {
+    return exportTimestamp().replace(/[:.]/g, '-');
+}
+
+function safeFilenamePart(value: string | undefined) {
+    const normalized = (value || 'trace').trim().replace(/[^a-zA-Z0-9_-]+/g, '-');
+    return normalized.slice(0, 80) || 'trace';
+}
+
+function downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function SummaryTile({
@@ -250,9 +379,31 @@ function TraceTable({
 
 function TraceDetailPanel({ traceId }: { traceId: string | null }) {
     const t = useTranslations('traces.detail');
+    const tExport = useTranslations('traces.export');
     const openLogTarget = useNavStore((state) => state.openLogTarget);
     const detailQuery = useRequestTraceDetail(traceId ?? undefined, !!traceId);
     const detail = detailQuery.data;
+
+    const handleExportDetail = useCallback(() => {
+        if (!detail) {
+            toast.warning(tExport('empty'));
+            return;
+        }
+
+        try {
+            downloadJson(`octopus-trace-${safeFilenamePart(detail.trace.trace_id)}-${exportFilenameTimestamp()}.json`, {
+                schema: 'octopus.request_traces.detail',
+                version: TRACE_EXPORT_VERSION,
+                exported_at: exportTimestamp(),
+                scope: 'trace_detail',
+                trace: sanitizeTraceForExport(detail.trace),
+                attempts: detail.attempts.map(sanitizeAttemptForExport),
+            });
+            toast.success(tExport('success'), { description: tExport('safe') });
+        } catch (error) {
+            toast.error(tExport('failed'), { description: error instanceof Error ? error.message : String(error) });
+        }
+    }, [detail, tExport]);
 
     if (!traceId) {
         return (
@@ -304,6 +455,16 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                         <ArrowRight className="size-3.5" />
                     </Button>
                 ) : null}
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 rounded-md px-2 text-xs"
+                    onClick={handleExportDetail}
+                >
+                    <Download className="size-3.5" />
+                    {tExport('detail')}
+                </Button>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs xl:grid-cols-4">
@@ -502,7 +663,35 @@ export function Traces() {
         setProtocolFilter('all');
     }, [resetTraceListPosition]);
 
+    const hasMore = tracesQuery.data?.has_more ?? false;
     const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const handleExportPage = useCallback(() => {
+        if (traces.length === 0) {
+            toast.warning(t('export.empty'));
+            return;
+        }
+
+        try {
+            downloadJson(`octopus-traces-page-${page}-${exportFilenameTimestamp()}.json`, {
+                schema: 'octopus.request_traces.page',
+                version: TRACE_EXPORT_VERSION,
+                exported_at: exportTimestamp(),
+                scope: 'current_page',
+                filters: sanitizeTraceParamsForExport(params),
+                pagination: {
+                    page,
+                    page_size: PAGE_SIZE,
+                    total,
+                    max_page: maxPage,
+                    has_more: hasMore,
+                },
+                items: traces.map(sanitizeTraceForExport),
+            });
+            toast.success(t('export.success'), { description: t('export.safe') });
+        } catch (error) {
+            toast.error(t('export.failed'), { description: error instanceof Error ? error.message : String(error) });
+        }
+    }, [hasMore, maxPage, page, params, t, total, traces]);
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
@@ -561,6 +750,16 @@ export function Traces() {
                         <Button type="button" variant="outline" size="sm" onClick={() => void tracesQuery.refetch()} disabled={tracesQuery.isFetching}>
                             {tracesQuery.isFetching ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
                             {t('refresh')}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleExportPage}
+                            disabled={traces.length === 0}
+                        >
+                            <Download className="size-4" />
+                            {t('export.page')}
                         </Button>
                     </div>
                 </div>
@@ -699,7 +898,7 @@ export function Traces() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={!tracesQuery.data?.has_more || tracesQuery.isFetching}
+                            disabled={!hasMore || tracesQuery.isFetching}
                             onClick={() => {
                                 setSelectedTraceId(null);
                                 setPage((current) => current + 1);

@@ -1073,6 +1073,14 @@
         "refresh": "Refresh",
         "reset": "Reset filters",
         "empty": "No request traces match the current filters",
+        "export": {
+            "page": "Export page",
+            "detail": "Export detail",
+            "empty": "No trace data to export",
+            "success": "Export started",
+            "failed": "Export failed",
+            "safe": "Only sanitized structured fields are included"
+        },
         "summary": {
             "total": "Total traces",
             "page": "{count} on this page",
