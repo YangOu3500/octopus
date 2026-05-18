@@ -130,6 +130,7 @@ type attemptResult struct {
 	Success           bool          // 是否成功
 	Written           bool          // 流式响应是否已开始写入（不可重试）
 	Canceled          bool          // 是否由下游请求取消或超时触发
+	SkipCandidate     bool          // 本地调度约束触发，跳过当前候选但不扣上游健康分
 	ResetConversation bool          // 是否需要立即重置连续会话并停止后续 failover
 	Err               error         // 失败时的错误
 	StatusCode        int           // 上游 HTTP 状态码（0 = 连接错误）

@@ -63,6 +63,9 @@ func BuildChannelModelHealth(ctx context.Context, query model.ChannelModelHealth
 			LoadBalancingStrategy: channelModelHealthStrategy(),
 		},
 	}
+	concurrencyConfig := balancer.CurrentChannelConcurrencyConfig()
+	result.Summary.ChannelConcurrencyEnabled = concurrencyConfig.Enabled
+	result.Summary.ChannelConcurrencyMax = concurrencyConfig.MaxInFlight
 	startTime, endTime := channelModelHealthWindow(query.TimeRange, logs)
 	result.Summary.StartTime = startTime
 	result.Summary.EndTime = endTime
@@ -104,6 +107,7 @@ func BuildChannelModelHealth(ctx context.Context, query model.ChannelModelHealth
 		result.Summary.FailureCount += row.FailureCount
 		result.Summary.AvgHealthScore += row.HealthScore
 		result.Summary.ActiveSelections += row.ActiveSelections
+		result.Summary.ChannelConcurrencyActive += row.ChannelConcurrencyActive
 		result.Summary.EstimatedCost += row.EstimatedCost
 		if row.CoolingDown {
 			result.Summary.CoolingDownCount++
@@ -319,6 +323,11 @@ func finalizeChannelModelHealthRow(acc *channelModelHealthAccumulator, channels 
 		row.AvgTotalMS = stats.AvgTotalMS
 	}
 	row.ActiveSelections = balancer.ActiveSelectionCount(row.ChannelID, row.ModelName)
+	concurrencyConfig := balancer.CurrentChannelConcurrencyConfig()
+	if concurrencyConfig.Enabled {
+		row.ChannelConcurrencyActive = balancer.ActiveChannelConcurrencyCount(row.ChannelID, row.ModelName)
+		row.ChannelConcurrencyLimit = concurrencyConfig.MaxInFlight
+	}
 
 	channel, ok := channels[row.ChannelID]
 	if ok {

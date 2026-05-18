@@ -158,8 +158,14 @@ export function ChannelModelHealthPanel() {
             id: 'load',
             icon: Activity,
             label: t('stats.load'),
-            value: formatNumber(summary?.active_selections),
-            sub: t('stats.loadSub', { cooldown: summary?.cooling_down_count ?? 0 }),
+            value: formatNumber((summary?.active_selections ?? 0) + (summary?.channel_concurrency_active ?? 0)),
+            sub: summary?.channel_concurrency_enabled
+                ? t('stats.loadSubWithConcurrency', {
+                    cooldown: summary?.cooling_down_count ?? 0,
+                    active: summary?.channel_concurrency_active ?? 0,
+                    limit: summary?.channel_concurrency_max ?? 0,
+                })
+                : t('stats.loadSub', { cooldown: summary?.cooling_down_count ?? 0 }),
         },
     ], [summary, t]);
 
@@ -346,6 +352,11 @@ export function ChannelModelHealthPanel() {
                                         <td className="px-3 py-3 tabular-nums">{formatCost(row.estimated_cost)}</td>
                                         <td className="px-3 py-3 tabular-nums">
                                             <div>{t('activeSelections')}: {formatNumber(row.active_selections)}</div>
+                                            {row.channel_concurrency_limit ? (
+                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                    {t('channelConcurrency')}: {(row.channel_concurrency_active ?? 0).toLocaleString()} / {row.channel_concurrency_limit}
+                                                </div>
+                                            ) : null}
                                             {row.cooling_down ? (
                                                 <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
                                                     {row.cooldown_reason || t('cooldown')} / {formatCooldown(row.cooldown_remaining_ms)}

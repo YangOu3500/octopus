@@ -179,14 +179,20 @@ func HandleResponsesCompact(c *gin.Context) {
 				success = true
 				break
 			}
+			if balancer.IsChannelConcurrencyLimitError(attemptErr) {
+				break
+			}
 			if !isRetryableStatus(statusCode) {
 				break
 			}
 		}
 
-		usedKey.StatusCode = statusCode
-		usedKey.LastUseTimeStamp = time.Now().Unix()
-		op.ChannelKeyUpdate(usedKey)
+		concurrencyLimited := balancer.IsChannelConcurrencyLimitError(attemptErr)
+		if !concurrencyLimited {
+			usedKey.StatusCode = statusCode
+			usedKey.LastUseTimeStamp = time.Now().Unix()
+			op.ChannelKeyUpdate(usedKey)
+		}
 
 		if success {
 			balancer.RecordSuccess(channel.ID, usedKey.ID, requestModel)
@@ -205,24 +211,26 @@ func HandleResponsesCompact(c *gin.Context) {
 			return
 		}
 
-		failureKind := circuitFailureKind(group.RetryEnabled, statusCode)
-		balancer.RecordFailure(channel.ID, usedKey.ID, requestModel, failureKind)
-		failureReason := ""
-		if attemptErr != nil {
-			failureReason = attemptErr.Error()
+		if !concurrencyLimited {
+			failureKind := circuitFailureKind(group.RetryEnabled, statusCode)
+			balancer.RecordFailure(channel.ID, usedKey.ID, requestModel, failureKind)
+			failureReason := ""
+			if attemptErr != nil {
+				failureReason = attemptErr.Error()
+			}
+			balancer.RecordHealthAttempt(balancer.HealthAttempt{
+				ChannelID:     channel.ID,
+				ChannelKeyID:  usedKey.ID,
+				SiteID:        runtimeState.SiteID,
+				SiteAccountID: runtimeState.SiteAccountID,
+				ModelName:     requestModel,
+				BaseURL:       channel.GetBaseUrl(),
+				Status:        dbmodel.AttemptFailed,
+				HTTPStatus:    statusCode,
+				FailureReason: failureReason,
+				RetryAfter:    retryAfter,
+			})
 		}
-		balancer.RecordHealthAttempt(balancer.HealthAttempt{
-			ChannelID:     channel.ID,
-			ChannelKeyID:  usedKey.ID,
-			SiteID:        runtimeState.SiteID,
-			SiteAccountID: runtimeState.SiteAccountID,
-			ModelName:     requestModel,
-			BaseURL:       channel.GetBaseUrl(),
-			Status:        dbmodel.AttemptFailed,
-			HTTPStatus:    statusCode,
-			FailureReason: failureReason,
-			RetryAfter:    retryAfter,
-		})
 		lastErr = attemptErr
 		lastStatusCode = statusCode
 		lastRetryAfter = retryAfter
@@ -267,6 +275,15 @@ func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balanc
 		SiteAccountID: runtimeState.SiteAccountID,
 		AttemptCount:  len(iter.Attempts()) + 1,
 	})
+	releaseConcurrency, _, acquired := balancer.AcquireChannelConcurrency(c.Request.Context(), channel.ID, modelName)
+	if !acquired {
+		err := balancer.ErrChannelConcurrencyQueueTimeout
+		span.End(dbmodel.AttemptFailed, 0, err.Error())
+		metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, 0, err.Error(), false, len(iter.Attempts()))
+		return 0, 0, err
+	}
+	defer releaseConcurrency()
+
 	request, err := buildResponsesCompactRequest(c.Request.Context(), channel, usedKey.ChannelKey, requestBody)
 	if err != nil {
 		span.End(dbmodel.AttemptFailed, 0, err.Error())

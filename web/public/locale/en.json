@@ -533,7 +533,13 @@
                     "name": "Burst Selection Spreading / Selection Tracker",
                     "desc": "When health scheduling is enabled, in-flight channel+model selections are tracked so equal-health bursts do not all land on one channel.",
                     "ui": "Group routing preview shows in-flight selections and effective score. Runtime routing prefers the lower-load peer among equal candidates.",
-                    "gap": "This is in-memory runtime spreading. Full channel rate-limit queue is still pending."
+                    "gap": "This is in-memory runtime spreading. Hard concurrency queueing is now exposed as separate configuration."
+                },
+                "channelConcurrency": {
+                    "name": "Channel + Model Hard Concurrency Queue",
+                    "desc": "Limits real in-flight requests by channel_id + model_name. Overflow waits briefly in-process, then fails over to later candidates on timeout.",
+                    "ui": "Settings expose enablement, per-channel-model max in-flight, and queue timeout in milliseconds. Channel model health shows current hard-concurrency load.",
+                    "gap": "Off by default and currently process-local. A shared queue for multi-replica deployments can be added later."
                 },
                 "slowProbe": {
                     "name": "Slow Active Probe",
@@ -681,6 +687,18 @@
                 "clearedOnSuccess": "Cleared on success",
                 "notClearedOnSuccess": "Not cleared on success",
                 "note": "These health cooldown rules only skip candidates when health score routing is enabled; the circuit breaker still uses its own settings."
+            },
+            "channelConcurrency": {
+                "title": "Channel Model Hard Concurrency",
+                "subtitle": "Off by default. Limits real in-flight requests by channel + model; queue timeout allows later candidates to be tried.",
+                "max": {
+                    "label": "Max In-flight Requests",
+                    "hint": "Concurrent upstream requests allowed for each channel + model."
+                },
+                "queue": {
+                    "label": "Queue Wait (ms)",
+                    "hint": "Local wait time after the limit is reached. 0 switches to the next candidate immediately."
+                }
             },
             "probe": {
                 "title": "Slow Active Probe",
@@ -1252,6 +1270,7 @@
             "tokenOut": "Output",
             "tokenCache": "Cache",
             "activeSelections": "Active selections",
+            "channelConcurrency": "Hard concurrency",
             "healthSamples": "{success}/{total} · {rate}",
             "noSamples": "No health samples",
             "emptyRate": "Empty",
@@ -1292,7 +1311,8 @@
                 "successSub": "Success {success} / Failed {failed}",
                 "healthScore": "Avg health score",
                 "load": "Current load",
-                "loadSub": "{cooldown} cooling down"
+                "loadSub": "{cooldown} cooling down",
+                "loadSubWithConcurrency": "{cooldown} cooling down · hard concurrency {active}/{limit}"
             },
             "table": {
                 "channel": "Channel / Model",

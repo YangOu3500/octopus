@@ -587,12 +587,12 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 			}
 
 			result = ra.attempt()
-			if result.Success || result.Written || result.Canceled || result.ResetConversation || !isRetryableStatus(result.StatusCode) {
+			if result.Success || result.Written || result.Canceled || result.SkipCandidate || result.ResetConversation || !isRetryableStatus(result.StatusCode) {
 				break
 			}
 		}
 
-		if !result.Success && !result.Written && !result.Canceled && !result.ResetConversation {
+		if !result.Success && !result.Written && !result.Canceled && !result.SkipCandidate && !result.ResetConversation {
 			failureKind := circuitFailureKind(group.RetryEnabled, result.StatusCode)
 			if replayExact && result.StatusCode == http.StatusServiceUnavailable && isNoAvailableAccountError(relayErrorMessage(result.Err)) {
 				failureKind = balancer.FailureHard

@@ -533,7 +533,13 @@
                     "name": "突發選擇分散 / Selection Tracker",
                     "desc": "健康調度開啟時記錄進行中的 channel+model 選擇，避免同級健康候選在突發請求中都壓到同一個渠道。",
                     "ui": "分組調度預覽展示進行中選擇數和有效分，真實調度在同級候選間優先選擇目前負載更低的候選。",
-                    "gap": "目前是記憶體態執行期負載分散；完整 channel rate-limit queue 仍待補。"
+                    "gap": "目前是記憶體態執行期負載分散；硬並發佇列已由單獨配置接入。"
+                },
+                "channelConcurrency": {
+                    "name": "Channel + Model 硬並發佇列",
+                    "desc": "按 channel_id + model_name 限制真實在途請求數，超出後在本地短暫排隊，逾時後切換後續候選。",
+                    "ui": "設定頁可開關、配置單渠道模型最大在途數和排隊等待毫秒；渠道模型健康頁展示目前硬並發負載。",
+                    "gap": "預設關閉，目前為記憶體態本機限流；分散式多副本共享佇列仍可後續增強。"
                 },
                 "slowProbe": {
                     "name": "慢速主動探測",
@@ -681,6 +687,18 @@
                 "clearedOnSuccess": "成功後清除",
                 "notClearedOnSuccess": "成功後不清除",
                 "note": "健康分調度關閉時不會按這些健康冷卻規則跳過候選；熔斷器仍使用單獨的熔斷設定。"
+            },
+            "channelConcurrency": {
+                "title": "渠道模型硬並發",
+                "subtitle": "預設關閉，開啟後按 channel + model 限制真實在途請求，排隊逾時會嘗試後續候選",
+                "max": {
+                    "label": "最大在途請求",
+                    "hint": "每個 channel + model 同時允許轉發到上游的請求數"
+                },
+                "queue": {
+                    "label": "排隊等待（毫秒）",
+                    "hint": "達到上限後的本地等待時間，0 表示不等待直接切換候選"
+                }
             },
             "probe": {
                 "title": "慢速主動探測",
@@ -1252,6 +1270,7 @@
             "tokenOut": "輸出",
             "tokenCache": "快取",
             "activeSelections": "活躍選擇",
+            "channelConcurrency": "硬並發",
             "healthSamples": "{success}/{total} · {rate}",
             "noSamples": "暫無健康樣本",
             "emptyRate": "空回應",
@@ -1292,7 +1311,8 @@
                 "successSub": "成功 {success} / 失敗 {failed}",
                 "healthScore": "平均健康分",
                 "load": "目前負載",
-                "loadSub": "{cooldown} 個冷卻中"
+                "loadSub": "{cooldown} 個冷卻中",
+                "loadSubWithConcurrency": "{cooldown} 個冷卻中 · 硬並發 {active}/{limit}"
             },
             "table": {
                 "channel": "渠道 / 模型",

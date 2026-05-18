@@ -147,4 +147,5 @@ func Reset() {
 	globalBreaker = sync.Map{}
 	globalSession = sync.Map{}
 	resetHealthState()
+	resetChannelConcurrencyState()
 }

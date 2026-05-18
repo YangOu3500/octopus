@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Activity, ArrowRight, CheckCircle2, CircleDashed, Eye, GitBranch, ListChecks, Settings2, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { Activity, ArrowRight, CheckCircle2, CircleDashed, Eye, GitBranch, ListChecks, Network, Settings2, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavStore, type NavItem } from '@/components/modules/navbar';
@@ -24,6 +24,7 @@ const capabilities: Capability[] = [
     { id: 'traceAttempts', status: 'done', source: 'both', nav: 'traces', icon: Eye },
     { id: 'healthCooldown', status: 'partial', source: 'both', nav: 'setting', icon: Settings2 },
     { id: 'selectionTracker', status: 'done', source: 'AxonHub', nav: 'group', icon: Activity },
+    { id: 'channelConcurrency', status: 'done', source: 'AxonHub', nav: 'setting', icon: Network },
     { id: 'slowProbe', status: 'partial', source: 'ccLoad', nav: 'setting', icon: CircleDashed },
     { id: 'costUsage', status: 'done', source: 'AxonHub', nav: 'home', icon: CheckCircle2 },
     { id: 'modelTest', status: 'done', source: 'ccLoad', nav: 'modelTest', icon: ListChecks },

@@ -205,8 +205,18 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 			AttemptCount:  len(iter.Attempts()) + 1,
 		})
 
+		releaseConcurrency, _, acquired := balancer.AcquireChannelConcurrency(ctx, channel.ID, item.ModelName)
+		if !acquired {
+			err := balancer.ErrChannelConcurrencyQueueTimeout
+			span.End(model.AttemptFailed, 0, err.Error())
+			metrics.markActiveAttemptEnd(model.AttemptFailed, 0, err.Error(), false, len(iter.Attempts()))
+			lastErr = err
+			continue
+		}
+
 		// 尝试一次转发
 		statusCode, written, usage, upstreamCT, fwdErr := imagesAttempt(ctx, endpoint, c, bc, isMultipart, boundary, jsonPayload, stream, channel, usedKey.ChannelKey, group.FirstTokenTimeOut, metrics, item.ModelName, hb)
+		releaseConcurrency()
 
 		// 更新 channel key 状态
 		usedKey.StatusCode = statusCode

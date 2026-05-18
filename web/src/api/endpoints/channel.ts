@@ -113,6 +113,8 @@ export type ChannelModelHealthRow = {
     empty_response_rate: number;
     rate_limit_count: number;
     active_selections: number;
+    channel_concurrency_active: number;
+    channel_concurrency_limit?: number;
     cooling_down: boolean;
     cooldown_remaining_ms: number;
     cooldown_reason?: string;
@@ -130,6 +132,8 @@ export type ChannelModelHealthSummary = {
     end_time: number;
     health_score_enabled: boolean;
     load_balancing_strategy: string;
+    channel_concurrency_enabled: boolean;
+    channel_concurrency_max: number;
     total_rows: number;
     total_requests: number;
     success_count: number;
@@ -138,6 +142,7 @@ export type ChannelModelHealthSummary = {
     avg_health_score: number;
     cooling_down_count: number;
     active_selections: number;
+    channel_concurrency_active: number;
     estimated_cost: number;
 };
 
@@ -259,6 +264,8 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             end_time: typeof summary.end_time === 'number' ? summary.end_time : 0,
             health_score_enabled: summary.health_score_enabled === true,
             load_balancing_strategy: summary.load_balancing_strategy ?? 'static_group_mode',
+            channel_concurrency_enabled: summary.channel_concurrency_enabled === true,
+            channel_concurrency_max: typeof summary.channel_concurrency_max === 'number' ? summary.channel_concurrency_max : 0,
             total_rows: typeof summary.total_rows === 'number' ? summary.total_rows : 0,
             total_requests: typeof summary.total_requests === 'number' ? summary.total_requests : 0,
             success_count: typeof summary.success_count === 'number' ? summary.success_count : 0,
@@ -267,6 +274,7 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             avg_health_score: typeof summary.avg_health_score === 'number' ? summary.avg_health_score : 100,
             cooling_down_count: typeof summary.cooling_down_count === 'number' ? summary.cooling_down_count : 0,
             active_selections: typeof summary.active_selections === 'number' ? summary.active_selections : 0,
+            channel_concurrency_active: typeof summary.channel_concurrency_active === 'number' ? summary.channel_concurrency_active : 0,
             estimated_cost: typeof summary.estimated_cost === 'number' ? summary.estimated_cost : 0,
         },
         rows: (data.rows ?? []).map((row) => ({
@@ -298,6 +306,8 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             empty_response_rate: typeof row.empty_response_rate === 'number' ? row.empty_response_rate : 0,
             rate_limit_count: typeof row.rate_limit_count === 'number' ? row.rate_limit_count : 0,
             active_selections: typeof row.active_selections === 'number' ? row.active_selections : 0,
+            channel_concurrency_active: typeof row.channel_concurrency_active === 'number' ? row.channel_concurrency_active : 0,
+            channel_concurrency_limit: typeof row.channel_concurrency_limit === 'number' ? row.channel_concurrency_limit : undefined,
             cooling_down: row.cooling_down === true,
             cooldown_remaining_ms: typeof row.cooldown_remaining_ms === 'number' ? row.cooldown_remaining_ms : 0,
             cooldown_reason: row.cooldown_reason ?? '',

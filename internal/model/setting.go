@@ -11,43 +11,46 @@ type SettingKey string
 
 const (
 	SettingKeyProxyURL                   SettingKey = "proxy_url"
-	SettingKeyStatsSaveInterval          SettingKey = "stats_save_interval"                 // 将统计信息写入数据库的周期(分钟)
-	SettingKeyModelInfoUpdateInterval    SettingKey = "model_info_update_interval"          // 模型信息更新间隔(小时)
-	SettingKeySyncLLMInterval            SettingKey = "sync_llm_interval"                   // LLM 同步间隔(小时)
-	SettingKeySiteSyncInterval           SettingKey = "site_sync_interval"                  // 站点账号同步间隔(小时)
-	SettingKeySiteCheckinInterval        SettingKey = "site_checkin_interval"               // 站点自动签到间隔(小时)
-	SettingKeyRelayLogKeepPeriod         SettingKey = "relay_log_keep_period"               // 日志保存时间范围(天)
-	SettingKeyRelayLogKeepEnabled        SettingKey = "relay_log_keep_enabled"              // 是否保留历史日志
-	SettingKeyCORSAllowOrigins           SettingKey = "cors_allow_origins"                  // 跨域白名单(逗号分隔, 如 "example.com,example2.com"). 为空不允许跨域, "*"允许所有
-	SettingKeyCircuitBreakerThreshold    SettingKey = "circuit_breaker_threshold"           // 熔断触发阈值（连续失败次数）
-	SettingKeyCircuitBreakerCooldown     SettingKey = "circuit_breaker_cooldown"            // 熔断基础冷却时间（秒）
-	SettingKeyCircuitBreakerMaxCooldown  SettingKey = "circuit_breaker_max_cooldown"        // 熔断最大冷却时间（秒），指数退避上限
-	SettingKeyRelayWSUpgradeEnabled      SettingKey = "relay_ws_upgrade_enabled"            // 是否主动尝试WS上游连接（双向降级）
-	SettingKeySSEHeartbeatInterval       SettingKey = "sse_heartbeat_interval"              // SSE 流式心跳间隔（秒），0 表示禁用
-	SettingKeySSEPreStreamHeartbeatDelay SettingKey = "sse_pre_stream_heartbeat_delay"      // SSE 上游流建立前心跳首次延迟（秒），0 表示禁用
-	SettingKeyStreamFirstValidTimeout    SettingKey = "stream_first_valid_timeout_seconds"  // 流式首个有效输出全局超时（秒），0 表示禁用
-	SettingKeyStreamFirstValidMaxBuffer  SettingKey = "stream_first_valid_max_buffer_bytes" // 流式首个有效输出前最大缓冲字节数
-	SettingKeyStreamEmptyDoneAsFailure   SettingKey = "stream_empty_done_as_failure"        // 流式仅 [DONE] 是否判定为失败
-	SettingKeyStreamInvalidSSEAsFailure  SettingKey = "stream_invalid_sse_as_failure"       // 流式无效 SSE 是否判定为失败
-	SettingKeyGroupHealthEnabled         SettingKey = "group_health_enabled"                // 是否启用分组健康检查功能
-	SettingKeyHealthScoreEnabled         SettingKey = "enable_health_score"                 // 是否启用真实请求反馈驱动的健康分与冷却调度
-	SettingKeyHealthScoreWindowMinutes   SettingKey = "health_score_window_minutes"         // 健康分统计窗口（分钟）
-	SettingKeyHealthMinConfidentSample   SettingKey = "health_min_confident_sample"         // 健康分最低可信样本量
-	SettingKeySuccessRatePenaltyWeight   SettingKey = "success_rate_penalty_weight"         // 失败率惩罚权重
-	SettingKeyEmptyResponsePenaltyWeight SettingKey = "empty_response_penalty_weight"       // 空响应惩罚权重
-	SettingKeyLatencyPenaltyWeight       SettingKey = "latency_penalty_weight"              // 延迟惩罚权重
-	SettingKeyProbeEnabled               SettingKey = "probe.enabled"                       // 是否启用慢速主动探测
-	SettingKeyProbeSiteMinInterval       SettingKey = "probe.site_min_interval_minutes"     // 同一站点最小探测间隔（分钟）
-	SettingKeyProbeModelMinInterval      SettingKey = "probe.model_min_interval_hours"      // 同一站点同一模型最小探测间隔（小时）
-	SettingKeyProbeMaxConcurrency        SettingKey = "probe.max_concurrency"               // 慢速探测最大并发
-	SettingKeyProbeDailyMaxRequests      SettingKey = "probe.daily_max_requests_per_site"   // 每站点每日最大探测请求数
-	SettingKeyProbePrompt                SettingKey = "probe.prompt"                        // 慢速探测提示词
-	SettingKeyProbeMaxTokens             SettingKey = "probe.max_tokens"                    // 慢速探测最大输出 token
-	SettingKeyProbeTemperature           SettingKey = "probe.temperature"                   // 慢速探测温度
-	SettingKeyProbeJitterRatio           SettingKey = "probe.jitter_ratio"                  // 慢速探测抖动比例
-	SettingKeyProbeStreamEnabled         SettingKey = "probe.stream_enabled"                // 慢速探测是否使用流式请求
-	SettingKeyJWTSecret                  SettingKey = "jwt_secret"                          // JWT 签名密钥（自动生成）
-	SettingKeyStatsSiteModelBackfilled   SettingKey = "stats_site_model_backfilled"         // 站点渠道小时聚合是否已回填历史日志
+	SettingKeyStatsSaveInterval          SettingKey = "stats_save_interval"                  // 将统计信息写入数据库的周期(分钟)
+	SettingKeyModelInfoUpdateInterval    SettingKey = "model_info_update_interval"           // 模型信息更新间隔(小时)
+	SettingKeySyncLLMInterval            SettingKey = "sync_llm_interval"                    // LLM 同步间隔(小时)
+	SettingKeySiteSyncInterval           SettingKey = "site_sync_interval"                   // 站点账号同步间隔(小时)
+	SettingKeySiteCheckinInterval        SettingKey = "site_checkin_interval"                // 站点自动签到间隔(小时)
+	SettingKeyRelayLogKeepPeriod         SettingKey = "relay_log_keep_period"                // 日志保存时间范围(天)
+	SettingKeyRelayLogKeepEnabled        SettingKey = "relay_log_keep_enabled"               // 是否保留历史日志
+	SettingKeyCORSAllowOrigins           SettingKey = "cors_allow_origins"                   // 跨域白名单(逗号分隔, 如 "example.com,example2.com"). 为空不允许跨域, "*"允许所有
+	SettingKeyCircuitBreakerThreshold    SettingKey = "circuit_breaker_threshold"            // 熔断触发阈值（连续失败次数）
+	SettingKeyCircuitBreakerCooldown     SettingKey = "circuit_breaker_cooldown"             // 熔断基础冷却时间（秒）
+	SettingKeyCircuitBreakerMaxCooldown  SettingKey = "circuit_breaker_max_cooldown"         // 熔断最大冷却时间（秒），指数退避上限
+	SettingKeyRelayWSUpgradeEnabled      SettingKey = "relay_ws_upgrade_enabled"             // 是否主动尝试WS上游连接（双向降级）
+	SettingKeySSEHeartbeatInterval       SettingKey = "sse_heartbeat_interval"               // SSE 流式心跳间隔（秒），0 表示禁用
+	SettingKeySSEPreStreamHeartbeatDelay SettingKey = "sse_pre_stream_heartbeat_delay"       // SSE 上游流建立前心跳首次延迟（秒），0 表示禁用
+	SettingKeyStreamFirstValidTimeout    SettingKey = "stream_first_valid_timeout_seconds"   // 流式首个有效输出全局超时（秒），0 表示禁用
+	SettingKeyStreamFirstValidMaxBuffer  SettingKey = "stream_first_valid_max_buffer_bytes"  // 流式首个有效输出前最大缓冲字节数
+	SettingKeyStreamEmptyDoneAsFailure   SettingKey = "stream_empty_done_as_failure"         // 流式仅 [DONE] 是否判定为失败
+	SettingKeyStreamInvalidSSEAsFailure  SettingKey = "stream_invalid_sse_as_failure"        // 流式无效 SSE 是否判定为失败
+	SettingKeyGroupHealthEnabled         SettingKey = "group_health_enabled"                 // 是否启用分组健康检查功能
+	SettingKeyHealthScoreEnabled         SettingKey = "enable_health_score"                  // 是否启用真实请求反馈驱动的健康分与冷却调度
+	SettingKeyHealthScoreWindowMinutes   SettingKey = "health_score_window_minutes"          // 健康分统计窗口（分钟）
+	SettingKeyHealthMinConfidentSample   SettingKey = "health_min_confident_sample"          // 健康分最低可信样本量
+	SettingKeySuccessRatePenaltyWeight   SettingKey = "success_rate_penalty_weight"          // 失败率惩罚权重
+	SettingKeyEmptyResponsePenaltyWeight SettingKey = "empty_response_penalty_weight"        // 空响应惩罚权重
+	SettingKeyLatencyPenaltyWeight       SettingKey = "latency_penalty_weight"               // 延迟惩罚权重
+	SettingKeyChannelConcurrencyEnabled  SettingKey = "channel_concurrency_enabled"          // 是否启用 channel+model 硬并发限制
+	SettingKeyChannelConcurrencyMax      SettingKey = "channel_concurrency_max_in_flight"    // 单 channel+model 最大在途请求数
+	SettingKeyChannelConcurrencyQueueMS  SettingKey = "channel_concurrency_queue_timeout_ms" // 单 channel+model 排队等待上限（毫秒）
+	SettingKeyProbeEnabled               SettingKey = "probe.enabled"                        // 是否启用慢速主动探测
+	SettingKeyProbeSiteMinInterval       SettingKey = "probe.site_min_interval_minutes"      // 同一站点最小探测间隔（分钟）
+	SettingKeyProbeModelMinInterval      SettingKey = "probe.model_min_interval_hours"       // 同一站点同一模型最小探测间隔（小时）
+	SettingKeyProbeMaxConcurrency        SettingKey = "probe.max_concurrency"                // 慢速探测最大并发
+	SettingKeyProbeDailyMaxRequests      SettingKey = "probe.daily_max_requests_per_site"    // 每站点每日最大探测请求数
+	SettingKeyProbePrompt                SettingKey = "probe.prompt"                         // 慢速探测提示词
+	SettingKeyProbeMaxTokens             SettingKey = "probe.max_tokens"                     // 慢速探测最大输出 token
+	SettingKeyProbeTemperature           SettingKey = "probe.temperature"                    // 慢速探测温度
+	SettingKeyProbeJitterRatio           SettingKey = "probe.jitter_ratio"                   // 慢速探测抖动比例
+	SettingKeyProbeStreamEnabled         SettingKey = "probe.stream_enabled"                 // 慢速探测是否使用流式请求
+	SettingKeyJWTSecret                  SettingKey = "jwt_secret"                           // JWT 签名密钥（自动生成）
+	SettingKeyStatsSiteModelBackfilled   SettingKey = "stats_site_model_backfilled"          // 站点渠道小时聚合是否已回填历史日志
 )
 
 type Setting struct {
@@ -83,6 +86,9 @@ func DefaultSettings() []Setting {
 		{Key: SettingKeySuccessRatePenaltyWeight, Value: "70"},
 		{Key: SettingKeyEmptyResponsePenaltyWeight, Value: "25"},
 		{Key: SettingKeyLatencyPenaltyWeight, Value: "8"},
+		{Key: SettingKeyChannelConcurrencyEnabled, Value: "false"},
+		{Key: SettingKeyChannelConcurrencyMax, Value: "1"},
+		{Key: SettingKeyChannelConcurrencyQueueMS, Value: "1000"},
 		{Key: SettingKeyProbeEnabled, Value: "false"},
 		{Key: SettingKeyProbeSiteMinInterval, Value: "30"},
 		{Key: SettingKeyProbeModelMinInterval, Value: "12"},
@@ -108,6 +114,24 @@ func (s *Setting) Validate() error {
 		_, err := strconv.Atoi(s.Value)
 		if err != nil {
 			return fmt.Errorf("setting value must be an integer")
+		}
+		return nil
+	case SettingKeyChannelConcurrencyMax:
+		value, err := strconv.Atoi(s.Value)
+		if err != nil {
+			return fmt.Errorf("setting value must be an integer")
+		}
+		if value <= 0 {
+			return fmt.Errorf("setting value must be greater than 0")
+		}
+		return nil
+	case SettingKeyChannelConcurrencyQueueMS:
+		value, err := strconv.Atoi(s.Value)
+		if err != nil {
+			return fmt.Errorf("setting value must be an integer")
+		}
+		if value < 0 {
+			return fmt.Errorf("setting value must be non-negative")
 		}
 		return nil
 	case SettingKeyProbeSiteMinInterval, SettingKeyProbeModelMinInterval:
@@ -164,7 +188,7 @@ func (s *Setting) Validate() error {
 			return fmt.Errorf("setting value must be greater than 0")
 		}
 		return nil
-	case SettingKeyRelayLogKeepEnabled, SettingKeyRelayWSUpgradeEnabled, SettingKeyStreamEmptyDoneAsFailure, SettingKeyStreamInvalidSSEAsFailure, SettingKeyGroupHealthEnabled, SettingKeyHealthScoreEnabled, SettingKeyProbeEnabled, SettingKeyProbeStreamEnabled:
+	case SettingKeyRelayLogKeepEnabled, SettingKeyRelayWSUpgradeEnabled, SettingKeyStreamEmptyDoneAsFailure, SettingKeyStreamInvalidSSEAsFailure, SettingKeyGroupHealthEnabled, SettingKeyHealthScoreEnabled, SettingKeyChannelConcurrencyEnabled, SettingKeyProbeEnabled, SettingKeyProbeStreamEnabled:
 		if s.Value != "true" && s.Value != "false" {
 			return fmt.Errorf("setting value must be true or false")
 		}

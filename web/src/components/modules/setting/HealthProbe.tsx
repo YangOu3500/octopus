@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Activity, FileWarning, Gauge, Hash, HeartPulse, HelpCircle, MessageSquare, Percent, Send, ShieldAlert, Shuffle, Thermometer, Timer, type LucideIcon } from 'lucide-react';
+import { Activity, FileWarning, Gauge, Hash, HeartPulse, HelpCircle, MessageSquare, Network, Percent, Send, ShieldAlert, Shuffle, Thermometer, Timer, type LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useHealthCooldownPolicy, useSettingList, useSetSetting, SettingKey } from '@/api/endpoints/setting';
@@ -36,6 +36,8 @@ const defaultValues: Record<string, string> = {
     [SettingKey.SuccessRatePenaltyWeight]: '70',
     [SettingKey.EmptyResponsePenaltyWeight]: '25',
     [SettingKey.LatencyPenaltyWeight]: '8',
+    [SettingKey.ChannelConcurrencyMax]: '1',
+    [SettingKey.ChannelConcurrencyQueueMS]: '1000',
     [SettingKey.StreamFirstValidTimeout]: '15',
     [SettingKey.StreamFirstValidMaxBuffer]: '65536',
     [SettingKey.StreamEmptyDoneAsFailure]: 'true',
@@ -93,10 +95,12 @@ export function SettingHealthProbe() {
 
     const [values, setValues] = useState<Record<string, string>>(defaultValues);
     const [healthScoreEnabled, setHealthScoreEnabled] = useState(false);
+    const [channelConcurrencyEnabled, setChannelConcurrencyEnabled] = useState(false);
     const [probeEnabled, setProbeEnabled] = useState(false);
 
     const initialValues = useRef<Record<string, string>>(defaultValues);
     const initialHealthScoreEnabled = useRef(false);
+    const initialChannelConcurrencyEnabled = useRef(false);
     const initialProbeEnabled = useRef(false);
 
     const healthFields: FieldConfig[] = [
@@ -212,6 +216,25 @@ export function SettingHealthProbe() {
         },
     ];
 
+    const channelConcurrencyFields: FieldConfig[] = [
+        {
+            key: SettingKey.ChannelConcurrencyMax,
+            icon: Hash,
+            label: t('healthProbe.channelConcurrency.max.label'),
+            hint: t('healthProbe.channelConcurrency.max.hint'),
+            inputMode: 'numeric',
+            min: '1',
+        },
+        {
+            key: SettingKey.ChannelConcurrencyQueueMS,
+            icon: Timer,
+            label: t('healthProbe.channelConcurrency.queue.label'),
+            hint: t('healthProbe.channelConcurrency.queue.hint'),
+            inputMode: 'numeric',
+            min: '0',
+        },
+    ];
+
     const probeSwitchFields: SwitchConfig[] = [
         {
             key: SettingKey.ProbeStreamEnabled,
@@ -273,6 +296,11 @@ export function SettingHealthProbe() {
         queueMicrotask(() => setHealthScoreEnabled(nextHealthScoreEnabled));
         initialHealthScoreEnabled.current = nextHealthScoreEnabled;
 
+        const channelConcurrency = settings.find(s => s.key === SettingKey.ChannelConcurrencyEnabled);
+        const nextChannelConcurrencyEnabled = channelConcurrency?.value === 'true';
+        queueMicrotask(() => setChannelConcurrencyEnabled(nextChannelConcurrencyEnabled));
+        initialChannelConcurrencyEnabled.current = nextChannelConcurrencyEnabled;
+
         const probe = settings.find(s => s.key === SettingKey.ProbeEnabled);
         const nextProbeEnabled = probe?.value === 'true';
         queueMicrotask(() => setProbeEnabled(nextProbeEnabled));
@@ -324,6 +352,20 @@ export function SettingHealthProbe() {
                     initialHealthScoreEnabled.current = checked;
                 },
                 onError: () => setHealthScoreEnabled(initialHealthScoreEnabled.current),
+            }
+        );
+    };
+
+    const handleChannelConcurrencyChange = (checked: boolean) => {
+        setChannelConcurrencyEnabled(checked);
+        setSetting.mutate(
+            { key: SettingKey.ChannelConcurrencyEnabled, value: checked ? 'true' : 'false' },
+            {
+                onSuccess: () => {
+                    toast.success(t('saved'));
+                    initialChannelConcurrencyEnabled.current = checked;
+                },
+                onError: () => setChannelConcurrencyEnabled(initialChannelConcurrencyEnabled.current),
             }
         );
     };
@@ -396,6 +438,22 @@ export function SettingHealthProbe() {
                 </div>
                 <div className="space-y-4">
                     {healthFields.map(renderField)}
+                </div>
+            </div>
+
+            <div className="border-t border-border pt-5 space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Network className="h-5 w-5 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0">
+                            <div className="text-sm font-medium">{t('healthProbe.channelConcurrency.title')}</div>
+                            <div className="text-xs text-muted-foreground">{t('healthProbe.channelConcurrency.subtitle')}</div>
+                        </div>
+                    </div>
+                    <Switch checked={channelConcurrencyEnabled} onCheckedChange={handleChannelConcurrencyChange} />
+                </div>
+                <div className="space-y-4">
+                    {channelConcurrencyFields.map(renderField)}
                 </div>
             </div>
 

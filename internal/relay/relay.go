@@ -252,13 +252,13 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 			}
 
 			result = ra.attempt()
-			if result.Success || result.Written || result.Canceled || result.ResetConversation || !isRetryableStatus(result.StatusCode) {
+			if result.Success || result.Written || result.Canceled || result.SkipCandidate || result.ResetConversation || !isRetryableStatus(result.StatusCode) {
 				break
 			}
 		}
 
 		// 同通道重试耗尽后记录熔断器失败
-		if !result.Success && !result.Written && !result.Canceled && !result.ResetConversation {
+		if !result.Success && !result.Written && !result.Canceled && !result.SkipCandidate && !result.ResetConversation {
 			failureKind := circuitFailureKind(group.RetryEnabled, result.StatusCode)
 			balancer.RecordFailure(channel.ID, usedKey.ID, internalRequest.Model, failureKind)
 			if failureKind == balancer.FailureHard {
@@ -334,6 +334,20 @@ func (ra *relayAttempt) attempt() attemptResult {
 		SiteAccountID: ra.siteAccountID,
 		AttemptCount:  len(ra.iter.Attempts()) + 1,
 	})
+
+	releaseConcurrency, _, acquired := balancer.AcquireChannelConcurrency(ra.requestContext(), ra.channel.ID, ra.internalRequest.Model)
+	if !acquired {
+		err := balancer.ErrChannelConcurrencyQueueTimeout
+		span.End(dbmodel.AttemptFailed, 0, err.Error())
+		ra.metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, 0, err.Error(), false, len(ra.iter.Attempts()))
+		return attemptResult{
+			Success:       false,
+			SkipCandidate: true,
+			Err:           err,
+			StatusCode:    0,
+		}
+	}
+	defer releaseConcurrency()
 
 	// 转发请求
 	statusCode, fwdErr := ra.forward()
