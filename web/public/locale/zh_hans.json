@@ -520,6 +520,12 @@
                 "clear": "清除筛选",
                 "noResults": "没有匹配当前筛选的能力"
             },
+            "export": {
+                "button": "导出当前视图",
+                "empty": "没有可导出的能力行",
+                "success": "Fusion 能力视图已导出",
+                "safe": "导出仅包含能力元数据和本地化 UI 说明，不包含日志、payload、Key 或认证信息"
+            },
             "columns": {
                 "capability": "能力",
                 "source": "参考来源",

@@ -520,6 +520,12 @@
                 "clear": "清除篩選",
                 "noResults": "沒有符合目前篩選的能力"
             },
+            "export": {
+                "button": "匯出目前視圖",
+                "empty": "沒有可匯出的能力列",
+                "success": "Fusion 能力視圖已匯出",
+                "safe": "匯出僅包含能力元資料和本地化 UI 說明，不包含日誌、payload、Key 或認證資訊"
+            },
             "columns": {
                 "capability": "能力",
                 "source": "參考來源",

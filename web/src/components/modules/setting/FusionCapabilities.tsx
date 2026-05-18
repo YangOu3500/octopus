@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { Activity, ArrowRight, CheckCircle2, CircleDashed, Download, Eye, GitBranch, ListChecks, Network, Search, Settings2, Thermometer, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { toast } from '@/components/common/Toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,28 @@ const capabilities: Capability[] = [
     { id: 'safeDiagnosticsExport', status: 'done', source: 'both', nav: 'log', icon: Download },
     { id: 'quotaStatus', status: 'done', source: 'both', nav: 'channel', channelTab: 'health', icon: CircleDashed },
 ];
+
+const FUSION_CAPABILITY_EXPORT_VERSION = 1;
+
+function exportTimestamp() {
+    return new Date().toISOString();
+}
+
+function exportFilenameTimestamp() {
+    return exportTimestamp().replace(/[:.]/g, '-');
+}
+
+function downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
 
 function statusClass(status: CapabilityStatus) {
     switch (status) {
@@ -112,6 +135,47 @@ export function SettingFusionCapabilities() {
 
     const hasActiveFilters = normalizedQuery.length > 0 || statusFilter !== 'all' || sourceFilter !== 'all';
 
+    const exportCurrentView = () => {
+        if (filteredCapabilities.length === 0) {
+            toast.warning(t('fusionCapabilities.export.empty'));
+            return;
+        }
+
+        const exportedAt = exportTimestamp();
+        downloadJson(`octopus-fusion-capabilities-${exportFilenameTimestamp()}.json`, {
+            export_version: FUSION_CAPABILITY_EXPORT_VERSION,
+            exported_at: exportedAt,
+            safety_note: t('fusionCapabilities.export.safe'),
+            filters: {
+                query: query.trim(),
+                status: statusFilter,
+                source: sourceFilter,
+            },
+            counts: {
+                shown: filteredCapabilities.length,
+                total: capabilities.length,
+                statuses: counts,
+            },
+            capabilities: filteredCapabilities.map((item) => ({
+                id: item.id,
+                status: item.status,
+                status_label: t(`fusionCapabilities.status.${item.status}`),
+                source: item.source,
+                source_label: sourceLabel(item.source, t),
+                entry: item.nav ? item.nav : undefined,
+                entry_label: item.nav ? t(`fusionCapabilities.nav.${item.nav}`) : undefined,
+                channel_tab: item.channelTab,
+                name: t(`fusionCapabilities.items.${item.id}.name`),
+                description: t(`fusionCapabilities.items.${item.id}.desc`),
+                current_ui: t(`fusionCapabilities.items.${item.id}.ui`),
+                remaining_gap: t(`fusionCapabilities.items.${item.id}.gap`),
+            })),
+        });
+        toast.success(t('fusionCapabilities.export.success'), {
+            description: t('fusionCapabilities.export.safe'),
+        });
+    };
+
     return (
         <div className="rounded-lg border border-border bg-card p-6">
             <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -166,6 +230,17 @@ export function SettingFusionCapabilities() {
                                 {t('fusionCapabilities.filters.clear')}
                             </Button>
                         ) : null}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 rounded-md px-2 text-xs"
+                            disabled={filteredCapabilities.length === 0}
+                            onClick={exportCurrentView}
+                        >
+                            <Download className="size-3.5" />
+                            {t('fusionCapabilities.export.button')}
+                        </Button>
                     </div>
                 </div>
 

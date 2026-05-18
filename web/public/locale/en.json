@@ -520,6 +520,12 @@
                 "clear": "Clear filters",
                 "noResults": "No capabilities match the current filters"
             },
+            "export": {
+                "button": "Export current view",
+                "empty": "No capability rows to export",
+                "success": "Fusion capability view exported",
+                "safe": "The export only contains capability metadata and localized UI descriptions, without logs, payloads, keys, or auth data"
+            },
             "columns": {
                 "capability": "Capability",
                 "source": "Reference",
