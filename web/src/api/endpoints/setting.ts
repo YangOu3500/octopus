@@ -65,6 +65,9 @@ export const SettingKey = {
     ProbeTemperature: 'probe.temperature',
     ProbeJitterRatio: 'probe.jitter_ratio',
     ProbeStreamEnabled: 'probe.stream_enabled',
+    GroupAutoGenerateAssociationMode: 'group_auto_generate_association_mode',
+    GroupAutoGenerateAssociationOptions: 'group_auto_generate_association_options',
+    GroupAutoGenerateManualAliases: 'group_auto_generate_manual_aliases',
 } as const;
 
 /**

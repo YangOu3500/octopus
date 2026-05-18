@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -51,6 +52,9 @@ const (
 	SettingKeyProbeTemperature           SettingKey = "probe.temperature"                    // 慢速探测温度
 	SettingKeyProbeJitterRatio           SettingKey = "probe.jitter_ratio"                   // 慢速探测抖动比例
 	SettingKeyProbeStreamEnabled         SettingKey = "probe.stream_enabled"                 // 慢速探测是否使用流式请求
+	SettingKeyGroupAutoGenerateAssociationMode    SettingKey = "group_auto_generate_association_mode"    // 模型分组批量生成默认关联模式
+	SettingKeyGroupAutoGenerateAssociationOptions SettingKey = "group_auto_generate_association_options" // 模型分组批量生成默认关联规则 JSON
+	SettingKeyGroupAutoGenerateManualAliases      SettingKey = "group_auto_generate_manual_aliases"      // 模型分组批量生成默认手动映射 JSON
 	SettingKeyJWTSecret                  SettingKey = "jwt_secret"                           // JWT 签名密钥（自动生成）
 	SettingKeyStatsSiteModelBackfilled   SettingKey = "stats_site_model_backfilled"          // 站点渠道小时聚合是否已回填历史日志
 )
@@ -103,6 +107,9 @@ func DefaultSettings() []Setting {
 		{Key: SettingKeyProbeTemperature, Value: "0"},
 		{Key: SettingKeyProbeJitterRatio, Value: "0.25"},
 		{Key: SettingKeyProbeStreamEnabled, Value: "false"},
+		{Key: SettingKeyGroupAutoGenerateAssociationMode, Value: string(GroupAutoGenerateAssociationExact)},
+		{Key: SettingKeyGroupAutoGenerateAssociationOptions, Value: "{}"},
+		{Key: SettingKeyGroupAutoGenerateManualAliases, Value: "[]"},
 		{Key: SettingKeyJWTSecret, Value: ""}, // 为空时自动生成
 		{Key: SettingKeyStatsSiteModelBackfilled, Value: "false"},
 	}
@@ -216,6 +223,39 @@ func (s *Setting) Validate() error {
 	case SettingKeyProbePrompt:
 		if strings.TrimSpace(s.Value) == "" {
 			return fmt.Errorf("setting value must not be empty")
+		}
+		return nil
+	case SettingKeyGroupAutoGenerateAssociationMode:
+		switch GroupAutoGenerateAssociationMode(strings.ToLower(strings.TrimSpace(s.Value))) {
+		case GroupAutoGenerateAssociationExact, GroupAutoGenerateAssociationAlias:
+			return nil
+		default:
+			return fmt.Errorf("setting value must be exact or alias")
+		}
+	case SettingKeyGroupAutoGenerateAssociationOptions:
+		if strings.TrimSpace(s.Value) == "" {
+			return nil
+		}
+		var options GroupAutoGenerateAssociationOptions
+		if err := json.Unmarshal([]byte(s.Value), &options); err != nil {
+			return fmt.Errorf("setting value must be valid JSON object")
+		}
+		return nil
+	case SettingKeyGroupAutoGenerateManualAliases:
+		if strings.TrimSpace(s.Value) == "" {
+			return nil
+		}
+		var aliases []GroupAutoGenerateManualAlias
+		if err := json.Unmarshal([]byte(s.Value), &aliases); err != nil {
+			return fmt.Errorf("setting value must be valid JSON array")
+		}
+		if len(aliases) > 200 {
+			return fmt.Errorf("setting value must contain at most 200 manual aliases")
+		}
+		for _, alias := range aliases {
+			if strings.TrimSpace(alias.Alias) == "" || strings.TrimSpace(alias.Target) == "" {
+				return fmt.Errorf("manual alias entries must include alias and target")
+			}
 		}
 		return nil
 	case SettingKeyProxyURL:

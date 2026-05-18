@@ -2,13 +2,29 @@
 
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { Activity, ArrowRight, CheckCircle2, CircleDashed, Download, Eye, GitBranch, ListChecks, Network, Search, Settings2, Thermometer, TriangleAlert, type LucideIcon } from 'lucide-react';
+import {
+    Activity,
+    ArrowRight,
+    CheckCircle2,
+    CircleDashed,
+    Download,
+    Eye,
+    GitBranch,
+    ListChecks,
+    Network,
+    Search,
+    Settings2,
+    Thermometer,
+    TriangleAlert,
+    type LucideIcon,
+} from 'lucide-react';
 import { toast } from '@/components/common/Toast';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useNavStore, type NavItem } from '@/components/modules/navbar';
 import { useChannelTabStore, type ChannelTab } from '@/components/modules/channel/tab-store';
+import { useNavStore, type NavItem } from '@/components/modules/navbar';
 import { cn } from '@/lib/utils';
 
 type CapabilityStatus = 'done' | 'partial' | 'planned';
@@ -230,14 +246,14 @@ export function SettingFusionCapabilities() {
     };
 
     return (
-        <div className="rounded-lg border border-border bg-card p-6">
-            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="rounded-lg border border-border bg-card p-4 sm:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                     <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
                         <Eye className="h-5 w-5" />
                         {t('fusionCapabilities.title')}
                     </h2>
-                    <p className="mt-1 max-w-4xl text-sm leading-relaxed text-muted-foreground">
+                    <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
                         {t('fusionCapabilities.subtitle')}
                     </p>
                 </div>
@@ -250,260 +266,317 @@ export function SettingFusionCapabilities() {
                 </div>
             </div>
 
-            <div className="mb-4 rounded-lg border border-border bg-background/40 p-3">
-                <div className="mb-3 flex flex-col gap-1">
-                    <div className="text-sm font-medium text-card-foreground">
-                        {t('fusionCapabilities.coverage.title')}
-                    </div>
-                    <div className="text-xs leading-relaxed text-muted-foreground">
-                        {t('fusionCapabilities.coverage.description')}
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
-                    {capabilitySources.map((source) => (
-                        <button
-                            key={source}
-                            type="button"
-                            className={cn(
-                                'rounded-lg border border-border bg-card/60 p-3 text-left transition-colors hover:bg-muted/50',
-                                sourceFilter === source && 'border-primary/60 bg-primary/5',
-                            )}
-                            onClick={() => setSourceFilter(source)}
-                        >
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="truncate text-sm font-medium text-card-foreground">
-                                    {sourceLabel(source, t)}
-                                </span>
-                                <span className="shrink-0 text-xs text-muted-foreground">
-                                    {t('fusionCapabilities.coverage.total', { count: sourceCounts[source] })}
-                                </span>
+            <Accordion type="single" collapsible className="mt-4">
+                <AccordionItem value="details" className="overflow-hidden rounded-lg border border-border bg-background/40 px-4">
+                    <AccordionTrigger className="py-3 hover:no-underline">
+                        <div className="flex min-w-0 flex-1 flex-col gap-1 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                            <div className="min-w-0">
+                                <div className="text-sm font-medium text-card-foreground">
+                                    {t('fusionCapabilities.columns.capability')}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                    {t('fusionCapabilities.filters.summary', {
+                                        shown: filteredCapabilities.length,
+                                        total: capabilities.length,
+                                    })}
+                                </div>
                             </div>
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                                {capabilityStatuses.map((status) => (
-                                    <Badge key={status} variant="outline" className={cn('rounded-md text-[11px]', statusClass(status))}>
-                                        {t(`fusionCapabilities.status.${status}`)} {sourceStatusCounts[source][status]}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="mb-4 rounded-lg border border-border bg-background/40 p-3">
-                <div className="mb-3 flex flex-col gap-1">
-                    <div className="text-sm font-medium text-card-foreground">
-                        {t('fusionCapabilities.entryCoverage.title')}
-                    </div>
-                    <div className="text-xs leading-relaxed text-muted-foreground">
-                        {t('fusionCapabilities.entryCoverage.description')}
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
-                    {capabilityEntries.map((entry) => (
-                        <button
-                            key={entry}
-                            type="button"
-                            className={cn(
-                                'rounded-lg border border-border bg-card/60 p-3 text-left transition-colors hover:bg-muted/50',
-                                entryFilter === entry && 'border-primary/60 bg-primary/5',
-                            )}
-                            onClick={() => setEntryFilter(entry)}
-                        >
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="truncate text-sm font-medium text-card-foreground">
-                                    {t(`fusionCapabilities.nav.${entry}`)}
-                                </span>
-                                <span className="shrink-0 text-xs text-muted-foreground">
-                                    {t('fusionCapabilities.entryCoverage.total', { count: entryCounts[entry] })}
-                                </span>
-                            </div>
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                                {capabilityStatuses.map((status) => (
-                                    <Badge key={status} variant="outline" className={cn('rounded-md text-[11px]', statusClass(status))}>
-                                        {t(`fusionCapabilities.status.${status}`)} {entryStatusCounts[entry][status]}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="mb-4 space-y-3 rounded-lg border border-border bg-background/40 p-3">
-                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(260px,1fr)_auto] xl:items-center">
-                    <div className="relative min-w-0">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            value={query}
-                            onChange={(event) => setQuery(event.target.value)}
-                            placeholder={t('fusionCapabilities.filters.searchPlaceholder')}
-                            className="h-9 rounded-lg pl-9"
-                        />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <span>
-                            {t('fusionCapabilities.filters.summary', {
-                                shown: filteredCapabilities.length,
-                                total: capabilities.length,
-                            })}
-                        </span>
-                        {hasActiveFilters ? (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 rounded-md px-2 text-xs"
-                                onClick={() => {
-                                    setQuery('');
-                                    setStatusFilter('all');
-                                    setSourceFilter('all');
-                                    setEntryFilter('all');
-                                }}
-                            >
-                                {t('fusionCapabilities.filters.clear')}
-                            </Button>
-                        ) : null}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-7 rounded-md px-2 text-xs"
-                            disabled={filteredCapabilities.length === 0}
-                            onClick={exportCurrentView}
-                        >
-                            <Download className="size-3.5" />
-                            {t('fusionCapabilities.export.button')}
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                    {statusOptions.map((status) => (
-                        <Button
-                            key={status}
-                            type="button"
-                            variant={statusFilter === status ? 'default' : 'outline'}
-                            size="sm"
-                            className="h-7 rounded-md px-2 text-xs"
-                            onClick={() => setStatusFilter(status)}
-                        >
-                            {status === 'all'
-                                ? t('fusionCapabilities.filters.allStatuses')
-                                : `${t(`fusionCapabilities.status.${status}`)} ${counts[status]}`}
-                        </Button>
-                    ))}
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                    {sourceOptions.map((source) => (
-                        <Button
-                            key={source}
-                            type="button"
-                            variant={sourceFilter === source ? 'default' : 'outline'}
-                            size="sm"
-                            className="h-7 rounded-md px-2 text-xs"
-                            onClick={() => setSourceFilter(source)}
-                        >
-                            {source === 'all' ? t('fusionCapabilities.filters.allSources') : sourceLabel(source, t)}
-                        </Button>
-                    ))}
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                    {entryOptions.map((entry) => (
-                        <Button
-                            key={entry}
-                            type="button"
-                            variant={entryFilter === entry ? 'default' : 'outline'}
-                            size="sm"
-                            className="h-7 rounded-md px-2 text-xs"
-                            onClick={() => setEntryFilter(entry)}
-                        >
-                            {entry === 'all'
-                                ? t('fusionCapabilities.filters.allEntries')
-                                : `${t(`fusionCapabilities.nav.${entry}`)} ${entryCounts[entry]}`}
-                        </Button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full min-w-[920px] text-left text-xs">
-                    <thead className="bg-muted/40 text-muted-foreground">
-                        <tr>
-                            <th className="px-3 py-2 font-medium">{t('fusionCapabilities.columns.capability')}</th>
-                            <th className="px-3 py-2 font-medium">{t('fusionCapabilities.columns.source')}</th>
-                            <th className="px-3 py-2 font-medium">{t('fusionCapabilities.columns.ui')}</th>
-                            <th className="px-3 py-2 font-medium">{t('fusionCapabilities.columns.gap')}</th>
-                            <th className="px-3 py-2 font-medium">{t('fusionCapabilities.columns.entry')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredCapabilities.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="px-3 py-8 text-center text-sm text-muted-foreground">
-                                    {t('fusionCapabilities.filters.noResults')}
-                                </td>
-                            </tr>
-                        ) : filteredCapabilities.map((item) => {
-                            const Icon = item.icon;
-                            return (
-                                <tr key={item.id} className="border-t border-border align-top">
-                                    <td className="px-3 py-3">
-                                        <div className="flex items-start gap-2">
-                                            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                                            <div className="min-w-0">
-                                                <div className="font-medium text-card-foreground">
-                                                    {t(`fusionCapabilities.items.${item.id}.name`)}
-                                                </div>
-                                                <div className="mt-1 text-muted-foreground">
-                                                    {t(`fusionCapabilities.items.${item.id}.desc`)}
-                                                </div>
-                                                <Badge variant="outline" className={cn('mt-2 rounded-md', statusClass(item.status))}>
-                                                    {t(`fusionCapabilities.status.${item.status}`)}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-3 text-muted-foreground">
-                                        {sourceLabel(item.source, t)}
-                                    </td>
-                                    <td className="px-3 py-3 text-muted-foreground">
-                                        {t(`fusionCapabilities.items.${item.id}.ui`)}
-                                    </td>
-                                    <td className="px-3 py-3 text-muted-foreground">
-                                        {t(`fusionCapabilities.items.${item.id}.gap`)}
-                                    </td>
-                                    <td className="px-3 py-3">
-                                        {item.nav ? (
+                            <Badge variant="outline" className="w-fit rounded-md">
+                                {filteredCapabilities.length}
+                            </Badge>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4 pt-0">
+                        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+                            <div className="space-y-3 rounded-lg border border-border bg-background/40 p-3">
+                                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(260px,1fr)_auto] xl:items-center">
+                                    <div className="relative min-w-0">
+                                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            value={query}
+                                            onChange={(event) => setQuery(event.target.value)}
+                                            placeholder={t('fusionCapabilities.filters.searchPlaceholder')}
+                                            className="h-9 rounded-lg pl-9"
+                                        />
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                        <span>
+                                            {t('fusionCapabilities.filters.summary', {
+                                                shown: filteredCapabilities.length,
+                                                total: capabilities.length,
+                                            })}
+                                        </span>
+                                        {hasActiveFilters ? (
                                             <Button
                                                 type="button"
-                                                variant="outline"
+                                                variant="ghost"
                                                 size="sm"
-                                                className="h-8 rounded-lg px-2 text-xs"
+                                                className="h-7 rounded-md px-2 text-xs"
                                                 onClick={() => {
-                                                    if (item.channelTab) setChannelTab(item.channelTab);
-                                                    setActiveItem(item.nav!);
+                                                    setQuery('');
+                                                    setStatusFilter('all');
+                                                    setSourceFilter('all');
+                                                    setEntryFilter('all');
                                                 }}
                                             >
-                                                {t(`fusionCapabilities.nav.${item.nav}`)}
-                                                <ArrowRight className="size-3.5" />
+                                                {t('fusionCapabilities.filters.clear')}
                                             </Button>
-                                        ) : (
-                                            <span className="text-muted-foreground">-</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                                        ) : null}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 rounded-md px-2 text-xs"
+                                            disabled={filteredCapabilities.length === 0}
+                                            onClick={exportCurrentView}
+                                        >
+                                            <Download className="size-3.5" />
+                                            {t('fusionCapabilities.export.button')}
+                                        </Button>
+                                    </div>
+                                </div>
 
-            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                {t('fusionCapabilities.note')}
-            </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {statusOptions.map((status) => (
+                                        <Button
+                                            key={status}
+                                            type="button"
+                                            variant={statusFilter === status ? 'default' : 'outline'}
+                                            size="sm"
+                                            className="h-7 rounded-md px-2 text-xs"
+                                            onClick={() => setStatusFilter(status)}
+                                        >
+                                            {status === 'all'
+                                                ? t('fusionCapabilities.filters.allStatuses')
+                                                : `${t(`fusionCapabilities.status.${status}`)} ${counts[status]}`}
+                                        </Button>
+                                    ))}
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {sourceOptions.map((source) => (
+                                        <Button
+                                            key={source}
+                                            type="button"
+                                            variant={sourceFilter === source ? 'default' : 'outline'}
+                                            size="sm"
+                                            className="h-7 rounded-md px-2 text-xs"
+                                            onClick={() => setSourceFilter(source)}
+                                        >
+                                            {source === 'all' ? t('fusionCapabilities.filters.allSources') : sourceLabel(source, t)}
+                                        </Button>
+                                    ))}
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {entryOptions.map((entry) => (
+                                        <Button
+                                            key={entry}
+                                            type="button"
+                                            variant={entryFilter === entry ? 'default' : 'outline'}
+                                            size="sm"
+                                            className="h-7 rounded-md px-2 text-xs"
+                                            onClick={() => setEntryFilter(entry)}
+                                        >
+                                            {entry === 'all'
+                                                ? t('fusionCapabilities.filters.allEntries')
+                                                : `${t(`fusionCapabilities.nav.${entry}`)} ${entryCounts[entry]}`}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                                {capabilityStatuses.map((status) => (
+                                    <div key={status} className="rounded-lg border border-border bg-background/60 p-3">
+                                        <div className="text-xs text-muted-foreground">{t(`fusionCapabilities.status.${status}`)}</div>
+                                        <div className="mt-1 text-2xl font-semibold tabular-nums text-card-foreground">
+                                            {counts[status]}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="mt-4">
+                            {filteredCapabilities.length === 0 ? (
+                                <div className="rounded-lg border border-dashed border-border/80 bg-card/50 px-3 py-8 text-center text-sm text-muted-foreground">
+                                    {t('fusionCapabilities.filters.noResults')}
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                                    {filteredCapabilities.map((item) => {
+                                        const Icon = item.icon;
+                                        return (
+                                            <div key={item.id} className="rounded-lg border border-border bg-card/70 p-4">
+                                                <div className="flex flex-col gap-3">
+                                                    <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                                                        <div className="flex min-w-0 items-start gap-3">
+                                                            <div className="rounded-lg border border-border bg-background/70 p-2 text-muted-foreground">
+                                                                <Icon className="h-4 w-4" />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <div className="font-medium text-card-foreground">
+                                                                    {t(`fusionCapabilities.items.${item.id}.name`)}
+                                                                </div>
+                                                                <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                                    {t(`fusionCapabilities.items.${item.id}.desc`)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            <Badge variant="outline" className={cn('rounded-md', statusClass(item.status))}>
+                                                                {t(`fusionCapabilities.status.${item.status}`)}
+                                                            </Badge>
+                                                            <Badge variant="outline" className="rounded-md">
+                                                                {sourceLabel(item.source, t)}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid gap-2 lg:grid-cols-2">
+                                                        <div className="rounded-lg border border-border bg-background/70 p-3">
+                                                            <div className="text-xs font-medium text-muted-foreground">
+                                                                {t('fusionCapabilities.columns.ui')}
+                                                            </div>
+                                                            <div className="mt-1 text-sm leading-6 text-card-foreground">
+                                                                {t(`fusionCapabilities.items.${item.id}.ui`)}
+                                                            </div>
+                                                        </div>
+                                                        <div className="rounded-lg border border-border bg-background/70 p-3">
+                                                            <div className="text-xs font-medium text-muted-foreground">
+                                                                {t('fusionCapabilities.columns.gap')}
+                                                            </div>
+                                                            <div className="mt-1 text-sm leading-6 text-card-foreground">
+                                                                {t(`fusionCapabilities.items.${item.id}.gap`)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-3">
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {t('fusionCapabilities.columns.entry')}: {item.nav ? t(`fusionCapabilities.nav.${item.nav}`) : '-'}
+                                                        </div>
+                                                        {item.nav ? (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-8 rounded-lg px-2 text-xs"
+                                                                onClick={() => {
+                                                                    if (item.channelTab) setChannelTab(item.channelTab);
+                                                                    setActiveItem(item.nav!);
+                                                                }}
+                                                            >
+                                                                {t(`fusionCapabilities.nav.${item.nav}`)}
+                                                                <ArrowRight className="size-3.5" />
+                                                            </Button>
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        <Accordion type="multiple" className="mt-4 space-y-3">
+                            <AccordionItem value="sources" className="overflow-hidden rounded-lg border border-border bg-background/40 px-4">
+                                <AccordionTrigger className="py-3 hover:no-underline">
+                                    <div className="min-w-0 text-left">
+                                        <div className="text-sm font-medium text-card-foreground">
+                                            {t('fusionCapabilities.coverage.title')}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {t('fusionCapabilities.coverage.description')}
+                                        </div>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-0">
+                                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+                                        {capabilitySources.map((source) => (
+                                            <button
+                                                key={source}
+                                                type="button"
+                                                className={cn(
+                                                    'rounded-lg border border-border bg-card/60 p-3 text-left transition-colors hover:bg-muted/50',
+                                                    sourceFilter === source && 'border-primary/60 bg-primary/5',
+                                                )}
+                                                onClick={() => setSourceFilter(source)}
+                                            >
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="truncate text-sm font-medium text-card-foreground">
+                                                        {sourceLabel(source, t)}
+                                                    </span>
+                                                    <span className="shrink-0 text-xs text-muted-foreground">
+                                                        {t('fusionCapabilities.coverage.total', { count: sourceCounts[source] })}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                                    {capabilityStatuses.map((status) => (
+                                                        <Badge key={status} variant="outline" className={cn('rounded-md text-[11px]', statusClass(status))}>
+                                                            {t(`fusionCapabilities.status.${status}`)} {sourceStatusCounts[source][status]}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="entries" className="overflow-hidden rounded-lg border border-border bg-background/40 px-4">
+                                <AccordionTrigger className="py-3 hover:no-underline">
+                                    <div className="min-w-0 text-left">
+                                        <div className="text-sm font-medium text-card-foreground">
+                                            {t('fusionCapabilities.entryCoverage.title')}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {t('fusionCapabilities.entryCoverage.description')}
+                                        </div>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-0">
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                                        {capabilityEntries.map((entry) => (
+                                            <button
+                                                key={entry}
+                                                type="button"
+                                                className={cn(
+                                                    'rounded-lg border border-border bg-card/60 p-3 text-left transition-colors hover:bg-muted/50',
+                                                    entryFilter === entry && 'border-primary/60 bg-primary/5',
+                                                )}
+                                                onClick={() => setEntryFilter(entry)}
+                                            >
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="truncate text-sm font-medium text-card-foreground">
+                                                        {t(`fusionCapabilities.nav.${entry}`)}
+                                                    </span>
+                                                    <span className="shrink-0 text-xs text-muted-foreground">
+                                                        {t('fusionCapabilities.entryCoverage.total', { count: entryCounts[entry] })}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                                    {capabilityStatuses.map((status) => (
+                                                        <Badge key={status} variant="outline" className={cn('rounded-md text-[11px]', statusClass(status))}>
+                                                            {t(`fusionCapabilities.status.${status}`)} {entryStatusCounts[entry][status]}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+
+                        <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                            {t('fusionCapabilities.note')}
+                        </p>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
         </div>
     );
 }

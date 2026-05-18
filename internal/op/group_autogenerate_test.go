@@ -498,6 +498,117 @@ func TestGroupAutoGenerateAliasAssociationSupportsManualAliasesAndScores(t *test
 	}
 }
 
+func TestGroupAutoGenerateUsesSavedAssociationSettingsByDefault(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+
+	if err := SettingSetString(model.SettingKeyGroupAutoGenerateAssociationMode, "alias"); err != nil {
+		t.Fatalf("SettingSetString mode failed: %v", err)
+	}
+	if err := SettingSetString(model.SettingKeyGroupAutoGenerateAssociationOptions, `{"strip_provider_prefix":true,"strip_models_namespace":true,"normalize_case":true,"normalize_separators":true}`); err != nil {
+		t.Fatalf("SettingSetString options failed: %v", err)
+	}
+	if err := SettingSetString(model.SettingKeyGroupAutoGenerateManualAliases, `[{"alias":"gpt4o-mini-preview","target":"gpt-4o-mini"}]`); err != nil {
+		t.Fatalf("SettingSetString aliases failed: %v", err)
+	}
+
+	first := model.Channel{
+		Name:      "saved-manual-alias",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "gpt4o-mini-preview",
+		BaseUrls:  []model.BaseUrl{{URL: "https://saved-manual-alias.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-saved-manual-alias"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&first, ctx); err != nil {
+		t.Fatalf("ChannelCreate first failed: %v", err)
+	}
+	second := model.Channel{
+		Name:      "saved-models-prefix",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "models/gpt-4o-mini",
+		BaseUrls:  []model.BaseUrl{{URL: "https://saved-models-prefix.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-saved-models-prefix"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&second, ctx); err != nil {
+		t.Fatalf("ChannelCreate second failed: %v", err)
+	}
+
+	preview, err := GroupAutoGeneratePreview(&model.GroupAutoGenerateRequest{All: true}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGeneratePreview failed: %v", err)
+	}
+	if preview.AssociationMode != model.GroupAutoGenerateAssociationAlias {
+		t.Fatalf("preview association mode = %q, want alias", preview.AssociationMode)
+	}
+	if preview.TotalModels != 1 || len(preview.Items) != 1 {
+		t.Fatalf("expected one merged saved-settings bucket, got %+v", preview)
+	}
+	item := preview.Items[0]
+	if item.ModelName != "gpt-4o-mini" {
+		t.Fatalf("saved-settings preview model name = %q, want gpt-4o-mini", item.ModelName)
+	}
+	if !containsStrategy(item.MatchStrategies, "manual_alias") || !containsStrategy(item.MatchStrategies, "strip_models_namespace") {
+		t.Fatalf("saved-settings preview strategies = %+v", item.MatchStrategies)
+	}
+}
+
+func TestGroupAutoGenerateRequestOverridesSavedAssociationSettings(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+
+	if err := SettingSetString(model.SettingKeyGroupAutoGenerateAssociationMode, "alias"); err != nil {
+		t.Fatalf("SettingSetString mode failed: %v", err)
+	}
+	if err := SettingSetString(model.SettingKeyGroupAutoGenerateAssociationOptions, `{"strip_provider_prefix":true,"strip_models_namespace":true,"normalize_case":true,"normalize_separators":true}`); err != nil {
+		t.Fatalf("SettingSetString options failed: %v", err)
+	}
+	if err := SettingSetString(model.SettingKeyGroupAutoGenerateManualAliases, `[{"alias":"gpt4o-mini-preview","target":"gpt-4o-mini"}]`); err != nil {
+		t.Fatalf("SettingSetString aliases failed: %v", err)
+	}
+
+	first := model.Channel{
+		Name:      "override-manual-alias",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "gpt4o-mini-preview",
+		BaseUrls:  []model.BaseUrl{{URL: "https://override-manual-alias.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-override-manual-alias"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&first, ctx); err != nil {
+		t.Fatalf("ChannelCreate first failed: %v", err)
+	}
+	second := model.Channel{
+		Name:      "override-models-prefix",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "models/gpt-4o-mini",
+		BaseUrls:  []model.BaseUrl{{URL: "https://override-models-prefix.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-override-models-prefix"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&second, ctx); err != nil {
+		t.Fatalf("ChannelCreate second failed: %v", err)
+	}
+
+	preview, err := GroupAutoGeneratePreview(&model.GroupAutoGenerateRequest{
+		All:             true,
+		AssociationMode: model.GroupAutoGenerateAssociationExact,
+		ManualAliases:   []model.GroupAutoGenerateManualAlias{},
+	}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGeneratePreview failed: %v", err)
+	}
+	if preview.AssociationMode != model.GroupAutoGenerateAssociationExact {
+		t.Fatalf("preview association mode = %q, want exact", preview.AssociationMode)
+	}
+	if preview.TotalModels != 2 || len(preview.Items) != 2 {
+		t.Fatalf("expected saved settings to be overridden, got %+v", preview)
+	}
+}
+
 func containsStrategy(strategies []string, target string) bool {
 	for _, strategy := range strategies {
 		if strategy == target {

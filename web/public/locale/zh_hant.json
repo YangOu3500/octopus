@@ -503,7 +503,7 @@
         },
         "fusionCapabilities": {
             "title": "Fusion 能力可見性",
-            "subtitle": "對齊 AxonHub / ccLoad 的 UI 體現：已融合的能力必須在 Octopus 中可配置、可觀察、可解釋或可排障；未完成的能力也要明確標記，避免使用者只能從程式碼或預設值猜測。",
+            "subtitle": "參照 AxonHub / ccLoad，已融合能力需要有入口、有狀態、能排障。",
             "sources": {
                 "both": "AxonHub / ccLoad"
             },
@@ -637,8 +637,8 @@
                 "modelAssociation": {
                     "name": "模型關聯 / 別名歸併",
                     "desc": "在保留 Octopus 模型分組結構的前提下，把 provider/model、models/... 等常見上游別名歸併到同一對外模型組。",
-                    "ui": "模型分組批量生成彈窗已補齊高階關聯規則、手動別名映射、匹配分與策略解釋，預覽會直接展示歸併依據。",
-                    "gap": "仍未引入 AxonHub Provider / GlobalModel / 完整 ModelAssociation 條件體系；標籤輔助歸併和持久化規則仍作為後續增強。"
+                    "ui": "模型分組批量生成彈窗已補齊高階關聯規則、預設規則持久化、手動別名映射、匹配分與策略解釋，預覽會直接展示歸併依據。",
+                    "gap": "仍未引入 AxonHub Provider / GlobalModel / 完整 ModelAssociation 條件體系；標籤輔助歸併和更複雜的跨 Provider 條件關聯仍作為後續增強。"
                 },
                 "protocolTransform": {
                     "name": "協議轉換與相容鏈路",
@@ -665,7 +665,7 @@
                     "gap": "保留 Octopus 站點 / 帳號 / 渠道結構，不引入 AxonHub Provider / GlobalModel 配額物件；分散式配額儲存仍作為後續增強。"
                 }
             },
-            "note": "這個面板是融合能力的 UI 對齊索引。它不替代具體功能頁面，但用於保證「已接入後端能力就必須能被使用者看到、理解和排障」。"
+            "note": "這裡只做能力索引，具體操作請進入對應頁面。"
         },
         "log": {
             "title": "日誌設定",
@@ -941,12 +941,19 @@
                 "title": "關聯規則",
                 "description": "在現有別名歸併之上追加更細的前綴、分隔符與手動映射規則。",
                 "manualCount": "{count} 條手動映射",
+                "save": "保存預設",
+                "saving": "保存中...",
+                "loadSaved": "載入預設",
                 "reset": "重置規則",
                 "addManual": "新增映射",
                 "manualTitle": "手動別名映射",
                 "manualEmpty": "可選：手動把某個上游模型名歸併到指定公開模型名，預覽會自動更新。",
                 "manualAliasPlaceholder": "上游模型名 / 別名",
                 "manualTargetPlaceholder": "歸併到的模型名",
+                "mode": {
+                    "exact": "預設：精確同名",
+                    "alias": "預設：別名歸併"
+                },
                 "options": {
                     "strip_provider_prefix": {
                         "label": "去掉 provider/model 前綴",
@@ -964,6 +971,10 @@
                         "label": "分隔符歸一化",
                         "help": "把空格、底線和重複連字號統一為同一模型名。"
                     }
+                },
+                "toast": {
+                    "saved": "已保存預設關聯規則",
+                    "saveFailed": "保存預設關聯規則失敗"
                 }
             },
             "searchPlaceholder": "搜尋模型名",

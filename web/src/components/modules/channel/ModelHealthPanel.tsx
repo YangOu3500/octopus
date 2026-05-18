@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
-const HEALTH_ROW_GRID_COLUMNS = 'minmax(18rem,1.45fr) minmax(12rem,0.95fr) minmax(11rem,0.9fr) minmax(10rem,0.8fr) minmax(10rem,0.8fr) minmax(12rem,0.95fr) minmax(8rem,0.65fr) minmax(12rem,0.9fr) minmax(11rem,0.85fr) minmax(14rem,1fr)';
+const HEALTH_ROW_GRID_COLUMNS = 'minmax(15rem,1.45fr) minmax(10rem,0.95fr) minmax(11rem,1fr) minmax(11rem,1fr) minmax(11rem,1fr) minmax(15rem,1.2fr)';
 const QUOTA_FILTER_STATUSES = [
     'available',
     'rate_limited',
@@ -382,7 +382,7 @@ export function ChannelModelHealthPanel() {
         <div className="flex h-full min-h-0 flex-col gap-3">
             <section className="shrink-0 rounded-lg border border-border bg-card p-3">
                 <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="flex flex-col gap-3">
                         <div className="min-w-0">
                             <div className="flex items-center gap-2 text-base font-semibold">
                                 <Thermometer className="size-4 text-primary" />
@@ -400,9 +400,10 @@ export function ChannelModelHealthPanel() {
                                 <span>{sourceLabel(t, source)}</span>
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
+
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[9rem_minmax(14rem,1.25fr)_9rem_10rem_minmax(18rem,1fr)]">
                             <Select value={timeRange} onValueChange={setTimeRange}>
-                                <SelectTrigger className="h-9 w-[8rem] rounded-lg">
+                                <SelectTrigger className="h-9 w-full rounded-lg">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -414,7 +415,7 @@ export function ChannelModelHealthPanel() {
                                 </SelectContent>
                             </Select>
                             <Select value={channelId} onValueChange={setChannelId}>
-                                <SelectTrigger className="h-9 w-[12rem] rounded-lg">
+                                <SelectTrigger className="h-9 w-full rounded-lg">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -427,7 +428,7 @@ export function ChannelModelHealthPanel() {
                                 </SelectContent>
                             </Select>
                             <Select value={source} onValueChange={setSource}>
-                                <SelectTrigger className="h-9 w-[9rem] rounded-lg">
+                                <SelectTrigger className="h-9 w-full rounded-lg">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -438,7 +439,7 @@ export function ChannelModelHealthPanel() {
                                 </SelectContent>
                             </Select>
                             <Select value={quotaStatus} onValueChange={setQuotaStatus}>
-                                <SelectTrigger className="h-9 w-[10rem] rounded-lg">
+                                <SelectTrigger className="h-9 w-full rounded-lg">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -450,7 +451,7 @@ export function ChannelModelHealthPanel() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <div className="relative w-full sm:w-56">
+                            <div className="relative min-w-0">
                                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     value={modelQuery}
@@ -459,7 +460,56 @@ export function ChannelModelHealthPanel() {
                                     className="h-9 rounded-lg pl-9"
                                 />
                             </div>
-                            <label className="flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground">
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
+                        {metricCards.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <div key={item.id} className="rounded-lg border border-border bg-background/50 px-3 py-2">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <Icon className="size-3.5" />
+                                        {item.label}
+                                    </div>
+                                    <div className="mt-1 text-xl font-semibold tabular-nums">{item.value}</div>
+                                    <div className="mt-0.5 truncate text-xs text-muted-foreground" title={item.sub}>
+                                        {item.sub}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                                type="button"
+                                variant={quotaStatus === 'all' ? 'default' : 'outline'}
+                                size="sm"
+                                className="h-8 rounded-lg"
+                                onClick={() => setQuotaStatus('all')}
+                            >
+                                {t('quota.all')}
+                                <span className="ml-1 tabular-nums">{summary?.total_rows ?? 0}</span>
+                            </Button>
+                            {quotaStatusChips.map((status) => (
+                                <Button
+                                    key={status}
+                                    type="button"
+                                    variant={quotaStatus === status ? 'default' : 'outline'}
+                                    size="sm"
+                                    className={cn('h-8 rounded-lg', quotaStatus !== status && quotaTone(status))}
+                                    onClick={() => setQuotaStatus(status)}
+                                >
+                                    {quotaLabel(t, status)}
+                                    <span className="ml-1 tabular-nums">{quotaStatusCounts[status]}</span>
+                                </Button>
+                            ))}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 text-sm text-muted-foreground">
                                 <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
                                 {t('autoRefresh')}
                             </label>
@@ -490,50 +540,6 @@ export function ChannelModelHealthPanel() {
                             </Button>
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
-                        {metricCards.map((item) => {
-                            const Icon = item.icon;
-                            return (
-                                <div key={item.id} className="rounded-lg border border-border bg-background/50 px-3 py-2">
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Icon className="size-3.5" />
-                                        {item.label}
-                                    </div>
-                                    <div className="mt-1 text-xl font-semibold tabular-nums">{item.value}</div>
-                                    <div className="mt-0.5 truncate text-xs text-muted-foreground" title={item.sub}>
-                                        {item.sub}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                            type="button"
-                            variant={quotaStatus === 'all' ? 'default' : 'outline'}
-                            size="sm"
-                            className="h-8 rounded-lg"
-                            onClick={() => setQuotaStatus('all')}
-                        >
-                            {t('quota.all')}
-                            <span className="ml-1 tabular-nums">{summary?.total_rows ?? 0}</span>
-                        </Button>
-                        {quotaStatusChips.map((status) => (
-                            <Button
-                                key={status}
-                                type="button"
-                                variant={quotaStatus === status ? 'default' : 'outline'}
-                                size="sm"
-                                className={cn('h-8 rounded-lg', quotaStatus !== status && quotaTone(status))}
-                                onClick={() => setQuotaStatus(status)}
-                            >
-                                {quotaLabel(t, status)}
-                                <span className="ml-1 tabular-nums">{quotaStatusCounts[status]}</span>
-                            </Button>
-                        ))}
-                    </div>
                 </div>
             </section>
 
@@ -550,7 +556,7 @@ export function ChannelModelHealthPanel() {
                     </div>
                 ) : (
                     <div ref={scrollRef} className="h-full overflow-auto overscroll-contain">
-                        <div className="min-w-[92rem] text-left text-sm">
+                        <div className="min-w-[74rem] text-left text-sm">
                             <div
                                 className="sticky top-0 z-10 grid border-b border-border bg-muted/90 text-xs text-muted-foreground backdrop-blur"
                                 style={{ gridTemplateColumns: HEALTH_ROW_GRID_COLUMNS }}
@@ -559,12 +565,8 @@ export function ChannelModelHealthPanel() {
                                 <div className="px-3 py-2 font-medium">{t('table.health')}</div>
                                 <div className="px-3 py-2 font-medium">{t('table.calls')}</div>
                                 <div className="px-3 py-2 font-medium">{t('table.latency')}</div>
-                                <div className="px-3 py-2 font-medium">{t('table.throughput')}</div>
-                                <div className="px-3 py-2 font-medium">{t('table.tokens')}</div>
-                                <div className="px-3 py-2 font-medium">{t('table.cost')}</div>
                                 <div className="px-3 py-2 font-medium">{t('table.load')}</div>
                                 <div className="px-3 py-2 font-medium">{t('table.quota')}</div>
-                                <div className="px-3 py-2 font-medium">{t('table.lastFailure')}</div>
                             </div>
 
                             {rows.length === 0 ? (
@@ -626,22 +628,19 @@ export function ChannelModelHealthPanel() {
                                                             rate: formatPercent(row.success_rate, row.request_count > 0),
                                                         })}
                                                     </div>
-                                                    <div className="text-xs text-muted-foreground">{t('requests')}: {formatNumber(row.request_count)}</div>
+                                                    <div className="mt-1 text-xs text-muted-foreground">{t('requests')}: {formatNumber(row.request_count)}</div>
+                                                    <div className="mt-1 text-xs text-muted-foreground">
+                                                        {formatDecimal(row.tokens_per_second, 1)} Tok/s / RPM {formatDecimal(row.rpm, 2)}
+                                                    </div>
                                                 </div>
                                                 <div className="px-3 py-3 tabular-nums">
                                                     <div>{t('ttfb')}: {formatMS(row.avg_ttfb_ms)}</div>
                                                     <div className="text-xs text-muted-foreground">{t('duration')}: {formatMS(row.avg_total_ms)}</div>
-                                                </div>
-                                                <div className="px-3 py-3 tabular-nums">
-                                                    <div>{formatDecimal(row.tokens_per_second, 1)} Tok/s</div>
-                                                    <div className="text-xs text-muted-foreground">RPM {formatDecimal(row.rpm, 2)}</div>
-                                                </div>
-                                                <div className="px-3 py-3 tabular-nums">
-                                                    <div>{t('tokenIn')}: {formatNumber(row.input_tokens)}</div>
+                                                    <div className="mt-1 text-xs text-muted-foreground">{t('tokenIn')}: {formatNumber(row.input_tokens)}</div>
                                                     <div className="text-xs text-muted-foreground">{t('tokenOut')}: {formatNumber(row.output_tokens)}</div>
                                                     <div className="text-xs text-muted-foreground">{t('tokenCache')}: {formatNumber(row.cache_tokens)}</div>
+                                                    <div className="mt-1">{formatCost(row.estimated_cost)}</div>
                                                 </div>
-                                                <div className="px-3 py-3 tabular-nums">{formatCost(row.estimated_cost)}</div>
                                                 <div className="px-3 py-3 tabular-nums">
                                                     <div>{t('activeSelections')}: {formatNumber(row.active_selections)}</div>
                                                     {row.channel_concurrency_limit ? (
@@ -693,8 +692,6 @@ export function ChannelModelHealthPanel() {
                                                             {t('capacity.observed')}: {formatUnixTime(row.last_observed_at)}
                                                         </div>
                                                     ) : null}
-                                                </div>
-                                                <div className="max-w-[14rem] px-3 py-3">
                                                     <div className="text-xs tabular-nums text-muted-foreground">
                                                         {row.last_http_status ? `HTTP ${row.last_http_status}` : '-'}
                                                     </div>

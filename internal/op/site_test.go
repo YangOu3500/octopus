@@ -23,6 +23,9 @@ func setupSiteOpTestDB(t *testing.T) context.Context {
 	if err := dbpkg.InitDB("sqlite", dbPath, false); err != nil {
 		t.Fatalf("InitDB failed: %v", err)
 	}
+	if err := settingRefreshCache(context.Background()); err != nil {
+		t.Fatalf("settingRefreshCache failed: %v", err)
+	}
 	t.Cleanup(func() {
 		_ = dbpkg.Close()
 	})

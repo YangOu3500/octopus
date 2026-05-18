@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Layers3, Loader2, Plus, RefreshCw, Search, Settings2, Sparkles, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -14,6 +14,7 @@ import {
     usePreviewAutoGenerateGroups,
 } from '@/api/endpoints/group';
 import { type LLMChannel, useModelChannelList } from '@/api/endpoints/model';
+import { type Setting, SettingKey, useSetSetting, useSettingList } from '@/api/endpoints/setting';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -35,6 +36,11 @@ import { MODE_LABELS } from './utils';
 type GenerateScope = 'all' | 'selected';
 type ManualAliasDraft = { id: string; alias: string; target: string };
 type AssociationOptionKey = keyof GroupAutoGenerateAssociationOptions;
+type SavedAssociationState = {
+    associationMode: GroupAutoGenerateAssociationMode;
+    associationOptions: GroupAutoGenerateAssociationOptions;
+    manualAliases: GroupAutoGenerateManualAlias[];
+};
 
 const ALL_FILTER_VALUE = 'all';
 const MANUAL_SITE_FILTER_VALUE = 'manual';
@@ -76,6 +82,14 @@ function createManualAliasDraft(): ManualAliasDraft {
     };
 }
 
+function createManualAliasDraftFromValue(item: GroupAutoGenerateManualAlias): ManualAliasDraft {
+    return {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        alias: item.alias,
+        target: item.target,
+    };
+}
+
 function sanitizeManualAliases(items: ManualAliasDraft[]): GroupAutoGenerateManualAlias[] {
     return items
         .map((item) => ({
@@ -83,6 +97,66 @@ function sanitizeManualAliases(items: ManualAliasDraft[]): GroupAutoGenerateManu
             target: item.target.trim(),
         }))
         .filter((item) => item.alias && item.target);
+}
+
+function parseAssociationMode(value: string | undefined): GroupAutoGenerateAssociationMode {
+    return value === 'alias' ? 'alias' : 'exact';
+}
+
+function parseAssociationOptions(value: string | undefined, mode: GroupAutoGenerateAssociationMode): GroupAutoGenerateAssociationOptions {
+    const defaults = defaultAssociationOptions(mode);
+    if (!value?.trim()) return defaults;
+    try {
+        const parsed = JSON.parse(value) as GroupAutoGenerateAssociationOptions;
+        const next = { ...defaults };
+        ASSOCIATION_OPTION_KEYS.forEach((key) => {
+            if (typeof parsed[key] === 'boolean') next[key] = parsed[key];
+        });
+        return next;
+    } catch {
+        return defaults;
+    }
+}
+
+function parseManualAliases(value: string | undefined): GroupAutoGenerateManualAlias[] {
+    if (!value?.trim()) return [];
+    try {
+        const parsed = JSON.parse(value) as GroupAutoGenerateManualAlias[];
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+            .map((item) => ({
+                alias: typeof item?.alias === 'string' ? item.alias.trim() : '',
+                target: typeof item?.target === 'string' ? item.target.trim() : '',
+            }))
+            .filter((item) => item.alias && item.target);
+    } catch {
+        return [];
+    }
+}
+
+function parseSavedAssociationState(settings: Setting[]): SavedAssociationState {
+    const associationMode = parseAssociationMode(
+        settings.find((item) => item.key === SettingKey.GroupAutoGenerateAssociationMode)?.value
+    );
+    return {
+        associationMode,
+        associationOptions: parseAssociationOptions(
+            settings.find((item) => item.key === SettingKey.GroupAutoGenerateAssociationOptions)?.value,
+            associationMode
+        ),
+        manualAliases: parseManualAliases(
+            settings.find((item) => item.key === SettingKey.GroupAutoGenerateManualAliases)?.value
+        ),
+    };
+}
+
+function associationOptionsEqual(left: GroupAutoGenerateAssociationOptions, right: GroupAutoGenerateAssociationOptions) {
+    return ASSOCIATION_OPTION_KEYS.every((key) => Boolean(left[key]) === Boolean(right[key]));
+}
+
+function manualAliasesEqual(left: GroupAutoGenerateManualAlias[], right: GroupAutoGenerateManualAlias[]) {
+    if (left.length !== right.length) return false;
+    return left.every((item, index) => item.alias === right[index]?.alias && item.target === right[index]?.target);
 }
 
 function normalizedModelName(value: string) {
@@ -143,10 +217,14 @@ export function GroupBulkGenerateDialog() {
     const [manualAliases, setManualAliases] = useState<ManualAliasDraft[]>([]);
     const [siteFilter, setSiteFilter] = useState(ALL_FILTER_VALUE);
     const [channelFilter, setChannelFilter] = useState(ALL_FILTER_VALUE);
+    const initializedFromSaved = useRef(false);
 
     const { data: modelChannels = [] } = useModelChannelList();
+    const { data: settings = [], isLoading: settingsLoading } = useSettingList();
     const preview = usePreviewAutoGenerateGroups();
     const generate = useAutoGenerateGroups();
+    const setSetting = useSetSetting();
+    const savedAssociationState = useMemo(() => parseSavedAssociationState(settings), [settings]);
     const normalizedManualAliases = useMemo(() => sanitizeManualAliases(manualAliases), [manualAliases]);
     const previewPayload = useMemo<GroupAutoGenerateRequest>(() => ({
         all: true,
@@ -156,13 +234,25 @@ export function GroupBulkGenerateDialog() {
     }), [associationMode, associationOptions, normalizedManualAliases]);
 
     useEffect(() => {
-        if (!open) return;
+        if (!open) {
+            initializedFromSaved.current = false;
+            return;
+        }
+        if (settingsLoading || initializedFromSaved.current) return;
+        setAssociationMode(savedAssociationState.associationMode);
+        setAssociationOptions(savedAssociationState.associationOptions);
+        setManualAliases(savedAssociationState.manualAliases.map(createManualAliasDraftFromValue));
+        initializedFromSaved.current = true;
+    }, [open, savedAssociationState, settingsLoading]);
+
+    useEffect(() => {
+        if (!open || settingsLoading) return;
         const timer = window.setTimeout(() => {
             preview.mutate(previewPayload);
         }, 250);
         return () => window.clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, previewPayload]);
+    }, [open, previewPayload, settingsLoading]);
 
     const previewData = preview.data;
     const items = useMemo(() => previewData?.items ?? [], [previewData]);
@@ -250,6 +340,9 @@ export function GroupBulkGenerateDialog() {
         : 0;
     const hasCustomAssociationOptions = ASSOCIATION_OPTION_KEYS.some((key) => associationOptions[key] !== defaultAssociationOptions(associationMode)[key]);
     const hasRuleChanges = hasCustomAssociationOptions || manualAliases.some((item) => item.alias.trim() || item.target.trim());
+    const currentAssociationMatchesSaved = associationMode === savedAssociationState.associationMode
+        && associationOptionsEqual(associationOptions, savedAssociationState.associationOptions)
+        && manualAliasesEqual(normalizedManualAliases, savedAssociationState.manualAliases);
 
     const toggleSelected = (modelName: string) => {
         setSelected((prev) => {
@@ -303,6 +396,34 @@ export function GroupBulkGenerateDialog() {
     const resetAssociationRules = () => {
         setAssociationOptions(defaultAssociationOptions(associationMode));
         setManualAliases([]);
+    };
+
+    const applySavedAssociationRules = () => {
+        setAssociationMode(savedAssociationState.associationMode);
+        setAssociationOptions(savedAssociationState.associationOptions);
+        setManualAliases(savedAssociationState.manualAliases.map(createManualAliasDraftFromValue));
+        setSelected(new Set());
+    };
+
+    const handleSaveAssociationRules = async () => {
+        try {
+            await setSetting.mutateAsync({
+                key: SettingKey.GroupAutoGenerateAssociationMode,
+                value: associationMode,
+            });
+            await setSetting.mutateAsync({
+                key: SettingKey.GroupAutoGenerateAssociationOptions,
+                value: JSON.stringify(associationOptions),
+            });
+            await setSetting.mutateAsync({
+                key: SettingKey.GroupAutoGenerateManualAliases,
+                value: JSON.stringify(normalizedManualAliases),
+            });
+            toast.success(bulkT('rules.toast.saved'));
+        } catch (error) {
+            const description = error instanceof Error ? error.message : undefined;
+            toast.error(bulkT('rules.toast.saveFailed'), description ? { description } : undefined);
+        }
     };
 
     const strategyLabel = (strategy: string) => bulkT(`strategy.${strategy}`);
@@ -416,7 +537,14 @@ export function GroupBulkGenerateDialog() {
                                 </div>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                <span>{bulkT(`rules.mode.${savedAssociationState.associationMode}`)}</span>
                                 <span>{bulkT('rules.manualCount', { count: normalizedManualAliases.length })}</span>
+                                <Button type="button" variant="secondary" className="h-8 rounded-lg px-2.5 text-xs" onClick={applySavedAssociationRules} disabled={settingsLoading || currentAssociationMatchesSaved}>
+                                    {bulkT('rules.loadSaved')}
+                                </Button>
+                                <Button type="button" variant="secondary" className="h-8 rounded-lg px-2.5 text-xs" onClick={handleSaveAssociationRules} disabled={setSetting.isPending || currentAssociationMatchesSaved}>
+                                    {setSetting.isPending ? bulkT('rules.saving') : bulkT('rules.save')}
+                                </Button>
                                 <Button type="button" variant="secondary" className="h-8 rounded-lg px-2.5 text-xs" onClick={resetAssociationRules} disabled={!hasRuleChanges}>
                                     {bulkT('rules.reset')}
                                 </Button>
