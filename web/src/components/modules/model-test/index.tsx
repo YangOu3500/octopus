@@ -25,6 +25,8 @@ type TestRow = {
     enabled: boolean;
 };
 
+type ModelTestResultFilter = 'all' | 'success' | 'failed' | 'running' | 'idle';
+
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
 const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.4fr) 7rem 9rem 5rem 6rem 6rem 9rem 6rem 7rem minmax(18rem,1.2fr) 8rem';
@@ -186,6 +188,7 @@ export function ModelTest() {
     const [selectedChannelId, setSelectedChannelId] = useState<string>('');
     const [selectedModelName, setSelectedModelName] = useState<string>('');
     const [query, setQuery] = useState('');
+    const [resultFilter, setResultFilter] = useState<ModelTestResultFilter>('all');
     const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
     const [maxTokens, setMaxTokens] = useState(8);
     const [concurrency, setConcurrency] = useState(2);
@@ -256,13 +259,16 @@ export function ModelTest() {
             allRows.sort((a, b) => a.channelName.localeCompare(b.channelName));
         }
 
-        if (!normalizedQuery) return allRows;
-        return allRows.filter((row) => (
-            row.modelName.toLowerCase().includes(normalizedQuery) ||
-            row.channelName.toLowerCase().includes(normalizedQuery) ||
-            protocolLabel(row.protocol).toLowerCase().includes(normalizedQuery)
-        ));
-    }, [channelById, mode, modelChannels, query, selectedChannelId, selectedModelName]);
+        const searchedRows = normalizedQuery
+            ? allRows.filter((row) => (
+                row.modelName.toLowerCase().includes(normalizedQuery) ||
+                row.channelName.toLowerCase().includes(normalizedQuery) ||
+                protocolLabel(row.protocol).toLowerCase().includes(normalizedQuery)
+            ))
+            : allRows;
+        if (resultFilter === 'all') return searchedRows;
+        return searchedRows.filter((row) => resultStatus(results[row.key], runningKeys.has(row.key)) === resultFilter);
+    }, [channelById, mode, modelChannels, query, resultFilter, results, runningKeys, selectedChannelId, selectedModelName]);
 
     useEffect(() => {
         queueMicrotask(() => setSelectedKeys(new Set(rows.filter((row) => row.enabled).map((row) => row.key))));
@@ -379,6 +385,7 @@ export function ModelTest() {
                     concurrency,
                     max_tokens: maxTokens,
                     prompt_length: prompt.length,
+                    result_filter: resultFilter,
                     selected_count: selectedRows.length,
                     visible_count: rows.length,
                 },
@@ -556,14 +563,28 @@ export function ModelTest() {
                         </div>
                     </div>
 
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            value={query}
-                            onChange={(event) => setQuery(event.target.value)}
-                            placeholder={mode === 'channel' ? t('searchModel') : t('searchChannel')}
-                            className="rounded-lg pl-9"
-                        />
+                    <div className="flex flex-col gap-2 md:flex-row">
+                        <div className="relative min-w-0 flex-1">
+                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                value={query}
+                                onChange={(event) => setQuery(event.target.value)}
+                                placeholder={mode === 'channel' ? t('searchModel') : t('searchChannel')}
+                                className="rounded-lg pl-9"
+                            />
+                        </div>
+                        <Select value={resultFilter} onValueChange={(value) => setResultFilter(value as ModelTestResultFilter)}>
+                            <SelectTrigger className="w-full rounded-lg md:w-40">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">{t('filter.all')}</SelectItem>
+                                <SelectItem value="success">{t('filter.success')}</SelectItem>
+                                <SelectItem value="failed">{t('filter.failed')}</SelectItem>
+                                <SelectItem value="running">{t('filter.running')}</SelectItem>
+                                <SelectItem value="idle">{t('filter.idle')}</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
             </div>

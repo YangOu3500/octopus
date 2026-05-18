@@ -1015,6 +1015,13 @@
             "failed": "Failed to export model test results",
             "safe": "The export only contains structured redacted fields, without the full prompt, response body, or auth data"
         },
+        "filter": {
+            "all": "All results",
+            "success": "Success",
+            "failed": "Failed",
+            "running": "Running",
+            "idle": "Idle"
+        },
         "channel": "Channel",
         "model": "Model",
         "prompt": "Prompt",
