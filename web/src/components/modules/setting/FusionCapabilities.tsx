@@ -26,6 +26,9 @@ type Capability = {
 type StatusFilter = CapabilityStatus | 'all';
 type SourceFilter = CapabilitySource | 'all';
 
+const capabilityStatuses: CapabilityStatus[] = ['done', 'partial', 'planned'];
+const capabilitySources: CapabilitySource[] = ['both', 'AxonHub', 'ccLoad', 'octopus'];
+
 const capabilities: Capability[] = [
     { id: 'responseValidator', status: 'done', source: 'ccLoad', nav: 'log', icon: CheckCircle2 },
     { id: 'failoverRetry', status: 'done', source: 'ccLoad', nav: 'group', icon: GitBranch },
@@ -46,7 +49,11 @@ const capabilities: Capability[] = [
     { id: 'quotaStatus', status: 'done', source: 'both', nav: 'channel', channelTab: 'health', icon: CircleDashed },
 ];
 
-const FUSION_CAPABILITY_EXPORT_VERSION = 1;
+const FUSION_CAPABILITY_EXPORT_VERSION = 2;
+
+function emptyStatusCounts(): Record<CapabilityStatus, number> {
+    return { done: 0, partial: 0, planned: 0 };
+}
 
 function exportTimestamp() {
     return new Date().toISOString();
@@ -110,8 +117,29 @@ export function SettingFusionCapabilities() {
         { done: 0, partial: 0, planned: 0 } satisfies Record<CapabilityStatus, number>,
     );
 
-    const sourceOptions: SourceFilter[] = ['all', 'both', 'AxonHub', 'ccLoad', 'octopus'];
-    const statusOptions: StatusFilter[] = ['all', 'done', 'partial', 'planned'];
+    const sourceCounts = capabilities.reduce(
+        (acc, item) => {
+            acc[item.source] += 1;
+            return acc;
+        },
+        { ccLoad: 0, AxonHub: 0, both: 0, octopus: 0 } satisfies Record<CapabilitySource, number>,
+    );
+
+    const sourceStatusCounts = capabilities.reduce(
+        (acc, item) => {
+            acc[item.source][item.status] += 1;
+            return acc;
+        },
+        {
+            ccLoad: emptyStatusCounts(),
+            AxonHub: emptyStatusCounts(),
+            both: emptyStatusCounts(),
+            octopus: emptyStatusCounts(),
+        } satisfies Record<CapabilitySource, Record<CapabilityStatus, number>>,
+    );
+
+    const sourceOptions: SourceFilter[] = ['all', ...capabilitySources];
+    const statusOptions: StatusFilter[] = ['all', ...capabilityStatuses];
     const normalizedQuery = query.trim().toLowerCase();
 
     const filteredCapabilities = useMemo(() => capabilities.filter((item) => {
@@ -155,6 +183,8 @@ export function SettingFusionCapabilities() {
                 shown: filteredCapabilities.length,
                 total: capabilities.length,
                 statuses: counts,
+                sources: sourceCounts,
+                statuses_by_source: sourceStatusCounts,
             },
             capabilities: filteredCapabilities.map((item) => ({
                 id: item.id,
@@ -193,6 +223,46 @@ export function SettingFusionCapabilities() {
                         <Badge key={status} variant="outline" className={cn('rounded-md', statusClass(status))}>
                             {t(`fusionCapabilities.status.${status}`)} {counts[status]}
                         </Badge>
+                    ))}
+                </div>
+            </div>
+
+            <div className="mb-4 rounded-lg border border-border bg-background/40 p-3">
+                <div className="mb-3 flex flex-col gap-1">
+                    <div className="text-sm font-medium text-card-foreground">
+                        {t('fusionCapabilities.coverage.title')}
+                    </div>
+                    <div className="text-xs leading-relaxed text-muted-foreground">
+                        {t('fusionCapabilities.coverage.description')}
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+                    {capabilitySources.map((source) => (
+                        <button
+                            key={source}
+                            type="button"
+                            className={cn(
+                                'rounded-lg border border-border bg-card/60 p-3 text-left transition-colors hover:bg-muted/50',
+                                sourceFilter === source && 'border-primary/60 bg-primary/5',
+                            )}
+                            onClick={() => setSourceFilter(source)}
+                        >
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="truncate text-sm font-medium text-card-foreground">
+                                    {sourceLabel(source, t)}
+                                </span>
+                                <span className="shrink-0 text-xs text-muted-foreground">
+                                    {t('fusionCapabilities.coverage.total', { count: sourceCounts[source] })}
+                                </span>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                                {capabilityStatuses.map((status) => (
+                                    <Badge key={status} variant="outline" className={cn('rounded-md text-[11px]', statusClass(status))}>
+                                        {t(`fusionCapabilities.status.${status}`)} {sourceStatusCounts[source][status]}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </button>
                     ))}
                 </div>
             </div>

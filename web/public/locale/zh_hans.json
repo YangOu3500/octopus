@@ -526,6 +526,11 @@
                 "success": "Fusion 能力视图已导出",
                 "safe": "导出仅包含能力元数据和本地化 UI 说明，不包含日志、payload、Key 或认证信息"
             },
+            "coverage": {
+                "title": "来源覆盖总览",
+                "description": "按参考来源汇总已接入、部分接入和待补齐能力，点击来源可直接筛选。",
+                "total": "{count} 项能力"
+            },
             "columns": {
                 "capability": "能力",
                 "source": "参考来源",

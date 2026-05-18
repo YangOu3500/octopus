@@ -526,6 +526,11 @@
                 "success": "Fusion capability view exported",
                 "safe": "The export only contains capability metadata and localized UI descriptions, without logs, payloads, keys, or auth data"
             },
+            "coverage": {
+                "title": "Source Coverage",
+                "description": "Summarizes integrated, partial, and planned capabilities by reference source. Click a source to filter the table.",
+                "total": "{count} capabilities"
+            },
             "columns": {
                 "capability": "Capability",
                 "source": "Reference",
