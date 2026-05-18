@@ -1413,6 +1413,7 @@
                 "request": "Request",
                 "phase": "Phase",
                 "route": "Current Candidate",
+                "capacity": "Capacity / Quota",
                 "status": "Status",
                 "preview": "Redacted Preview",
                 "elapsed": "Elapsed"
@@ -1421,6 +1422,10 @@
             "responsePreview": "Resp",
             "keySite": "Key #{key} / site #{site} / account #{account}",
             "noFailure": "No failure",
+            "noCapacity": "No capacity signal",
+            "noCapacityReason": "No blocking reason",
+            "observedAt": "Obs",
+            "expiresAt": "Exp",
             "attempts": "{count} attempts",
             "queue": {
                 "modeLocal": "Local queue",
@@ -1429,7 +1434,21 @@
                 "waited": "wait {ms}ms",
                 "acquired": "slot acquired",
                 "timedOut": "queue timeout"
-            }
+            },
+            "quotaStatusAvailable": "Balance Available",
+            "quotaStatusZeroBalance": "Zero Balance",
+            "quotaStatusAccountDisabled": "Account Disabled",
+            "quotaStatusQuotaError": "Quota Error",
+            "quotaStatusAuthError": "Auth Blocked",
+            "quotaStatusRateLimited": "Rate Limited",
+            "quotaStatusNoKey": "No Available Key",
+            "quotaStatusSiteDisabled": "Site Disabled",
+            "quotaStatusAccountMissing": "Account Missing",
+            "quotaStatusModelDisabled": "Model Disabled",
+            "quotaStatusUnknown": "Unknown",
+            "capacityStatusAvailable": "Available",
+            "capacityStatusBlocked": "Blocked",
+            "capacityStatusUnknown": "Unknown"
         },
         "card": {
             "error": "Error",

@@ -1413,6 +1413,7 @@
                 "request": "请求",
                 "phase": "阶段",
                 "route": "当前候选",
+                "capacity": "容量 / 配额",
                 "status": "状态",
                 "preview": "脱敏预览",
                 "elapsed": "耗时"
@@ -1421,6 +1422,10 @@
             "responsePreview": "响应",
             "keySite": "Key #{key} / 站点 #{site} / 账号 #{account}",
             "noFailure": "暂无失败",
+            "noCapacity": "暂无容量信号",
+            "noCapacityReason": "暂无阻断原因",
+            "observedAt": "观测",
+            "expiresAt": "到期",
             "attempts": "{count} 次尝试",
             "queue": {
                 "modeLocal": "本机队列",
@@ -1429,7 +1434,21 @@
                 "waited": "等待 {ms}ms",
                 "acquired": "已获得 slot",
                 "timedOut": "排队超时"
-            }
+            },
+            "quotaStatusAvailable": "余额可用",
+            "quotaStatusZeroBalance": "余额为 0",
+            "quotaStatusAccountDisabled": "账号禁用",
+            "quotaStatusQuotaError": "配额错误",
+            "quotaStatusAuthError": "认证阻断",
+            "quotaStatusRateLimited": "限流中",
+            "quotaStatusNoKey": "无可用 Key",
+            "quotaStatusSiteDisabled": "站点禁用",
+            "quotaStatusAccountMissing": "账号缺失",
+            "quotaStatusModelDisabled": "模型禁用",
+            "quotaStatusUnknown": "未知",
+            "capacityStatusAvailable": "可用",
+            "capacityStatusBlocked": "已阻断",
+            "capacityStatusUnknown": "未知"
         },
         "card": {
             "error": "错误",

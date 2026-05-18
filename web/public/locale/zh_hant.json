@@ -1413,6 +1413,7 @@
                 "request": "請求",
                 "phase": "階段",
                 "route": "目前候選",
+                "capacity": "容量 / 配額",
                 "status": "狀態",
                 "preview": "脫敏預覽",
                 "elapsed": "耗時"
@@ -1421,6 +1422,10 @@
             "responsePreview": "回應",
             "keySite": "Key #{key} / 站點 #{site} / 帳號 #{account}",
             "noFailure": "暫無失敗",
+            "noCapacity": "暫無容量訊號",
+            "noCapacityReason": "暫無阻斷原因",
+            "observedAt": "觀測",
+            "expiresAt": "到期",
             "attempts": "{count} 次嘗試",
             "queue": {
                 "modeLocal": "本機佇列",
@@ -1429,7 +1434,21 @@
                 "waited": "等待 {ms}ms",
                 "acquired": "已取得槽位",
                 "timedOut": "排隊逾時"
-            }
+            },
+            "quotaStatusAvailable": "餘額可用",
+            "quotaStatusZeroBalance": "餘額為 0",
+            "quotaStatusAccountDisabled": "帳號停用",
+            "quotaStatusQuotaError": "配額錯誤",
+            "quotaStatusAuthError": "認證阻斷",
+            "quotaStatusRateLimited": "限流中",
+            "quotaStatusNoKey": "無可用 Key",
+            "quotaStatusSiteDisabled": "站點停用",
+            "quotaStatusAccountMissing": "帳號缺失",
+            "quotaStatusModelDisabled": "模型停用",
+            "quotaStatusUnknown": "未知",
+            "capacityStatusAvailable": "可用",
+            "capacityStatusBlocked": "已阻斷",
+            "capacityStatusUnknown": "未知"
         },
         "card": {
             "error": "錯誤",

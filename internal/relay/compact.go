@@ -274,6 +274,7 @@ func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balanc
 		ModelName:     modelName,
 		SiteID:        runtimeState.SiteID,
 		SiteAccountID: runtimeState.SiteAccountID,
+		AttemptMeta:   runtimeState.AttemptMeta,
 		AttemptCount:  len(iter.Attempts()) + 1,
 	})
 	queueCfg := balancer.CurrentChannelConcurrencyConfig()

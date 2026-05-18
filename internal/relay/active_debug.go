@@ -43,6 +43,14 @@ type ActiveRequestSnapshot struct {
 	ModelName                  string `json:"model_name,omitempty"`
 	SiteID                     int    `json:"site_id,omitempty"`
 	SiteAccountID              int    `json:"site_account_id,omitempty"`
+	QuotaStatus                string `json:"quota_status,omitempty"`
+	QuotaReason                string `json:"quota_reason,omitempty"`
+	CapacityStatus             string `json:"capacity_status,omitempty"`
+	CapacityReason             string `json:"capacity_reason,omitempty"`
+	CapacityScope              string `json:"capacity_scope,omitempty"`
+	CapacitySource             string `json:"capacity_source,omitempty"`
+	LastObservedAt             int64  `json:"last_observed_at,omitempty"`
+	ExpiresAt                  int64  `json:"expires_at,omitempty"`
 	ChannelConcurrencyMode     string `json:"channel_concurrency_mode,omitempty"`
 	ChannelConcurrencyLimit    int    `json:"channel_concurrency_limit,omitempty"`
 	ChannelConcurrencyWaitMS   int    `json:"channel_concurrency_wait_ms,omitempty"`
@@ -79,6 +87,7 @@ type activeAttemptInfo struct {
 	ModelName     string
 	SiteID        int
 	SiteAccountID int
+	AttemptMeta   dbmodel.AttemptCapacityMeta
 	AttemptCount  int
 }
 
@@ -384,6 +393,61 @@ func activeDebugContentPreview(content string) string {
 	return string(runes[:activeRequestPreviewMaxRunes]) + "...[truncated]"
 }
 
+func resetActiveCapacityMeta(snapshot *ActiveRequestSnapshot) {
+	if snapshot == nil {
+		return
+	}
+	snapshot.QuotaStatus = ""
+	snapshot.QuotaReason = ""
+	snapshot.CapacityStatus = ""
+	snapshot.CapacityReason = ""
+	snapshot.CapacityScope = ""
+	snapshot.CapacitySource = ""
+	snapshot.LastObservedAt = 0
+	snapshot.ExpiresAt = 0
+}
+
+func applyActiveCapacityMeta(snapshot *ActiveRequestSnapshot, meta dbmodel.AttemptCapacityMeta) {
+	if snapshot == nil {
+		return
+	}
+	if value := strings.TrimSpace(meta.QuotaStatus); value != "" {
+		snapshot.QuotaStatus = value
+	}
+	if value := strings.TrimSpace(meta.QuotaReason); value != "" {
+		snapshot.QuotaReason = value
+	}
+	if value := strings.TrimSpace(meta.CapacityStatus); value != "" {
+		snapshot.CapacityStatus = value
+	}
+	if value := strings.TrimSpace(meta.CapacityReason); value != "" {
+		snapshot.CapacityReason = value
+	}
+	if value := strings.TrimSpace(meta.CapacityScope); value != "" {
+		snapshot.CapacityScope = value
+	}
+	if value := strings.TrimSpace(meta.CapacitySource); value != "" {
+		snapshot.CapacitySource = value
+	}
+	if meta.LastObservedAt > 0 {
+		snapshot.LastObservedAt = meta.LastObservedAt
+	}
+	if meta.ExpiresAt > 0 {
+		snapshot.ExpiresAt = meta.ExpiresAt
+	}
+}
+
+func hasActiveCapacityMeta(meta dbmodel.AttemptCapacityMeta) bool {
+	return strings.TrimSpace(meta.QuotaStatus) != "" ||
+		strings.TrimSpace(meta.QuotaReason) != "" ||
+		strings.TrimSpace(meta.CapacityStatus) != "" ||
+		strings.TrimSpace(meta.CapacityReason) != "" ||
+		strings.TrimSpace(meta.CapacityScope) != "" ||
+		strings.TrimSpace(meta.CapacitySource) != "" ||
+		meta.LastObservedAt > 0 ||
+		meta.ExpiresAt > 0
+}
+
 func (m *RelayMetrics) markActiveFirstToken() {
 	if m == nil {
 		return
@@ -415,6 +479,8 @@ func (m *RelayMetrics) markActiveAttemptStart(info activeAttemptInfo) {
 		snapshot.ModelName = strings.TrimSpace(info.ModelName)
 		snapshot.SiteID = info.SiteID
 		snapshot.SiteAccountID = info.SiteAccountID
+		resetActiveCapacityMeta(snapshot)
+		applyActiveCapacityMeta(snapshot, info.AttemptMeta)
 		snapshot.ChannelConcurrencyMode = ""
 		snapshot.ChannelConcurrencyLimit = 0
 		snapshot.ChannelConcurrencyWaitMS = 0
@@ -472,6 +538,11 @@ func (m *RelayMetrics) markActiveAttemptEnd(status dbmodel.AttemptStatus, httpSt
 		snapshot.Written = written
 		if attemptCount > 0 {
 			snapshot.AttemptsCount = attemptCount
+		}
+		httpMeta := dbmodel.AttemptCapacityMetaFromHTTPStatus(httpStatus, time.Now().Unix())
+		if hasActiveCapacityMeta(httpMeta) {
+			resetActiveCapacityMeta(snapshot)
+			applyActiveCapacityMeta(snapshot, httpMeta)
 		}
 		switch status {
 		case dbmodel.AttemptSuccess:
@@ -532,6 +603,8 @@ func (m *imagesRelayMetrics) markActiveAttemptStart(info activeAttemptInfo) {
 		snapshot.ModelName = strings.TrimSpace(info.ModelName)
 		snapshot.SiteID = info.SiteID
 		snapshot.SiteAccountID = info.SiteAccountID
+		resetActiveCapacityMeta(snapshot)
+		applyActiveCapacityMeta(snapshot, info.AttemptMeta)
 		snapshot.ChannelConcurrencyMode = ""
 		snapshot.ChannelConcurrencyLimit = 0
 		snapshot.ChannelConcurrencyWaitMS = 0
@@ -589,6 +662,11 @@ func (m *imagesRelayMetrics) markActiveAttemptEnd(status dbmodel.AttemptStatus, 
 		snapshot.Written = written
 		if attemptCount > 0 {
 			snapshot.AttemptsCount = attemptCount
+		}
+		httpMeta := dbmodel.AttemptCapacityMetaFromHTTPStatus(httpStatus, time.Now().Unix())
+		if hasActiveCapacityMeta(httpMeta) {
+			resetActiveCapacityMeta(snapshot)
+			applyActiveCapacityMeta(snapshot, httpMeta)
 		}
 		if status == dbmodel.AttemptSuccess {
 			snapshot.Phase = "completed"

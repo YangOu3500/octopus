@@ -334,6 +334,7 @@ func (ra *relayAttempt) attempt() attemptResult {
 		ModelName:     ra.internalRequest.Model,
 		SiteID:        ra.siteID,
 		SiteAccountID: ra.siteAccountID,
+		AttemptMeta:   ra.attemptMeta,
 		AttemptCount:  len(ra.iter.Attempts()) + 1,
 	})
 

@@ -37,7 +37,16 @@ func TestActiveRequestTrackerLifecycleAndSanitization(t *testing.T) {
 		ModelName:     "upstream-model",
 		SiteID:        41,
 		SiteAccountID: 59,
-		AttemptCount:  1,
+		AttemptMeta: dbmodel.AttemptCapacityMeta{
+			QuotaStatus:    "available",
+			QuotaReason:    "site_account_balance",
+			CapacityStatus: "available",
+			CapacityReason: "site_account_balance",
+			CapacityScope:  "site_account",
+			CapacitySource: "site_account_balance",
+			LastObservedAt: 1716000000,
+		},
+		AttemptCount: 1,
 	})
 	metrics.markActiveAttemptQueueing("database", 3)
 	metrics.markActiveAttemptQueueResult("database", 3, 250*time.Millisecond, true, false)
@@ -57,6 +66,16 @@ func TestActiveRequestTrackerLifecycleAndSanitization(t *testing.T) {
 	}
 	if got.ChannelConcurrencyMode != "database" || got.ChannelConcurrencyLimit != 3 || got.ChannelConcurrencyWaitMS != 250 || !got.ChannelConcurrencyAcquired || got.ChannelConcurrencyTimedOut {
 		t.Fatalf("unexpected queue tracking fields: %+v", got)
+	}
+	if got.QuotaStatus != "rate_limited" || got.QuotaReason != "http_429" {
+		t.Fatalf("unexpected quota tracking fields: %+v", got)
+	}
+	if got.CapacityStatus != "blocked" ||
+		got.CapacityReason != "http_429" ||
+		got.CapacityScope != "channel_key" ||
+		got.CapacitySource != "key_status_code" ||
+		got.LastObservedAt <= 0 {
+		t.Fatalf("unexpected capacity tracking fields: %+v", got)
 	}
 	if !got.RequestStream || !got.FirstTokenSeen || !got.Written {
 		t.Fatalf("expected stream/first-token/written flags: %+v", got)
@@ -111,10 +130,23 @@ func TestActiveRequestTrackerEventStream(t *testing.T) {
 		t.Fatalf("unexpected started event: %+v", started)
 	}
 
-	metrics.markActiveAttemptStart(activeAttemptInfo{ChannelID: 23, ChannelName: "debug-channel", AttemptCount: 1})
+	metrics.markActiveAttemptStart(activeAttemptInfo{
+		ChannelID:    23,
+		ChannelName:  "debug-channel",
+		AttemptCount: 1,
+		AttemptMeta: dbmodel.AttemptCapacityMeta{
+			QuotaStatus:    "available",
+			CapacityStatus: "available",
+			CapacityScope:  "site_account",
+			CapacitySource: "site_account_balance",
+		},
+	})
 	updated := readActiveRequestEvent(t, ch)
 	if updated.Type != "updated" || updated.Snapshot == nil || updated.Snapshot.ChannelID != 23 {
 		t.Fatalf("unexpected updated event: %+v", updated)
+	}
+	if updated.Snapshot.QuotaStatus != "available" || updated.Snapshot.CapacityStatus != "available" {
+		t.Fatalf("unexpected capacity metadata in updated event: %+v", updated)
 	}
 
 	metrics.completeActiveTracking()

@@ -32,7 +32,7 @@ type ManagedChannelLookup = {
     } | null;
 };
 
-const ACTIVE_DEBUG_EXPORT_VERSION = 1;
+const ACTIVE_DEBUG_EXPORT_VERSION = 2;
 const LOG_LIST_EXPORT_VERSION = 1;
 
 function getBaseGroupKey(groupKey: string) {
@@ -167,6 +167,35 @@ function hasActiveQueueMetadata(item: ActiveRequestSnapshot) {
     );
 }
 
+function hasActiveCapacityMetadata(item: ActiveRequestSnapshot) {
+    return Boolean(
+        item.quota_status
+        || item.quota_reason
+        || item.capacity_status
+        || item.capacity_reason
+        || item.capacity_scope
+        || item.capacity_source
+        || item.last_observed_at
+        || item.expires_at,
+    );
+}
+
+function formatActiveOptionalText(value: string | undefined) {
+    return value?.trim() || '-';
+}
+
+function formatActiveUnixTime(value: number | undefined) {
+    if (!value) return '-';
+    return new Date(value * 1000).toLocaleString([], {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    });
+}
+
 function formatActiveQueueMode(mode: string | undefined, t: LogActiveTranslations) {
     switch ((mode ?? '').trim()) {
         case 'database':
@@ -187,6 +216,58 @@ function formatActiveQueueSummary(item: ActiveRequestSnapshot, t: LogActiveTrans
         item.channel_concurrency_timed_out ? t('queue.timedOut') : (item.channel_concurrency_acquired ? t('queue.acquired') : ''),
     ].filter(Boolean);
     return parts.join(' · ');
+}
+
+function formatActiveQuotaStatus(status: string | undefined, t: LogActiveTranslations) {
+    switch ((status ?? '').trim()) {
+        case 'available':
+            return t('quotaStatusAvailable');
+        case 'zero_balance':
+            return t('quotaStatusZeroBalance');
+        case 'account_disabled':
+            return t('quotaStatusAccountDisabled');
+        case 'quota_error':
+            return t('quotaStatusQuotaError');
+        case 'auth_error':
+            return t('quotaStatusAuthError');
+        case 'rate_limited':
+            return t('quotaStatusRateLimited');
+        case 'no_key':
+            return t('quotaStatusNoKey');
+        case 'site_disabled':
+            return t('quotaStatusSiteDisabled');
+        case 'account_missing':
+            return t('quotaStatusAccountMissing');
+        case 'model_disabled':
+            return t('quotaStatusModelDisabled');
+        case 'unknown':
+            return t('quotaStatusUnknown');
+        default:
+            return formatActiveOptionalText(status);
+    }
+}
+
+function formatActiveCapacityStatus(status: string | undefined, t: LogActiveTranslations) {
+    switch ((status ?? '').trim()) {
+        case 'available':
+            return t('capacityStatusAvailable');
+        case 'blocked':
+            return t('capacityStatusBlocked');
+        case 'unknown':
+            return t('capacityStatusUnknown');
+        default:
+            return formatActiveOptionalText(status);
+    }
+}
+
+function formatActiveCapacitySummary(item: ActiveRequestSnapshot, t: LogActiveTranslations) {
+    if (!hasActiveCapacityMetadata(item)) return '';
+    const parts = [
+        item.quota_status ? formatActiveQuotaStatus(item.quota_status, t) : '',
+        item.capacity_status ? formatActiveCapacityStatus(item.capacity_status, t) : '',
+        item.capacity_reason || item.quota_reason || '',
+    ].filter(Boolean);
+    return parts.join(' / ');
 }
 
 function formatEventTime(timestamp: number | undefined) {
@@ -254,6 +335,14 @@ function sanitizeActiveSnapshot(snapshot: ActiveRequestSnapshot | undefined) {
         model_name: snapshot.model_name,
         site_id: snapshot.site_id,
         site_account_id: snapshot.site_account_id,
+        quota_status: snapshot.quota_status,
+        quota_reason: snapshot.quota_reason,
+        capacity_status: snapshot.capacity_status,
+        capacity_reason: snapshot.capacity_reason,
+        capacity_scope: snapshot.capacity_scope,
+        capacity_source: snapshot.capacity_source,
+        last_observed_at: snapshot.last_observed_at,
+        expires_at: snapshot.expires_at,
         channel_concurrency_mode: snapshot.channel_concurrency_mode,
         channel_concurrency_limit: snapshot.channel_concurrency_limit,
         channel_concurrency_wait_ms: snapshot.channel_concurrency_wait_ms,
@@ -562,12 +651,13 @@ function ActiveRequestsPanel({
                 </div>
             ) : (
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1040px] text-left text-xs">
+                    <table className="w-full min-w-[1220px] text-left text-xs">
                         <thead className="text-muted-foreground">
                             <tr className="border-b">
                                 <th className="py-1.5 pr-3 font-medium">{t('columns.request')}</th>
                                 <th className="py-1.5 pr-3 font-medium">{t('columns.phase')}</th>
                                 <th className="py-1.5 pr-3 font-medium">{t('columns.route')}</th>
+                                <th className="py-1.5 pr-3 font-medium">{t('columns.capacity')}</th>
                                 <th className="py-1.5 pr-3 font-medium">{t('columns.status')}</th>
                                 <th className="py-1.5 pr-3 font-medium">{t('columns.preview')}</th>
                                 <th className="py-1.5 pr-3 font-medium text-right">{t('columns.elapsed')}</th>
@@ -603,6 +693,45 @@ function ActiveRequestsPanel({
                                                 {formatActiveQueueSummary(item, t)}
                                             </div>
                                         ) : null}
+                                    </td>
+                                    <td className="max-w-[260px] py-2 pr-3">
+                                        {hasActiveCapacityMetadata(item) ? (
+                                            <div className="space-y-1">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {item.quota_status ? (
+                                                        <Badge variant="outline" className="h-5 rounded-md px-1.5 text-[10px]">
+                                                            {formatActiveQuotaStatus(item.quota_status, t)}
+                                                        </Badge>
+                                                    ) : null}
+                                                    {item.capacity_status ? (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`h-5 rounded-md px-1.5 text-[10px] ${
+                                                                item.capacity_status === 'blocked' ? 'border-destructive/30 text-destructive' : ''
+                                                            }`}
+                                                        >
+                                                            {formatActiveCapacityStatus(item.capacity_status, t)}
+                                                        </Badge>
+                                                    ) : null}
+                                                </div>
+                                                <div className="truncate text-muted-foreground" title={item.capacity_reason || item.quota_reason || undefined}>
+                                                    {item.capacity_reason || item.quota_reason || t('noCapacityReason')}
+                                                </div>
+                                                <div className="truncate text-muted-foreground" title={`${item.capacity_source || '-'} / ${item.capacity_scope || '-'}`}>
+                                                    {formatActiveOptionalText(item.capacity_source)} / {formatActiveOptionalText(item.capacity_scope)}
+                                                </div>
+                                                {item.last_observed_at || item.expires_at ? (
+                                                    <div
+                                                        className="truncate font-mono text-muted-foreground"
+                                                        title={`${t('observedAt')}: ${formatActiveUnixTime(item.last_observed_at)} / ${t('expiresAt')}: ${formatActiveUnixTime(item.expires_at)}`}
+                                                    >
+                                                        {t('observedAt')}: {formatActiveUnixTime(item.last_observed_at)} / {t('expiresAt')}: {formatActiveUnixTime(item.expires_at)}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        ) : (
+                                            <div className="text-muted-foreground">{t('noCapacity')}</div>
+                                        )}
                                     </td>
                                     <td className="max-w-[240px] py-2 pr-3">
                                         <div className="truncate" title={item.last_failure_reason || undefined}>
@@ -674,6 +803,7 @@ function ActiveRequestsPanel({
                                         ? `${snapshot.channel_name || `#${snapshot.channel_id || 0}`} / ${snapshot.model_name || '-'}`
                                         : t('events.snapshotMeta', { count: event.list?.total ?? 0 });
                                     const queueSummary = snapshot ? formatActiveQueueSummary(snapshot, t) : '';
+                                    const capacitySummary = snapshot ? formatActiveCapacitySummary(snapshot, t) : '';
                                     return (
                                         <tr key={`${event.type}-${event.updated_at}-${snapshot?.id ?? index}`} className="border-b last:border-0">
                                             <td className="w-[96px] py-1.5 pr-3 font-mono text-muted-foreground">
@@ -694,8 +824,8 @@ function ActiveRequestsPanel({
                                             </td>
                                             <td className="max-w-[240px] py-1.5 pr-3">
                                                 <div className="truncate" title={route}>{route}</div>
-                                                <div className="truncate text-muted-foreground" title={queueSummary || snapshot?.last_failure_reason || undefined}>
-                                                    {queueSummary || `${snapshot?.last_status || snapshot?.phase || '-'} ${snapshot?.last_http_status ? `/ ${snapshot.last_http_status}` : ''}`.trim()}
+                                                <div className="truncate text-muted-foreground" title={capacitySummary || queueSummary || snapshot?.last_failure_reason || undefined}>
+                                                    {capacitySummary || queueSummary || `${snapshot?.last_status || snapshot?.phase || '-'} ${snapshot?.last_http_status ? `/ ${snapshot.last_http_status}` : ''}`.trim()}
                                                 </div>
                                             </td>
                                             <td className="max-w-[280px] py-1.5 pr-3 font-mono text-[11px] text-muted-foreground">

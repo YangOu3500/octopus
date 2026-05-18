@@ -203,6 +203,7 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 			ModelName:     item.ModelName,
 			SiteID:        runtimeState.SiteID,
 			SiteAccountID: runtimeState.SiteAccountID,
+			AttemptMeta:   runtimeState.AttemptMeta,
 			AttemptCount:  len(iter.Attempts()) + 1,
 		})
 
