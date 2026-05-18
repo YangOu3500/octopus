@@ -1279,6 +1279,7 @@
             "loading": "Loading channel model health...",
             "loadFailed": "Failed to load channel model health",
             "empty": "No channel model health rows match the current filters",
+            "autoRefresh": "Realtime refresh",
             "searchModel": "Search models",
             "channelAll": "All channels",
             "cooldown": "Cooling down",

@@ -156,6 +156,7 @@ export type ChannelModelHealthParams = {
     channelId?: number | null;
     model?: string;
     source?: string;
+    refetchIntervalMs?: number | false;
 };
 
 /**
@@ -326,6 +327,7 @@ export function useChannelModelHealth(params: ChannelModelHealthParams = {}) {
     const channelId = params.channelId ?? null;
     const model = params.model?.trim() ?? '';
     const source = params.source?.trim() ?? '';
+    const refetchIntervalMs = params.refetchIntervalMs === undefined ? 30000 : params.refetchIntervalMs;
 
     return useQuery({
         queryKey: ['channels', 'model-health', timeRange, channelId, model, source],
@@ -337,7 +339,7 @@ export function useChannelModelHealth(params: ChannelModelHealthParams = {}) {
             return apiClient.get<ChannelModelHealthResult>(`/api/v1/channel/model-health?${search.toString()}`);
         },
         select: normalizeChannelModelHealth,
-        refetchInterval: 30000,
+        refetchInterval: refetchIntervalMs,
     });
 }
 

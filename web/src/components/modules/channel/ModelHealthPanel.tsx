@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Activity, AlertTriangle, Gauge, LoaderCircle, RefreshCw, Search, Server, ShieldCheck, Thermometer, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useChannelList, useChannelModelHealth, type ChannelModelHealthRow } from '@/api/endpoints/channel';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
 function formatNumber(value: number | undefined) {
@@ -111,6 +112,8 @@ export function ChannelModelHealthPanel() {
     const [channelId, setChannelId] = useState('all');
     const [source, setSource] = useState('all');
     const [modelQuery, setModelQuery] = useState('');
+    const [autoRefresh, setAutoRefresh] = useState(true);
+    const [refreshInterval, setRefreshInterval] = useState('30000');
     const { data: channelsData } = useChannelList();
     const {
         data,
@@ -123,16 +126,21 @@ export function ChannelModelHealthPanel() {
         channelId: channelId === 'all' ? null : Number(channelId),
         model: modelQuery,
         source,
+        refetchIntervalMs: autoRefresh ? Number(refreshInterval) : false,
     });
 
     const rows = data?.rows ?? [];
     const summary = data?.summary;
-    const filteredChannels = useMemo(
-        () => (channelsData ?? []).map((item) => item.raw).sort((a, b) => a.name.localeCompare(b.name)),
-        [channelsData],
-    );
+    const filteredChannels = (channelsData ?? [])
+        .map((item) => item.raw)
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-    const metricCards = useMemo(() => [
+    useEffect(() => {
+        if (!autoRefresh) return;
+        void refetch();
+    }, [autoRefresh, refreshInterval, refetch]);
+
+    const metricCards = [
         {
             id: 'rows',
             icon: Server,
@@ -167,7 +175,7 @@ export function ChannelModelHealthPanel() {
                 })
                 : t('stats.loadSub', { cooldown: summary?.cooling_down_count ?? 0 }),
         },
-    ], [summary, t]);
+    ];
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
@@ -232,6 +240,20 @@ export function ChannelModelHealthPanel() {
                                     className="h-9 rounded-lg pl-9"
                                 />
                             </div>
+                            <label className="flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground">
+                                <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+                                {t('autoRefresh')}
+                            </label>
+                            <Select value={refreshInterval} onValueChange={setRefreshInterval}>
+                                <SelectTrigger className="h-9 w-[7rem] rounded-lg" disabled={!autoRefresh}>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="5000">5s</SelectItem>
+                                    <SelectItem value="10000">10s</SelectItem>
+                                    <SelectItem value="30000">30s</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" onClick={() => refetch()}>
                                 <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
                                 {t('refresh')}

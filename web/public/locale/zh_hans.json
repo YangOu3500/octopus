@@ -1279,6 +1279,7 @@
             "loading": "正在加载渠道模型健康度...",
             "loadFailed": "渠道模型健康度加载失败",
             "empty": "当前筛选条件下没有渠道模型健康记录",
+            "autoRefresh": "实时刷新",
             "searchModel": "搜索模型",
             "channelAll": "全部渠道",
             "cooldown": "冷却中",
