@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Activity, AlertTriangle, Gauge, LoaderCircle, RefreshCw, Search, Server, ShieldCheck, Thermometer, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useChannelList, useChannelModelHealth, type ChannelModelHealthRow } from '@/api/endpoints/channel';
@@ -10,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+
+const HEALTH_ROW_GRID_COLUMNS = 'minmax(18rem,1.45fr) minmax(12rem,0.95fr) minmax(11rem,0.9fr) minmax(10rem,0.8fr) minmax(10rem,0.8fr) minmax(12rem,0.95fr) minmax(8rem,0.65fr) minmax(12rem,0.9fr) minmax(11rem,0.85fr) minmax(14rem,1fr)';
 
 function formatNumber(value: number | undefined) {
     if (!value || value <= 0) return '-';
@@ -108,6 +111,7 @@ function quotaLabel(t: ReturnType<typeof useTranslations<'channel.health'>>, sta
 
 export function ChannelModelHealthPanel() {
     const t = useTranslations('channel.health');
+    const scrollRef = useRef<HTMLDivElement | null>(null);
     const [timeRange, setTimeRange] = useState('24h');
     const [channelId, setChannelId] = useState('all');
     const [source, setSource] = useState('all');
@@ -134,6 +138,21 @@ export function ChannelModelHealthPanel() {
     const filteredChannels = (channelsData ?? [])
         .map((item) => item.raw)
         .sort((a, b) => a.name.localeCompare(b.name));
+
+    // eslint-disable-next-line react-hooks/incompatible-library
+    const rowVirtualizer = useVirtualizer({
+        count: rows.length,
+        getScrollElement: () => scrollRef.current,
+        getItemKey: (index) => {
+            const row = rows[index];
+            return row ? `${row.channel_id}-${row.model_name}` : `health-row-${index}`;
+        },
+        estimateSize: () => 112,
+        measureElement: (element) =>
+            element instanceof HTMLElement ? element.offsetHeight : element.getBoundingClientRect().height,
+        overscan: 8,
+    });
+    const virtualRows = rowVirtualizer.getVirtualItems();
 
     useEffect(() => {
         if (!autoRefresh) return;
@@ -293,121 +312,137 @@ export function ChannelModelHealthPanel() {
                         {t('loadFailed')}
                     </div>
                 ) : (
-                    <div className="h-full overflow-x-auto">
-                        <table className="w-full min-w-[92rem] text-left text-sm">
-                            <thead className="sticky top-0 z-10 border-b border-border bg-muted/90 text-xs text-muted-foreground backdrop-blur">
-                                <tr>
-                                    <th className="px-3 py-2">{t('table.channel')}</th>
-                                    <th className="px-3 py-2">{t('table.health')}</th>
-                                    <th className="px-3 py-2">{t('table.calls')}</th>
-                                    <th className="px-3 py-2">{t('table.latency')}</th>
-                                    <th className="px-3 py-2">{t('table.throughput')}</th>
-                                    <th className="px-3 py-2">{t('table.tokens')}</th>
-                                    <th className="px-3 py-2">{t('table.cost')}</th>
-                                    <th className="px-3 py-2">{t('table.load')}</th>
-                                    <th className="px-3 py-2">{t('table.quota')}</th>
-                                    <th className="px-3 py-2">{t('table.lastFailure')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={10} className="px-3 py-12 text-center text-sm text-muted-foreground">
-                                            {t('empty')}
-                                        </td>
-                                    </tr>
-                                ) : rows.map((row) => (
-                                    <tr key={`${row.channel_id}-${row.model_name}`} className="border-b border-border/60 align-top last:border-0">
-                                        <td className="max-w-[18rem] px-3 py-3">
-                                            <div className="flex min-w-0 items-center gap-2">
-                                                <div className="truncate font-medium" title={row.channel_name}>{row.channel_name || `#${row.channel_id}`}</div>
-                                                {row.managed ? <Badge variant="outline" className="h-5 rounded-md px-1.5 text-[10px]">{t('managed')}</Badge> : null}
-                                            </div>
-                                            <div className="mt-1 truncate text-xs text-muted-foreground" title={row.model_name}>{row.model_name}</div>
-                                            {row.site_account_name || row.site_name ? (
-                                                <div className="mt-1 truncate text-xs text-muted-foreground" title={row.site_account_name || row.site_name}>
-                                                    {row.site_account_name || row.site_name}
+                    <div ref={scrollRef} className="h-full overflow-auto overscroll-contain">
+                        <div className="min-w-[92rem] text-left text-sm">
+                            <div
+                                className="sticky top-0 z-10 grid border-b border-border bg-muted/90 text-xs text-muted-foreground backdrop-blur"
+                                style={{ gridTemplateColumns: HEALTH_ROW_GRID_COLUMNS }}
+                            >
+                                <div className="px-3 py-2 font-medium">{t('table.channel')}</div>
+                                <div className="px-3 py-2 font-medium">{t('table.health')}</div>
+                                <div className="px-3 py-2 font-medium">{t('table.calls')}</div>
+                                <div className="px-3 py-2 font-medium">{t('table.latency')}</div>
+                                <div className="px-3 py-2 font-medium">{t('table.throughput')}</div>
+                                <div className="px-3 py-2 font-medium">{t('table.tokens')}</div>
+                                <div className="px-3 py-2 font-medium">{t('table.cost')}</div>
+                                <div className="px-3 py-2 font-medium">{t('table.load')}</div>
+                                <div className="px-3 py-2 font-medium">{t('table.quota')}</div>
+                                <div className="px-3 py-2 font-medium">{t('table.lastFailure')}</div>
+                            </div>
+
+                            {rows.length === 0 ? (
+                                <div className="px-3 py-12 text-center text-sm text-muted-foreground">
+                                    {t('empty')}
+                                </div>
+                            ) : (
+                                <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+                                    {virtualRows.map((virtualRow) => {
+                                        const row = rows[virtualRow.index];
+                                        if (!row) return null;
+
+                                        return (
+                                            <div
+                                                key={virtualRow.key}
+                                                data-index={virtualRow.index}
+                                                ref={rowVirtualizer.measureElement}
+                                                className="absolute left-0 top-0 grid w-full border-b border-border/60"
+                                                style={{
+                                                    gridTemplateColumns: HEALTH_ROW_GRID_COLUMNS,
+                                                    transform: `translateY(${virtualRow.start}px)`,
+                                                }}
+                                            >
+                                                <div className="max-w-[18rem] px-3 py-3">
+                                                    <div className="flex min-w-0 items-center gap-2">
+                                                        <div className="truncate font-medium" title={row.channel_name}>{row.channel_name || `#${row.channel_id}`}</div>
+                                                        {row.managed ? <Badge variant="outline" className="h-5 rounded-md px-1.5 text-[10px]">{t('managed')}</Badge> : null}
+                                                    </div>
+                                                    <div className="mt-1 truncate text-xs text-muted-foreground" title={row.model_name}>{row.model_name}</div>
+                                                    {row.site_account_name || row.site_name ? (
+                                                        <div className="mt-1 truncate text-xs text-muted-foreground" title={row.site_account_name || row.site_name}>
+                                                            {row.site_account_name || row.site_name}
+                                                        </div>
+                                                    ) : null}
                                                 </div>
-                                            ) : null}
-                                        </td>
-                                        <td className="px-3 py-3 tabular-nums">
-                                            <div className={cn('text-base font-semibold', healthTone(row.health_score))}>
-                                                {row.health_score.toFixed(1)}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {row.health_sample_count ? t('healthSamples', {
-                                                    success: row.health_success_count,
-                                                    total: row.health_sample_count,
-                                                    rate: formatPercent(row.health_success_rate),
-                                                }) : t('noSamples')}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {t('emptyRate')}: {formatPercent(row.empty_response_rate, row.health_sample_count > 0)} / 429 {formatNumber(row.rate_limit_count)}
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-3 tabular-nums">
-                                            <Badge variant="outline" className={cn('rounded-md text-[11px]', rowStatusTone(row))}>
-                                                {t(`status.${rowStatus(row)}`)}
-                                            </Badge>
-                                            <div className="mt-1 text-xs text-muted-foreground">
-                                                {t('callMeta', {
-                                                    success: row.success_count,
-                                                    failed: row.failure_count,
-                                                    rate: formatPercent(row.success_rate, row.request_count > 0),
-                                                })}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">{t('requests')}: {formatNumber(row.request_count)}</div>
-                                        </td>
-                                        <td className="px-3 py-3 tabular-nums">
-                                            <div>{t('ttfb')}: {formatMS(row.avg_ttfb_ms)}</div>
-                                            <div className="text-xs text-muted-foreground">{t('duration')}: {formatMS(row.avg_total_ms)}</div>
-                                        </td>
-                                        <td className="px-3 py-3 tabular-nums">
-                                            <div>{formatDecimal(row.tokens_per_second, 1)} Tok/s</div>
-                                            <div className="text-xs text-muted-foreground">RPM {formatDecimal(row.rpm, 2)}</div>
-                                        </td>
-                                        <td className="px-3 py-3 tabular-nums">
-                                            <div>{t('tokenIn')}: {formatNumber(row.input_tokens)}</div>
-                                            <div className="text-xs text-muted-foreground">{t('tokenOut')}: {formatNumber(row.output_tokens)}</div>
-                                            <div className="text-xs text-muted-foreground">{t('tokenCache')}: {formatNumber(row.cache_tokens)}</div>
-                                        </td>
-                                        <td className="px-3 py-3 tabular-nums">{formatCost(row.estimated_cost)}</td>
-                                        <td className="px-3 py-3 tabular-nums">
-                                            <div>{t('activeSelections')}: {formatNumber(row.active_selections)}</div>
-                                            {row.channel_concurrency_limit ? (
-                                                <div className="mt-1 text-xs text-muted-foreground">
-                                                    {t('channelConcurrency')}: {(row.channel_concurrency_active ?? 0).toLocaleString()} / {row.channel_concurrency_limit}
+                                                <div className="px-3 py-3 tabular-nums">
+                                                    <div className={cn('text-base font-semibold', healthTone(row.health_score))}>
+                                                        {row.health_score.toFixed(1)}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {row.health_sample_count ? t('healthSamples', {
+                                                            success: row.health_success_count,
+                                                            total: row.health_sample_count,
+                                                            rate: formatPercent(row.health_success_rate),
+                                                        }) : t('noSamples')}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {t('emptyRate')}: {formatPercent(row.empty_response_rate, row.health_sample_count > 0)} / 429 {formatNumber(row.rate_limit_count)}
+                                                    </div>
                                                 </div>
-                                            ) : null}
-                                            {row.cooling_down ? (
-                                                <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                                                    {row.cooldown_reason || t('cooldown')} / {formatCooldown(row.cooldown_remaining_ms)}
+                                                <div className="px-3 py-3 tabular-nums">
+                                                    <Badge variant="outline" className={cn('rounded-md text-[11px]', rowStatusTone(row))}>
+                                                        {t(`status.${rowStatus(row)}`)}
+                                                    </Badge>
+                                                    <div className="mt-1 text-xs text-muted-foreground">
+                                                        {t('callMeta', {
+                                                            success: row.success_count,
+                                                            failed: row.failure_count,
+                                                            rate: formatPercent(row.success_rate, row.request_count > 0),
+                                                        })}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">{t('requests')}: {formatNumber(row.request_count)}</div>
                                                 </div>
-                                            ) : (
-                                                <div className="mt-1 text-xs text-muted-foreground">{t('noCooldown')}</div>
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-3">
-                                            <Badge variant="outline" className={cn('rounded-md text-[11px]', quotaTone(row.quota_status))}>
-                                                <Wallet className="size-3" />
-                                                {quotaLabel(t, row.quota_status)}
-                                            </Badge>
-                                            <div className="mt-1 text-xs text-muted-foreground">
-                                                {row.quota_balance !== undefined ? `${formatDecimal(row.quota_balance, 2)} / ${formatDecimal(row.quota_used, 2)}` : '-'}
+                                                <div className="px-3 py-3 tabular-nums">
+                                                    <div>{t('ttfb')}: {formatMS(row.avg_ttfb_ms)}</div>
+                                                    <div className="text-xs text-muted-foreground">{t('duration')}: {formatMS(row.avg_total_ms)}</div>
+                                                </div>
+                                                <div className="px-3 py-3 tabular-nums">
+                                                    <div>{formatDecimal(row.tokens_per_second, 1)} Tok/s</div>
+                                                    <div className="text-xs text-muted-foreground">RPM {formatDecimal(row.rpm, 2)}</div>
+                                                </div>
+                                                <div className="px-3 py-3 tabular-nums">
+                                                    <div>{t('tokenIn')}: {formatNumber(row.input_tokens)}</div>
+                                                    <div className="text-xs text-muted-foreground">{t('tokenOut')}: {formatNumber(row.output_tokens)}</div>
+                                                    <div className="text-xs text-muted-foreground">{t('tokenCache')}: {formatNumber(row.cache_tokens)}</div>
+                                                </div>
+                                                <div className="px-3 py-3 tabular-nums">{formatCost(row.estimated_cost)}</div>
+                                                <div className="px-3 py-3 tabular-nums">
+                                                    <div>{t('activeSelections')}: {formatNumber(row.active_selections)}</div>
+                                                    {row.channel_concurrency_limit ? (
+                                                        <div className="mt-1 text-xs text-muted-foreground">
+                                                            {t('channelConcurrency')}: {(row.channel_concurrency_active ?? 0).toLocaleString()} / {row.channel_concurrency_limit}
+                                                        </div>
+                                                    ) : null}
+                                                    {row.cooling_down ? (
+                                                        <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                                                            {row.cooldown_reason || t('cooldown')} / {formatCooldown(row.cooldown_remaining_ms)}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mt-1 text-xs text-muted-foreground">{t('noCooldown')}</div>
+                                                    )}
+                                                </div>
+                                                <div className="px-3 py-3">
+                                                    <Badge variant="outline" className={cn('rounded-md text-[11px]', quotaTone(row.quota_status))}>
+                                                        <Wallet className="size-3" />
+                                                        {quotaLabel(t, row.quota_status)}
+                                                    </Badge>
+                                                    <div className="mt-1 text-xs text-muted-foreground">
+                                                        {row.quota_balance !== undefined ? `${formatDecimal(row.quota_balance, 2)} / ${formatDecimal(row.quota_used, 2)}` : '-'}
+                                                    </div>
+                                                </div>
+                                                <div className="max-w-[14rem] px-3 py-3">
+                                                    <div className="text-xs tabular-nums text-muted-foreground">
+                                                        {row.last_http_status ? `HTTP ${row.last_http_status}` : '-'}
+                                                    </div>
+                                                    <div className="mt-1 line-clamp-2 text-xs text-destructive" title={row.last_failure_reason || ''}>
+                                                        {row.last_failure_reason || '-'}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </td>
-                                        <td className="max-w-[14rem] px-3 py-3">
-                                            <div className="text-xs tabular-nums text-muted-foreground">
-                                                {row.last_http_status ? `HTTP ${row.last_http_status}` : '-'}
-                                            </div>
-                                            <div className="mt-1 line-clamp-2 text-xs text-destructive" title={row.last_failure_reason || ''}>
-                                                {row.last_failure_reason || '-'}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </section>
