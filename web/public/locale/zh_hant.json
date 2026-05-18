@@ -249,6 +249,10 @@
                     "label": "活躍請求 Debug",
                     "entry": "日誌頁活躍請求"
                 },
+                "safeExport": {
+                    "label": "安全排障匯出",
+                    "entry": "日誌 / 鏈路 / 健康匯出"
+                },
                 "health": {
                     "label": "健康分 / 冷卻",
                     "entry": "設定頁 / 調度預覽"

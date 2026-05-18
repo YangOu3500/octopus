@@ -6,6 +6,7 @@ import {
     BarChart3,
     CheckCircle2,
     Clock3,
+    Download,
     GitBranch,
     KeyRound,
     ListChecks,
@@ -36,7 +37,7 @@ type OperationItem = {
 };
 
 type CapabilityItem = {
-    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'liveDebug' | 'health' | 'channelHealth' | 'selection' | 'channelConcurrency' | 'modelAssociation' | 'probe' | 'quota';
+    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'liveDebug' | 'safeExport' | 'health' | 'channelHealth' | 'selection' | 'channelConcurrency' | 'modelAssociation' | 'probe' | 'quota';
     nav: NavItem;
     channelTab?: ChannelTab;
     icon: LucideIcon;
@@ -159,6 +160,7 @@ export function GatewayOperationsPanel() {
         { id: 'streamGate', nav: 'setting', icon: ListChecks, status: 'done' },
         { id: 'trace', nav: 'traces', icon: Radar, status: 'done' },
         { id: 'liveDebug', nav: 'log', icon: Activity, status: 'partial' },
+        { id: 'safeExport', nav: 'log', icon: Download, status: 'done' },
         { id: 'health', nav: 'setting', icon: Activity, status: 'partial' },
         { id: 'channelHealth', nav: 'channel', channelTab: 'health', icon: Thermometer, status: 'done' },
         { id: 'selection', nav: 'group', icon: BarChart3, status: 'done' },

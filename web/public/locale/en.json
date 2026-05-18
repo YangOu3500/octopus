@@ -249,6 +249,10 @@
                     "label": "Active Request Debug",
                     "entry": "Log active requests"
                 },
+                "safeExport": {
+                    "label": "Safe Diagnostic Export",
+                    "entry": "Logs / traces / health exports"
+                },
                 "health": {
                     "label": "Health Score / Cooldown",
                     "entry": "Settings / routing preview"

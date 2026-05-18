@@ -249,6 +249,10 @@
                     "label": "活跃请求 Debug",
                     "entry": "日志页活跃请求"
                 },
+                "safeExport": {
+                    "label": "安全排障导出",
+                    "entry": "日志 / 链路 / 健康导出"
+                },
                 "health": {
                     "label": "健康分 / 冷却",
                     "entry": "设置页 / 调度预览"
