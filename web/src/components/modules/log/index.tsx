@@ -277,7 +277,7 @@ export function Log() {
         data: activeRequests,
         isFetching: isFetchingActiveRequests,
         refetch: refetchActiveRequests,
-    } = useActiveRequests({ refetchIntervalMs: autoRefresh ? 2000 : 5000 });
+    } = useActiveRequests({ refetchIntervalMs: autoRefresh ? 2000 : false });
 
     const filters = useMemo<LogListFilters>(() => ({
         time_range: nonAll(timeRange),

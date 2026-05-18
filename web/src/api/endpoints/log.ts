@@ -191,8 +191,8 @@ export function useLogDetail(logID: number | undefined, enabled: boolean) {
     });
 }
 
-export function useActiveRequests(options: { refetchIntervalMs?: number } = {}) {
-    const { refetchIntervalMs = 3000 } = options;
+export function useActiveRequests(options: { refetchIntervalMs?: number | false } = {}) {
+    const { refetchIntervalMs = false } = options;
     return useQuery({
         queryKey: ['logs', 'active'],
         queryFn: async () => apiClient.get<ActiveRequestListResponse>('/api/v1/log/active'),
