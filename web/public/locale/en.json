@@ -192,8 +192,8 @@
             "description": "Review request, trace, channel, model, API key, and performance status.",
             "window": "Stream {stream} / model test {modelTest}",
             "empty": "No data",
-            "apiKeyBreakdown": "API Key Analysis",
-            "sourceBreakdown": "Source Analysis",
+            "apiKeyBreakdown": "Top API Keys",
+            "sourceBreakdown": "Request Sources",
             "breakdownMeta": "{requests} requests / {failures} failures / {rate}",
             "capabilityTitle": "Capability Index",
             "capabilityDescription": "The full capability index remains in Settings.",
@@ -208,23 +208,23 @@
                     "sub": "{failover} requests used failover"
                 },
                 "traces": {
-                    "label": "Traces / Attempts",
+                    "label": "Traces",
                     "sub": "Max {max} attempts per request"
                 },
                 "channels": {
-                    "label": "Channel Analysis",
+                    "label": "Channels",
                     "sub": "{failed} failed requests"
                 },
                 "models": {
-                    "label": "Model Analysis",
+                    "label": "Models",
                     "empty": "No model samples"
                 },
                 "apiKeys": {
-                    "label": "API Key Analysis",
+                    "label": "API Key",
                     "empty": "No API key samples"
                 },
                 "performance": {
-                    "label": "Performance Analysis",
+                    "label": "Performance",
                     "sub": "TTFB {ttfb}"
                 }
             },

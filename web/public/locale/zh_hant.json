@@ -192,8 +192,8 @@
             "description": "查看請求、鏈路、渠道、模型、API Key 與效能狀態。",
             "window": "串流 {stream} / 模型測試 {modelTest}",
             "empty": "暫無資料",
-            "apiKeyBreakdown": "API Key 分析",
-            "sourceBreakdown": "來源分析",
+            "apiKeyBreakdown": "API Key 排行",
+            "sourceBreakdown": "來源分布",
             "breakdownMeta": "{requests} 請求 / {failures} 失敗 / {rate}",
             "capabilityTitle": "能力索引",
             "capabilityDescription": "完整能力核對保留在設定頁。",
@@ -204,27 +204,27 @@
             },
             "items": {
                 "requests": {
-                    "label": "請求 / Requests",
+                    "label": "請求",
                     "sub": "{failover} 個請求發生故障轉移"
                 },
                 "traces": {
-                    "label": "追蹤 / Attempts",
+                    "label": "鏈路",
                     "sub": "單請求最多 {max} 次嘗試"
                 },
                 "channels": {
-                    "label": "渠道分析",
+                    "label": "渠道",
                     "sub": "{failed} 個失敗請求"
                 },
                 "models": {
-                    "label": "模型分析",
+                    "label": "模型",
                     "empty": "暫無模型樣本"
                 },
                 "apiKeys": {
-                    "label": "API Key 分析",
+                    "label": "API Key",
                     "empty": "暫無 API Key 樣本"
                 },
                 "performance": {
-                    "label": "效能分析",
+                    "label": "效能",
                     "sub": "TTFB {ttfb}"
                 }
             },

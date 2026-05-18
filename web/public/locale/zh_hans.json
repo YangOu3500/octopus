@@ -192,8 +192,8 @@
             "description": "查看请求、链路、渠道、模型、API Key 与性能状态。",
             "window": "流式 {stream} / 模型测试 {modelTest}",
             "empty": "暂无数据",
-            "apiKeyBreakdown": "API Key 分析",
-            "sourceBreakdown": "来源分析",
+            "apiKeyBreakdown": "API Key 排行",
+            "sourceBreakdown": "来源分布",
             "breakdownMeta": "{requests} 请求 / {failures} 失败 / {rate}",
             "capabilityTitle": "能力索引",
             "capabilityDescription": "完整能力核对保留在设置页。",
@@ -204,27 +204,27 @@
             },
             "items": {
                 "requests": {
-                    "label": "请求 / Requests",
+                    "label": "请求",
                     "sub": "{failover} 个请求发生故障转移"
                 },
                 "traces": {
-                    "label": "追踪 / Attempts",
+                    "label": "链路",
                     "sub": "单请求最多 {max} 次尝试"
                 },
                 "channels": {
-                    "label": "渠道分析",
+                    "label": "渠道",
                     "sub": "{failed} 个失败请求"
                 },
                 "models": {
-                    "label": "模型分析",
+                    "label": "模型",
                     "empty": "暂无模型样本"
                 },
                 "apiKeys": {
-                    "label": "API Key 分析",
+                    "label": "API Key",
                     "empty": "暂无 API Key 样本"
                 },
                 "performance": {
-                    "label": "性能分析",
+                    "label": "性能",
                     "sub": "TTFB {ttfb}"
                 }
             },
