@@ -1264,6 +1264,15 @@
             "count": "{count} 個執行中",
             "refresh": "刷新",
             "empty": "目前沒有執行中的請求",
+            "copyRequestPreview": "複製脫敏請求預覽",
+            "copyResponsePreview": "複製脫敏響應預覽",
+            "export": {
+                "button": "匯出",
+                "empty": "沒有可匯出的活躍請求 Debug 資料",
+                "success": "活躍請求 Debug 已匯出",
+                "failed": "活躍請求 Debug 匯出失敗",
+                "safe": "匯出僅包含脫敏預覽和結構化執行態欄位，不包含完整請求 / 響應正文或認證資訊"
+            },
             "eventStream": {
                 "connected": "事件流已連接",
                 "disconnected": "事件流未連接",

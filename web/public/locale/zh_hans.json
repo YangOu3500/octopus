@@ -1264,6 +1264,15 @@
             "count": "{count} 个运行中",
             "refresh": "刷新",
             "empty": "当前没有运行中的请求",
+            "copyRequestPreview": "复制脱敏请求预览",
+            "copyResponsePreview": "复制脱敏响应预览",
+            "export": {
+                "button": "导出",
+                "empty": "没有可导出的活跃请求 Debug 数据",
+                "success": "活跃请求 Debug 已导出",
+                "failed": "活跃请求 Debug 导出失败",
+                "safe": "导出仅包含脱敏预览和结构化运行态字段，不包含完整请求 / 响应正文或认证信息"
+            },
             "eventStream": {
                 "connected": "事件流已连接",
                 "disconnected": "事件流未连接",

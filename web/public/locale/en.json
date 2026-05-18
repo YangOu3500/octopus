@@ -1264,6 +1264,15 @@
             "count": "{count} running",
             "refresh": "Refresh",
             "empty": "No requests are currently running",
+            "copyRequestPreview": "Copy redacted request preview",
+            "copyResponsePreview": "Copy redacted response preview",
+            "export": {
+                "button": "Export",
+                "empty": "No active request debug data to export",
+                "success": "Active request debug exported",
+                "failed": "Failed to export active request debug",
+                "safe": "The export only contains redacted previews and structured runtime fields, without full request / response bodies or auth data"
+            },
             "eventStream": {
                 "connected": "Event stream connected",
                 "disconnected": "Event stream disconnected",

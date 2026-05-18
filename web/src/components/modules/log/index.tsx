@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type ActiveRequestEvent, type ActiveRequestSnapshot, type LogListFilters, useActiveRequests, useLogs } from '@/api/endpoints/log';
 import { LogCard, type LogSiteActionTarget, type LogSiteActionTargets } from './Item';
-import { Activity, Loader2, RefreshCw, Search, X } from 'lucide-react';
+import { Activity, Download, Loader2, RefreshCw, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { VirtualizedGrid } from '@/components/common/VirtualizedGrid';
 import { useChannelList } from '@/api/endpoints/channel';
 import { useSiteChannelList } from '@/api/endpoints/site-channel';
 import { useNavStore } from '@/components/modules/navbar';
+import { CopyIconButton } from '@/components/common/CopyButton';
+import { toast } from '@/components/common/Toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +31,8 @@ type ManagedChannelLookup = {
         group_key: string;
     } | null;
 };
+
+const ACTIVE_DEBUG_EXPORT_VERSION = 1;
 
 function getBaseGroupKey(groupKey: string) {
     return groupKey.split('::', 1)[0] || groupKey;
@@ -166,6 +170,103 @@ function formatDebugPreview(value: string | undefined) {
     return normalized.length > 160 ? `${normalized.slice(0, 160)}...` : normalized;
 }
 
+function formatActiveClientIP(value: string | undefined) {
+    const ip = value?.trim();
+    if (!ip) return undefined;
+    const ipv4 = ip.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/);
+    if (ipv4) return `${ipv4[1]}.*`;
+    if (ip.includes(':') && ip.length > 24) return `${ip.slice(0, 20)}...`;
+    return ip;
+}
+
+function exportTimestamp() {
+    return new Date().toISOString();
+}
+
+function exportFilenameTimestamp() {
+    return exportTimestamp().replace(/[:.]/g, '-');
+}
+
+function downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function sanitizeActiveSnapshot(snapshot: ActiveRequestSnapshot | undefined) {
+    if (!snapshot) return undefined;
+    return {
+        id: snapshot.id,
+        api_key_id: snapshot.api_key_id,
+        group_id: snapshot.group_id,
+        request_model: snapshot.request_model,
+        request_source: snapshot.request_source,
+        request_stream: snapshot.request_stream,
+        client_ip: formatActiveClientIP(snapshot.client_ip),
+        started_at: snapshot.started_at,
+        updated_at: snapshot.updated_at,
+        elapsed_ms: snapshot.elapsed_ms,
+        phase: snapshot.phase,
+        channel_id: snapshot.channel_id,
+        channel_name: snapshot.channel_name,
+        channel_key_id: snapshot.channel_key_id,
+        model_name: snapshot.model_name,
+        site_id: snapshot.site_id,
+        site_account_id: snapshot.site_account_id,
+        attempts_count: snapshot.attempts_count,
+        last_status: snapshot.last_status,
+        last_http_status: snapshot.last_http_status,
+        last_failure_reason: snapshot.last_failure_reason,
+        request_preview: snapshot.request_preview,
+        response_preview: snapshot.response_preview,
+        written: snapshot.written,
+        first_token_seen: snapshot.first_token_seen,
+        used_ws: snapshot.used_ws,
+    };
+}
+
+function buildActiveDebugExport(
+    items: ActiveRequestSnapshot[],
+    total: number,
+    recentEvents: ActiveRequestEvent[],
+    isStreamConnected: boolean,
+) {
+    return {
+        export_version: ACTIVE_DEBUG_EXPORT_VERSION,
+        exported_at: exportTimestamp(),
+        safety: {
+            content: 'server_redacted_active_request_debug_snapshot',
+            excludes: [
+                'request body',
+                'response body',
+                'full api key',
+                'cookie',
+                'authorization',
+                'set-cookie',
+                'x-api-key',
+                'bearer token',
+                'session',
+                'jwt',
+            ],
+        },
+        stream_connected: isStreamConnected,
+        total,
+        items: items.map(sanitizeActiveSnapshot),
+        recent_events: recentEvents.map((event) => ({
+            type: event.type,
+            updated_at: event.updated_at,
+            snapshot: sanitizeActiveSnapshot(event.snapshot),
+            list_total: event.list?.total,
+        })),
+    };
+}
+
 function ActiveRequestsPanel({
     items,
     total,
@@ -186,6 +287,23 @@ function ActiveRequestsPanel({
     const t = useTranslations('log.active');
     const visibleItems = items.slice(0, 4);
     const visibleEvents = recentEvents.slice(0, 5);
+    const canExport = items.length > 0 || recentEvents.length > 0;
+
+    const handleExport = useCallback(() => {
+        if (!canExport) {
+            toast.warning(t('export.empty'));
+            return;
+        }
+        try {
+            downloadJson(
+                `octopus-active-debug-${exportFilenameTimestamp()}.json`,
+                buildActiveDebugExport(items, total, recentEvents, isStreamConnected),
+            );
+            toast.success(t('export.success'), { description: t('export.safe') });
+        } catch (error) {
+            toast.error(t('export.failed'), { description: error instanceof Error ? error.message : String(error) });
+        }
+    }, [canExport, isStreamConnected, items, recentEvents, t, total]);
 
     return (
         <div className="rounded-md border bg-background/40 p-3">
@@ -205,7 +323,11 @@ function ActiveRequestsPanel({
                         {t('eventStream.fallback')}
                     </Badge>
                 ) : null}
-                <Button type="button" size="sm" variant="ghost" className="ml-auto h-7 rounded-md px-2 text-xs" onClick={onRefresh}>
+                <Button type="button" size="sm" variant="ghost" className="ml-auto h-7 rounded-md px-2 text-xs" onClick={handleExport} disabled={!canExport}>
+                    <Download className="size-3.5" />
+                    {t('export.button')}
+                </Button>
+                <Button type="button" size="sm" variant="ghost" className="h-7 rounded-md px-2 text-xs" onClick={onRefresh}>
                     {isFetching ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
                     {t('refresh')}
                 </Button>
@@ -262,12 +384,36 @@ function ActiveRequestsPanel({
                                         </div>
                                     </td>
                                     <td className="max-w-[280px] py-2 pr-3 font-mono text-[11px]">
-                                        <div className="truncate" title={item.request_preview || undefined}>
-                                            <span className="text-muted-foreground">{t('requestPreview')} </span>
-                                            {formatDebugPreview(item.request_preview)}
+                                        <div className="flex min-w-0 items-center gap-1" title={item.request_preview || undefined}>
+                                            <span className="min-w-0 flex-1 truncate">
+                                                <span className="text-muted-foreground">{t('requestPreview')} </span>
+                                                {formatDebugPreview(item.request_preview)}
+                                            </span>
+                                            {item.request_preview ? (
+                                                <CopyIconButton
+                                                    text={item.request_preview}
+                                                    title={t('copyRequestPreview')}
+                                                    ariaLabel={t('copyRequestPreview')}
+                                                    className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                                    copyIconClassName="size-3"
+                                                    checkIconClassName="size-3"
+                                                />
+                                            ) : null}
                                         </div>
-                                        <div className="truncate text-muted-foreground" title={item.response_preview || undefined}>
-                                            {t('responsePreview')} {formatDebugPreview(item.response_preview)}
+                                        <div className="flex min-w-0 items-center gap-1 text-muted-foreground" title={item.response_preview || undefined}>
+                                            <span className="min-w-0 flex-1 truncate">
+                                                {t('responsePreview')} {formatDebugPreview(item.response_preview)}
+                                            </span>
+                                            {item.response_preview ? (
+                                                <CopyIconButton
+                                                    text={item.response_preview}
+                                                    title={t('copyResponsePreview')}
+                                                    ariaLabel={t('copyResponsePreview')}
+                                                    className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                                    copyIconClassName="size-3"
+                                                    checkIconClassName="size-3"
+                                                />
+                                            ) : null}
                                         </div>
                                     </td>
                                     <td className="py-2 text-right font-mono tabular-nums">
@@ -323,11 +469,35 @@ function ActiveRequestsPanel({
                                                 </div>
                                             </td>
                                             <td className="max-w-[280px] py-1.5 pr-3 font-mono text-[11px] text-muted-foreground">
-                                                <div className="truncate" title={snapshot?.request_preview || undefined}>
-                                                    {t('requestPreview')} {formatDebugPreview(snapshot?.request_preview)}
+                                                <div className="flex min-w-0 items-center gap-1" title={snapshot?.request_preview || undefined}>
+                                                    <span className="min-w-0 flex-1 truncate">
+                                                        {t('requestPreview')} {formatDebugPreview(snapshot?.request_preview)}
+                                                    </span>
+                                                    {snapshot?.request_preview ? (
+                                                        <CopyIconButton
+                                                            text={snapshot.request_preview}
+                                                            title={t('copyRequestPreview')}
+                                                            ariaLabel={t('copyRequestPreview')}
+                                                            className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                                            copyIconClassName="size-3"
+                                                            checkIconClassName="size-3"
+                                                        />
+                                                    ) : null}
                                                 </div>
-                                                <div className="truncate" title={snapshot?.response_preview || undefined}>
-                                                    {t('responsePreview')} {formatDebugPreview(snapshot?.response_preview)}
+                                                <div className="flex min-w-0 items-center gap-1" title={snapshot?.response_preview || undefined}>
+                                                    <span className="min-w-0 flex-1 truncate">
+                                                        {t('responsePreview')} {formatDebugPreview(snapshot?.response_preview)}
+                                                    </span>
+                                                    {snapshot?.response_preview ? (
+                                                        <CopyIconButton
+                                                            text={snapshot.response_preview}
+                                                            title={t('copyResponsePreview')}
+                                                            ariaLabel={t('copyResponsePreview')}
+                                                            className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                                            copyIconClassName="size-3"
+                                                            checkIconClassName="size-3"
+                                                        />
+                                                    ) : null}
                                                 </div>
                                             </td>
                                         </tr>
