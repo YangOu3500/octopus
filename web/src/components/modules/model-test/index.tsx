@@ -380,6 +380,24 @@ export function ModelTest() {
 
     const handleRun = () => handleRunRows(selectedRows);
 
+    const visibleResultKeys = useMemo(
+        () => rows.filter((row) => Boolean(results[row.key])).map((row) => row.key),
+        [results, rows],
+    );
+
+    const handleClearVisible = () => {
+        const keysToClear = new Set(visibleResultKeys);
+        if (keysToClear.size === 0) return;
+        setResults((previous) => {
+            const next = { ...previous };
+            for (const key of keysToClear) {
+                delete next[key];
+            }
+            return next;
+        });
+        toast.success(t('clearVisibleSuccess', { count: keysToClear.size }));
+    };
+
     const handleClear = () => setResults({});
 
     const summary = useMemo(() => {
@@ -480,6 +498,10 @@ export function ModelTest() {
                             <Button type="button" variant="outline" size="sm" onClick={handleExport} disabled={exportableResults.length === 0}>
                                 <Download className="size-4" />
                                 {t('export.button')}
+                            </Button>
+                            <Button type="button" variant="outline" size="sm" onClick={handleClearVisible} disabled={visibleResultKeys.length === 0}>
+                                <Trash2 className="size-4" />
+                                {t('clearVisible')}
                             </Button>
                             <Button type="button" variant="outline" size="sm" onClick={handleClear} disabled={Object.keys(results).length === 0}>
                                 <RotateCcw className="size-4" />

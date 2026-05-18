@@ -999,7 +999,9 @@
             "model": "按模型测试"
         },
         "summary": "已测 {total} · 成功 {success} · 失败 {failed}",
-        "clear": "清空结果",
+        "clearVisible": "清空当前结果",
+        "clearVisibleSuccess": "已清空当前结果 {count} 条",
+        "clear": "清空全部",
         "running": "测试中...",
         "runSelected": "测试 {count} 项",
         "runComplete": "模型测试完成：成功 {success}，失败 {failed}",

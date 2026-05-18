@@ -999,7 +999,9 @@
             "model": "By model"
         },
         "summary": "Tested {total} · Success {success} · Failed {failed}",
-        "clear": "Clear",
+        "clearVisible": "Clear visible",
+        "clearVisibleSuccess": "Cleared {count} visible results",
+        "clear": "Clear all",
         "running": "Running...",
         "runSelected": "Test {count}",
         "runComplete": "Model test completed: {success} success, {failed} failed",
