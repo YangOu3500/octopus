@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, Circle, FlaskConical, FileSearch, Play, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Circle, FlaskConical, FileSearch, LoaderCircle, Play, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
 import { useChannelList, ChannelType, type Channel } from '@/api/endpoints/channel';
 import { useModelChannelList } from '@/api/endpoints/model';
 import { useRunModelTest, type ModelTestMode, type ModelTestResult, type ModelTestTarget } from '@/api/endpoints/model-test';
@@ -97,7 +97,8 @@ function formatCost(value?: number) {
     return `$${value.toFixed(6)}`;
 }
 
-function resultStatus(result?: ModelTestResult) {
+function resultStatus(result?: ModelTestResult, running = false) {
+    if (running) return 'running';
     if (!result) return 'idle';
     if (result.success) return 'success';
     return 'failed';
@@ -133,6 +134,7 @@ export function ModelTest() {
     const [stream, setStream] = useState(false);
     const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
     const [results, setResults] = useState<Record<string, ModelTestResult>>({});
+    const [runningKeys, setRunningKeys] = useState<Set<string>>(new Set());
 
     const modelNames = useMemo(() => {
         const names = new Set<string>();
@@ -233,10 +235,25 @@ export function ModelTest() {
             toast.error(t('emptySelection'));
             return;
         }
+        const rowKeys = rowsToRun.map((row) => row.key);
         const targets: ModelTestTarget[] = rowsToRun.map((row) => ({
             channel_id: row.channelId,
             model_name: row.modelName,
         }));
+        setRunningKeys((previous) => {
+            const next = new Set(previous);
+            for (const key of rowKeys) {
+                next.add(key);
+            }
+            return next;
+        });
+        setResults((previous) => {
+            const next = { ...previous };
+            for (const key of rowKeys) {
+                delete next[key];
+            }
+            return next;
+        });
         runModelTest.mutate({
             mode,
             targets,
@@ -254,9 +271,23 @@ export function ModelTest() {
                     }
                     return nextResults;
                 });
+                setRunningKeys((previous) => {
+                    const next = new Set(previous);
+                    for (const key of rowKeys) {
+                        next.delete(key);
+                    }
+                    return next;
+                });
                 toast.success(t('runComplete', { success: data.success, failed: data.failed }));
             },
             onError: (error) => {
+                setRunningKeys((previous) => {
+                    const next = new Set(previous);
+                    for (const key of rowKeys) {
+                        next.delete(key);
+                    }
+                    return next;
+                });
                 const message = error instanceof Error ? error.message : t('runFailed');
                 toast.error(message);
             },
@@ -486,8 +517,9 @@ export function ModelTest() {
                                     overscan={12}
                                     getItemKey={(row) => row.key}
                                     renderItem={(row) => {
+                                        const isRunning = runningKeys.has(row.key);
                                         const result = results[row.key];
-                                        const status = resultStatus(result);
+                                        const status = resultStatus(result, isRunning);
                                         return (
                                             <div
                                                 className="grid border-b border-border/60 text-sm align-top last:border-0"
@@ -521,7 +553,12 @@ export function ModelTest() {
                                                     </Badge>
                                                 </div>
                                                 <div className="px-3 py-3">
-                                                    {status === 'success' ? (
+                                                    {status === 'running' ? (
+                                                        <Badge variant="outline" className="rounded-md">
+                                                            <LoaderCircle className="size-3 animate-spin" />
+                                                            {t('status.running')}
+                                                        </Badge>
+                                                    ) : status === 'success' ? (
                                                         <Badge className="rounded-md bg-emerald-600 text-white">
                                                             <CheckCircle2 className="size-3" />
                                                             {t('status.success')}
@@ -553,7 +590,7 @@ export function ModelTest() {
                                                 <div className="px-3 py-3 tabular-nums">{formatCost(result?.estimated_cost)}</div>
                                                 <div className="min-w-0 px-3 py-3">
                                                     <div className="line-clamp-3 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
-                                                        {result?.response_text || result?.error_message || '-'}
+                                                        {isRunning ? t('running') : result?.response_text || result?.error_message || '-'}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-start gap-1 px-3 py-3">

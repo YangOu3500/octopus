@@ -998,6 +998,7 @@
         },
         "status": {
             "idle": "未测试",
+            "running": "测试中",
             "success": "成功",
             "failed": "失败",
             "disabled": "已禁用"

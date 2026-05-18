@@ -430,7 +430,7 @@ func TestRunModelTestConcurrencyOneRunsTargetsInOrder(t *testing.T) {
 		Type:     outbound.OutboundTypeOpenAIChat,
 		Enabled:  true,
 		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
-		Model:    "model-a,model-b,model-c",
+		Model:    "model-a,model-b,model-c,model-d",
 		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-concurrency-secret", Remark: "concurrency"}},
 	}
 	if err := op.ChannelCreate(channel, ctx); err != nil {
@@ -444,13 +444,19 @@ func TestRunModelTestConcurrencyOneRunsTargetsInOrder(t *testing.T) {
 			{ChannelID: channel.ID, ModelName: "model-a"},
 			{ChannelID: channel.ID, ModelName: "model-b"},
 			{ChannelID: channel.ID, ModelName: "model-c"},
+			{ChannelID: channel.ID, ModelName: "model-d"},
 		},
 	})
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
-	if result.Success != 3 || result.Failed != 0 {
+	if result.Success != 4 || result.Failed != 0 {
 		t.Fatalf("unexpected summary: %+v", result)
+	}
+	for i, item := range result.Results {
+		if item.Index != i+1 || item.LogID == 0 || item.TraceID == "" {
+			t.Fatalf("unexpected result metadata at %d: %+v", i, item)
+		}
 	}
 
 	mu.Lock()
@@ -461,7 +467,7 @@ func TestRunModelTestConcurrencyOneRunsTargetsInOrder(t *testing.T) {
 	if gotMaxActive != 1 {
 		t.Fatalf("expected at most one active request, got %d", gotMaxActive)
 	}
-	wantOrder := []string{"model-a", "model-b", "model-c"}
+	wantOrder := []string{"model-a", "model-b", "model-c", "model-d"}
 	if strings.Join(gotOrder, ",") != strings.Join(wantOrder, ",") {
 		t.Fatalf("request order = %v, want %v", gotOrder, wantOrder)
 	}

@@ -998,6 +998,7 @@
         },
         "status": {
             "idle": "Idle",
+            "running": "Running",
             "success": "Success",
             "failed": "Failed",
             "disabled": "Disabled"
