@@ -1105,6 +1105,20 @@
                 "action": "Action"
             }
         },
+        "audit": {
+            "title": "Audit Aggregation",
+            "scope": "{page} on this page / {total} total",
+            "unknown": "Unknown",
+            "failed": "Failed requests",
+            "failover": "Failover",
+            "stream": "Stream requests",
+            "avgAttempts": "Avg attempts",
+            "avgLatency": "Avg latency",
+            "costTokens": "Cost / Tokens",
+            "statusBreakdown": "Status breakdown",
+            "sourceBreakdown": "Source breakdown",
+            "modelBreakdown": "Model breakdown"
+        },
         "summary": {
             "total": "Total traces",
             "page": "{count} on this page",

@@ -270,6 +270,151 @@ function downloadJson(filename: string, payload: unknown) {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+type AuditBucket = {
+    key: string;
+    label: string;
+    count: number;
+    cost: number;
+    tokens: number;
+};
+
+function buildAuditBuckets(
+    traces: RequestTrace[],
+    keyForTrace: (trace: RequestTrace) => string | undefined,
+    labelForTrace: (trace: RequestTrace, key: string) => string,
+    limit = 5,
+) {
+    const buckets = new Map<string, AuditBucket>();
+    for (const trace of traces) {
+        const key = (keyForTrace(trace) || 'unknown').trim() || 'unknown';
+        const existing = buckets.get(key);
+        if (existing) {
+            existing.count += 1;
+            existing.cost += traceCost(trace);
+            existing.tokens += totalTokens(trace);
+            continue;
+        }
+        buckets.set(key, {
+            key,
+            label: labelForTrace(trace, key),
+            count: 1,
+            cost: traceCost(trace),
+            tokens: totalTokens(trace),
+        });
+    }
+    return [...buckets.values()]
+        .sort((left, right) => right.count - left.count || right.cost - left.cost || left.label.localeCompare(right.label))
+        .slice(0, limit);
+}
+
+function AuditList({
+    title,
+    items,
+    total,
+}: {
+    title: string;
+    items: AuditBucket[];
+    total: number;
+}) {
+    return (
+        <div className="min-w-0">
+            <div className="mb-2 text-xs font-medium text-muted-foreground">{title}</div>
+            <div className="space-y-2">
+                {items.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">-</div>
+                ) : items.map((item) => {
+                    const percent = total > 0 ? Math.round((item.count / total) * 100) : 0;
+                    return (
+                        <div key={item.key} className="space-y-1">
+                            <div className="flex min-w-0 items-center gap-2 text-xs">
+                                <span className="min-w-0 flex-1 truncate" title={item.label}>{item.label}</span>
+                                <span className="font-mono tabular-nums text-muted-foreground">{item.count} / {percent}%</span>
+                            </div>
+                            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                                <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(4, percent)}%` }} />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+function TraceAuditPanel({ traces, total }: { traces: RequestTrace[]; total: number }) {
+    const t = useTranslations('traces.audit');
+
+    if (traces.length === 0) return null;
+
+    const failed = traces.filter((trace) => (trace.final_status || '').toLowerCase() === 'failed').length;
+    const failover = traces.filter((trace) => (trace.attempts_count || 0) > 1).length;
+    const stream = traces.filter((trace) => trace.request_stream).length;
+    const totalCost = traces.reduce((sum, trace) => sum + traceCost(trace), 0);
+    const tokens = traces.reduce((sum, trace) => sum + totalTokens(trace), 0);
+    const avgAttempts = traces.reduce((sum, trace) => sum + (trace.attempts_count || 0), 0) / traces.length;
+    const avgLatency = Math.round(traces.reduce((sum, trace) => sum + (trace.total_latency_ms || 0), 0) / traces.length);
+    const statusBuckets = buildAuditBuckets(
+        traces,
+        (trace) => trace.final_status,
+        (_trace, key) => key === 'unknown' ? t('unknown') : key,
+    );
+    const sourceBuckets = buildAuditBuckets(
+        traces,
+        (trace) => trace.request_source,
+        (trace, key) => key === 'unknown' ? t('unknown') : sourceLabel(trace.request_source),
+    );
+    const modelBuckets = buildAuditBuckets(
+        traces,
+        (trace) => trace.client_model || trace.final_upstream_model,
+        (_trace, key) => key === 'unknown' ? t('unknown') : key,
+    );
+
+    return (
+        <div className="rounded-lg border bg-card p-3">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="h-7 rounded-md px-2">
+                    <ShieldAlert className="size-3.5" />
+                    {t('title')}
+                </Badge>
+                <span className="text-xs text-muted-foreground">{t('scope', { page: traces.length, total })}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b pb-3 text-xs md:grid-cols-3 xl:grid-cols-6">
+                <div>
+                    <div className="text-muted-foreground">{t('failed')}</div>
+                    <div className="mt-1 font-mono text-sm tabular-nums">{failed} / {traces.length}</div>
+                </div>
+                <div>
+                    <div className="text-muted-foreground">{t('failover')}</div>
+                    <div className="mt-1 font-mono text-sm tabular-nums">{failover} / {traces.length}</div>
+                </div>
+                <div>
+                    <div className="text-muted-foreground">{t('stream')}</div>
+                    <div className="mt-1 font-mono text-sm tabular-nums">{stream} / {traces.length}</div>
+                </div>
+                <div>
+                    <div className="text-muted-foreground">{t('avgAttempts')}</div>
+                    <div className="mt-1 font-mono text-sm tabular-nums">{avgAttempts.toFixed(2)}</div>
+                </div>
+                <div>
+                    <div className="text-muted-foreground">{t('avgLatency')}</div>
+                    <div className="mt-1 font-mono text-sm tabular-nums">{formatDuration(avgLatency)}</div>
+                </div>
+                <div>
+                    <div className="text-muted-foreground">{t('costTokens')}</div>
+                    <div className="mt-1 font-mono text-sm tabular-nums">{formatCost(totalCost)} / {tokens.toLocaleString()}</div>
+                </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <AuditList title={t('statusBreakdown')} items={statusBuckets} total={traces.length} />
+                <AuditList title={t('sourceBreakdown')} items={sourceBuckets} total={traces.length} />
+                <AuditList title={t('modelBreakdown')} items={modelBuckets} total={traces.length} />
+            </div>
+        </div>
+    );
+}
+
 function TraceComparisonPanel({
     traces,
     onClear,
@@ -1092,6 +1237,8 @@ export function Traces() {
                     </div>
                 </div>
             </div>
+
+            <TraceAuditPanel traces={traces} total={total} />
 
             <TraceComparisonPanel
                 traces={compareTraces}

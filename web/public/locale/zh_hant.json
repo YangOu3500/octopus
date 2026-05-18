@@ -1105,6 +1105,20 @@
                 "action": "操作"
             }
         },
+        "audit": {
+            "title": "審計聚合",
+            "scope": "目前頁 {page} 條 / 總計 {total} 條",
+            "unknown": "未知",
+            "failed": "失敗請求",
+            "failover": "故障轉移",
+            "stream": "流式請求",
+            "avgAttempts": "平均嘗試",
+            "avgLatency": "平均延遲",
+            "costTokens": "成本 / Token",
+            "statusBreakdown": "狀態分布",
+            "sourceBreakdown": "來源分布",
+            "modelBreakdown": "模型分布"
+        },
         "summary": {
             "total": "Trace 總數",
             "page": "目前頁 {count} 條",
