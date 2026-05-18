@@ -110,6 +110,7 @@ func (m *RelayMetrics) SetInternalResponse(resp *transformerModel.InternalLLMRes
 	if resp != nil {
 		m.ServiceTier = strings.TrimSpace(resp.ServiceTier)
 	}
+	m.syncActiveResponsePreview()
 
 	if resp == nil || resp.Usage == nil {
 		return

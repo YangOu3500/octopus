@@ -598,8 +598,8 @@
                 "liveDebug": {
                     "name": "Live Debug / Active Requests",
                     "desc": "ccLoad has stronger active request and debug snapshot views for in-flight troubleshooting.",
-                    "ui": "The Logs page now shows active request snapshots with model, phase, candidate channel, key ID, site/account, attempt count, first-token, and written state.",
-                    "gap": "Current snapshots are in memory. Debug event streaming is now connected, structured traces are covered by the standalone workbench, and deeper raw debugging can still be added later."
+                    "ui": "The Logs page now shows active request snapshots with model, phase, candidate channel, key ID, site/account, attempt count, first-token, written state, and redacted request / response previews.",
+                    "gap": "Current snapshots are in memory. Debug event streaming and redacted payload previews are connected, structured traces are covered by the standalone workbench, and deeper on-demand raw debugging can still be added later."
                 },
                 "quotaStatus": {
                     "name": "Quota / Capacity Status Resolver",
@@ -1246,8 +1246,11 @@
                 "phase": "Phase",
                 "route": "Current Candidate",
                 "status": "Status",
+                "preview": "Redacted Preview",
                 "elapsed": "Elapsed"
             },
+            "requestPreview": "Req",
+            "responsePreview": "Resp",
             "keySite": "Key #{key} / site #{site} / account #{account}",
             "noFailure": "No failure",
             "attempts": "{count} attempts"

@@ -598,8 +598,8 @@
                 "liveDebug": {
                     "name": "实时 debug / 活跃请求视图",
                     "desc": "ccLoad 有更强的活跃请求和调试快照体验，适合排查未结束请求。",
-                    "ui": "日志页顶部已提供活跃请求快照，展示运行中请求的模型、阶段、候选渠道、Key ID、站点 / 账号、attempt 数、首 token 和写出状态。",
-                    "gap": "当前是内存态快照；debug 事件流已接入，结构化 trace 已由独立工作台承接；更细 raw 调试仍可后续增强。"
+                    "ui": "日志页顶部已提供活跃请求快照，展示运行中请求的模型、阶段、候选渠道、Key ID、站点 / 账号、attempt 数、首 token、写出状态和脱敏请求 / 响应预览。",
+                    "gap": "当前是内存态快照；debug 事件流和脱敏 payload 预览已接入，结构化 trace 已由独立工作台承接；更细的按需 raw 调试仍可后续增强。"
                 },
                 "quotaStatus": {
                     "name": "额度 / 配额状态解析",
@@ -1246,8 +1246,11 @@
                 "phase": "阶段",
                 "route": "当前候选",
                 "status": "状态",
+                "preview": "脱敏预览",
                 "elapsed": "耗时"
             },
+            "requestPreview": "请求",
+            "responsePreview": "响应",
             "keySite": "Key #{key} / 站点 #{site} / 账号 #{account}",
             "noFailure": "暂无失败",
             "attempts": "{count} 次尝试"

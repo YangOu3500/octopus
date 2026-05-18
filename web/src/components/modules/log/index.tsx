@@ -160,6 +160,12 @@ function formatEventTime(timestamp: number | undefined) {
     });
 }
 
+function formatDebugPreview(value: string | undefined) {
+    const normalized = value?.replace(/\s+/g, ' ').trim();
+    if (!normalized) return '-';
+    return normalized.length > 160 ? `${normalized.slice(0, 160)}...` : normalized;
+}
+
 function ActiveRequestsPanel({
     items,
     total,
@@ -210,13 +216,14 @@ function ActiveRequestsPanel({
                 </div>
             ) : (
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[860px] text-left text-xs">
+                    <table className="w-full min-w-[1040px] text-left text-xs">
                         <thead className="text-muted-foreground">
                             <tr className="border-b">
                                 <th className="py-1.5 pr-3 font-medium">{t('columns.request')}</th>
                                 <th className="py-1.5 pr-3 font-medium">{t('columns.phase')}</th>
                                 <th className="py-1.5 pr-3 font-medium">{t('columns.route')}</th>
                                 <th className="py-1.5 pr-3 font-medium">{t('columns.status')}</th>
+                                <th className="py-1.5 pr-3 font-medium">{t('columns.preview')}</th>
                                 <th className="py-1.5 pr-3 font-medium text-right">{t('columns.elapsed')}</th>
                             </tr>
                         </thead>
@@ -254,6 +261,15 @@ function ActiveRequestsPanel({
                                             {item.last_failure_reason || t('noFailure')}
                                         </div>
                                     </td>
+                                    <td className="max-w-[280px] py-2 pr-3 font-mono text-[11px]">
+                                        <div className="truncate" title={item.request_preview || undefined}>
+                                            <span className="text-muted-foreground">{t('requestPreview')} </span>
+                                            {formatDebugPreview(item.request_preview)}
+                                        </div>
+                                        <div className="truncate text-muted-foreground" title={item.response_preview || undefined}>
+                                            {t('responsePreview')} {formatDebugPreview(item.response_preview)}
+                                        </div>
+                                    </td>
                                     <td className="py-2 text-right font-mono tabular-nums">
                                         {formatElapsed(item.elapsed_ms)}
                                         <div className="text-muted-foreground">{t('attempts', { count: item.attempts_count || 0 })}</div>
@@ -275,7 +291,7 @@ function ActiveRequestsPanel({
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[760px] text-left text-xs">
+                        <table className="w-full min-w-[960px] text-left text-xs">
                             <tbody>
                                 {visibleEvents.map((event, index) => {
                                     const snapshot = event.snapshot;
@@ -304,6 +320,14 @@ function ActiveRequestsPanel({
                                                 <div className="truncate" title={route}>{route}</div>
                                                 <div className="truncate text-muted-foreground" title={snapshot?.last_failure_reason || undefined}>
                                                     {snapshot?.last_status || snapshot?.phase || '-'} {snapshot?.last_http_status ? `/ ${snapshot.last_http_status}` : ''}
+                                                </div>
+                                            </td>
+                                            <td className="max-w-[280px] py-1.5 pr-3 font-mono text-[11px] text-muted-foreground">
+                                                <div className="truncate" title={snapshot?.request_preview || undefined}>
+                                                    {t('requestPreview')} {formatDebugPreview(snapshot?.request_preview)}
+                                                </div>
+                                                <div className="truncate" title={snapshot?.response_preview || undefined}>
+                                                    {t('responsePreview')} {formatDebugPreview(snapshot?.response_preview)}
                                                 </div>
                                             </td>
                                         </tr>

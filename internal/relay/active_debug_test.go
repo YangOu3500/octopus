@@ -17,7 +17,7 @@ func TestActiveRequestTrackerLifecycleAndSanitization(t *testing.T) {
 	}()
 
 	stream := true
-	metrics := NewRelayMetrics(7, "client-model", []byte(`{"model":"client-model","messages":[]}`), &transformerModel.InternalLLMRequest{
+	metrics := NewRelayMetrics(7, "client-model", []byte(`{"model":"client-model","authorization":"Bearer abc.def","api_key":"sk-live-secret","messages":[]}`), &transformerModel.InternalLLMRequest{
 		Model:  "client-model",
 		Stream: &stream,
 	})
@@ -58,6 +58,25 @@ func TestActiveRequestTrackerLifecycleAndSanitization(t *testing.T) {
 	}
 	if got.LastFailureReason == "" || strings.Contains(strings.ToLower(got.LastFailureReason), "authorization") {
 		t.Fatalf("failure reason was not sanitized: %q", got.LastFailureReason)
+	}
+	if got.RequestPreview == "" || strings.Contains(got.RequestPreview, "sk-live-secret") || strings.Contains(got.RequestPreview, "abc.def") {
+		t.Fatalf("request preview was not sanitized: %q", got.RequestPreview)
+	}
+
+	metrics.SetInternalResponse(&transformerModel.InternalLLMResponse{
+		Choices: []transformerModel.Choice{{
+			Message: &transformerModel.Message{
+				Content: transformerModel.MessageContent{Content: activeDebugStringPtr("ok sk-live-secret Authorization: Bearer abc.def")},
+			},
+		}},
+	}, "actual-model")
+	list = ActiveRequestSnapshots()
+	if list.Total != 1 {
+		t.Fatalf("active total after response preview = %d, want 1", list.Total)
+	}
+	got = list.Items[0]
+	if got.ResponsePreview == "" || strings.Contains(got.ResponsePreview, "sk-live-secret") || strings.Contains(got.ResponsePreview, "abc.def") {
+		t.Fatalf("response preview was not sanitized: %q", got.ResponsePreview)
 	}
 
 	metrics.completeActiveTracking()
@@ -129,4 +148,8 @@ func readActiveRequestEvent(t *testing.T, ch chan ActiveRequestEvent) ActiveRequ
 		t.Fatal("timed out waiting for active request event")
 	}
 	return ActiveRequestEvent{}
+}
+
+func activeDebugStringPtr(value string) *string {
+	return &value
 }

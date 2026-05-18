@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -9,12 +10,14 @@ import (
 	"time"
 
 	dbmodel "github.com/bestruirui/octopus/internal/model"
+	"github.com/bestruirui/octopus/internal/op"
 )
 
 const (
-	activeRequestMaxItems = 512
-	activeRequestTTL      = 2 * time.Hour
-	activeRequestEventBuf = 64
+	activeRequestMaxItems        = 512
+	activeRequestTTL             = 2 * time.Hour
+	activeRequestEventBuf        = 64
+	activeRequestPreviewMaxRunes = 4096
 )
 
 var (
@@ -44,6 +47,8 @@ type ActiveRequestSnapshot struct {
 	LastStatus        string `json:"last_status,omitempty"`
 	LastHTTPStatus    int    `json:"last_http_status,omitempty"`
 	LastFailureReason string `json:"last_failure_reason,omitempty"`
+	RequestPreview    string `json:"request_preview,omitempty"`
+	ResponsePreview   string `json:"response_preview,omitempty"`
 	Written           bool   `json:"written"`
 	FirstTokenSeen    bool   `json:"first_token_seen"`
 	UsedWS            bool   `json:"used_ws"`
@@ -291,6 +296,7 @@ func (m *RelayMetrics) BeginActiveTracking(phase string) {
 		RequestStream:  m.RequestStream,
 		ClientIP:       m.ClientIP,
 		Phase:          phase,
+		RequestPreview: m.activeRequestPayloadPreview(),
 		FirstTokenSeen: !m.FirstTokenTime.IsZero(),
 		UsedWS:         m.UsedWS,
 	})
@@ -315,9 +321,62 @@ func (m *RelayMetrics) syncActiveBase() {
 		snapshot.RequestSource = m.RequestSource
 		snapshot.RequestStream = m.RequestStream
 		snapshot.ClientIP = m.ClientIP
+		snapshot.RequestPreview = m.activeRequestPayloadPreview()
 		snapshot.FirstTokenSeen = !m.FirstTokenTime.IsZero()
 		snapshot.UsedWS = m.UsedWS
 	})
+}
+
+func (m *RelayMetrics) syncActiveResponsePreview() {
+	if m == nil {
+		return
+	}
+	preview := m.activeResponsePayloadPreview()
+	activeRequests.update(m.activeRequestID, func(snapshot *ActiveRequestSnapshot) {
+		snapshot.ResponsePreview = preview
+	})
+}
+
+func (m *RelayMetrics) activeRequestPayloadPreview() string {
+	if m == nil {
+		return ""
+	}
+	if len(m.RawRequest) > 0 {
+		return activeDebugContentPreview(string(m.RawRequest))
+	}
+	if m.InternalRequest != nil {
+		if data, err := json.Marshal(m.InternalRequest); err == nil {
+			return activeDebugContentPreview(string(data))
+		}
+	}
+	return ""
+}
+
+func (m *RelayMetrics) activeResponsePayloadPreview() string {
+	if m == nil || m.InternalResponse == nil {
+		return ""
+	}
+	filtered := m.filterResponseForLog(m.InternalResponse)
+	if filtered == nil {
+		return ""
+	}
+	data, err := json.Marshal(filtered)
+	if err != nil {
+		return ""
+	}
+	return activeDebugContentPreview(string(data))
+}
+
+func activeDebugContentPreview(content string) string {
+	sanitized := strings.TrimSpace(op.SanitizeRelayLogContent(content))
+	if sanitized == "" {
+		return ""
+	}
+	runes := []rune(sanitized)
+	if len(runes) <= activeRequestPreviewMaxRunes {
+		return sanitized
+	}
+	return string(runes[:activeRequestPreviewMaxRunes]) + "...[truncated]"
 }
 
 func (m *RelayMetrics) markActiveFirstToken() {

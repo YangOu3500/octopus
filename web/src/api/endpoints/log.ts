@@ -150,6 +150,8 @@ export interface ActiveRequestSnapshot {
     last_status?: string;
     last_http_status?: number;
     last_failure_reason?: string;
+    request_preview?: string;
+    response_preview?: string;
     written: boolean;
     first_token_seen: boolean;
     used_ws: boolean;

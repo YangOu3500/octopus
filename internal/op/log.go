@@ -1221,6 +1221,10 @@ func relayLogForDetail(relayLog model.RelayLog) model.RelayLog {
 	return relayLog
 }
 
+func SanitizeRelayLogContent(content string) string {
+	return sanitizeRelayLogContent(content)
+}
+
 func sanitizeRelayLogContent(content string) string {
 	content = strings.TrimSpace(content)
 	if content == "" {
