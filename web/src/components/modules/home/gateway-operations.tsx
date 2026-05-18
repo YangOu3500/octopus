@@ -9,6 +9,7 @@ import {
     GitBranch,
     KeyRound,
     ListChecks,
+    Network,
     Radar,
     Server,
     Settings2,
@@ -33,7 +34,7 @@ type OperationItem = {
 };
 
 type CapabilityItem = {
-    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'liveDebug' | 'health' | 'selection' | 'modelAssociation' | 'probe' | 'quota';
+    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'liveDebug' | 'health' | 'selection' | 'channelConcurrency' | 'modelAssociation' | 'probe' | 'quota';
     nav: NavItem;
     icon: LucideIcon;
     status: 'done' | 'partial';
@@ -156,6 +157,7 @@ export function GatewayOperationsPanel() {
         { id: 'liveDebug', nav: 'log', icon: Activity, status: 'partial' },
         { id: 'health', nav: 'setting', icon: Activity, status: 'partial' },
         { id: 'selection', nav: 'group', icon: BarChart3, status: 'done' },
+        { id: 'channelConcurrency', nav: 'setting', icon: Network, status: 'done' },
         { id: 'modelAssociation', nav: 'group', icon: GitBranch, status: 'done' },
         { id: 'probe', nav: 'setting', icon: TestTubeDiagonal, status: 'partial' },
         { id: 'quota', nav: 'group', icon: Settings2, status: 'partial' },

@@ -257,6 +257,10 @@
                     "label": "Selection Tracker",
                     "entry": "Group routing preview"
                 },
+                "channelConcurrency": {
+                    "label": "Hard Concurrency Queue",
+                    "entry": "Settings / model health"
+                },
                 "modelAssociation": {
                     "label": "Model Association / Alias Folding",
                     "entry": "Group bulk generation"

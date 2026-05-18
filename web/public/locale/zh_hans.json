@@ -257,6 +257,10 @@
                     "label": "Selection Tracker",
                     "entry": "分组调度预览"
                 },
+                "channelConcurrency": {
+                    "label": "硬并发队列",
+                    "entry": "设置页 / 模型健康"
+                },
                 "modelAssociation": {
                     "label": "模型关联 / 别名归并",
                     "entry": "模型分组批量生成"

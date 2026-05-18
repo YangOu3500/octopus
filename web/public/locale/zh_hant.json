@@ -257,6 +257,10 @@
                     "label": "Selection Tracker",
                     "entry": "分組調度預覽"
                 },
+                "channelConcurrency": {
+                    "label": "硬並發隊列",
+                    "entry": "設定頁 / 模型健康"
+                },
                 "modelAssociation": {
                     "label": "模型關聯 / 別名歸併",
                     "entry": "模型分組批量生成"
