@@ -188,15 +188,15 @@
             "unknown": "未知"
         },
         "operations": {
-            "title": "网关工作台",
-            "description": "把 AxonHub 的 Dashboard / Requests / Traces 组织方式落到 Octopus 首页，直接进入请求、链路、渠道、模型、API Key 与性能排障。",
+            "title": "网关概览",
+            "description": "查看请求、链路、渠道、模型、API Key 与性能状态。",
             "window": "流式 {stream} / 模型测试 {modelTest}",
             "empty": "暂无数据",
             "apiKeyBreakdown": "API Key 分析",
             "sourceBreakdown": "来源分析",
             "breakdownMeta": "{requests} 请求 / {failures} 失败 / {rate}",
-            "capabilityTitle": "Fusion 能力入口",
-            "capabilityDescription": "已融合能力在首页显示状态与入口；完整索引仍保留在设置页。",
+            "capabilityTitle": "能力索引",
+            "capabilityDescription": "完整能力核对保留在设置页。",
             "allCapabilities": "全部能力",
             "status": {
                 "done": "已接入",

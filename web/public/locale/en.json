@@ -188,15 +188,15 @@
             "unknown": "Unknown"
         },
         "operations": {
-            "title": "Gateway Workbench",
-            "description": "Brings AxonHub-style Dashboard / Requests / Traces organization into the Octopus home page for request, trace, channel, model, API key, and performance operations.",
+            "title": "Gateway Overview",
+            "description": "Review request, trace, channel, model, API key, and performance status.",
             "window": "Stream {stream} / model test {modelTest}",
             "empty": "No data",
             "apiKeyBreakdown": "API Key Analysis",
             "sourceBreakdown": "Source Analysis",
             "breakdownMeta": "{requests} requests / {failures} failures / {rate}",
-            "capabilityTitle": "Fusion Capability Entry",
-            "capabilityDescription": "Fused capabilities show status and entry points on Home; the full index remains in Settings.",
+            "capabilityTitle": "Capability Index",
+            "capabilityDescription": "The full capability index remains in Settings.",
             "allCapabilities": "All capabilities",
             "status": {
                 "done": "Integrated",
