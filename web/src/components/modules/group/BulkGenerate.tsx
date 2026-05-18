@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import {
     type GroupAutoGenerateAssociationOptions,
     type GroupAutoGenerateAssociationMode,
-    type GroupAutoGenerateManualAlias,
     type GroupAutoGeneratePreviewItem,
     type GroupAutoGenerateRequest,
     GroupMode,
@@ -14,7 +13,7 @@ import {
     usePreviewAutoGenerateGroups,
 } from '@/api/endpoints/group';
 import { type LLMChannel, useModelChannelList } from '@/api/endpoints/model';
-import { type Setting, SettingKey, useSetSetting, useSettingList } from '@/api/endpoints/setting';
+import { SettingKey, useSetSetting, useSettingList } from '@/api/endpoints/setting';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -29,134 +28,31 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/common/Toast';
+import {
+    ASSOCIATION_OPTION_KEYS,
+    associationOptionsEqual,
+    createManualAliasDraft,
+    createManualAliasDraftFromValue,
+    defaultAssociationOptions,
+    manualAliasesEqual,
+    parseSavedAssociationState,
+    sanitizeManualAliases,
+    type AssociationOptionKey,
+    type ManualAliasDraft,
+} from '@/lib/group-association';
 import { cn } from '@/lib/utils';
 import { getModelIcon } from '@/lib/model-icons';
 import { MODE_LABELS } from './utils';
 
 type GenerateScope = 'all' | 'selected';
-type ManualAliasDraft = { id: string; alias: string; target: string };
-type AssociationOptionKey = keyof GroupAutoGenerateAssociationOptions;
-type SavedAssociationState = {
-    associationMode: GroupAutoGenerateAssociationMode;
-    associationOptions: GroupAutoGenerateAssociationOptions;
-    manualAliases: GroupAutoGenerateManualAlias[];
-};
 
 const ALL_FILTER_VALUE = 'all';
 const MANUAL_SITE_FILTER_VALUE = 'manual';
-const ASSOCIATION_OPTION_KEYS = [
-    'strip_provider_prefix',
-    'strip_models_namespace',
-    'normalize_case',
-    'normalize_separators',
-] as const satisfies readonly AssociationOptionKey[];
 
 function itemStatus(item: GroupAutoGeneratePreviewItem) {
     if (item.will_create) return 'create';
     if (item.will_add_count > 0) return 'fill';
     return 'skip';
-}
-
-function defaultAssociationOptions(mode: GroupAutoGenerateAssociationMode): GroupAutoGenerateAssociationOptions {
-    if (mode === 'alias') {
-        return {
-            strip_provider_prefix: true,
-            strip_models_namespace: true,
-            normalize_case: true,
-            normalize_separators: true,
-        };
-    }
-    return {
-        strip_provider_prefix: false,
-        strip_models_namespace: false,
-        normalize_case: true,
-        normalize_separators: false,
-    };
-}
-
-function createManualAliasDraft(): ManualAliasDraft {
-    return {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        alias: '',
-        target: '',
-    };
-}
-
-function createManualAliasDraftFromValue(item: GroupAutoGenerateManualAlias): ManualAliasDraft {
-    return {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        alias: item.alias,
-        target: item.target,
-    };
-}
-
-function sanitizeManualAliases(items: ManualAliasDraft[]): GroupAutoGenerateManualAlias[] {
-    return items
-        .map((item) => ({
-            alias: item.alias.trim(),
-            target: item.target.trim(),
-        }))
-        .filter((item) => item.alias && item.target);
-}
-
-function parseAssociationMode(value: string | undefined): GroupAutoGenerateAssociationMode {
-    return value === 'alias' ? 'alias' : 'exact';
-}
-
-function parseAssociationOptions(value: string | undefined, mode: GroupAutoGenerateAssociationMode): GroupAutoGenerateAssociationOptions {
-    const defaults = defaultAssociationOptions(mode);
-    if (!value?.trim()) return defaults;
-    try {
-        const parsed = JSON.parse(value) as GroupAutoGenerateAssociationOptions;
-        const next = { ...defaults };
-        ASSOCIATION_OPTION_KEYS.forEach((key) => {
-            if (typeof parsed[key] === 'boolean') next[key] = parsed[key];
-        });
-        return next;
-    } catch {
-        return defaults;
-    }
-}
-
-function parseManualAliases(value: string | undefined): GroupAutoGenerateManualAlias[] {
-    if (!value?.trim()) return [];
-    try {
-        const parsed = JSON.parse(value) as GroupAutoGenerateManualAlias[];
-        if (!Array.isArray(parsed)) return [];
-        return parsed
-            .map((item) => ({
-                alias: typeof item?.alias === 'string' ? item.alias.trim() : '',
-                target: typeof item?.target === 'string' ? item.target.trim() : '',
-            }))
-            .filter((item) => item.alias && item.target);
-    } catch {
-        return [];
-    }
-}
-
-function parseSavedAssociationState(settings: Setting[]): SavedAssociationState {
-    const associationMode = parseAssociationMode(
-        settings.find((item) => item.key === SettingKey.GroupAutoGenerateAssociationMode)?.value
-    );
-    return {
-        associationMode,
-        associationOptions: parseAssociationOptions(
-            settings.find((item) => item.key === SettingKey.GroupAutoGenerateAssociationOptions)?.value,
-            associationMode
-        ),
-        manualAliases: parseManualAliases(
-            settings.find((item) => item.key === SettingKey.GroupAutoGenerateManualAliases)?.value
-        ),
-    };
-}
-
-function associationOptionsEqual(left: GroupAutoGenerateAssociationOptions, right: GroupAutoGenerateAssociationOptions) {
-    return ASSOCIATION_OPTION_KEYS.every((key) => Boolean(left[key]) === Boolean(right[key]));
-}
-
-function manualAliasesEqual(left: GroupAutoGenerateManualAlias[], right: GroupAutoGenerateManualAlias[]) {
-    if (left.length !== right.length) return false;
-    return left.every((item, index) => item.alias === right[index]?.alias && item.target === right[index]?.target);
 }
 
 function normalizedModelName(value: string) {

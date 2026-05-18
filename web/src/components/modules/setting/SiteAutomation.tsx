@@ -25,7 +25,9 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function SettingSiteAutomation() {
-    const t = useTranslations();
+    const rootT = useTranslations();
+    const t = useTranslations('setting.siteAutomation');
+    const settingT = useTranslations('setting');
     const locale = useSettingStore((state) => state.locale);
     const { data: settings } = useSettingList();
     const setSetting = useSetSetting();
@@ -56,24 +58,27 @@ export function SettingSiteAutomation() {
     function handleSave(key: string, value: string, initialValue: string, onSaved: (next: string) => void) {
         if (value === initialValue) return;
 
-        setSetting.mutate({ key, value }, {
-            onSuccess: () => {
-                onSaved(value);
-                toast.success('已保存');
+        setSetting.mutate(
+            { key, value },
+            {
+                onSuccess: () => {
+                    onSaved(value);
+                    toast.success(settingT('saved'));
+                },
+                onError: (error) => {
+                    toast.error(translateSiteMessage(locale, getErrorMessage(error, settingT('saveFailed')), rootT));
+                },
             },
-            onError: (error) => {
-                toast.error(translateSiteMessage(locale, getErrorMessage(error, '保存失败'), t));
-            },
-        });
+        );
     }
 
     function handleManualSync() {
         syncAllSites.mutate(undefined, {
             onSuccess: () => {
-                toast.success('已触发后台站点全量同步');
+                toast.success(t('manualSync.success'));
             },
             onError: (error) => {
-                toast.error(translateSiteMessage(locale, getErrorMessage(error, '触发同步失败'), t));
+                toast.error(translateSiteMessage(locale, getErrorMessage(error, t('manualSync.failed')), rootT));
             },
         });
     }
@@ -81,34 +86,36 @@ export function SettingSiteAutomation() {
     function handleManualCheckin() {
         checkinAllSites.mutate(undefined, {
             onSuccess: () => {
-                toast.success('已触发后台站点全量签到');
+                toast.success(t('manualCheckin.success'));
             },
             onError: (error) => {
-                toast.error(translateSiteMessage(locale, getErrorMessage(error, '触发签到失败'), t));
+                toast.error(translateSiteMessage(locale, getErrorMessage(error, t('manualCheckin.failed')), rootT));
             },
         });
     }
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
                 <Globe2 className="h-5 w-5" />
-                站点自动化
+                {t('title')}
             </h2>
 
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Clock3 className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">自动同步间隔（小时）</span>
+                    <span className="text-sm font-medium">{t('syncInterval.label')}</span>
                 </div>
                 <Input
                     type="number"
                     value={syncInterval}
                     onChange={(event) => setSyncInterval(event.target.value)}
-                    onBlur={() => handleSave(SettingKey.SiteSyncInterval, syncInterval, initialSyncInterval.current, (next) => {
-                        initialSyncInterval.current = next;
-                    })}
-                    placeholder="请输入间隔（小时）"
+                    onBlur={() =>
+                        handleSave(SettingKey.SiteSyncInterval, syncInterval, initialSyncInterval.current, (next) => {
+                            initialSyncInterval.current = next;
+                        })
+                    }
+                    placeholder={t('syncInterval.placeholder')}
                     className="w-48 rounded-xl"
                 />
             </div>
@@ -116,16 +123,23 @@ export function SettingSiteAutomation() {
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Clock3 className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">自动签到间隔（小时）</span>
+                    <span className="text-sm font-medium">{t('checkinInterval.label')}</span>
                 </div>
                 <Input
                     type="number"
                     value={checkinInterval}
                     onChange={(event) => setCheckinInterval(event.target.value)}
-                    onBlur={() => handleSave(SettingKey.SiteCheckinInterval, checkinInterval, initialCheckinInterval.current, (next) => {
-                        initialCheckinInterval.current = next;
-                    })}
-                    placeholder="请输入间隔（小时）"
+                    onBlur={() =>
+                        handleSave(
+                            SettingKey.SiteCheckinInterval,
+                            checkinInterval,
+                            initialCheckinInterval.current,
+                            (next) => {
+                                initialCheckinInterval.current = next;
+                            },
+                        )
+                    }
+                    placeholder={t('checkinInterval.placeholder')}
                     className="w-48 rounded-xl"
                 />
             </div>
@@ -133,20 +147,32 @@ export function SettingSiteAutomation() {
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <RefreshCw className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">手动站点全量同步</span>
+                    <span className="text-sm font-medium">{t('manualSync.label')}</span>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleManualSync} disabled={syncAllSites.isPending} className="rounded-xl">
-                    {syncAllSites.isPending ? '同步中...' : '立即同步'}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleManualSync}
+                    disabled={syncAllSites.isPending}
+                    className="rounded-xl"
+                >
+                    {syncAllSites.isPending ? t('manualSync.pending') : t('manualSync.button')}
                 </Button>
             </div>
 
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <CalendarCheck2 className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">手动站点全量签到</span>
+                    <span className="text-sm font-medium">{t('manualCheckin.label')}</span>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleManualCheckin} disabled={checkinAllSites.isPending} className="rounded-xl">
-                    {checkinAllSites.isPending ? '签到中...' : '立即签到'}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleManualCheckin}
+                    disabled={checkinAllSites.isPending}
+                    className="rounded-xl"
+                >
+                    {checkinAllSites.isPending ? t('manualCheckin.pending') : t('manualCheckin.button')}
                 </Button>
             </div>
         </div>

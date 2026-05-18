@@ -53,7 +53,7 @@ function MetricTile({
 }) {
     return (
         <div className={cn(
-            'rounded-md border bg-background/40 px-3 py-2.5',
+            'rounded-md border bg-background/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/70',
             tone === 'success' && 'border-primary/30 bg-primary/5',
             tone === 'warning' && 'border-amber-500/25 bg-amber-500/5',
             tone === 'danger' && 'border-destructive/25 bg-destructive/5',
@@ -78,7 +78,7 @@ function BreakdownList({ title, items }: { title: string; items: StatsObservabil
                 {items.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{t('noData')}</div>
                 ) : items.map((item) => (
-                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50">
+                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-2 rounded-md px-2 py-1.5 transition-all duration-200 hover:-translate-y-px hover:bg-muted/60">
                         <div className="min-w-0">
                             <div className="truncate text-sm font-medium" title={item.name}>{item.name || '—'}</div>
                             <div className="text-xs text-muted-foreground">
@@ -113,7 +113,7 @@ function RecentFailureList({ items }: { items: StatsObservabilityFailure[] }) {
                 {items.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{t('noFailures')}</div>
                 ) : items.map((item) => (
-                    <div key={`${item.id}-${item.channel_id}-${item.failure_reason}`} className="rounded-md border border-border/50 px-2 py-1.5">
+                    <div key={`${item.id}-${item.channel_id}-${item.failure_reason}`} className="rounded-md border border-border/50 px-2 py-1.5 transition-all duration-200 hover:-translate-y-px hover:border-destructive/25 hover:bg-muted/40">
                         <div className="flex min-w-0 items-center gap-2">
                             <Badge variant="outline" className="h-5 shrink-0 px-1.5 text-[10px]">
                                 {item.http_status || '—'}
@@ -156,7 +156,7 @@ export function ObservabilityPanel() {
     const failoverRequests = data?.failover_requests ?? 0;
 
     return (
-        <section className="rounded-xl border border-card-border bg-card p-4 text-card-foreground shadow-sm">
+        <section className="rounded-xl border border-card-border bg-card p-4 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
             <header className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                     <div className="flex items-center gap-2">

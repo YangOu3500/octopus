@@ -155,7 +155,7 @@ export function GatewayOperationsPanel() {
                             <button
                                 key={item.id}
                                 type="button"
-                                className="group rounded-xl border bg-background/40 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+                                className="group rounded-xl border bg-background/40 p-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
                                 onClick={() => setActiveItem(item.nav)}
                             >
                                 <div className="flex items-start justify-between gap-2">

@@ -110,6 +110,20 @@
             "failoverRequests": "故障转移",
             "failoverSub": "占比 {rate}"
         },
+        "sections": {
+            "workbench": {
+                "title": "请求与链路",
+                "description": "高频排障、链路观察和渠道状态"
+            },
+            "analytics": {
+                "title": "趋势与排行",
+                "description": "成本走势、请求热度和渠道排行"
+            },
+            "activity": {
+                "title": "活动热力",
+                "description": "按天查看请求活跃度"
+            }
+        },
         "activity": {
             "requestCount": "请求次数",
             "waitTime": "等待时间",
@@ -386,6 +400,31 @@
                 "result": "导入结果"
             }
         },
+        "siteAutomation": {
+            "title": "站点自动化",
+            "syncInterval": {
+                "label": "自动同步间隔（小时）",
+                "placeholder": "请输入间隔（小时）"
+            },
+            "checkinInterval": {
+                "label": "自动签到间隔（小时）",
+                "placeholder": "请输入间隔（小时）"
+            },
+            "manualSync": {
+                "label": "手动站点全量同步",
+                "button": "立即同步",
+                "pending": "同步中...",
+                "success": "已触发后台站点全量同步",
+                "failed": "触发同步失败"
+            },
+            "manualCheckin": {
+                "label": "手动站点全量签到",
+                "button": "立即签到",
+                "pending": "签到中...",
+                "success": "已触发后台站点全量签到",
+                "failed": "触发签到失败"
+            }
+        },
         "apiKey": {
             "title": "API 密钥",
             "empty": "暂无 API 密钥",
@@ -500,6 +539,31 @@
             "updating": "更新中...",
             "updateSuccess": "更新成功，服务即将重启",
             "updateFailed": "更新失败"
+        },
+        "modelAssociation": {
+            "title": "模型关联规则",
+            "subtitle": "管理模型分组批量生成默认带入的别名归并规则和手动映射。",
+            "description": "这些默认规则会自动带入“模型分组 -> 批量生成”的预览与生成请求。",
+            "summaryOptions": "已启用 {count} 项规则",
+            "summaryManual": "{count} 条手动映射",
+            "openGroup": "前往模型分组",
+            "restore": "恢复已保存",
+            "save": "保存默认",
+            "saving": "保存中...",
+            "reset": "重置为推荐值",
+            "saved": "默认关联规则已保存",
+            "saveFailed": "保存默认关联规则失败",
+            "savedState": "已保存",
+            "pendingState": "未保存更改",
+            "empty": "尚未配置手动映射，留空时只使用规则归并。"
+        },
+        "sections": {
+            "system": "系统与日志",
+            "health": "健康调度",
+            "automation": "自动化与同步",
+            "association": "模型关联",
+            "fusion": "Fusion 能力",
+            "maintenance": "账户与备份"
         },
         "fusionCapabilities": {
             "title": "Fusion 能力可见性",
@@ -637,7 +701,7 @@
                 "modelAssociation": {
                     "name": "模型关联 / 别名归并",
                     "desc": "在保留 Octopus 模型分组结构的前提下，把 provider/model、models/... 等常见上游别名归并到同一对外模型组。",
-                    "ui": "模型分组批量生成弹窗已补齐高级关联规则、默认规则持久化、手动别名映射、匹配分和策略解释，预览会直接展示归并依据。",
+                    "ui": "模型分组批量生成弹窗和设置页默认规则卡片都可配置高级关联规则、持久化默认值、手动别名映射、匹配分和策略解释，预览会直接展示归并依据。",
                     "gap": "仍未引入 AxonHub Provider / GlobalModel / 完整 ModelAssociation 条件体系；标签辅助归并和更复杂的跨 Provider 条件关联仍作为后续增强。"
                 },
                 "protocolTransform": {

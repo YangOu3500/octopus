@@ -25,7 +25,7 @@ export function GroupHealthSummaryStrip() {
     if (!enabled) return null;
 
     return (
-        <section className="rounded-lg bg-card border-card-border border text-card-foreground shadow-sm px-4 py-3">
+        <section className="rounded-lg bg-card border-card-border border text-card-foreground shadow-sm px-4 py-3 transition-shadow duration-200 hover:shadow-md">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-semibold">

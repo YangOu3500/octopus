@@ -30,7 +30,7 @@ function SummaryCard({
     return (
         <article
             className={cn(
-                'rounded-xl border bg-card p-3.5 text-card-foreground shadow-sm',
+                'rounded-xl border bg-card p-3.5 text-card-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
                 tone === 'good' && 'border-emerald-500/25 bg-emerald-500/5',
                 tone === 'warning' && 'border-amber-500/25 bg-amber-500/5',
                 tone === 'accent' && 'border-primary/30 bg-primary text-primary-foreground',

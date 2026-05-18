@@ -15,65 +15,143 @@ import { SettingBackup } from './Backup';
 import { SettingCircuitBreaker } from './CircuitBreaker';
 import { SettingHealthProbe } from './HealthProbe';
 import { SettingFusionCapabilities } from './FusionCapabilities';
+import { SettingModelAssociation } from './ModelAssociation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
-export function Setting() {
-    const t = useTranslations('setting');
-    const quickLinks = [
-        { id: 'setting-system', label: t('system') },
-        { id: 'setting-health-probe', label: t('healthProbe.title') },
-        { id: 'setting-api-key', label: t('apiKey.title') },
-        { id: 'setting-site-automation', label: t('siteAutomation.title') },
-        { id: 'setting-fusion-capabilities', label: t('fusionCapabilities.title') },
-        { id: 'setting-backup', label: t('backup.title') },
-        { id: 'setting-info', label: t('info.title') },
-    ];
+type SettingSection = {
+    id: string;
+    label: string;
+};
 
+function scrollToSection(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function SectionNav({
+    sections,
+}: {
+    sections: SettingSection[];
+}) {
     return (
-        <div className="h-full min-h-0 overflow-y-auto overscroll-contain rounded-t-3xl">
-            <div className="sticky top-0 z-10 mb-3 border-b border-border/70 bg-background/90 pb-3 pt-1 backdrop-blur">
-                <div className="flex flex-wrap gap-2">
-                    {quickLinks.map((item) => (
+        <div className="space-y-2 rounded-xl border border-border/70 bg-card p-3 shadow-sm">
+            <div className="md:hidden">
+                <Select defaultValue={sections[0]?.id} onValueChange={scrollToSection}>
+                    <SelectTrigger className="h-10 rounded-lg">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {sections.map((section) => (
+                            <SelectItem key={section.id} value={section.id}>
+                                {section.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="hidden md:block xl:hidden">
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                    {sections.map((section) => (
                         <button
-                            key={item.id}
+                            key={section.id}
                             type="button"
-                            className="h-8 rounded-full border border-border bg-card px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
-                            onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                            className="shrink-0 rounded-lg border border-border bg-background/60 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground"
+                            onClick={() => scrollToSection(section.id)}
                         >
-                            {item.label}
+                            {section.label}
                         </button>
                     ))}
                 </div>
             </div>
+
+            <nav className="hidden xl:flex xl:flex-col xl:gap-1">
+                {sections.map((section) => (
+                    <button
+                        key={section.id}
+                        type="button"
+                        className={cn(
+                            'rounded-lg px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+                        )}
+                        onClick={() => scrollToSection(section.id)}
+                    >
+                        {section.label}
+                    </button>
+                ))}
+            </nav>
+        </div>
+    );
+}
+
+function SectionHeader({ title }: { title: string }) {
+    return <h2 className="text-sm font-semibold text-foreground">{title}</h2>;
+}
+
+export function Setting() {
+    const sectionT = useTranslations('setting.sections');
+    const sections = [
+        { id: 'setting-system', label: sectionT('system') },
+        { id: 'setting-health', label: sectionT('health') },
+        { id: 'setting-automation', label: sectionT('automation') },
+        { id: 'setting-model-association', label: sectionT('association') },
+        { id: 'setting-fusion-capabilities', label: sectionT('fusion') },
+        { id: 'setting-maintenance', label: sectionT('maintenance') },
+    ];
+
+    return (
+        <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
             <PageWrapper
                 childLayout={false}
-                className="grid grid-cols-1 gap-3 pb-24 md:pb-4 xl:grid-cols-2"
+                className="grid grid-cols-1 gap-4 pb-24 md:pb-4 xl:grid-cols-[13.5rem_minmax(0,1fr)]"
             >
-                <div id="setting-system" key="setting-system" className="xl:col-span-2 scroll-mt-24">
-                    <SettingSystem />
-                </div>
-                <div id="setting-health-probe" key="setting-health-probe" className="xl:col-span-2 scroll-mt-24">
-                    <SettingHealthProbe />
-                </div>
-                <SettingCircuitBreaker key="setting-circuit-breaker" />
-                <SettingLog key="setting-log" />
-                <div id="setting-site-automation" key="setting-site-automation" className="xl:col-span-2 scroll-mt-24">
-                    <SettingSiteAutomation />
-                </div>
-                <div id="setting-api-key" key="setting-apikey" className="scroll-mt-24">
-                    <SettingAPIKey />
-                </div>
-                <SettingLLMPrice key="setting-llmprice" />
-                <SettingLLMSync key="setting-llmsync" />
-                <div id="setting-fusion-capabilities" key="setting-fusion-capabilities" className="xl:col-span-2 scroll-mt-24">
-                    <SettingFusionCapabilities />
-                </div>
-                <div id="setting-backup" key="setting-backup" className="xl:col-span-2 scroll-mt-24">
-                    <SettingBackup />
-                </div>
-                <SettingAppearance key="setting-appearance" />
-                <SettingAccount key="setting-account" />
-                <div id="setting-info" key="setting-info" className="xl:col-span-2 scroll-mt-24">
-                    <SettingInfo />
+                <aside className="xl:sticky xl:top-3 xl:self-start">
+                    <SectionNav sections={sections} />
+                </aside>
+
+                <div className="space-y-5">
+                    <section id="setting-system" className="scroll-mt-24 space-y-3">
+                        <SectionHeader title={sectionT('system')} />
+                        <SettingSystem />
+                        <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
+                            <SettingCircuitBreaker />
+                            <SettingLog />
+                        </div>
+                    </section>
+
+                    <section id="setting-health" className="scroll-mt-24 space-y-3">
+                        <SectionHeader title={sectionT('health')} />
+                        <SettingHealthProbe />
+                    </section>
+
+                    <section id="setting-automation" className="scroll-mt-24 space-y-3">
+                        <SectionHeader title={sectionT('automation')} />
+                        <SettingSiteAutomation />
+                        <div className="grid grid-cols-1 gap-3 2xl:grid-cols-3">
+                            <SettingAPIKey />
+                            <SettingLLMPrice />
+                            <SettingLLMSync />
+                        </div>
+                    </section>
+
+                    <section id="setting-model-association" className="scroll-mt-24 space-y-3">
+                        <SectionHeader title={sectionT('association')} />
+                        <SettingModelAssociation />
+                    </section>
+
+                    <section id="setting-fusion-capabilities" className="scroll-mt-24 space-y-3">
+                        <SectionHeader title={sectionT('fusion')} />
+                        <SettingFusionCapabilities />
+                    </section>
+
+                    <section id="setting-maintenance" className="scroll-mt-24 space-y-3">
+                        <SectionHeader title={sectionT('maintenance')} />
+                        <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
+                            <SettingAppearance />
+                            <SettingAccount />
+                        </div>
+                        <SettingBackup />
+                        <SettingInfo />
+                    </section>
                 </div>
             </PageWrapper>
         </div>

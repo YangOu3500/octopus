@@ -110,6 +110,20 @@
             "failoverRequests": "故障轉移",
             "failoverSub": "占比 {rate}"
         },
+        "sections": {
+            "workbench": {
+                "title": "請求與鏈路",
+                "description": "高頻排障、鏈路觀測與渠道狀態"
+            },
+            "analytics": {
+                "title": "趨勢與排行",
+                "description": "成本走勢、請求熱度與渠道排行"
+            },
+            "activity": {
+                "title": "活動熱力",
+                "description": "按天查看請求活躍度"
+            }
+        },
         "activity": {
             "requestCount": "請求次數",
             "waitTime": "等待時間",
@@ -386,6 +400,31 @@
                 "result": "匯入結果"
             }
         },
+        "siteAutomation": {
+            "title": "站點自動化",
+            "syncInterval": {
+                "label": "自動同步間隔（小時）",
+                "placeholder": "請輸入間隔（小時）"
+            },
+            "checkinInterval": {
+                "label": "自動簽到間隔（小時）",
+                "placeholder": "請輸入間隔（小時）"
+            },
+            "manualSync": {
+                "label": "手動站點全量同步",
+                "button": "立即同步",
+                "pending": "同步中...",
+                "success": "已觸發後台站點全量同步",
+                "failed": "觸發同步失敗"
+            },
+            "manualCheckin": {
+                "label": "手動站點全量簽到",
+                "button": "立即簽到",
+                "pending": "簽到中...",
+                "success": "已觸發後台站點全量簽到",
+                "failed": "觸發簽到失敗"
+            }
+        },
         "apiKey": {
             "title": "API 金鑰",
             "empty": "暫無 API 金鑰",
@@ -500,6 +539,31 @@
             "updating": "更新中...",
             "updateSuccess": "更新成功，服務即將重啟",
             "updateFailed": "更新失敗"
+        },
+        "modelAssociation": {
+            "title": "模型關聯規則",
+            "subtitle": "管理模型分組批量生成預設帶入的別名歸併規則和手動映射。",
+            "description": "這些預設規則會自動帶入「模型分組 -> 批量生成」的預覽與生成請求。",
+            "summaryOptions": "已啟用 {count} 項規則",
+            "summaryManual": "{count} 條手動映射",
+            "openGroup": "前往模型分組",
+            "restore": "恢復已儲存",
+            "save": "儲存預設",
+            "saving": "儲存中...",
+            "reset": "重置為建議值",
+            "saved": "預設關聯規則已儲存",
+            "saveFailed": "儲存預設關聯規則失敗",
+            "savedState": "已儲存",
+            "pendingState": "尚未儲存",
+            "empty": "尚未配置手動映射，留空時只使用規則歸併。"
+        },
+        "sections": {
+            "system": "系統與日誌",
+            "health": "健康調度",
+            "automation": "自動化與同步",
+            "association": "模型關聯",
+            "fusion": "Fusion 能力",
+            "maintenance": "帳戶與備份"
         },
         "fusionCapabilities": {
             "title": "Fusion 能力可見性",
@@ -637,7 +701,7 @@
                 "modelAssociation": {
                     "name": "模型關聯 / 別名歸併",
                     "desc": "在保留 Octopus 模型分組結構的前提下，把 provider/model、models/... 等常見上游別名歸併到同一對外模型組。",
-                    "ui": "模型分組批量生成彈窗已補齊高階關聯規則、預設規則持久化、手動別名映射、匹配分與策略解釋，預覽會直接展示歸併依據。",
+                    "ui": "模型分組批量生成彈窗與設定頁預設規則卡片都可配置高階關聯規則、持久化預設值、手動別名映射、匹配分與策略解釋，預覽會直接展示歸併依據。",
                     "gap": "仍未引入 AxonHub Provider / GlobalModel / 完整 ModelAssociation 條件體系；標籤輔助歸併和更複雜的跨 Provider 條件關聯仍作為後續增強。"
                 },
                 "protocolTransform": {

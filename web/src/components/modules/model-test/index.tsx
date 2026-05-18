@@ -35,7 +35,7 @@ type ActiveRunPlan = {
 
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
-const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.4fr) 7rem 9rem 5rem 6rem 6rem 9rem 6rem 7rem minmax(18rem,1.2fr) 8rem';
+const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.6fr) minmax(11rem,0.95fr) minmax(10rem,0.9fr) minmax(12rem,1.1fr) minmax(18rem,1.6fr) 7rem';
 const MODEL_TEST_EXPORT_VERSION = 1;
 const MODEL_TEST_RESULT_FILTERS: ModelTestResultFilter[] = ['all', 'success', 'failed', 'running', 'queued', 'idle'];
 
@@ -112,10 +112,6 @@ function resultStatus(result?: ModelTestResult, runStatus?: ModelTestRunStatus):
     if (!result) return 'idle';
     if (result.success) return 'success';
     return 'failed';
-}
-
-function modelSourceLabel(row: TestRow) {
-    return `${row.channelName} · ${protocolLabel(row.protocol)}`;
 }
 
 function exportTimestamp() {
@@ -508,9 +504,9 @@ export function ModelTest() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="shrink-0 rounded-lg border border-border bg-card p-3">
+            <div className="shrink-0 rounded-xl border border-border bg-card p-3.5 shadow-sm">
                 <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                         <div className="flex flex-wrap items-center gap-2">
                             <button
                                 type="button"
@@ -535,11 +531,11 @@ export function ModelTest() {
                             <Badge variant="outline" className="rounded-md">
                                 {t('summary', { total: summary.total, success: summary.success, failed: summary.failed })}
                             </Badge>
-                            {runStats.total > 0 && (
+                            {runStats.total > 0 ? (
                                 <Badge variant="secondary" className="rounded-md">
                                     {t('queueSummary', { running: runStats.running, queued: runStats.queued, total: runStats.total })}
                                 </Badge>
-                            )}
+                            ) : null}
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <Button type="button" variant="outline" size="sm" onClick={handleExport} disabled={exportableResults.length === 0}>
@@ -565,118 +561,117 @@ export function ModelTest() {
                         </div>
                     </div>
 
-                    <div className="grid gap-3 lg:grid-cols-[minmax(12rem,18rem)_minmax(20rem,1fr)_8rem_8rem_auto]">
-                        {mode === 'channel' ? (
-                            <label className="grid gap-1">
-                                <span className="text-xs font-medium text-muted-foreground">{t('channel')}</span>
-                                <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-                                    <SelectTrigger className="w-full rounded-lg">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {channels.map((channel) => (
-                                            <SelectItem key={channel.id} value={String(channel.id)}>
-                                                {channel.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </label>
-                        ) : (
-                            <label className="grid gap-1">
-                                <span className="text-xs font-medium text-muted-foreground">{t('model')}</span>
-                                <Select value={selectedModelName} onValueChange={setSelectedModelName}>
-                                    <SelectTrigger className="w-full rounded-lg">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {modelNames.map((name) => (
-                                            <SelectItem key={name} value={name}>
-                                                {name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </label>
-                        )}
+                    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(16rem,0.8fr)]">
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                            <div className="grid gap-3 lg:grid-cols-[minmax(12rem,18rem)_minmax(0,1fr)]">
+                                {mode === 'channel' ? (
+                                    <label className="grid gap-1">
+                                        <span className="text-xs font-medium text-muted-foreground">{t('channel')}</span>
+                                        <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
+                                            <SelectTrigger className="w-full rounded-lg">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {channels.map((channel) => (
+                                                    <SelectItem key={channel.id} value={String(channel.id)}>
+                                                        {channel.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </label>
+                                ) : (
+                                    <label className="grid gap-1">
+                                        <span className="text-xs font-medium text-muted-foreground">{t('model')}</span>
+                                        <Select value={selectedModelName} onValueChange={setSelectedModelName}>
+                                            <SelectTrigger className="w-full rounded-lg">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {modelNames.map((name) => (
+                                                    <SelectItem key={name} value={name}>
+                                                        {name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </label>
+                                )}
 
-                        <label className="grid gap-1">
-                            <span className="text-xs font-medium text-muted-foreground">{t('prompt')}</span>
-                            <Input value={prompt} onChange={(event) => setPrompt(event.target.value)} className="rounded-lg" />
-                        </label>
+                                <label className="grid gap-1">
+                                    <span className="text-xs font-medium text-muted-foreground">{t('prompt')}</span>
+                                    <Input value={prompt} onChange={(event) => setPrompt(event.target.value)} className="rounded-lg" />
+                                </label>
+                            </div>
+                        </div>
 
-                        <label className="grid gap-1">
-                            <span className="text-xs font-medium text-muted-foreground">{t('maxTokens')}</span>
-                            <Input
-                                type="number"
-                                min={1}
-                                max={256}
-                                value={maxTokens}
-                                onChange={(event) => setMaxTokens(Math.max(1, Math.min(256, Number(event.target.value) || 1)))}
-                                className="rounded-lg"
-                            />
-                        </label>
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <label className="grid gap-1">
+                                    <span className="text-xs font-medium text-muted-foreground">{t('maxTokens')}</span>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={256}
+                                        value={maxTokens}
+                                        onChange={(event) => setMaxTokens(Math.max(1, Math.min(256, Number(event.target.value) || 1)))}
+                                        className="rounded-lg"
+                                    />
+                                </label>
 
-                        <label className="grid gap-1">
-                            <span className="text-xs font-medium text-muted-foreground">{t('concurrency')}</span>
-                            <Input
-                                type="number"
-                                min={1}
-                                max={MAX_CONCURRENCY}
-                                value={concurrency}
-                                onChange={(event) => setConcurrency(Math.max(1, Math.min(MAX_CONCURRENCY, Number(event.target.value) || 1)))}
-                                className="rounded-lg"
-                            />
-                        </label>
+                                <label className="grid gap-1">
+                                    <span className="text-xs font-medium text-muted-foreground">{t('concurrency')}</span>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={MAX_CONCURRENCY}
+                                        value={concurrency}
+                                        onChange={(event) => setConcurrency(Math.max(1, Math.min(MAX_CONCURRENCY, Number(event.target.value) || 1)))}
+                                        className="rounded-lg"
+                                    />
+                                </label>
 
-                        <div className="flex items-end gap-3">
-                            <label className="grid gap-1">
-                                <span className="text-xs font-medium text-muted-foreground">{t('protocol')}</span>
-                                <Select value="auto" disabled>
-                                    <SelectTrigger className="w-28 rounded-lg">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="auto">{t('protocolAuto')}</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </label>
-                            <label className="flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground">
-                                <Switch checked={stream} onCheckedChange={setStream} />
-                                {t('stream')}
-                            </label>
+                                <label className="grid gap-1">
+                                    <span className="text-xs font-medium text-muted-foreground">{t('protocol')}</span>
+                                    <Select value="auto" disabled>
+                                        <SelectTrigger className="w-full rounded-lg">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="auto">{t('protocolAuto')}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </label>
+
+                                <label className="flex h-10 items-center justify-between rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground">
+                                    <span>{t('stream')}</span>
+                                    <Switch checked={stream} onCheckedChange={setStream} />
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+                                <div className="text-xs text-muted-foreground">{t('stats.visible')}</div>
+                                <div className="mt-1 text-lg font-semibold tabular-nums">{rows.length}</div>
+                            </div>
+                            <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+                                <div className="text-xs text-muted-foreground">{t('stats.selected')}</div>
+                                <div className="mt-1 text-lg font-semibold tabular-nums">{selectedRows.length}</div>
+                            </div>
+                            <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+                                <div className="text-xs text-muted-foreground">{t('stats.running')}</div>
+                                <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.running}</div>
+                            </div>
+                            <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+                                <div className="text-xs text-muted-foreground">{t('stats.queued')}</div>
+                                <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.queued}</div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
-                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
-                            <div className="text-xs text-muted-foreground">{t('stats.visible')}</div>
-                            <div className="mt-1 text-lg font-semibold tabular-nums">{rows.length}</div>
-                        </div>
-                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
-                            <div className="text-xs text-muted-foreground">{t('stats.selected')}</div>
-                            <div className="mt-1 text-lg font-semibold tabular-nums">{selectedRows.length}</div>
-                        </div>
-                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
-                            <div className="text-xs text-muted-foreground">{t('stats.concurrency')}</div>
-                            <div className="mt-1 text-lg font-semibold tabular-nums">{concurrency}</div>
-                        </div>
-                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
-                            <div className="text-xs text-muted-foreground">{t('stats.running')}</div>
-                            <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.running}</div>
-                        </div>
-                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
-                            <div className="text-xs text-muted-foreground">{t('stats.queued')}</div>
-                            <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.queued}</div>
-                        </div>
-                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
-                            <div className="text-xs text-muted-foreground">{t('stats.requestMode')}</div>
-                            <div className="mt-1 text-lg font-semibold">{stream ? t('stats.stream') : t('stats.nonStream')}</div>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 md:flex-row">
-                        <div className="relative min-w-0 flex-1">
+                    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_10rem]">
+                        <div className="relative min-w-0">
                             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={query}
@@ -686,7 +681,7 @@ export function ModelTest() {
                             />
                         </div>
                         <Select value={resultFilter} onValueChange={(value) => setResultFilter(value as ModelTestResultFilter)}>
-                            <SelectTrigger className="w-full rounded-lg md:w-40">
+                            <SelectTrigger className="w-full rounded-lg">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -728,11 +723,11 @@ export function ModelTest() {
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-card">
-                <div className="h-full overflow-x-auto">
-                    <div className="flex h-full min-w-[76rem] flex-col">
+            <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div className="h-full overflow-auto">
+                    <div className="flex h-full min-w-[58rem] flex-col">
                         <div
-                            className="grid border-b border-border bg-muted/90 text-left text-xs uppercase text-muted-foreground backdrop-blur"
+                            className="sticky top-0 z-10 grid border-b border-border bg-muted/90 text-left text-xs uppercase text-muted-foreground backdrop-blur"
                             style={{ gridTemplateColumns: MODEL_TEST_GRID_COLUMNS }}
                         >
                             <div className="px-3 py-3">
@@ -741,14 +736,9 @@ export function ModelTest() {
                                 </button>
                             </div>
                             <div className="px-3 py-3">{mode === 'channel' ? t('table.model') : t('table.channel')}</div>
-                            <div className="px-3 py-3">{t('table.protocol')}</div>
                             <div className="px-3 py-3">{t('table.status')}</div>
-                            <div className="px-3 py-3">{t('table.http')}</div>
-                            <div className="px-3 py-3">{t('table.ttfb')}</div>
-                            <div className="px-3 py-3">{t('table.duration')}</div>
-                            <div className="px-3 py-3">{t('table.tokens')}</div>
-                            <div className="px-3 py-3">{t('table.speed')}</div>
-                            <div className="px-3 py-3">{t('table.cost')}</div>
+                            <div className="px-3 py-3">{`${t('table.http')} / ${t('table.duration')}`}</div>
+                            <div className="px-3 py-3">{`${t('table.tokens')} / ${t('table.cost')}`}</div>
                             <div className="px-3 py-3">{t('table.response')}</div>
                             <div className="px-3 py-3">{t('table.actions')}</div>
                         </div>
@@ -763,7 +753,7 @@ export function ModelTest() {
                                     items={rows}
                                     layout="list"
                                     columns={{ default: 1 }}
-                                    estimateItemHeight={86}
+                                    estimateItemHeight={110}
                                     gap={0}
                                     overscan={12}
                                     getItemKey={(row) => row.key}
@@ -795,14 +785,19 @@ export function ModelTest() {
                                                     <div className="truncate font-medium text-foreground">
                                                         {mode === 'channel' ? row.modelName : row.channelName}
                                                     </div>
-                                                    <div className="mt-1 truncate text-xs text-muted-foreground">
-                                                        {mode === 'channel' ? modelSourceLabel(row) : row.modelName}
+                                                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                                                        <span className="truncate" title={mode === 'channel' ? row.channelName : row.modelName}>
+                                                            {mode === 'channel' ? row.channelName : row.modelName}
+                                                        </span>
+                                                        <Badge variant="outline" className="rounded-md">
+                                                            {protocolLabel(row.protocol)}
+                                                        </Badge>
+                                                        {!row.enabled ? (
+                                                            <Badge variant="outline" className="rounded-md">
+                                                                {t('status.disabled')}
+                                                            </Badge>
+                                                        ) : null}
                                                     </div>
-                                                </div>
-                                                <div className="px-3 py-3">
-                                                    <Badge variant="outline" className="rounded-md">
-                                                        {protocolLabel(row.protocol)}
-                                                    </Badge>
                                                 </div>
                                                 <div className="px-3 py-3">
                                                     {status === 'running' ? (
@@ -830,27 +825,31 @@ export function ModelTest() {
                                                             {row.enabled ? t('status.idle') : t('status.disabled')}
                                                         </Badge>
                                                     )}
-                                                    {result?.failure_reason && (
-                                                        <div className="mt-1 max-w-40 truncate text-xs text-destructive" title={result.failure_reason}>
+                                                    {result?.failure_reason ? (
+                                                        <div className="mt-1 line-clamp-2 text-xs text-destructive" title={result.failure_reason}>
                                                             {result.failure_reason}
                                                         </div>
-                                                    )}
+                                                    ) : null}
                                                 </div>
-                                                <div className="px-3 py-3 tabular-nums">{result?.http_status || '-'}</div>
-                                                <div className="px-3 py-3 tabular-nums">{formatMS(result?.ttfb_ms)}</div>
-                                                <div className="px-3 py-3 tabular-nums">{formatMS(result?.duration_ms)}</div>
-                                                <div className="px-3 py-3 tabular-nums">
-                                                    <div>{formatCount(result?.input_tokens)} / {formatCount(result?.output_tokens)}</div>
-                                                    <div className="text-xs text-muted-foreground">{t('cache')}: {formatCount(result?.cache_tokens)}</div>
+                                                <div className="px-3 py-3 text-xs tabular-nums text-muted-foreground">
+                                                    <div className="font-medium text-foreground">{t('table.http')}: {result?.http_status || '-'}</div>
+                                                    <div className="mt-1">{t('table.ttfb')}: {formatMS(result?.ttfb_ms)}</div>
+                                                    <div>{t('table.duration')}: {formatMS(result?.duration_ms)}</div>
                                                 </div>
-                                                <div className="px-3 py-3 tabular-nums">{formatSpeed(result?.tokens_per_second)}</div>
-                                                <div className="px-3 py-3 tabular-nums">{formatCost(result?.estimated_cost)}</div>
+                                                <div className="px-3 py-3 text-xs tabular-nums text-muted-foreground">
+                                                    <div className="font-medium text-foreground">
+                                                        {formatCount(result?.input_tokens)} / {formatCount(result?.output_tokens)}
+                                                    </div>
+                                                    <div className="mt-1">{t('cache')}: {formatCount(result?.cache_tokens)}</div>
+                                                    <div>{t('table.speed')}: {formatSpeed(result?.tokens_per_second)}</div>
+                                                    <div>{t('table.cost')}: {formatCost(result?.estimated_cost)}</div>
+                                                </div>
                                                 <div className="min-w-0 px-3 py-3">
-                                                    <div className="line-clamp-3 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
+                                                    <div className="line-clamp-4 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
                                                         {runStatus === 'queued' ? t('queued') : isRunning ? t('running') : result?.response_text || result?.error_message || '-'}
                                                     </div>
                                                 </div>
-                                                <div className="flex items-start gap-1 px-3 py-3">
+                                                <div className="flex flex-wrap items-start gap-1 px-3 py-3">
                                                     <Button
                                                         type="button"
                                                         variant="ghost"

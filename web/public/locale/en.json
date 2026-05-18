@@ -110,6 +110,20 @@
             "failoverRequests": "Failover",
             "failoverSub": "Rate {rate}"
         },
+        "sections": {
+            "workbench": {
+                "title": "Requests & Traces",
+                "description": "High-frequency debugging, trace visibility, and channel status"
+            },
+            "analytics": {
+                "title": "Trends & Rankings",
+                "description": "Cost trends, request heat, and channel rankings"
+            },
+            "activity": {
+                "title": "Activity Heatmap",
+                "description": "Daily request activity"
+            }
+        },
         "activity": {
             "requestCount": "Requests",
             "waitTime": "Wait Time",
@@ -386,6 +400,31 @@
                 "result": "Import result"
             }
         },
+        "siteAutomation": {
+            "title": "Site Automation",
+            "syncInterval": {
+                "label": "Auto Sync Interval (hours)",
+                "placeholder": "Enter interval in hours"
+            },
+            "checkinInterval": {
+                "label": "Auto Check-in Interval (hours)",
+                "placeholder": "Enter interval in hours"
+            },
+            "manualSync": {
+                "label": "Manual full site sync",
+                "button": "Sync now",
+                "pending": "Syncing...",
+                "success": "Triggered full site sync in the background",
+                "failed": "Failed to trigger sync"
+            },
+            "manualCheckin": {
+                "label": "Manual full site check-in",
+                "button": "Check in now",
+                "pending": "Checking in...",
+                "success": "Triggered full site check-in in the background",
+                "failed": "Failed to trigger check-in"
+            }
+        },
         "apiKey": {
             "title": "API Keys",
             "empty": "No API keys",
@@ -500,6 +539,31 @@
             "updating": "Updating...",
             "updateSuccess": "Update successful, service will restart shortly",
             "updateFailed": "Update failed"
+        },
+        "modelAssociation": {
+            "title": "Model Association Rules",
+            "subtitle": "Manage the alias-folding rules and manual mappings that are loaded by default for bulk group generation.",
+            "description": "These defaults are applied automatically to the preview and generate requests in Groups -> Bulk Generate.",
+            "summaryOptions": "{count} rules enabled",
+            "summaryManual": "{count} manual mappings",
+            "openGroup": "Open Groups",
+            "restore": "Restore saved",
+            "save": "Save defaults",
+            "saving": "Saving...",
+            "reset": "Reset to recommended",
+            "saved": "Default association rules saved",
+            "saveFailed": "Failed to save default association rules",
+            "savedState": "Saved",
+            "pendingState": "Unsaved changes",
+            "empty": "No manual mapping is configured yet. Leave it empty to use rule-based folding only."
+        },
+        "sections": {
+            "system": "System & Logs",
+            "health": "Health Routing",
+            "automation": "Automation & Sync",
+            "association": "Model Association",
+            "fusion": "Fusion Visibility",
+            "maintenance": "Account & Backup"
         },
         "fusionCapabilities": {
             "title": "Fusion Capability Visibility",
@@ -637,7 +701,7 @@
                 "modelAssociation": {
                     "name": "Model Association / Alias Folding",
                     "desc": "Keeps the Octopus group model while folding common upstream aliases such as provider/model and models/... into the same public model group.",
-                    "ui": "The group bulk-generation dialog now includes advanced association rules, persisted defaults, manual alias mapping, match scores, and strategy explanations directly in preview.",
+                    "ui": "Both the group bulk-generation dialog and the settings-page defaults card can configure advanced association rules, persisted defaults, manual alias mapping, match scores, and strategy explanations directly in preview.",
                     "gap": "Still does not introduce AxonHub Provider / GlobalModel / full ModelAssociation conditions. Tag-assisted folding and richer cross-provider conditions remain future work."
                 },
                 "protocolTransform": {
