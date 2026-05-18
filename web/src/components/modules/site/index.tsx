@@ -73,6 +73,7 @@ import {
 import type { SiteFilter as SiteSurfaceFilter } from "@/components/modules/toolbar/view-options-store";
 import { cn } from "@/lib/utils";
 import { useSettingStore } from "@/stores/setting";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { CheckinPanel } from "./CheckinPanel";
 import {
   accountHasCheckinEnabled,
@@ -151,6 +152,7 @@ type SiteAccountFormState = {
 };
 
 const AUTO_DETECT_VALUE = "__auto__";
+const SITE_CARD_RENDER_BATCH_SIZE = 36;
 
 const PLATFORM_LABELS: Record<SitePlatform, string> = {
   [SitePlatform.NewAPI]: "New API",
@@ -803,6 +805,7 @@ function estimateVisibleSiteCardHeight(item: VisibleSite, expanded: boolean) {
 export function Site() {
   const t = useTranslations();
   const locale = useSettingStore((state) => state.locale);
+  const isMobile = useIsMobile();
   const { data: sites, isLoading, error } = useSiteList();
   const createSite = useCreateSite();
   const updateSite = useUpdateSite();
@@ -877,6 +880,10 @@ export function Site() {
   const [siteCardHeights, setSiteCardHeights] = useState<Record<number, number>>(
     {},
   );
+  const [siteRenderWindow, setSiteRenderWindow] = useState({
+    key: "",
+    limit: SITE_CARD_RENDER_BATCH_SIZE,
+  });
   const [statusDayKey, setStatusDayKey] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
@@ -1112,6 +1119,47 @@ export function Site() {
     (sum, item) => sum + item.visibleAccounts.length,
     0,
   );
+  const siteRenderScopeKey = `${normalizedQuery}\u0000${siteSurfaceFilter}\u0000${checkinFilterStatus}`;
+  const siteRenderBaseLimit =
+    siteRenderWindow.key === siteRenderScopeKey
+      ? siteRenderWindow.limit
+      : SITE_CARD_RENDER_BATCH_SIZE;
+  const forcedSiteIndex = useMemo(() => {
+    if (!forcedSiteId) return -1;
+    return visibleSites.findIndex((item) => item.site.id === forcedSiteId);
+  }, [forcedSiteId, visibleSites]);
+  const effectiveSiteRenderLimit = Math.min(
+    visibleSites.length,
+    Math.max(
+      SITE_CARD_RENDER_BATCH_SIZE,
+      siteRenderBaseLimit,
+      forcedSiteIndex >= 0 ? forcedSiteIndex + 1 : 0,
+    ),
+  );
+  const renderedVisibleSites = useMemo(
+    () => visibleSites.slice(0, effectiveSiteRenderLimit),
+    [visibleSites, effectiveSiteRenderLimit],
+  );
+  const hiddenSiteCount = Math.max(
+    visibleSites.length - renderedVisibleSites.length,
+    0,
+  );
+  const handleLoadMoreSites = useCallback(() => {
+    setSiteRenderWindow((current) => {
+      const currentLimit =
+        current.key === siteRenderScopeKey
+          ? current.limit
+          : SITE_CARD_RENDER_BATCH_SIZE;
+      return {
+        key: siteRenderScopeKey,
+        limit: Math.min(
+          visibleSites.length,
+          Math.max(currentLimit, effectiveSiteRenderLimit) +
+            SITE_CARD_RENDER_BATCH_SIZE,
+        ),
+      };
+    });
+  }, [effectiveSiteRenderLimit, siteRenderScopeKey, visibleSites.length]);
 
   const currentPlatform = accountSite?.platform ?? SitePlatform.NewAPI;
   const currentCredentialOptions = credentialOptions(currentPlatform);
@@ -1691,11 +1739,31 @@ export function Site() {
       if (target.kind === "site-account") {
         flashTarget("account", target.accountId);
       }
+      if (forcedSiteIndex >= 0) {
+        setSiteRenderWindow((current) => {
+          const currentLimit =
+            current.key === siteRenderScopeKey
+              ? current.limit
+              : SITE_CARD_RENDER_BATCH_SIZE;
+          const nextLimit = Math.max(currentLimit, forcedSiteIndex + 1);
+          if (current.key === siteRenderScopeKey && current.limit === nextLimit) {
+            return current;
+          }
+          return { key: siteRenderScopeKey, limit: nextLimit };
+        });
+      }
       clearPendingJump(requestId);
     }, 80);
 
     return () => window.clearTimeout(timer);
-  }, [pendingSiteJump, visibleSites, clearPendingJump, flashTarget]);
+  }, [
+    pendingSiteJump,
+    visibleSites,
+    forcedSiteIndex,
+    siteRenderScopeKey,
+    clearPendingJump,
+    flashTarget,
+  ]);
 
   const masonryColumns = useMemo<[VisibleSite[], VisibleSite[]]>(() => {
     const left: VisibleSite[] = [];
@@ -1703,7 +1771,7 @@ export function Site() {
     let leftHeight = 0;
     let rightHeight = 0;
 
-    for (const item of visibleSites) {
+    for (const item of renderedVisibleSites) {
       const isExpanded = item.forceExpanded || expandedSiteIds.has(item.site.id);
       const estimatedHeight =
         siteCardHeights[item.site.id] ??
@@ -1718,7 +1786,7 @@ export function Site() {
     }
 
     return [left, right];
-  }, [visibleSites, expandedSiteIds, siteCardHeights]);
+  }, [renderedVisibleSites, expandedSiteIds, siteCardHeights]);
 
   const renderSiteCard = ({
     site,
@@ -2369,38 +2437,59 @@ export function Site() {
 
         {visibleSites.length > 0 ? (
           <>
-            <div className="space-y-4 md:hidden">
-              {visibleSites.map((item) => (
-                <div
-                  key={item.site.id}
-                  ref={getSiteCardMeasureRef(item.site.id)}
-                >
-                  {renderSiteCard(item)}
+            {isMobile ? (
+              <div className="space-y-4">
+                {renderedVisibleSites.map((item) => (
+                  <div
+                    key={item.site.id}
+                    ref={getSiteCardMeasureRef(item.site.id)}
+                  >
+                    {renderSiteCard(item)}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid items-start gap-4 md:grid-cols-2">
+                <div className="space-y-4">
+                  {masonryColumns[0].map((item) => (
+                    <div
+                      key={item.site.id}
+                      ref={getSiteCardMeasureRef(item.site.id)}
+                    >
+                      {renderSiteCard(item)}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="hidden items-start gap-4 md:grid md:grid-cols-2">
-              <div className="space-y-4">
-                {masonryColumns[0].map((item) => (
-                  <div
-                    key={item.site.id}
-                    ref={getSiteCardMeasureRef(item.site.id)}
-                  >
-                    {renderSiteCard(item)}
-                  </div>
-                ))}
+                <div className="space-y-4">
+                  {masonryColumns[1].map((item) => (
+                    <div
+                      key={item.site.id}
+                      ref={getSiteCardMeasureRef(item.site.id)}
+                    >
+                      {renderSiteCard(item)}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-4">
-                {masonryColumns[1].map((item) => (
-                  <div
-                    key={item.site.id}
-                    ref={getSiteCardMeasureRef(item.site.id)}
-                  >
-                    {renderSiteCard(item)}
+            )}
+
+            {hiddenSiteCount > 0 ? (
+              <section className="rounded-3xl border border-dashed border-border bg-card/70 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    已显示 {renderedVisibleSites.length} / {visibleSites.length} 个站点
                   </div>
-                ))}
-              </div>
-            </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl sm:w-auto"
+                    onClick={handleLoadMoreSites}
+                  >
+                    显示更多站点
+                  </Button>
+                </div>
+              </section>
+            ) : null}
           </>
         ) : null}
       </PageWrapper>
