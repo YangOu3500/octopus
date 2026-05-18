@@ -1257,7 +1257,14 @@
     },
     "log": {
         "list": {
-            "noMore": "No more logs"
+            "noMore": "No more logs",
+            "export": {
+                "button": "Export Loaded",
+                "empty": "No loaded logs to export",
+                "success": "Loaded logs exported",
+                "failed": "Failed to export loaded logs",
+                "safe": "The export only contains structured fields from currently loaded rows, without full request / response bodies, API key names, or auth data"
+            }
         },
         "active": {
             "title": "Active Request Debug",

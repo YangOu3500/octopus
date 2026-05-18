@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type ActiveRequestEvent, type ActiveRequestSnapshot, type LogListFilters, useActiveRequests, useLogs } from '@/api/endpoints/log';
+import { type ActiveRequestEvent, type ActiveRequestSnapshot, type ChannelAttempt, type LogListFilters, type RelayLog, useActiveRequests, useLogs } from '@/api/endpoints/log';
 import { LogCard, type LogSiteActionTarget, type LogSiteActionTargets } from './Item';
 import { Activity, Download, Loader2, RefreshCw, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -33,6 +33,7 @@ type ManagedChannelLookup = {
 };
 
 const ACTIVE_DEBUG_EXPORT_VERSION = 1;
+const LOG_LIST_EXPORT_VERSION = 1;
 
 function getBaseGroupKey(groupKey: string) {
     return groupKey.split('::', 1)[0] || groupKey;
@@ -264,6 +265,177 @@ function buildActiveDebugExport(
             snapshot: sanitizeActiveSnapshot(event.snapshot),
             list_total: event.list?.total,
         })),
+    };
+}
+
+function sanitizeLogExportText(value: string | undefined | null, maxLength = 500) {
+    if (!value) return undefined;
+
+    let text = value
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/gi, 'Bearer [REDACTED]')
+        .replace(/\bsk-[A-Za-z0-9_-]{10,}\b/g, '[REDACTED_API_KEY]')
+        .replace(/\b(cookie|set-cookie|authorization|x-api-key)\s*[:=]\s*[^,\s;]+/gi, '$1=[REDACTED]')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!text) return undefined;
+    if (text.length > maxLength) text = `${text.slice(0, maxLength)}...`;
+    return text;
+}
+
+function sanitizeBaseURLForExport(value: string | undefined | null) {
+    const raw = value?.trim();
+    if (!raw) return undefined;
+
+    try {
+        const parsed = new URL(raw);
+        parsed.username = '';
+        parsed.password = '';
+        parsed.search = '';
+        parsed.hash = '';
+        return parsed.toString();
+    } catch {
+        return sanitizeLogExportText(raw, 240);
+    }
+}
+
+function sanitizeLogAttemptForExport(attempt: ChannelAttempt, index: number) {
+    return {
+        attempt_num: attempt.attempt_num,
+        attempt_index: attempt.attempt_index ?? attempt.attempt_num ?? index + 1,
+        channel_id: attempt.channel_id,
+        channel_name: attempt.channel_name,
+        channel_key_id: attempt.channel_key_id ?? attempt.key_id,
+        site_id: attempt.site_id,
+        site_account_id: attempt.site_account_id ?? attempt.account_id,
+        base_url: sanitizeBaseURLForExport(attempt.base_url),
+        model_name: attempt.model_name,
+        upstream_model: attempt.upstream_model,
+        request_protocol: attempt.request_protocol,
+        upstream_protocol: attempt.upstream_protocol,
+        response_protocol: attempt.response_protocol,
+        status: attempt.status,
+        http_status: attempt.http_status,
+        failure_reason: attempt.failure_reason,
+        retryable: attempt.retryable,
+        duration_ms: attempt.duration_ms ?? attempt.duration,
+        ttfb_ms: attempt.ttfb_ms,
+        total_ms: attempt.total_ms,
+        input_tokens: attempt.input_tokens,
+        output_tokens: attempt.output_tokens,
+        cache_tokens: attempt.cache_tokens,
+        input_cost: attempt.input_cost,
+        output_cost: attempt.output_cost,
+        estimated_cost: attempt.estimated_cost,
+        cost_incurred: attempt.cost_incurred,
+        cost_source: attempt.cost_source,
+        service_tier: attempt.service_tier,
+        sticky: attempt.sticky,
+        created_at: attempt.created_at,
+        error_summary: sanitizeLogExportText(attempt.error_summary || attempt.msg, 500),
+    };
+}
+
+function sanitizeLogForListExport(log: RelayLog) {
+    return {
+        id: log.id,
+        trace_id: log.trace_id,
+        thread_id: log.thread_id,
+        client_api_key_id: log.client_api_key_id,
+        group_id: log.group_id,
+        time: log.time,
+        request: {
+            model_name: log.request_model_name,
+            stream: log.request_stream,
+            source: log.request_source,
+            client_ip: formatActiveClientIP(log.client_ip),
+        },
+        route: {
+            channel_id: log.channel,
+            channel_name: log.channel_name,
+            actual_model_name: log.actual_model_name,
+            final_status: log.final_status,
+            final_channel_id: log.final_channel_id,
+            final_site_id: log.final_site_id,
+            final_upstream_model: log.final_upstream_model,
+        },
+        latency: {
+            total_latency_ms: log.total_latency_ms,
+            first_token_ms: log.ftut,
+            use_time_ms: log.use_time,
+        },
+        usage: {
+            input_tokens: log.input_tokens,
+            transport_input_tokens: log.transport_input_tokens,
+            bill_input_tokens: log.bill_input_tokens,
+            cache_read_tokens: log.cache_read_tokens,
+            cache_write_tokens: log.cache_write_tokens,
+            cache_tokens: log.cache_tokens,
+            output_tokens: log.output_tokens,
+        },
+        cost: {
+            cost: log.cost,
+            estimated_cost: log.estimated_cost,
+            final_success_cost: log.final_success_cost,
+            total_attempt_cost: log.total_attempt_cost,
+            failed_attempt_estimated_cost: log.failed_attempt_estimated_cost,
+        },
+        service_tier: log.service_tier,
+        websocket: {
+            used: log.used_ws,
+            mode: log.ws_mode,
+            recovery: log.ws_recovery,
+        },
+        attempts_count: log.attempts_count ?? log.total_attempts ?? log.attempts?.length ?? 0,
+        total_attempts: log.total_attempts,
+        error: sanitizeLogExportText(log.error, 500),
+        attempts: log.attempts?.map(sanitizeLogAttemptForExport) ?? [],
+    };
+}
+
+function sanitizeLogListFiltersForExport(filters: LogListFilters) {
+    const { api_key: apiKey, ...safeFilters } = filters;
+    return {
+        ...safeFilters,
+        api_key_filter_present: Boolean(apiKey),
+    };
+}
+
+function buildLogListExport(logs: RelayLog[], total: number, filters: LogListFilters) {
+    return {
+        export_version: LOG_LIST_EXPORT_VERSION,
+        exported_at: exportTimestamp(),
+        safety: {
+            content: 'loaded_log_list_structured_fields',
+            scope: 'currently loaded rows only',
+            excludes: [
+                'request body',
+                'response body',
+                'api key name',
+                'full api key',
+                'cookie',
+                'authorization',
+                'set-cookie',
+                'x-api-key',
+                'bearer token',
+                'session',
+                'jwt',
+            ],
+        },
+        scope: {
+            loaded_count: logs.length,
+            matched_total: total,
+            filters: sanitizeLogListFiltersForExport(filters),
+        },
+        items: logs.map(sanitizeLogForListExport),
     };
 }
 
@@ -664,6 +836,22 @@ export function Log() {
         void loadMore();
     }, [canLoadMore, loadMore]);
 
+    const handleExportLoadedLogs = useCallback(() => {
+        if (logs.length === 0) {
+            toast.warning(t('list.export.empty'));
+            return;
+        }
+        try {
+            downloadJson(
+                `octopus-log-list-${exportFilenameTimestamp()}.json`,
+                buildLogListExport(logs, total, filters),
+            );
+            toast.success(t('list.export.success'), { description: t('list.export.safe') });
+        } catch (error) {
+            toast.error(t('list.export.failed'), { description: error instanceof Error ? error.message : String(error) });
+        }
+    }, [filters, logs, t, total]);
+
     const resetFilters = useCallback(() => {
         setTimeRange('all');
         setModelFilter('');
@@ -773,6 +961,10 @@ export function Log() {
                             <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
                                 {isFetching ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
                                 刷新
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handleExportLoadedLogs} disabled={logs.length === 0}>
+                                <Download className="size-4" />
+                                {t('list.export.button')}
                             </Button>
                         </div>
                     </div>
