@@ -539,7 +539,7 @@
                     "name": "健康分 / 冷却 / 智能调度",
                     "desc": "结合真实请求反馈、成功率、空响应率、延迟和冷却状态影响候选排序或跳过。",
                     "ui": "设置页可调健康分权重并查看冷却策略；分组调度预览展示健康分、冷却和决策原因。",
-                    "gap": "已实现 key / channel / base_url / site / account 冷却范围；后续可继续补硬并发队列。"
+                    "gap": "已实现 key / channel / base_url / site / account 冷却范围；硬并发队列已作为独立能力接入。"
                 },
                 "channelModelHealth": {
                     "name": "渠道-模型健康工作台",
@@ -599,7 +599,7 @@
                     "name": "实时 debug / 活跃请求视图",
                     "desc": "ccLoad 有更强的活跃请求和调试快照体验，适合排查未结束请求。",
                     "ui": "日志页顶部已提供活跃请求快照，展示运行中请求的模型、阶段、候选渠道、Key ID、站点 / 账号、attempt 数、首 token 和写出状态。",
-                    "gap": "当前是内存态快照；debug 事件流、独立 request_traces 表和更细 raw 调试仍可后续增强。"
+                    "gap": "当前是内存态快照；debug 事件流和更细 raw 调试仍可后续增强，结构化 trace 已由独立工作台承接。"
                 },
                 "quotaStatus": {
                     "name": "额度 / 配额状态解析",

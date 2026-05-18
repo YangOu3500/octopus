@@ -539,7 +539,7 @@
                     "name": "Health Score / Cooldown / Smart Routing",
                     "desc": "Uses real feedback, success rate, empty response rate, latency, and cooldown state to sort or skip candidates.",
                     "ui": "Settings expose health weights and cooldown policy. Group routing preview shows health score, cooldown, and decisions.",
-                    "gap": "Key / channel / base_url / site / account cooldown scopes are implemented. Hard concurrency queues can still be added later."
+                    "gap": "Key / channel / base_url / site / account cooldown scopes are implemented. Hard concurrency queueing is now exposed as a separate capability."
                 },
                 "channelModelHealth": {
                     "name": "Channel-Model Health Workbench",
@@ -599,7 +599,7 @@
                     "name": "Live Debug / Active Requests",
                     "desc": "ccLoad has stronger active request and debug snapshot views for in-flight troubleshooting.",
                     "ui": "The Logs page now shows active request snapshots with model, phase, candidate channel, key ID, site/account, attempt count, first-token, and written state.",
-                    "gap": "Current snapshots are in memory. Debug event streams, dedicated request_traces tables, and deeper raw debugging can still be added later."
+                    "gap": "Current snapshots are in memory. Debug event streams and deeper raw debugging can still be added later; structured traces are covered by the standalone workbench."
                 },
                 "quotaStatus": {
                     "name": "Quota / Capacity Status Resolver",
