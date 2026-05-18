@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Activity, AlertTriangle, Gauge, LoaderCircle, RefreshCw, Search, Server, ShieldCheck, Thermometer, Wallet } from 'lucide-react';
+import { Activity, AlertTriangle, Download, Gauge, LoaderCircle, RefreshCw, Search, Server, ShieldCheck, Thermometer, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useChannelList, useChannelModelHealth, type ChannelModelHealthRow } from '@/api/endpoints/channel';
+import { toast } from '@/components/common/Toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ const QUOTA_FILTER_STATUSES = [
     'model_disabled',
     'unknown',
 ] as const;
+const CHANNEL_MODEL_HEALTH_EXPORT_VERSION = 1;
 
 function formatNumber(value: number | undefined) {
     if (!value || value <= 0) return '-';
@@ -59,6 +61,77 @@ function formatCooldown(value: number | undefined) {
     const minutes = Math.ceil(seconds / 60);
     if (minutes < 60) return `${minutes}m`;
     return `${Math.ceil(minutes / 60)}h`;
+}
+
+function exportTimestamp() {
+    return new Date().toISOString();
+}
+
+function exportFilenameTimestamp() {
+    return exportTimestamp().replace(/[:.]/g, '-');
+}
+
+function compactObject<T extends Record<string, unknown>>(input: T) {
+    return Object.fromEntries(
+        Object.entries(input).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+    );
+}
+
+function downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function sanitizeChannelModelHealthRowForExport(row: ChannelModelHealthRow) {
+    return compactObject({
+        channel_id: row.channel_id,
+        channel_name: row.channel_name,
+        managed: row.managed,
+        site_id: row.site_id,
+        site_name: row.site_name,
+        site_account_id: row.site_account_id,
+        site_account_name: row.site_account_name,
+        model_name: row.model_name,
+        request_count: row.request_count,
+        success_count: row.success_count,
+        failure_count: row.failure_count,
+        success_rate: row.success_rate,
+        rpm: row.rpm,
+        avg_ttfb_ms: row.avg_ttfb_ms,
+        avg_total_ms: row.avg_total_ms,
+        tokens_per_second: row.tokens_per_second,
+        input_tokens: row.input_tokens,
+        output_tokens: row.output_tokens,
+        cache_tokens: row.cache_tokens,
+        estimated_cost: row.estimated_cost,
+        health_score: row.health_score,
+        health_sample_count: row.health_sample_count,
+        health_success_count: row.health_success_count,
+        health_failure_count: row.health_failure_count,
+        health_success_rate: row.health_success_rate,
+        empty_response_rate: row.empty_response_rate,
+        rate_limit_count: row.rate_limit_count,
+        active_selections: row.active_selections,
+        channel_concurrency_active: row.channel_concurrency_active,
+        channel_concurrency_limit: row.channel_concurrency_limit,
+        cooling_down: row.cooling_down,
+        cooldown_remaining_ms: row.cooldown_remaining_ms,
+        cooldown_reason: row.cooldown_reason,
+        quota_status: row.quota_status,
+        quota_reason: row.quota_reason,
+        quota_balance: row.quota_balance,
+        quota_used: row.quota_used,
+        last_http_status: row.last_http_status,
+        last_failure_reason: row.last_failure_reason,
+        last_seen_time: row.last_seen_time,
+    });
 }
 
 function healthTone(score: number) {
@@ -178,6 +251,31 @@ export function ChannelModelHealthPanel() {
     const quotaStatusChips = QUOTA_FILTER_STATUSES.filter((status) => (quotaStatusCounts[status] ?? 0) > 0);
     const quotaAvailableCount = quotaStatusCounts.available ?? 0;
     const quotaUnknownCount = quotaStatusCounts.unknown ?? 0;
+    const exportCurrentRows = () => {
+        if (rows.length === 0) {
+            toast.warning(t('export.empty'));
+            return;
+        }
+        try {
+            const exportedAt = exportTimestamp();
+            downloadJson(`octopus-channel-model-health-${exportFilenameTimestamp()}.json`, {
+                export_version: CHANNEL_MODEL_HEALTH_EXPORT_VERSION,
+                exported_at: exportedAt,
+                filters: compactObject({
+                    time_range: timeRange,
+                    channel_id: channelId === 'all' ? undefined : Number(channelId),
+                    source: source === 'all' ? undefined : source,
+                    quota_status: quotaStatus === 'all' ? undefined : quotaStatus,
+                    model: modelQuery.trim() || undefined,
+                }),
+                summary,
+                rows: rows.map(sanitizeChannelModelHealthRowForExport),
+            });
+            toast.success(t('export.success'), { description: t('export.safe') });
+        } catch (error) {
+            toast.error(t('export.failed'), { description: error instanceof Error ? error.message : String(error) });
+        }
+    };
 
     // eslint-disable-next-line react-hooks/incompatible-library
     const rowVirtualizer = useVirtualizer({
@@ -339,6 +437,17 @@ export function ChannelModelHealthPanel() {
                             <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" onClick={() => refetch()}>
                                 <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
                                 {t('refresh')}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-9 rounded-lg"
+                                onClick={exportCurrentRows}
+                                disabled={rows.length === 0}
+                            >
+                                <Download className="size-4" />
+                                {t('export.button')}
                             </Button>
                         </div>
                     </div>

@@ -1438,6 +1438,13 @@
                 "capacity": "Capacity blocks",
                 "capacitySub": "{available} available · {unknown} unknown"
             },
+            "export": {
+                "button": "Export",
+                "empty": "No channel model health rows to export",
+                "success": "Channel model health rows exported",
+                "failed": "Failed to export channel model health rows",
+                "safe": "The export only contains structured redacted fields, without full keys or auth data"
+            },
             "table": {
                 "channel": "Channel / Model",
                 "health": "Health",

@@ -1438,6 +1438,13 @@
                 "capacity": "容量阻斷",
                 "capacitySub": "{available} 個可用 · {unknown} 個未知"
             },
+            "export": {
+                "button": "匯出",
+                "empty": "沒有可匯出的渠道模型健康記錄",
+                "success": "渠道模型健康記錄已匯出",
+                "failed": "渠道模型健康記錄匯出失敗",
+                "safe": "匯出僅包含結構化脫敏欄位，不包含完整 Key 或認證資訊"
+            },
             "table": {
                 "channel": "渠道 / 模型",
                 "health": "健康度",
