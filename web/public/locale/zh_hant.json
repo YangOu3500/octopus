@@ -1332,6 +1332,14 @@
             "tokens": "Token",
             "protocol": "協議",
             "baseUrl": "Base URL",
+            "queueMode": "佇列模式",
+            "queueLimit": "並發上限",
+            "queueWait": "排隊等待",
+            "queueOutcome": "佇列結果",
+            "queueModeLocal": "本機佇列",
+            "queueModeDatabase": "共享佇列",
+            "queueAcquired": "已取得槽位",
+            "queueTimedOut": "排隊逾時",
             "yes": "是",
             "no": "否"
         }
@@ -1391,7 +1399,15 @@
             "responsePreview": "回應",
             "keySite": "Key #{key} / 站點 #{site} / 帳號 #{account}",
             "noFailure": "暫無失敗",
-            "attempts": "{count} 次嘗試"
+            "attempts": "{count} 次嘗試",
+            "queue": {
+                "modeLocal": "本機佇列",
+                "modeDatabase": "共享佇列",
+                "limit": "上限 {limit}",
+                "waited": "等待 {ms}ms",
+                "acquired": "已取得槽位",
+                "timedOut": "排隊逾時"
+            }
         },
         "card": {
             "error": "錯誤",
@@ -1456,6 +1472,14 @@
             "costSourceEstimatedTokens": "估算 Token",
             "protocol": "協議",
             "baseUrl": "Base URL",
+            "queueMode": "佇列模式",
+            "queueLimit": "並發上限",
+            "queueWait": "排隊等待",
+            "queueOutcome": "佇列結果",
+            "queueModeLocal": "本機佇列",
+            "queueModeDatabase": "共享佇列",
+            "queueOutcomeAcquired": "已取得槽位",
+            "queueOutcomeTimedOut": "排隊逾時",
             "startedAt": "開始時間",
             "cacheTokens": "快取 Token",
             "yes": "是",

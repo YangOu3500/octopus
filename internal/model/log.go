@@ -10,42 +10,47 @@ const (
 )
 
 type ChannelAttempt struct {
-	ChannelID        int           `json:"channel_id"`
-	ChannelKeyID     int           `json:"channel_key_id,omitempty"`
-	KeyID            int           `json:"key_id,omitempty"`
-	ChannelName      string        `json:"channel_name"`
-	SiteID           int           `json:"site_id,omitempty"`
-	SiteAccountID    int           `json:"site_account_id,omitempty"`
-	AccountID        int           `json:"account_id,omitempty"`
-	BaseURL          string        `json:"base_url,omitempty"`
-	ModelName        string        `json:"model_name"`
-	UpstreamModel    string        `json:"upstream_model,omitempty"`
-	RequestProtocol  string        `json:"request_protocol,omitempty"`
-	UpstreamProtocol string        `json:"upstream_protocol,omitempty"`
-	ResponseProtocol string        `json:"response_protocol,omitempty"`
-	AttemptNum       int           `json:"attempt_num"`
-	AttemptIndex     int           `json:"attempt_index,omitempty"`
-	Status           AttemptStatus `json:"status"`
-	Duration         int           `json:"duration"`
-	DurationMS       int           `json:"duration_ms,omitempty"`
-	TTFBMS           int           `json:"ttfb_ms,omitempty"`
-	TotalMS          int           `json:"total_ms,omitempty"`
-	HTTPStatus       int           `json:"http_status,omitempty"`
-	FailureReason    string        `json:"failure_reason,omitempty"`
-	Retryable        bool          `json:"retryable,omitempty"`
-	InputTokens      int           `json:"input_tokens,omitempty"`
-	OutputTokens     int           `json:"output_tokens,omitempty"`
-	CacheTokens      int           `json:"cache_tokens,omitempty"`
-	InputCost        float64       `json:"input_cost,omitempty"`
-	OutputCost       float64       `json:"output_cost,omitempty"`
-	EstimatedCost    float64       `json:"estimated_cost,omitempty"`
-	CostIncurred     string        `json:"cost_incurred,omitempty"`
-	CostSource       string        `json:"cost_source,omitempty"`
-	ServiceTier      string        `json:"service_tier,omitempty"`
-	ErrorSummary     string        `json:"error_summary,omitempty"`
-	CreatedAt        int64         `json:"created_at,omitempty"`
-	Sticky           bool          `json:"sticky,omitempty"`
-	Msg              string        `json:"msg,omitempty"`
+	ChannelID                  int           `json:"channel_id"`
+	ChannelKeyID               int           `json:"channel_key_id,omitempty"`
+	KeyID                      int           `json:"key_id,omitempty"`
+	ChannelName                string        `json:"channel_name"`
+	SiteID                     int           `json:"site_id,omitempty"`
+	SiteAccountID              int           `json:"site_account_id,omitempty"`
+	AccountID                  int           `json:"account_id,omitempty"`
+	BaseURL                    string        `json:"base_url,omitempty"`
+	ModelName                  string        `json:"model_name"`
+	UpstreamModel              string        `json:"upstream_model,omitempty"`
+	RequestProtocol            string        `json:"request_protocol,omitempty"`
+	UpstreamProtocol           string        `json:"upstream_protocol,omitempty"`
+	ResponseProtocol           string        `json:"response_protocol,omitempty"`
+	AttemptNum                 int           `json:"attempt_num"`
+	AttemptIndex               int           `json:"attempt_index,omitempty"`
+	Status                     AttemptStatus `json:"status"`
+	Duration                   int           `json:"duration"`
+	DurationMS                 int           `json:"duration_ms,omitempty"`
+	TTFBMS                     int           `json:"ttfb_ms,omitempty"`
+	TotalMS                    int           `json:"total_ms,omitempty"`
+	HTTPStatus                 int           `json:"http_status,omitempty"`
+	FailureReason              string        `json:"failure_reason,omitempty"`
+	Retryable                  bool          `json:"retryable,omitempty"`
+	ChannelConcurrencyMode     string        `json:"channel_concurrency_mode,omitempty"`
+	ChannelConcurrencyLimit    int           `json:"channel_concurrency_limit,omitempty"`
+	ChannelConcurrencyWaitMS   int           `json:"channel_concurrency_wait_ms,omitempty"`
+	ChannelConcurrencyAcquired bool          `json:"channel_concurrency_acquired,omitempty"`
+	ChannelConcurrencyTimedOut bool          `json:"channel_concurrency_timed_out,omitempty"`
+	InputTokens                int           `json:"input_tokens,omitempty"`
+	OutputTokens               int           `json:"output_tokens,omitempty"`
+	CacheTokens                int           `json:"cache_tokens,omitempty"`
+	InputCost                  float64       `json:"input_cost,omitempty"`
+	OutputCost                 float64       `json:"output_cost,omitempty"`
+	EstimatedCost              float64       `json:"estimated_cost,omitempty"`
+	CostIncurred               string        `json:"cost_incurred,omitempty"`
+	CostSource                 string        `json:"cost_source,omitempty"`
+	ServiceTier                string        `json:"service_tier,omitempty"`
+	ErrorSummary               string        `json:"error_summary,omitempty"`
+	CreatedAt                  int64         `json:"created_at,omitempty"`
+	Sticky                     bool          `json:"sticky,omitempty"`
+	Msg                        string        `json:"msg,omitempty"`
 }
 
 type RelayLogWSMode string
@@ -142,43 +147,48 @@ type RequestTrace struct {
 }
 
 type RequestAttempt struct {
-	ID               int64         `json:"id" gorm:"primaryKey;autoIncrement:false"`
-	TraceID          string        `json:"trace_id" gorm:"index"`
-	RelayLogID       int64         `json:"relay_log_id" gorm:"index"`
-	AttemptIndex     int           `json:"attempt_index,omitempty" gorm:"index"`
-	AttemptNum       int           `json:"attempt_num,omitempty"`
-	ChannelID        int           `json:"channel_id,omitempty" gorm:"index"`
-	ChannelKeyID     int           `json:"channel_key_id,omitempty" gorm:"index"`
-	KeyID            int           `json:"key_id,omitempty" gorm:"index"`
-	ChannelName      string        `json:"channel_name,omitempty"`
-	SiteID           int           `json:"site_id,omitempty" gorm:"index"`
-	SiteAccountID    int           `json:"site_account_id,omitempty" gorm:"index"`
-	AccountID        int           `json:"account_id,omitempty" gorm:"index"`
-	BaseURL          string        `json:"base_url,omitempty"`
-	ModelName        string        `json:"model_name,omitempty" gorm:"index"`
-	UpstreamModel    string        `json:"upstream_model,omitempty" gorm:"index"`
-	RequestProtocol  string        `json:"request_protocol,omitempty" gorm:"index"`
-	UpstreamProtocol string        `json:"upstream_protocol,omitempty" gorm:"index"`
-	ResponseProtocol string        `json:"response_protocol,omitempty" gorm:"index"`
-	Status           AttemptStatus `json:"status,omitempty" gorm:"index"`
-	HTTPStatus       int           `json:"http_status,omitempty" gorm:"index"`
-	FailureReason    string        `json:"failure_reason,omitempty" gorm:"index"`
-	Retryable        bool          `json:"retryable,omitempty" gorm:"index"`
-	DurationMS       int           `json:"duration_ms,omitempty"`
-	TTFBMS           int           `json:"ttfb_ms,omitempty"`
-	TotalMS          int           `json:"total_ms,omitempty"`
-	InputTokens      int           `json:"input_tokens,omitempty"`
-	OutputTokens     int           `json:"output_tokens,omitempty"`
-	CacheTokens      int           `json:"cache_tokens,omitempty"`
-	InputCost        float64       `json:"input_cost,omitempty"`
-	OutputCost       float64       `json:"output_cost,omitempty"`
-	EstimatedCost    float64       `json:"estimated_cost,omitempty"`
-	CostIncurred     string        `json:"cost_incurred,omitempty"`
-	CostSource       string        `json:"cost_source,omitempty"`
-	ServiceTier      string        `json:"service_tier,omitempty"`
-	ErrorSummary     string        `json:"error_summary,omitempty"`
-	Sticky           bool          `json:"sticky,omitempty"`
-	CreatedAt        int64         `json:"created_at" gorm:"index"`
+	ID                         int64         `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	TraceID                    string        `json:"trace_id" gorm:"index"`
+	RelayLogID                 int64         `json:"relay_log_id" gorm:"index"`
+	AttemptIndex               int           `json:"attempt_index,omitempty" gorm:"index"`
+	AttemptNum                 int           `json:"attempt_num,omitempty"`
+	ChannelID                  int           `json:"channel_id,omitempty" gorm:"index"`
+	ChannelKeyID               int           `json:"channel_key_id,omitempty" gorm:"index"`
+	KeyID                      int           `json:"key_id,omitempty" gorm:"index"`
+	ChannelName                string        `json:"channel_name,omitempty"`
+	SiteID                     int           `json:"site_id,omitempty" gorm:"index"`
+	SiteAccountID              int           `json:"site_account_id,omitempty" gorm:"index"`
+	AccountID                  int           `json:"account_id,omitempty" gorm:"index"`
+	BaseURL                    string        `json:"base_url,omitempty"`
+	ModelName                  string        `json:"model_name,omitempty" gorm:"index"`
+	UpstreamModel              string        `json:"upstream_model,omitempty" gorm:"index"`
+	RequestProtocol            string        `json:"request_protocol,omitempty" gorm:"index"`
+	UpstreamProtocol           string        `json:"upstream_protocol,omitempty" gorm:"index"`
+	ResponseProtocol           string        `json:"response_protocol,omitempty" gorm:"index"`
+	Status                     AttemptStatus `json:"status,omitempty" gorm:"index"`
+	HTTPStatus                 int           `json:"http_status,omitempty" gorm:"index"`
+	FailureReason              string        `json:"failure_reason,omitempty" gorm:"index"`
+	Retryable                  bool          `json:"retryable,omitempty" gorm:"index"`
+	ChannelConcurrencyMode     string        `json:"channel_concurrency_mode,omitempty"`
+	ChannelConcurrencyLimit    int           `json:"channel_concurrency_limit,omitempty"`
+	ChannelConcurrencyWaitMS   int           `json:"channel_concurrency_wait_ms,omitempty"`
+	ChannelConcurrencyAcquired bool          `json:"channel_concurrency_acquired,omitempty"`
+	ChannelConcurrencyTimedOut bool          `json:"channel_concurrency_timed_out,omitempty"`
+	DurationMS                 int           `json:"duration_ms,omitempty"`
+	TTFBMS                     int           `json:"ttfb_ms,omitempty"`
+	TotalMS                    int           `json:"total_ms,omitempty"`
+	InputTokens                int           `json:"input_tokens,omitempty"`
+	OutputTokens               int           `json:"output_tokens,omitempty"`
+	CacheTokens                int           `json:"cache_tokens,omitempty"`
+	InputCost                  float64       `json:"input_cost,omitempty"`
+	OutputCost                 float64       `json:"output_cost,omitempty"`
+	EstimatedCost              float64       `json:"estimated_cost,omitempty"`
+	CostIncurred               string        `json:"cost_incurred,omitempty"`
+	CostSource                 string        `json:"cost_source,omitempty"`
+	ServiceTier                string        `json:"service_tier,omitempty"`
+	ErrorSummary               string        `json:"error_summary,omitempty"`
+	Sticky                     bool          `json:"sticky,omitempty"`
+	CreatedAt                  int64         `json:"created_at" gorm:"index"`
 }
 
 type RelayLogListQuery struct {

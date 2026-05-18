@@ -202,35 +202,40 @@ func TestRelayLogAddMirrorsRequestTraceTables(t *testing.T) {
 		WSRecovery:         &wsRecovery,
 		Attempts: []model.ChannelAttempt{
 			{
-				AttemptIndex:     1,
-				AttemptNum:       1,
-				ChannelID:        41,
-				ChannelKeyID:     410,
-				KeyID:            411,
-				ChannelName:      "bad",
-				SiteID:           6,
-				SiteAccountID:    61,
-				AccountID:        62,
-				BaseURL:          "https://user:secret@api.example.com/v1?token=hidden",
-				ModelName:        "gpt-4o",
-				UpstreamModel:    "gpt-4o-bad",
-				RequestProtocol:  "openai_chat",
-				UpstreamProtocol: "openai_chat",
-				ResponseProtocol: "openai_chat",
-				Status:           model.AttemptFailed,
-				HTTPStatus:       200,
-				FailureReason:    "empty_choices",
-				Retryable:        true,
-				DurationMS:       180,
-				TTFBMS:           50,
-				TotalMS:          180,
-				InputTokens:      120,
-				EstimatedCost:    0.001,
-				CostIncurred:     "unknown",
-				CostSource:       "estimated_input",
-				ServiceTier:      "standard",
-				ErrorSummary:     "Authorization: Bearer secret-token",
-				CreatedAt:        501,
+				AttemptIndex:               1,
+				AttemptNum:                 1,
+				ChannelID:                  41,
+				ChannelKeyID:               410,
+				KeyID:                      411,
+				ChannelName:                "bad",
+				SiteID:                     6,
+				SiteAccountID:              61,
+				AccountID:                  62,
+				BaseURL:                    "https://user:secret@api.example.com/v1?token=hidden",
+				ModelName:                  "gpt-4o",
+				UpstreamModel:              "gpt-4o-bad",
+				RequestProtocol:            "openai_chat",
+				UpstreamProtocol:           "openai_chat",
+				ResponseProtocol:           "openai_chat",
+				Status:                     model.AttemptFailed,
+				HTTPStatus:                 200,
+				FailureReason:              "empty_choices",
+				Retryable:                  true,
+				ChannelConcurrencyMode:     "database",
+				ChannelConcurrencyLimit:    4,
+				ChannelConcurrencyWaitMS:   875,
+				ChannelConcurrencyAcquired: false,
+				ChannelConcurrencyTimedOut: true,
+				DurationMS:                 180,
+				TTFBMS:                     50,
+				TotalMS:                    180,
+				InputTokens:                120,
+				EstimatedCost:              0.001,
+				CostIncurred:               "unknown",
+				CostSource:                 "estimated_input",
+				ServiceTier:                "standard",
+				ErrorSummary:               "Authorization: Bearer secret-token",
+				CreatedAt:                  501,
 			},
 			{
 				AttemptIndex:  2,
@@ -290,6 +295,9 @@ func TestRelayLogAddMirrorsRequestTraceTables(t *testing.T) {
 	if attempts[0].BaseURL != "https://api.example.com/v1" {
 		t.Fatalf("expected base url credentials and query to be stripped, got %q", attempts[0].BaseURL)
 	}
+	if attempts[0].ChannelConcurrencyMode != "database" || attempts[0].ChannelConcurrencyLimit != 4 || attempts[0].ChannelConcurrencyWaitMS != 875 || attempts[0].ChannelConcurrencyAcquired || !attempts[0].ChannelConcurrencyTimedOut {
+		t.Fatalf("unexpected mirrored queue fields: %+v", attempts[0])
+	}
 	if strings.Contains(attempts[0].ErrorSummary, "secret-token") || !strings.Contains(attempts[0].ErrorSummary, "[REDACTED]") {
 		t.Fatalf("expected attempt error summary to be redacted, got %q", attempts[0].ErrorSummary)
 	}
@@ -328,24 +336,29 @@ func TestRequestTraceListAndDetailReadFromMirrorTables(t *testing.T) {
 		FinalUpstreamModel: "gpt-4o-final",
 		Attempts: []model.ChannelAttempt{
 			{
-				AttemptIndex:    1,
-				ChannelID:       21,
-				ChannelKeyID:    210,
-				ChannelName:     "bad",
-				SiteID:          4,
-				AccountID:       40,
-				BaseURL:         "https://user:secret@example.test/v1?token=secret-token#frag",
-				ModelName:       "gpt-4o",
-				UpstreamModel:   "gpt-4o-bad",
-				RequestProtocol: "openai_chat",
-				Status:          model.AttemptFailed,
-				HTTPStatus:      502,
-				FailureReason:   "server_error",
-				Retryable:       true,
-				DurationMS:      300,
-				TTFBMS:          100,
-				TotalMS:         300,
-				ErrorSummary:    "Cookie: session=secret-token",
+				AttemptIndex:               1,
+				ChannelID:                  21,
+				ChannelKeyID:               210,
+				ChannelName:                "bad",
+				SiteID:                     4,
+				AccountID:                  40,
+				BaseURL:                    "https://user:secret@example.test/v1?token=secret-token#frag",
+				ModelName:                  "gpt-4o",
+				UpstreamModel:              "gpt-4o-bad",
+				RequestProtocol:            "openai_chat",
+				Status:                     model.AttemptFailed,
+				HTTPStatus:                 502,
+				FailureReason:              "server_error",
+				Retryable:                  true,
+				ChannelConcurrencyMode:     "local",
+				ChannelConcurrencyLimit:    1,
+				ChannelConcurrencyWaitMS:   250,
+				ChannelConcurrencyAcquired: true,
+				ChannelConcurrencyTimedOut: false,
+				DurationMS:                 300,
+				TTFBMS:                     100,
+				TotalMS:                    300,
+				ErrorSummary:               "Cookie: session=secret-token",
 			},
 			{
 				AttemptIndex:    2,
@@ -428,6 +441,9 @@ func TestRequestTraceListAndDetailReadFromMirrorTables(t *testing.T) {
 	}
 	if detail.Attempts[0].BaseURL != "https://example.test/v1" {
 		t.Fatalf("expected sanitized attempt base url, got %q", detail.Attempts[0].BaseURL)
+	}
+	if detail.Attempts[0].ChannelConcurrencyMode != "local" || detail.Attempts[0].ChannelConcurrencyLimit != 1 || detail.Attempts[0].ChannelConcurrencyWaitMS != 250 || !detail.Attempts[0].ChannelConcurrencyAcquired || detail.Attempts[0].ChannelConcurrencyTimedOut {
+		t.Fatalf("expected mirrored queue metadata in detail, got %+v", detail.Attempts[0])
 	}
 	if strings.Contains(detail.Attempts[0].ErrorSummary, "secret-token") || !strings.Contains(detail.Attempts[0].ErrorSummary, "[REDACTED]") {
 		t.Fatalf("expected sanitized attempt error summary, got %q", detail.Attempts[0].ErrorSummary)

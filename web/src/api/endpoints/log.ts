@@ -34,6 +34,11 @@ export interface ChannelAttempt {
     http_status?: number;
     failure_reason?: string;
     retryable?: boolean;
+    channel_concurrency_mode?: string;
+    channel_concurrency_limit?: number;
+    channel_concurrency_wait_ms?: number;
+    channel_concurrency_acquired?: boolean;
+    channel_concurrency_timed_out?: boolean;
     input_tokens?: number;
     output_tokens?: number;
     cache_tokens?: number;
@@ -146,6 +151,11 @@ export interface ActiveRequestSnapshot {
     model_name?: string;
     site_id?: number;
     site_account_id?: number;
+    channel_concurrency_mode?: string;
+    channel_concurrency_limit?: number;
+    channel_concurrency_wait_ms?: number;
+    channel_concurrency_acquired?: boolean;
+    channel_concurrency_timed_out?: boolean;
     attempts_count?: number;
     last_status?: string;
     last_http_status?: number;

@@ -120,6 +120,11 @@ function sameAttemptGroup(left: ChannelAttempt, right: ChannelAttempt) {
         && (left.http_status ?? 0) === (right.http_status ?? 0)
         && (left.failure_reason ?? '') === (right.failure_reason ?? '')
         && (left.retryable ?? false) === (right.retryable ?? false)
+        && (left.channel_concurrency_mode ?? '') === (right.channel_concurrency_mode ?? '')
+        && (left.channel_concurrency_limit ?? 0) === (right.channel_concurrency_limit ?? 0)
+        && (left.channel_concurrency_wait_ms ?? 0) === (right.channel_concurrency_wait_ms ?? 0)
+        && (left.channel_concurrency_acquired ?? false) === (right.channel_concurrency_acquired ?? false)
+        && (left.channel_concurrency_timed_out ?? false) === (right.channel_concurrency_timed_out ?? false)
         && (left.msg ?? '') === (right.msg ?? '')
     );
 }
@@ -214,6 +219,34 @@ function formatAttemptRetryable(attempt: ChannelAttempt, t: LogCardTranslations)
     if (attempt.retryable === true) return t('yes');
     if (attempt.status === 'failed') return t('no');
     return '—';
+}
+
+function hasQueueMetadata(attempt: ChannelAttempt) {
+    return Boolean(
+        attempt.channel_concurrency_mode
+        || attempt.channel_concurrency_limit
+        || attempt.channel_concurrency_wait_ms
+        || attempt.channel_concurrency_acquired
+        || attempt.channel_concurrency_timed_out,
+    );
+}
+
+function formatQueueMode(mode: string | undefined, t: LogCardTranslations) {
+    switch ((mode ?? '').trim()) {
+        case 'database':
+            return t('queueModeDatabase');
+        case 'local':
+            return t('queueModeLocal');
+        default:
+            return '鈥?';
+    }
+}
+
+function formatQueueOutcome(attempt: ChannelAttempt, t: LogCardTranslations) {
+    if (attempt.channel_concurrency_timed_out) return t('queueOutcomeTimedOut');
+    if (attempt.channel_concurrency_acquired) return t('queueOutcomeAcquired');
+    if (hasQueueMetadata(attempt)) return t('unknown');
+    return '鈥?';
 }
 
 function formatOptionalText(value: string | null | undefined) {
@@ -358,6 +391,11 @@ function buildSafeLogDetailExport(log: RelayLog) {
                 error_summary: sanitizeErrorMessage(attempt.error_summary || attempt.msg),
                 sticky: attempt.sticky,
                 created_at: attempt.created_at,
+                channel_concurrency_mode: attempt.channel_concurrency_mode,
+                channel_concurrency_limit: attempt.channel_concurrency_limit,
+                channel_concurrency_wait_ms: attempt.channel_concurrency_wait_ms,
+                channel_concurrency_acquired: attempt.channel_concurrency_acquired,
+                channel_concurrency_timed_out: attempt.channel_concurrency_timed_out,
             })),
         },
     };
@@ -769,6 +807,14 @@ function AttemptTraceDetails({ attempt, target }: { attempt: MergedAttempt; targ
     const failureReason = getAttemptFailureReason(attempt);
     const errorSummary = getAttemptErrorSummary(attempt);
     const totalMS = attempt.total_ms || attempt.duration_ms || attempt.totalDuration || attempt.duration;
+    const queueRows = hasQueueMetadata(attempt)
+        ? [
+            { label: t('queueMode'), value: formatQueueMode(attempt.channel_concurrency_mode, t), title: formatQueueMode(attempt.channel_concurrency_mode, t) },
+            { label: t('queueLimit'), value: hasNumber(attempt.channel_concurrency_limit) && attempt.channel_concurrency_limit > 0 ? String(attempt.channel_concurrency_limit) : '鈥?' },
+            { label: t('queueWait'), value: formatOptionalDuration(attempt.channel_concurrency_wait_ms) },
+            { label: t('queueOutcome'), value: formatQueueOutcome(attempt, t) },
+        ]
+        : [];
     const rows = [
         { label: t('attemptIndex'), value: formatAttemptIndex(attempt) },
         { label: t('site'), value: formatAttemptSite(attempt, target, t), title: formatAttemptSite(attempt, target, t) },
@@ -789,6 +835,7 @@ function AttemptTraceDetails({ attempt, target }: { attempt: MergedAttempt; targ
         { label: t('serviceTier'), value: formatOptionalText(attempt.service_tier), title: formatOptionalText(attempt.service_tier) },
         { label: t('protocol'), value: formatProtocolPath(attempt), title: formatProtocolPath(attempt) },
         { label: t('baseUrl'), value: attempt.base_url?.trim() || '—', title: attempt.base_url?.trim() || undefined },
+        ...queueRows,
         { label: t('startedAt'), value: formatOptionalDateTime(attempt.created_at) },
     ];
 

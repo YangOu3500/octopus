@@ -155,6 +155,40 @@ function formatActiveMeta(item: ActiveRequestSnapshot) {
     return parts.join(' / ') || '-';
 }
 
+type LogActiveTranslations = ReturnType<typeof useTranslations<'log.active'>>;
+
+function hasActiveQueueMetadata(item: ActiveRequestSnapshot) {
+    return Boolean(
+        item.channel_concurrency_mode
+        || item.channel_concurrency_limit
+        || item.channel_concurrency_wait_ms
+        || item.channel_concurrency_acquired
+        || item.channel_concurrency_timed_out,
+    );
+}
+
+function formatActiveQueueMode(mode: string | undefined, t: LogActiveTranslations) {
+    switch ((mode ?? '').trim()) {
+        case 'database':
+            return t('queue.modeDatabase');
+        case 'local':
+            return t('queue.modeLocal');
+        default:
+            return '';
+    }
+}
+
+function formatActiveQueueSummary(item: ActiveRequestSnapshot, t: LogActiveTranslations) {
+    if (!hasActiveQueueMetadata(item)) return '';
+    const parts = [
+        formatActiveQueueMode(item.channel_concurrency_mode, t),
+        item.channel_concurrency_limit ? t('queue.limit', { limit: item.channel_concurrency_limit }) : '',
+        typeof item.channel_concurrency_wait_ms === 'number' ? t('queue.waited', { ms: item.channel_concurrency_wait_ms }) : '',
+        item.channel_concurrency_timed_out ? t('queue.timedOut') : (item.channel_concurrency_acquired ? t('queue.acquired') : ''),
+    ].filter(Boolean);
+    return parts.join(' · ');
+}
+
 function formatEventTime(timestamp: number | undefined) {
     if (!timestamp) return '-';
     return new Date(timestamp).toLocaleTimeString([], {
@@ -220,6 +254,11 @@ function sanitizeActiveSnapshot(snapshot: ActiveRequestSnapshot | undefined) {
         model_name: snapshot.model_name,
         site_id: snapshot.site_id,
         site_account_id: snapshot.site_account_id,
+        channel_concurrency_mode: snapshot.channel_concurrency_mode,
+        channel_concurrency_limit: snapshot.channel_concurrency_limit,
+        channel_concurrency_wait_ms: snapshot.channel_concurrency_wait_ms,
+        channel_concurrency_acquired: snapshot.channel_concurrency_acquired,
+        channel_concurrency_timed_out: snapshot.channel_concurrency_timed_out,
         attempts_count: snapshot.attempts_count,
         last_status: snapshot.last_status,
         last_http_status: snapshot.last_http_status,
@@ -338,6 +377,11 @@ function sanitizeLogAttemptForExport(attempt: ChannelAttempt, index: number) {
         cost_incurred: attempt.cost_incurred,
         cost_source: attempt.cost_source,
         service_tier: attempt.service_tier,
+        channel_concurrency_mode: attempt.channel_concurrency_mode,
+        channel_concurrency_limit: attempt.channel_concurrency_limit,
+        channel_concurrency_wait_ms: attempt.channel_concurrency_wait_ms,
+        channel_concurrency_acquired: attempt.channel_concurrency_acquired,
+        channel_concurrency_timed_out: attempt.channel_concurrency_timed_out,
         sticky: attempt.sticky,
         created_at: attempt.created_at,
         error_summary: sanitizeLogExportText(attempt.error_summary || attempt.msg, 500),
@@ -546,6 +590,11 @@ function ActiveRequestsPanel({
                                                 account: item.site_account_id || 0,
                                             })}
                                         </div>
+                                        {hasActiveQueueMetadata(item) ? (
+                                            <div className="truncate text-muted-foreground" title={formatActiveQueueSummary(item, t)}>
+                                                {formatActiveQueueSummary(item, t)}
+                                            </div>
+                                        ) : null}
                                     </td>
                                     <td className="max-w-[240px] py-2 pr-3">
                                         <div className="truncate" title={item.last_failure_reason || undefined}>
@@ -616,6 +665,7 @@ function ActiveRequestsPanel({
                                     const route = snapshot
                                         ? `${snapshot.channel_name || `#${snapshot.channel_id || 0}`} / ${snapshot.model_name || '-'}`
                                         : t('events.snapshotMeta', { count: event.list?.total ?? 0 });
+                                    const queueSummary = snapshot ? formatActiveQueueSummary(snapshot, t) : '';
                                     return (
                                         <tr key={`${event.type}-${event.updated_at}-${snapshot?.id ?? index}`} className="border-b last:border-0">
                                             <td className="w-[96px] py-1.5 pr-3 font-mono text-muted-foreground">
@@ -636,8 +686,8 @@ function ActiveRequestsPanel({
                                             </td>
                                             <td className="max-w-[240px] py-1.5 pr-3">
                                                 <div className="truncate" title={route}>{route}</div>
-                                                <div className="truncate text-muted-foreground" title={snapshot?.last_failure_reason || undefined}>
-                                                    {snapshot?.last_status || snapshot?.phase || '-'} {snapshot?.last_http_status ? `/ ${snapshot.last_http_status}` : ''}
+                                                <div className="truncate text-muted-foreground" title={queueSummary || snapshot?.last_failure_reason || undefined}>
+                                                    {queueSummary || `${snapshot?.last_status || snapshot?.phase || '-'} ${snapshot?.last_http_status ? `/ ${snapshot.last_http_status}` : ''}`.trim()}
                                                 </div>
                                             </td>
                                             <td className="max-w-[280px] py-1.5 pr-3 font-mono text-[11px] text-muted-foreground">

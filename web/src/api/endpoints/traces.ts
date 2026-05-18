@@ -56,6 +56,11 @@ export interface RequestAttempt {
     http_status?: number;
     failure_reason?: string;
     retryable?: boolean;
+    channel_concurrency_mode?: string;
+    channel_concurrency_limit?: number;
+    channel_concurrency_wait_ms?: number;
+    channel_concurrency_acquired?: boolean;
+    channel_concurrency_timed_out?: boolean;
     duration_ms?: number;
     ttfb_ms?: number;
     total_ms?: number;

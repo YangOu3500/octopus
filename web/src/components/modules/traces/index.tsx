@@ -147,6 +147,34 @@ function protocolPath(attempt: RequestAttempt) {
     return parts.length > 0 ? parts.join(' -> ') : '-';
 }
 
+function hasQueueMetadata(attempt: RequestAttempt) {
+    return Boolean(
+        attempt.channel_concurrency_mode
+        || attempt.channel_concurrency_limit
+        || attempt.channel_concurrency_wait_ms
+        || attempt.channel_concurrency_acquired
+        || attempt.channel_concurrency_timed_out,
+    );
+}
+
+function queueModeLabel(mode: string | undefined, t: ReturnType<typeof useTranslations<'traces.detail'>>) {
+    switch ((mode ?? '').trim()) {
+        case 'database':
+            return t('queueModeDatabase');
+        case 'local':
+            return t('queueModeLocal');
+        default:
+            return '-';
+    }
+}
+
+function queueOutcomeLabel(attempt: RequestAttempt, t: ReturnType<typeof useTranslations<'traces.detail'>>) {
+    if (attempt.channel_concurrency_timed_out) return t('queueTimedOut');
+    if (attempt.channel_concurrency_acquired) return t('queueAcquired');
+    if (hasQueueMetadata(attempt)) return t('no');
+    return '-';
+}
+
 function compactObject<T extends Record<string, unknown>>(input: T) {
     return Object.fromEntries(
         Object.entries(input).filter(([, value]) => value !== undefined && value !== null && value !== ''),
@@ -209,6 +237,11 @@ function sanitizeAttemptForExport(attempt: RequestAttempt) {
         http_status: attempt.http_status,
         failure_reason: attempt.failure_reason,
         retryable: attempt.retryable,
+        channel_concurrency_mode: attempt.channel_concurrency_mode,
+        channel_concurrency_limit: attempt.channel_concurrency_limit,
+        channel_concurrency_wait_ms: attempt.channel_concurrency_wait_ms,
+        channel_concurrency_acquired: attempt.channel_concurrency_acquired,
+        channel_concurrency_timed_out: attempt.channel_concurrency_timed_out,
         duration_ms: attempt.duration_ms,
         ttfb_ms: attempt.ttfb_ms,
         total_ms: attempt.total_ms,
@@ -883,6 +916,26 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                                     <div className="text-muted-foreground">{t('retryable')}</div>
                                     <div>{attempt.retryable ? t('yes') : t('no')}</div>
                                 </div>
+                                {hasQueueMetadata(attempt) ? (
+                                    <>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('queueMode')}</div>
+                                            <div>{queueModeLabel(attempt.channel_concurrency_mode, t)}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('queueLimit')}</div>
+                                            <div className="font-mono">{attempt.channel_concurrency_limit || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('queueWait')}</div>
+                                            <div className="font-mono">{formatDuration(attempt.channel_concurrency_wait_ms)}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('queueOutcome')}</div>
+                                            <div>{queueOutcomeLabel(attempt, t)}</div>
+                                        </div>
+                                    </>
+                                ) : null}
                                 <div className="col-span-2">
                                     <div className="text-muted-foreground">{t('tokens')}</div>
                                     <div className="font-mono">{formatAttemptTokens(attempt)}</div>

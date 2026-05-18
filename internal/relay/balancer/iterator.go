@@ -268,6 +268,21 @@ func (s *AttemptSpan) FirstTokenDurationMS(firstToken time.Time) int {
 	return int(firstToken.Sub(s.startTime).Milliseconds())
 }
 
+func (s *AttemptSpan) SetChannelConcurrency(mode string, limit int, waited time.Duration, acquired bool, timedOut bool) {
+	if s == nil {
+		return
+	}
+	s.attempt.ChannelConcurrencyMode = strings.TrimSpace(mode)
+	s.attempt.ChannelConcurrencyLimit = limit
+	if waited > 0 {
+		s.attempt.ChannelConcurrencyWaitMS = int(waited.Milliseconds())
+	} else {
+		s.attempt.ChannelConcurrencyWaitMS = 0
+	}
+	s.attempt.ChannelConcurrencyAcquired = acquired
+	s.attempt.ChannelConcurrencyTimedOut = timedOut
+}
+
 func normalizeAttemptFailureReason(msg string) string {
 	msg = strings.TrimSpace(msg)
 	if msg == "" {

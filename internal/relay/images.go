@@ -205,7 +205,15 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 			AttemptCount:  len(iter.Attempts()) + 1,
 		})
 
-		releaseConcurrency, _, acquired := balancer.AcquireChannelConcurrency(ctx, channel.ID, item.ModelName)
+		queueCfg := balancer.CurrentChannelConcurrencyConfig()
+		if queueCfg.Enabled && queueCfg.MaxInFlight > 0 {
+			metrics.markActiveAttemptQueueing(queueCfg.Mode, queueCfg.MaxInFlight)
+		}
+		releaseConcurrency, waited, acquired := balancer.AcquireChannelConcurrency(ctx, channel.ID, item.ModelName)
+		if queueCfg.Enabled && queueCfg.MaxInFlight > 0 {
+			span.SetChannelConcurrency(queueCfg.Mode, queueCfg.MaxInFlight, waited, acquired, !acquired)
+			metrics.markActiveAttemptQueueResult(queueCfg.Mode, queueCfg.MaxInFlight, waited, acquired, !acquired)
+		}
 		if !acquired {
 			err := balancer.ErrChannelConcurrencyQueueTimeout
 			span.End(model.AttemptFailed, 0, err.Error())

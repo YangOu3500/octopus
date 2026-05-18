@@ -39,6 +39,8 @@ func TestActiveRequestTrackerLifecycleAndSanitization(t *testing.T) {
 		SiteAccountID: 59,
 		AttemptCount:  1,
 	})
+	metrics.markActiveAttemptQueueing("database", 3)
+	metrics.markActiveAttemptQueueResult("database", 3, 250*time.Millisecond, true, false)
 	metrics.SetFirstTokenTime(time.Now())
 	metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, 429, "Authorization header present", true, 1)
 
@@ -52,6 +54,9 @@ func TestActiveRequestTrackerLifecycleAndSanitization(t *testing.T) {
 	}
 	if got.APIKeyID != 7 || got.GroupID != 11 || got.ChannelID != 23 || got.ChannelKeyID != 31 {
 		t.Fatalf("unexpected routing fields: %+v", got)
+	}
+	if got.ChannelConcurrencyMode != "database" || got.ChannelConcurrencyLimit != 3 || got.ChannelConcurrencyWaitMS != 250 || !got.ChannelConcurrencyAcquired || got.ChannelConcurrencyTimedOut {
+		t.Fatalf("unexpected queue tracking fields: %+v", got)
 	}
 	if !got.RequestStream || !got.FirstTokenSeen || !got.Written {
 		t.Fatalf("expected stream/first-token/written flags: %+v", got)

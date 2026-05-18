@@ -1332,6 +1332,14 @@
             "tokens": "Token",
             "protocol": "协议",
             "baseUrl": "Base URL",
+            "queueMode": "队列模式",
+            "queueLimit": "并发上限",
+            "queueWait": "排队等待",
+            "queueOutcome": "队列结果",
+            "queueModeLocal": "本机队列",
+            "queueModeDatabase": "共享队列",
+            "queueAcquired": "已获得 slot",
+            "queueTimedOut": "排队超时",
             "yes": "是",
             "no": "否"
         }
@@ -1391,7 +1399,15 @@
             "responsePreview": "响应",
             "keySite": "Key #{key} / 站点 #{site} / 账号 #{account}",
             "noFailure": "暂无失败",
-            "attempts": "{count} 次尝试"
+            "attempts": "{count} 次尝试",
+            "queue": {
+                "modeLocal": "本机队列",
+                "modeDatabase": "共享队列",
+                "limit": "上限 {limit}",
+                "waited": "等待 {ms}ms",
+                "acquired": "已获得 slot",
+                "timedOut": "排队超时"
+            }
         },
         "card": {
             "error": "错误",
@@ -1456,6 +1472,14 @@
             "costSourceEstimatedTokens": "估算 Token",
             "protocol": "协议",
             "baseUrl": "Base URL",
+            "queueMode": "队列模式",
+            "queueLimit": "并发上限",
+            "queueWait": "排队等待",
+            "queueOutcome": "队列结果",
+            "queueModeLocal": "本机队列",
+            "queueModeDatabase": "共享队列",
+            "queueOutcomeAcquired": "已获得 slot",
+            "queueOutcomeTimedOut": "排队超时",
             "startedAt": "开始时间",
             "cacheTokens": "缓存 Token",
             "yes": "是",

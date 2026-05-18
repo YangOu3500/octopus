@@ -275,7 +275,15 @@ func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balanc
 		SiteAccountID: runtimeState.SiteAccountID,
 		AttemptCount:  len(iter.Attempts()) + 1,
 	})
-	releaseConcurrency, _, acquired := balancer.AcquireChannelConcurrency(c.Request.Context(), channel.ID, modelName)
+	queueCfg := balancer.CurrentChannelConcurrencyConfig()
+	if queueCfg.Enabled && queueCfg.MaxInFlight > 0 {
+		metrics.markActiveAttemptQueueing(queueCfg.Mode, queueCfg.MaxInFlight)
+	}
+	releaseConcurrency, waited, acquired := balancer.AcquireChannelConcurrency(c.Request.Context(), channel.ID, modelName)
+	if queueCfg.Enabled && queueCfg.MaxInFlight > 0 {
+		span.SetChannelConcurrency(queueCfg.Mode, queueCfg.MaxInFlight, waited, acquired, !acquired)
+		metrics.markActiveAttemptQueueResult(queueCfg.Mode, queueCfg.MaxInFlight, waited, acquired, !acquired)
+	}
 	if !acquired {
 		err := balancer.ErrChannelConcurrencyQueueTimeout
 		span.End(dbmodel.AttemptFailed, 0, err.Error())

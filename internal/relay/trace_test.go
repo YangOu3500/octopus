@@ -3,6 +3,8 @@ package relay
 import (
 	"strings"
 	"testing"
+
+	"github.com/bestruirui/octopus/internal/model"
 )
 
 func TestSanitizeTraceTextRedactsSensitiveValues(t *testing.T) {
@@ -23,5 +25,35 @@ func TestSanitizeTraceBaseURLDropsCredentialsAndQuery(t *testing.T) {
 	got := sanitizeTraceBaseURL("https://user:pass@example.test/v1?api_key=secret&safe=1#frag")
 	if got != "https://example.test/v1" {
 		t.Fatalf("expected sanitized base url, got %q", got)
+	}
+}
+
+func TestEnrichTraceAttemptsPreservesQueueMetadata(t *testing.T) {
+	metrics := &RelayMetrics{}
+	attempts := metrics.enrichTraceAttempts(t.Context(), []model.ChannelAttempt{{
+		AttemptNum:                 1,
+		AttemptIndex:               1,
+		ChannelID:                  23,
+		ChannelName:                "queue-test",
+		ModelName:                  "gpt-4o",
+		Status:                     model.AttemptFailed,
+		FailureReason:              "channel_concurrency_queue_timeout",
+		ChannelConcurrencyMode:     "database",
+		ChannelConcurrencyLimit:    4,
+		ChannelConcurrencyWaitMS:   1000,
+		ChannelConcurrencyAcquired: false,
+		ChannelConcurrencyTimedOut: true,
+		CreatedAt:                  100,
+	}})
+	if len(attempts) != 1 {
+		t.Fatalf("expected one attempt, got %+v", attempts)
+	}
+	attempt := attempts[0]
+	if attempt.ChannelConcurrencyMode != "database" ||
+		attempt.ChannelConcurrencyLimit != 4 ||
+		attempt.ChannelConcurrencyWaitMS != 1000 ||
+		attempt.ChannelConcurrencyAcquired ||
+		!attempt.ChannelConcurrencyTimedOut {
+		t.Fatalf("unexpected queue metadata after enrich: %+v", attempt)
 	}
 }

@@ -335,7 +335,15 @@ func (ra *relayAttempt) attempt() attemptResult {
 		AttemptCount:  len(ra.iter.Attempts()) + 1,
 	})
 
-	releaseConcurrency, _, acquired := balancer.AcquireChannelConcurrency(ra.requestContext(), ra.channel.ID, ra.internalRequest.Model)
+	queueCfg := balancer.CurrentChannelConcurrencyConfig()
+	if queueCfg.Enabled && queueCfg.MaxInFlight > 0 {
+		ra.metrics.markActiveAttemptQueueing(queueCfg.Mode, queueCfg.MaxInFlight)
+	}
+	releaseConcurrency, waited, acquired := balancer.AcquireChannelConcurrency(ra.requestContext(), ra.channel.ID, ra.internalRequest.Model)
+	if queueCfg.Enabled && queueCfg.MaxInFlight > 0 {
+		span.SetChannelConcurrency(queueCfg.Mode, queueCfg.MaxInFlight, waited, acquired, !acquired)
+		ra.metrics.markActiveAttemptQueueResult(queueCfg.Mode, queueCfg.MaxInFlight, waited, acquired, !acquired)
+	}
 	if !acquired {
 		err := balancer.ErrChannelConcurrencyQueueTimeout
 		span.End(dbmodel.AttemptFailed, 0, err.Error())

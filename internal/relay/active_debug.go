@@ -26,32 +26,37 @@ var (
 )
 
 type ActiveRequestSnapshot struct {
-	ID                string `json:"id"`
-	APIKeyID          int    `json:"api_key_id,omitempty"`
-	GroupID           int    `json:"group_id,omitempty"`
-	RequestModel      string `json:"request_model"`
-	RequestSource     string `json:"request_source,omitempty"`
-	RequestStream     bool   `json:"request_stream"`
-	ClientIP          string `json:"client_ip,omitempty"`
-	StartedAt         int64  `json:"started_at"`
-	UpdatedAt         int64  `json:"updated_at"`
-	ElapsedMS         int64  `json:"elapsed_ms"`
-	Phase             string `json:"phase"`
-	ChannelID         int    `json:"channel_id,omitempty"`
-	ChannelName       string `json:"channel_name,omitempty"`
-	ChannelKeyID      int    `json:"channel_key_id,omitempty"`
-	ModelName         string `json:"model_name,omitempty"`
-	SiteID            int    `json:"site_id,omitempty"`
-	SiteAccountID     int    `json:"site_account_id,omitempty"`
-	AttemptsCount     int    `json:"attempts_count,omitempty"`
-	LastStatus        string `json:"last_status,omitempty"`
-	LastHTTPStatus    int    `json:"last_http_status,omitempty"`
-	LastFailureReason string `json:"last_failure_reason,omitempty"`
-	RequestPreview    string `json:"request_preview,omitempty"`
-	ResponsePreview   string `json:"response_preview,omitempty"`
-	Written           bool   `json:"written"`
-	FirstTokenSeen    bool   `json:"first_token_seen"`
-	UsedWS            bool   `json:"used_ws"`
+	ID                         string `json:"id"`
+	APIKeyID                   int    `json:"api_key_id,omitempty"`
+	GroupID                    int    `json:"group_id,omitempty"`
+	RequestModel               string `json:"request_model"`
+	RequestSource              string `json:"request_source,omitempty"`
+	RequestStream              bool   `json:"request_stream"`
+	ClientIP                   string `json:"client_ip,omitempty"`
+	StartedAt                  int64  `json:"started_at"`
+	UpdatedAt                  int64  `json:"updated_at"`
+	ElapsedMS                  int64  `json:"elapsed_ms"`
+	Phase                      string `json:"phase"`
+	ChannelID                  int    `json:"channel_id,omitempty"`
+	ChannelName                string `json:"channel_name,omitempty"`
+	ChannelKeyID               int    `json:"channel_key_id,omitempty"`
+	ModelName                  string `json:"model_name,omitempty"`
+	SiteID                     int    `json:"site_id,omitempty"`
+	SiteAccountID              int    `json:"site_account_id,omitempty"`
+	ChannelConcurrencyMode     string `json:"channel_concurrency_mode,omitempty"`
+	ChannelConcurrencyLimit    int    `json:"channel_concurrency_limit,omitempty"`
+	ChannelConcurrencyWaitMS   int    `json:"channel_concurrency_wait_ms,omitempty"`
+	ChannelConcurrencyAcquired bool   `json:"channel_concurrency_acquired"`
+	ChannelConcurrencyTimedOut bool   `json:"channel_concurrency_timed_out"`
+	AttemptsCount              int    `json:"attempts_count,omitempty"`
+	LastStatus                 string `json:"last_status,omitempty"`
+	LastHTTPStatus             int    `json:"last_http_status,omitempty"`
+	LastFailureReason          string `json:"last_failure_reason,omitempty"`
+	RequestPreview             string `json:"request_preview,omitempty"`
+	ResponsePreview            string `json:"response_preview,omitempty"`
+	Written                    bool   `json:"written"`
+	FirstTokenSeen             bool   `json:"first_token_seen"`
+	UsedWS                     bool   `json:"used_ws"`
 }
 
 type ActiveRequestList struct {
@@ -410,10 +415,49 @@ func (m *RelayMetrics) markActiveAttemptStart(info activeAttemptInfo) {
 		snapshot.ModelName = strings.TrimSpace(info.ModelName)
 		snapshot.SiteID = info.SiteID
 		snapshot.SiteAccountID = info.SiteAccountID
+		snapshot.ChannelConcurrencyMode = ""
+		snapshot.ChannelConcurrencyLimit = 0
+		snapshot.ChannelConcurrencyWaitMS = 0
+		snapshot.ChannelConcurrencyAcquired = false
+		snapshot.ChannelConcurrencyTimedOut = false
 		snapshot.AttemptsCount = info.AttemptCount
 		snapshot.LastStatus = "attempting"
 		snapshot.LastHTTPStatus = 0
 		snapshot.LastFailureReason = ""
+	})
+}
+
+func (m *RelayMetrics) markActiveAttemptQueueing(mode string, limit int) {
+	if m == nil {
+		return
+	}
+	activeRequests.update(m.activeRequestID, func(snapshot *ActiveRequestSnapshot) {
+		snapshot.Phase = "queueing"
+		snapshot.ChannelConcurrencyMode = strings.TrimSpace(mode)
+		snapshot.ChannelConcurrencyLimit = limit
+		snapshot.ChannelConcurrencyWaitMS = 0
+		snapshot.ChannelConcurrencyAcquired = false
+		snapshot.ChannelConcurrencyTimedOut = false
+	})
+}
+
+func (m *RelayMetrics) markActiveAttemptQueueResult(mode string, limit int, waited time.Duration, acquired bool, timedOut bool) {
+	if m == nil {
+		return
+	}
+	waitMS := 0
+	if waited > 0 {
+		waitMS = int(waited.Milliseconds())
+	}
+	activeRequests.update(m.activeRequestID, func(snapshot *ActiveRequestSnapshot) {
+		snapshot.ChannelConcurrencyMode = strings.TrimSpace(mode)
+		snapshot.ChannelConcurrencyLimit = limit
+		snapshot.ChannelConcurrencyWaitMS = waitMS
+		snapshot.ChannelConcurrencyAcquired = acquired
+		snapshot.ChannelConcurrencyTimedOut = timedOut
+		if acquired {
+			snapshot.Phase = "attempting"
+		}
 	})
 }
 
@@ -488,10 +532,49 @@ func (m *imagesRelayMetrics) markActiveAttemptStart(info activeAttemptInfo) {
 		snapshot.ModelName = strings.TrimSpace(info.ModelName)
 		snapshot.SiteID = info.SiteID
 		snapshot.SiteAccountID = info.SiteAccountID
+		snapshot.ChannelConcurrencyMode = ""
+		snapshot.ChannelConcurrencyLimit = 0
+		snapshot.ChannelConcurrencyWaitMS = 0
+		snapshot.ChannelConcurrencyAcquired = false
+		snapshot.ChannelConcurrencyTimedOut = false
 		snapshot.AttemptsCount = info.AttemptCount
 		snapshot.LastStatus = "attempting"
 		snapshot.LastHTTPStatus = 0
 		snapshot.LastFailureReason = ""
+	})
+}
+
+func (m *imagesRelayMetrics) markActiveAttemptQueueing(mode string, limit int) {
+	if m == nil {
+		return
+	}
+	activeRequests.update(m.activeRequestID, func(snapshot *ActiveRequestSnapshot) {
+		snapshot.Phase = "queueing"
+		snapshot.ChannelConcurrencyMode = strings.TrimSpace(mode)
+		snapshot.ChannelConcurrencyLimit = limit
+		snapshot.ChannelConcurrencyWaitMS = 0
+		snapshot.ChannelConcurrencyAcquired = false
+		snapshot.ChannelConcurrencyTimedOut = false
+	})
+}
+
+func (m *imagesRelayMetrics) markActiveAttemptQueueResult(mode string, limit int, waited time.Duration, acquired bool, timedOut bool) {
+	if m == nil {
+		return
+	}
+	waitMS := 0
+	if waited > 0 {
+		waitMS = int(waited.Milliseconds())
+	}
+	activeRequests.update(m.activeRequestID, func(snapshot *ActiveRequestSnapshot) {
+		snapshot.ChannelConcurrencyMode = strings.TrimSpace(mode)
+		snapshot.ChannelConcurrencyLimit = limit
+		snapshot.ChannelConcurrencyWaitMS = waitMS
+		snapshot.ChannelConcurrencyAcquired = acquired
+		snapshot.ChannelConcurrencyTimedOut = timedOut
+		if acquired {
+			snapshot.Phase = "attempting"
+		}
 	})
 }
 

@@ -1332,6 +1332,14 @@
             "tokens": "Tokens",
             "protocol": "Protocol",
             "baseUrl": "Base URL",
+            "queueMode": "Queue Mode",
+            "queueLimit": "Queue Limit",
+            "queueWait": "Queue Wait",
+            "queueOutcome": "Queue Outcome",
+            "queueModeLocal": "Local queue",
+            "queueModeDatabase": "Shared queue",
+            "queueAcquired": "Slot acquired",
+            "queueTimedOut": "Queue timeout",
             "yes": "Yes",
             "no": "No"
         }
@@ -1391,7 +1399,15 @@
             "responsePreview": "Resp",
             "keySite": "Key #{key} / site #{site} / account #{account}",
             "noFailure": "No failure",
-            "attempts": "{count} attempts"
+            "attempts": "{count} attempts",
+            "queue": {
+                "modeLocal": "Local queue",
+                "modeDatabase": "Shared queue",
+                "limit": "limit {limit}",
+                "waited": "wait {ms}ms",
+                "acquired": "slot acquired",
+                "timedOut": "queue timeout"
+            }
         },
         "card": {
             "error": "Error",
@@ -1456,6 +1472,14 @@
             "costSourceEstimatedTokens": "Estimated Tokens",
             "protocol": "Protocol",
             "baseUrl": "Base URL",
+            "queueMode": "Queue Mode",
+            "queueLimit": "Queue Limit",
+            "queueWait": "Queue Wait",
+            "queueOutcome": "Queue Outcome",
+            "queueModeLocal": "Local queue",
+            "queueModeDatabase": "Shared queue",
+            "queueOutcomeAcquired": "Slot acquired",
+            "queueOutcomeTimedOut": "Queue timeout",
             "startedAt": "Started At",
             "cacheTokens": "Cache Tokens",
             "yes": "Yes",
