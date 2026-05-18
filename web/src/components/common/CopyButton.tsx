@@ -13,6 +13,8 @@ export type CopyIconButtonProps = {
     className?: string;
     copyIconClassName?: string;
     checkIconClassName?: string;
+    title?: string;
+    ariaLabel?: string;
 };
 
 export function CopyIconButton({
@@ -20,6 +22,8 @@ export function CopyIconButton({
     className,
     copyIconClassName,
     checkIconClassName,
+    title,
+    ariaLabel,
 }: CopyIconButtonProps) {
     const t = useTranslations('common.copy');
     const [, copyToClipboard] = useCopyToClipboard();
@@ -60,7 +64,8 @@ export function CopyIconButton({
         <button
             type="button"
             onClick={handleClick}
-            aria-label="Copy"
+            title={title}
+            aria-label={ariaLabel ?? title ?? 'Copy'}
             className={cn(className)}
         >
             <AnimatePresence mode="wait" initial={false}>
@@ -77,5 +82,4 @@ export function CopyIconButton({
         </button>
     );
 }
-
 

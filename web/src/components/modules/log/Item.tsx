@@ -229,6 +229,28 @@ function formatClientIP(value: string | null | undefined) {
     return ip;
 }
 
+const LOG_DETAIL_EXPORT_VERSION = 1;
+
+function exportTimestamp() {
+    return new Date().toISOString();
+}
+
+function exportFilenameTimestamp() {
+    return exportTimestamp().replace(/[:.]/g, '-');
+}
+
+function downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 function formatRequestSource(value: string | null | undefined) {
     const source = value?.trim();
     switch (source) {
@@ -241,6 +263,104 @@ function formatRequestSource(value: string | null | undefined) {
         default:
             return source || '—';
     }
+}
+
+function buildSafeLogDetailExport(log: RelayLog) {
+    const exportedAt = exportTimestamp();
+
+    return {
+        export_version: LOG_DETAIL_EXPORT_VERSION,
+        exported_at: exportedAt,
+        safety: {
+            content: 'server_redacted_request_response_detail',
+            excludes: [
+                'full api key',
+                'cookie',
+                'authorization',
+                'set-cookie',
+                'x-api-key',
+                'bearer token',
+                'session',
+                'jwt',
+            ],
+        },
+        log: {
+            id: log.id,
+            trace_id: log.trace_id,
+            thread_id: log.thread_id,
+            client_api_key_id: log.client_api_key_id,
+            group_id: log.group_id,
+            time: log.time,
+            request_model_name: log.request_model_name,
+            request_stream: log.request_stream,
+            request_source: log.request_source,
+            client_ip: formatClientIP(log.client_ip),
+            channel_id: log.channel,
+            channel_name: log.channel_name,
+            actual_model_name: log.actual_model_name,
+            final_status: log.final_status,
+            final_channel_id: log.final_channel_id,
+            final_site_id: log.final_site_id,
+            final_upstream_model: log.final_upstream_model,
+            attempts_count: log.attempts_count || log.total_attempts || log.attempts?.length || 0,
+            total_latency_ms: log.total_latency_ms || log.use_time,
+            first_token_ms: log.ftut,
+            input_tokens: log.input_tokens,
+            transport_input_tokens: log.transport_input_tokens,
+            bill_input_tokens: log.bill_input_tokens,
+            cache_read_tokens: log.cache_read_tokens,
+            cache_write_tokens: log.cache_write_tokens,
+            cache_tokens: log.cache_tokens,
+            output_tokens: log.output_tokens,
+            estimated_cost: log.estimated_cost,
+            final_success_cost: log.final_success_cost,
+            total_attempt_cost: log.total_attempt_cost,
+            failed_attempt_estimated_cost: log.failed_attempt_estimated_cost,
+            service_tier: log.service_tier,
+            used_ws: log.used_ws,
+            ws_mode: log.ws_mode,
+            ws_recovery: log.ws_recovery,
+            error: sanitizeErrorMessage(log.error),
+            request_content: log.request_content || '',
+            response_content: log.response_content || '',
+            attempts: (log.attempts ?? []).map((attempt) => ({
+                attempt_num: attempt.attempt_num,
+                attempt_index: attempt.attempt_index,
+                channel_id: attempt.channel_id,
+                channel_key_id: attempt.channel_key_id,
+                key_id: attempt.key_id,
+                channel_name: attempt.channel_name,
+                site_id: attempt.site_id,
+                site_account_id: attempt.site_account_id,
+                account_id: attempt.account_id,
+                base_url: attempt.base_url,
+                model_name: attempt.model_name,
+                upstream_model: attempt.upstream_model,
+                request_protocol: attempt.request_protocol,
+                upstream_protocol: attempt.upstream_protocol,
+                response_protocol: attempt.response_protocol,
+                status: attempt.status,
+                http_status: attempt.http_status,
+                failure_reason: sanitizeErrorMessage(attempt.failure_reason),
+                retryable: attempt.retryable,
+                duration_ms: attempt.duration_ms || attempt.duration,
+                ttfb_ms: attempt.ttfb_ms,
+                total_ms: attempt.total_ms,
+                input_tokens: attempt.input_tokens,
+                output_tokens: attempt.output_tokens,
+                cache_tokens: attempt.cache_tokens,
+                input_cost: attempt.input_cost,
+                output_cost: attempt.output_cost,
+                estimated_cost: attempt.estimated_cost,
+                cost_incurred: attempt.cost_incurred,
+                cost_source: attempt.cost_source,
+                service_tier: attempt.service_tier,
+                error_summary: sanitizeErrorMessage(attempt.error_summary || attempt.msg),
+                sticky: attempt.sticky,
+                created_at: attempt.created_at,
+            })),
+        },
+    };
 }
 
 function formatCostIncurred(value: string | null | undefined, t: LogCardTranslations) {
@@ -1110,6 +1230,15 @@ export function LogCard({
         return pendingDisableKey === makeDisableTargetKey(target);
     };
 
+    const handleExportDetail = useCallback(() => {
+        try {
+            downloadJson(`octopus-log-detail-${detailLog.id}-${exportFilenameTimestamp()}.json`, buildSafeLogDetailExport(detailLog));
+            toast.success(t('exportDetailSuccess'), { description: t('exportDetailSafe') });
+        } catch (error) {
+            toast.error(t('exportDetailFailed'), { description: error instanceof Error ? error.message : String(error) });
+        }
+    }, [detailLog, t]);
+
     return (
         <TooltipProvider>
             <MorphingDialog>
@@ -1241,7 +1370,19 @@ export function LogCard({
                                     <Pin className="size-3.5 shrink-0 text-amber-500" />
                                 ) : null}
                             </div>
-                            <WSModeBadge log={log} />
+                            <div className="flex shrink-0 items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={handleExportDetail}
+                                    disabled={detailQuery.isFetching && !detailQuery.data}
+                                    title={t('exportDetail')}
+                                    aria-label={t('exportDetail')}
+                                    className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <ArrowDownToLine className="size-4" />
+                                </button>
+                                <WSModeBadge log={log} />
+                            </div>
                         </MorphingDialogTitle>
 
                         <MorphingDialogDescription className="flex-1 min-h-0">
@@ -1405,9 +1546,19 @@ export function LogCard({
                                             <div className="flex items-center gap-2 px-3 md:px-4 py-2.5 md:py-3 border-b border-border bg-muted/50 shrink-0">
                                                 <Send className="size-4 text-green-500" />
                                                 <span className="text-sm font-medium text-card-foreground">{t('requestContent')}</span>
-                                                <Badge variant="secondary" className="ml-auto text-xs">
-                                                    {getHeadlineInputTokens(log).toLocaleString()} {t('tokens')}
-                                                </Badge>
+                                                <div className="ml-auto flex items-center gap-2">
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {getHeadlineInputTokens(log).toLocaleString()} {t('tokens')}
+                                                    </Badge>
+                                                    <CopyIconButton
+                                                        text={detailLog.request_content ?? ''}
+                                                        title={t('copyRequestContent')}
+                                                        ariaLabel={t('copyRequestContent')}
+                                                        className="inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                                        copyIconClassName="size-4"
+                                                        checkIconClassName="size-4"
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="flex-1 overflow-auto min-h-0">
                                                 <DeferredJsonContent
@@ -1420,9 +1571,19 @@ export function LogCard({
                                             <div className="flex items-center gap-2 px-3 md:px-4 py-2.5 md:py-3 border-b border-border bg-muted/50 shrink-0">
                                                 <MessageSquare className="size-4 text-purple-500" />
                                                 <span className="text-sm font-medium text-card-foreground">{t('responseContent')}</span>
-                                                <Badge variant="secondary" className="ml-auto text-xs">
-                                                    {log.output_tokens.toLocaleString()} {t('tokens')}
-                                                </Badge>
+                                                <div className="ml-auto flex items-center gap-2">
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {log.output_tokens.toLocaleString()} {t('tokens')}
+                                                    </Badge>
+                                                    <CopyIconButton
+                                                        text={detailLog.response_content ?? ''}
+                                                        title={t('copyResponseContent')}
+                                                        ariaLabel={t('copyResponseContent')}
+                                                        className="inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                                        copyIconClassName="size-4"
+                                                        checkIconClassName="size-4"
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="flex-1 overflow-auto min-h-0">
                                                 <DeferredJsonContent
