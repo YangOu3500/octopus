@@ -154,11 +154,15 @@ function ActiveRequestsPanel({
     items,
     total,
     isFetching,
+    isStreamConnected,
+    streamError,
     onRefresh,
 }: {
     items: ActiveRequestSnapshot[];
     total: number;
     isFetching: boolean;
+    isStreamConnected: boolean;
+    streamError: Error | null;
     onRefresh: () => void;
 }) {
     const t = useTranslations('log.active');
@@ -174,6 +178,14 @@ function ActiveRequestsPanel({
                 <Badge variant={total > 0 ? 'secondary' : 'outline'} className="h-6 rounded-md px-2 text-xs">
                     {t('count', { count: total })}
                 </Badge>
+                <Badge variant={isStreamConnected ? 'secondary' : 'outline'} className="h-6 rounded-md px-2 text-xs">
+                    {isStreamConnected ? t('eventStream.connected') : t('eventStream.disconnected')}
+                </Badge>
+                {streamError ? (
+                    <Badge variant="outline" className="h-6 rounded-md border-destructive/30 px-2 text-xs text-destructive">
+                        {t('eventStream.fallback')}
+                    </Badge>
+                ) : null}
                 <Button type="button" size="sm" variant="ghost" className="ml-auto h-7 rounded-md px-2 text-xs" onClick={onRefresh}>
                     {isFetching ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
                     {t('refresh')}
@@ -277,7 +289,12 @@ export function Log() {
         data: activeRequests,
         isFetching: isFetchingActiveRequests,
         refetch: refetchActiveRequests,
-    } = useActiveRequests({ refetchIntervalMs: autoRefresh ? 2000 : false });
+        isStreamConnected: isActiveRequestStreamConnected,
+        streamError: activeRequestStreamError,
+    } = useActiveRequests({
+        refetchIntervalMs: autoRefresh ? Number(refreshInterval) : false,
+        streamEvents: autoRefresh,
+    });
 
     const filters = useMemo<LogListFilters>(() => ({
         time_range: nonAll(timeRange),
@@ -506,6 +523,8 @@ export function Log() {
                         items={activeRequests?.items ?? []}
                         total={activeRequests?.total ?? 0}
                         isFetching={isFetchingActiveRequests}
+                        isStreamConnected={autoRefresh && isActiveRequestStreamConnected}
+                        streamError={autoRefresh ? activeRequestStreamError : null}
                         onRefresh={() => void refetchActiveRequests()}
                     />
 

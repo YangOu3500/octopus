@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bestruirui/octopus/internal/model"
 	"github.com/bestruirui/octopus/internal/op"
@@ -52,6 +53,10 @@ func init() {
 		AddRoute(
 			router.NewRoute("/stream", http.MethodGet).
 				Handle(streamLog),
+		).
+		AddRoute(
+			router.NewRoute("/active-stream", http.MethodGet).
+				Handle(streamActiveRequests),
 		)
 }
 
@@ -316,4 +321,66 @@ func streamLog(c *gin.Context) {
 			c.Writer.Flush()
 		}
 	}
+}
+
+func streamActiveRequests(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" || !op.RelayLogStreamTokenVerify(token) {
+		resp.Error(c, http.StatusUnauthorized, "invalid stream token")
+		return
+	}
+
+	op.RelayLogStreamTokenRevoke(token)
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no")
+
+	eventChan := relay.ActiveRequestSubscribe()
+	defer relay.ActiveRequestUnsubscribe(eventChan)
+
+	initial := relay.ActiveRequestSnapshots()
+	if !writeActiveRequestSSE(c, relay.ActiveRequestEvent{
+		Type:      "snapshot",
+		UpdatedAt: initial.UpdatedAt,
+		List:      &initial,
+	}) {
+		return
+	}
+
+	ticker := time.NewTicker(25 * time.Second)
+	defer ticker.Stop()
+	ctx := c.Request.Context()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if _, err := c.Writer.Write([]byte(": heartbeat\n\n")); err != nil {
+				return
+			}
+			c.Writer.Flush()
+		case event, ok := <-eventChan:
+			if !ok {
+				return
+			}
+			if !writeActiveRequestSSE(c, event) {
+				return
+			}
+		}
+	}
+}
+
+func writeActiveRequestSSE(c *gin.Context, event relay.ActiveRequestEvent) bool {
+	data, err := json.Marshal(event)
+	if err != nil {
+		return true
+	}
+	if _, err := c.Writer.Write([]byte(fmt.Sprintf("data: %s\n\n", data))); err != nil {
+		return false
+	}
+	c.Writer.Flush()
+	return true
 }

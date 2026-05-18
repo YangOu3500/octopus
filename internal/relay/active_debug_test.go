@@ -23,7 +23,13 @@ func TestActiveRequestTrackerLifecycleAndSanitization(t *testing.T) {
 	})
 	metrics.SetGroupID(11)
 	metrics.SetClientInfo("127.0.0.1", "relay")
+	ch := ActiveRequestSubscribe()
+	defer ActiveRequestUnsubscribe(ch)
 	metrics.BeginActiveTracking("routing")
+	event := readActiveRequestEvent(t, ch)
+	if event.Type != "started" || event.Snapshot == nil || event.Snapshot.RequestModel != "client-model" {
+		t.Fatalf("unexpected started event: %+v", event)
+	}
 	metrics.markActiveAttemptStart(activeAttemptInfo{
 		ChannelID:     23,
 		ChannelName:   "debug-channel",
@@ -61,6 +67,39 @@ func TestActiveRequestTrackerLifecycleAndSanitization(t *testing.T) {
 	}
 }
 
+func TestActiveRequestTrackerEventStream(t *testing.T) {
+	previous := activeRequests
+	activeRequests = newActiveRequestTracker(16, time.Hour)
+	defer func() {
+		activeRequests = previous
+	}()
+
+	ch := ActiveRequestSubscribe()
+	defer ActiveRequestUnsubscribe(ch)
+
+	metrics := NewRelayMetrics(7, "client-model", []byte(`{"model":"client-model","messages":[]}`), &transformerModel.InternalLLMRequest{
+		Model: "client-model",
+	})
+	metrics.SetClientInfo("127.0.0.1", "relay")
+	metrics.BeginActiveTracking("routing")
+	started := readActiveRequestEvent(t, ch)
+	if started.Type != "started" || started.Snapshot == nil || started.Snapshot.ID == "" {
+		t.Fatalf("unexpected started event: %+v", started)
+	}
+
+	metrics.markActiveAttemptStart(activeAttemptInfo{ChannelID: 23, ChannelName: "debug-channel", AttemptCount: 1})
+	updated := readActiveRequestEvent(t, ch)
+	if updated.Type != "updated" || updated.Snapshot == nil || updated.Snapshot.ChannelID != 23 {
+		t.Fatalf("unexpected updated event: %+v", updated)
+	}
+
+	metrics.completeActiveTracking()
+	completed := readActiveRequestEvent(t, ch)
+	if completed.Type != "completed" || completed.Snapshot == nil || completed.Snapshot.ID != started.Snapshot.ID {
+		t.Fatalf("unexpected completed event: %+v", completed)
+	}
+}
+
 func TestActiveRequestTrackerPrunesOldAndBoundsItems(t *testing.T) {
 	tracker := newActiveRequestTracker(2, time.Minute)
 	now := time.Now()
@@ -79,4 +118,15 @@ func TestActiveRequestTrackerPrunesOldAndBoundsItems(t *testing.T) {
 			t.Fatalf("expected old entries to be pruned, got %+v", list.Items)
 		}
 	}
+}
+
+func readActiveRequestEvent(t *testing.T, ch chan ActiveRequestEvent) ActiveRequestEvent {
+	t.Helper()
+	select {
+	case event := <-ch:
+		return event
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for active request event")
+	}
+	return ActiveRequestEvent{}
 }

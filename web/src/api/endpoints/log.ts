@@ -161,6 +161,48 @@ export interface ActiveRequestListResponse {
     items: ActiveRequestSnapshot[];
 }
 
+export interface ActiveRequestEvent {
+    type: 'snapshot' | 'started' | 'updated' | 'completed';
+    updated_at: number;
+    snapshot?: ActiveRequestSnapshot;
+    list?: ActiveRequestListResponse;
+}
+
+const activeRequestsQueryKey = ['logs', 'active'] as const;
+
+function mergeActiveRequestEvent(
+    current: ActiveRequestListResponse | undefined,
+    event: ActiveRequestEvent,
+): ActiveRequestListResponse {
+    if (event.type === 'snapshot' && event.list) {
+        return event.list;
+    }
+
+    const updatedAt = event.updated_at || Date.now();
+    const base = current ?? { total: 0, updated_at: updatedAt, items: [] };
+    const snapshot = event.snapshot;
+    if (!snapshot?.id) {
+        return { ...base, updated_at: updatedAt };
+    }
+
+    const items = event.type === 'completed'
+        ? base.items.filter((item) => item.id !== snapshot.id)
+        : [snapshot, ...base.items.filter((item) => item.id !== snapshot.id)];
+
+    items.sort((left, right) => {
+        if ((left.elapsed_ms ?? 0) === (right.elapsed_ms ?? 0)) {
+            return (left.started_at ?? 0) - (right.started_at ?? 0);
+        }
+        return (right.elapsed_ms ?? 0) - (left.elapsed_ms ?? 0);
+    });
+
+    return {
+        total: items.length,
+        updated_at: updatedAt,
+        items,
+    };
+}
+
 export function useClearLogs() {
     const queryClient = useQueryClient();
 
@@ -191,15 +233,102 @@ export function useLogDetail(logID: number | undefined, enabled: boolean) {
     });
 }
 
-export function useActiveRequests(options: { refetchIntervalMs?: number | false } = {}) {
-    const { refetchIntervalMs = false } = options;
-    return useQuery({
-        queryKey: ['logs', 'active'],
+export function useActiveRequests(options: { refetchIntervalMs?: number | false; streamEvents?: boolean } = {}) {
+    const { refetchIntervalMs = false, streamEvents = false } = options;
+    const queryClient = useQueryClient();
+    const eventSourceRef = useRef<EventSource | null>(null);
+    const [isStreamConnected, setIsStreamConnected] = useState(false);
+    const [streamError, setStreamError] = useState<Error | null>(null);
+
+    const query = useQuery({
+        queryKey: activeRequestsQueryKey,
         queryFn: async () => apiClient.get<ActiveRequestListResponse>('/api/v1/log/active'),
         refetchInterval: refetchIntervalMs,
         refetchIntervalInBackground: false,
         staleTime: 1000,
     });
+
+    useEffect(() => {
+        if (!streamEvents) {
+            eventSourceRef.current?.close();
+            eventSourceRef.current = null;
+            return;
+        }
+
+        let cancelled = false;
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
+        let retryAttempt = 0;
+
+        const scheduleReconnect = () => {
+            if (cancelled) return;
+            const delay = Math.min(30000, 1000 * 2 ** retryAttempt);
+            retryAttempt += 1;
+            retryTimer = setTimeout(() => {
+                retryTimer = null;
+                connect(true);
+            }, delay);
+        };
+
+        const connect = async (isReconnect = false) => {
+            try {
+                const { token } = await apiClient.get<{ token: string }>('/api/v1/log/stream-token');
+                if (cancelled) return;
+
+                const eventSource = new EventSource(`${API_BASE_URL}/api/v1/log/active-stream?token=${token}`);
+                eventSourceRef.current = eventSource;
+
+                eventSource.onopen = () => {
+                    retryAttempt = 0;
+                    setIsStreamConnected(true);
+                    setStreamError(null);
+                    if (isReconnect) {
+                        queryClient.invalidateQueries({ queryKey: activeRequestsQueryKey });
+                    }
+                };
+
+                eventSource.onmessage = (event) => {
+                    try {
+                        const activeEvent: ActiveRequestEvent = JSON.parse(event.data);
+                        queryClient.setQueryData(
+                            activeRequestsQueryKey,
+                            (old: ActiveRequestListResponse | undefined) => mergeActiveRequestEvent(old, activeEvent),
+                        );
+                    } catch (e) {
+                        logger.error('failed to parse active request stream event:', e);
+                    }
+                };
+
+                eventSource.onerror = () => {
+                    setIsStreamConnected(false);
+                    setStreamError(new Error('active request stream disconnected'));
+                    eventSource.close();
+                    eventSourceRef.current = null;
+                    scheduleReconnect();
+                };
+            } catch (e) {
+                if (cancelled) return;
+                setStreamError(e instanceof Error ? e : new Error('failed to create active request stream'));
+                logger.error('failed to create active request stream:', e);
+                scheduleReconnect();
+            }
+        };
+
+        connect(false);
+
+        return () => {
+            cancelled = true;
+            if (retryTimer) clearTimeout(retryTimer);
+            eventSourceRef.current?.close();
+            eventSourceRef.current = null;
+            setIsStreamConnected(false);
+        };
+    }, [queryClient, streamEvents]);
+
+    return {
+        ...query,
+        isStreamConnected,
+        streamError,
+    };
 }
 
 const logsInfiniteQueryKey = (pageSize: number, filters: LogListFilters) => ['logs', 'infinite', pageSize, filters] as const;

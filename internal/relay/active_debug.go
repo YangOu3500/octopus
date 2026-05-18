@@ -14,6 +14,7 @@ import (
 const (
 	activeRequestMaxItems = 512
 	activeRequestTTL      = 2 * time.Hour
+	activeRequestEventBuf = 64
 )
 
 var (
@@ -54,6 +55,13 @@ type ActiveRequestList struct {
 	Items     []ActiveRequestSnapshot `json:"items"`
 }
 
+type ActiveRequestEvent struct {
+	Type      string                 `json:"type"`
+	UpdatedAt int64                  `json:"updated_at"`
+	Snapshot  *ActiveRequestSnapshot `json:"snapshot,omitempty"`
+	List      *ActiveRequestList     `json:"list,omitempty"`
+}
+
 type activeAttemptInfo struct {
 	ChannelID     int
 	ChannelName   string
@@ -65,10 +73,11 @@ type activeAttemptInfo struct {
 }
 
 type activeRequestTracker struct {
-	mu       sync.RWMutex
-	items    map[string]ActiveRequestSnapshot
-	maxItems int
-	ttl      time.Duration
+	mu          sync.RWMutex
+	items       map[string]ActiveRequestSnapshot
+	subscribers map[chan ActiveRequestEvent]struct{}
+	maxItems    int
+	ttl         time.Duration
 }
 
 func newActiveRequestTracker(maxItems int, ttl time.Duration) *activeRequestTracker {
@@ -79,14 +88,23 @@ func newActiveRequestTracker(maxItems int, ttl time.Duration) *activeRequestTrac
 		ttl = activeRequestTTL
 	}
 	return &activeRequestTracker{
-		items:    make(map[string]ActiveRequestSnapshot),
-		maxItems: maxItems,
-		ttl:      ttl,
+		items:       make(map[string]ActiveRequestSnapshot),
+		subscribers: make(map[chan ActiveRequestEvent]struct{}),
+		maxItems:    maxItems,
+		ttl:         ttl,
 	}
 }
 
 func ActiveRequestSnapshots() ActiveRequestList {
 	return activeRequests.snapshot()
+}
+
+func ActiveRequestSubscribe() chan ActiveRequestEvent {
+	return activeRequests.subscribe()
+}
+
+func ActiveRequestUnsubscribe(ch chan ActiveRequestEvent) {
+	activeRequests.unsubscribe(ch)
 }
 
 func (t *activeRequestTracker) begin(snapshot ActiveRequestSnapshot) string {
@@ -116,6 +134,7 @@ func (t *activeRequestTracker) begin(snapshot ActiveRequestSnapshot) string {
 	t.pruneLocked(now)
 	t.items[id] = snapshot
 	t.trimLocked()
+	t.publishLocked(activeRequestSnapshotEvent("started", snapshot, nowMS))
 	return id
 }
 
@@ -140,6 +159,7 @@ func (t *activeRequestTracker) update(id string, update func(*ActiveRequestSnaps
 		snapshot.Phase = "routing"
 	}
 	t.items[id] = snapshot
+	t.publishLocked(activeRequestSnapshotEvent("updated", snapshot, nowMS))
 }
 
 func (t *activeRequestTracker) complete(id string) {
@@ -147,8 +167,13 @@ func (t *activeRequestTracker) complete(id string) {
 	if id == "" {
 		return
 	}
+	nowMS := time.Now().UnixMilli()
 	t.mu.Lock()
-	delete(t.items, id)
+	snapshot, ok := t.items[id]
+	if ok {
+		delete(t.items, id)
+		t.publishLocked(activeRequestSnapshotEvent("completed", snapshot, nowMS))
+	}
 	t.mu.Unlock()
 }
 
@@ -178,6 +203,50 @@ func (t *activeRequestTracker) snapshot() ActiveRequestList {
 		Total:     len(items),
 		UpdatedAt: nowMS,
 		Items:     items,
+	}
+}
+
+func (t *activeRequestTracker) subscribe() chan ActiveRequestEvent {
+	ch := make(chan ActiveRequestEvent, activeRequestEventBuf)
+	t.mu.Lock()
+	t.subscribers[ch] = struct{}{}
+	t.mu.Unlock()
+	return ch
+}
+
+func (t *activeRequestTracker) unsubscribe(ch chan ActiveRequestEvent) {
+	if ch == nil {
+		return
+	}
+	t.mu.Lock()
+	if _, ok := t.subscribers[ch]; ok {
+		delete(t.subscribers, ch)
+		close(ch)
+	}
+	t.mu.Unlock()
+}
+
+func (t *activeRequestTracker) publishLocked(event ActiveRequestEvent) {
+	if len(t.subscribers) == 0 {
+		return
+	}
+	for ch := range t.subscribers {
+		select {
+		case ch <- event:
+		default:
+		}
+	}
+}
+
+func activeRequestSnapshotEvent(eventType string, snapshot ActiveRequestSnapshot, nowMS int64) ActiveRequestEvent {
+	snapshot.UpdatedAt = nowMS
+	if snapshot.StartedAt > 0 {
+		snapshot.ElapsedMS = nowMS - snapshot.StartedAt
+	}
+	return ActiveRequestEvent{
+		Type:      eventType,
+		UpdatedAt: nowMS,
+		Snapshot:  &snapshot,
 	}
 }
 

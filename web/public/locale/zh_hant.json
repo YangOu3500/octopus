@@ -599,7 +599,7 @@
                     "name": "即時 debug / 活躍請求視圖",
                     "desc": "ccLoad 有更強的活躍請求和調試快照體驗，適合排查未結束請求。",
                     "ui": "日誌頁頂部已提供活躍請求快照，展示執行中請求的模型、階段、候選渠道、Key ID、站點 / 帳號、attempt 數、首 token 和寫出狀態。",
-                    "gap": "目前是記憶體態快照；debug 事件流和更細 raw 調試仍可後續增強，結構化 trace 已由獨立工作台承接。"
+                    "gap": "目前是記憶體態快照；debug 事件流已接入，結構化 trace 已由獨立工作台承接；更細 raw 調試仍可後續增強。"
                 },
                 "quotaStatus": {
                     "name": "額度 / 配額狀態解析",
@@ -1174,6 +1174,11 @@
             "count": "{count} 個執行中",
             "refresh": "刷新",
             "empty": "目前沒有執行中的請求",
+            "eventStream": {
+                "connected": "事件流已連接",
+                "disconnected": "事件流未連接",
+                "fallback": "輪詢兜底"
+            },
             "columns": {
                 "request": "請求",
                 "phase": "階段",
