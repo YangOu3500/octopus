@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type LogListFilters, useLogs } from '@/api/endpoints/log';
+import { type ActiveRequestSnapshot, type LogListFilters, useActiveRequests, useLogs } from '@/api/endpoints/log';
 import { LogCard, type LogSiteActionTarget, type LogSiteActionTargets } from './Item';
-import { Loader2, RefreshCw, Search, X } from 'lucide-react';
+import { Activity, Loader2, RefreshCw, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { VirtualizedGrid } from '@/components/common/VirtualizedGrid';
 import { useChannelList } from '@/api/endpoints/channel';
@@ -132,6 +132,117 @@ function LogTableHeader() {
     );
 }
 
+function formatElapsed(ms: number | undefined) {
+    const value = Math.max(0, ms ?? 0);
+    if (value < 1000) return `${value}ms`;
+    if (value < 60000) return `${(value / 1000).toFixed(1)}s`;
+    return `${Math.floor(value / 60000)}m ${Math.floor((value % 60000) / 1000)}s`;
+}
+
+function formatActiveMeta(item: ActiveRequestSnapshot) {
+    const parts = [
+        item.request_source,
+        item.request_stream ? 'stream' : 'non-stream',
+        item.used_ws ? 'ws' : '',
+        item.first_token_seen ? 'first-token' : '',
+        item.written ? 'written' : '',
+    ].filter(Boolean);
+    return parts.join(' / ') || '-';
+}
+
+function ActiveRequestsPanel({
+    items,
+    total,
+    isFetching,
+    onRefresh,
+}: {
+    items: ActiveRequestSnapshot[];
+    total: number;
+    isFetching: boolean;
+    onRefresh: () => void;
+}) {
+    const t = useTranslations('log.active');
+    const visibleItems = items.slice(0, 4);
+
+    return (
+        <div className="rounded-md border bg-background/40 p-3">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                    <Activity className="size-4 text-primary" />
+                    {t('title')}
+                </div>
+                <Badge variant={total > 0 ? 'secondary' : 'outline'} className="h-6 rounded-md px-2 text-xs">
+                    {t('count', { count: total })}
+                </Badge>
+                <Button type="button" size="sm" variant="ghost" className="ml-auto h-7 rounded-md px-2 text-xs" onClick={onRefresh}>
+                    {isFetching ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+                    {t('refresh')}
+                </Button>
+            </div>
+            {visibleItems.length === 0 ? (
+                <div className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+                    {t('empty')}
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-[860px] text-left text-xs">
+                        <thead className="text-muted-foreground">
+                            <tr className="border-b">
+                                <th className="py-1.5 pr-3 font-medium">{t('columns.request')}</th>
+                                <th className="py-1.5 pr-3 font-medium">{t('columns.phase')}</th>
+                                <th className="py-1.5 pr-3 font-medium">{t('columns.route')}</th>
+                                <th className="py-1.5 pr-3 font-medium">{t('columns.status')}</th>
+                                <th className="py-1.5 pr-3 font-medium text-right">{t('columns.elapsed')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {visibleItems.map((item) => (
+                                <tr key={item.id} className="border-b last:border-0">
+                                    <td className="max-w-[220px] py-2 pr-3">
+                                        <div className="truncate font-medium" title={item.request_model}>{item.request_model || '-'}</div>
+                                        <div className="truncate text-muted-foreground" title={formatActiveMeta(item)}>
+                                            {formatActiveMeta(item)}
+                                        </div>
+                                    </td>
+                                    <td className="py-2 pr-3">
+                                        <Badge variant="outline" className="h-5 rounded-md px-1.5 text-[10px]">
+                                            {item.phase || '-'}
+                                        </Badge>
+                                    </td>
+                                    <td className="max-w-[260px] py-2 pr-3">
+                                        <div className="truncate" title={item.channel_name || undefined}>
+                                            {item.channel_name || `#${item.channel_id || 0}`} / {item.model_name || '-'}
+                                        </div>
+                                        <div className="text-muted-foreground">
+                                            {t('keySite', {
+                                                key: item.channel_key_id || 0,
+                                                site: item.site_id || 0,
+                                                account: item.site_account_id || 0,
+                                            })}
+                                        </div>
+                                    </td>
+                                    <td className="max-w-[240px] py-2 pr-3">
+                                        <div className="truncate" title={item.last_failure_reason || undefined}>
+                                            {item.last_status || '-'} {item.last_http_status ? `/ ${item.last_http_status}` : ''}
+                                        </div>
+                                        <div className="truncate text-muted-foreground" title={item.last_failure_reason || undefined}>
+                                            {item.last_failure_reason || t('noFailure')}
+                                        </div>
+                                    </td>
+                                    <td className="py-2 text-right font-mono tabular-nums">
+                                        {formatElapsed(item.elapsed_ms)}
+                                        <div className="text-muted-foreground">{t('attempts', { count: item.attempts_count || 0 })}</div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
+
 /**
  * 日志页面组件
  * - 初始加载 pageSize 条历史日志
@@ -162,6 +273,11 @@ export function Log() {
     const clearLogTarget = useNavStore((state) => state.clearLogTarget);
     const { data: channelsData } = useChannelList();
     const { data: siteChannelsData } = useSiteChannelList();
+    const {
+        data: activeRequests,
+        isFetching: isFetchingActiveRequests,
+        refetch: refetchActiveRequests,
+    } = useActiveRequests({ refetchIntervalMs: autoRefresh ? 2000 : 5000 });
 
     const filters = useMemo<LogListFilters>(() => ({
         time_range: nonAll(timeRange),
@@ -384,6 +500,13 @@ export function Log() {
                             </Button>
                         </div>
                     </div>
+
+                    <ActiveRequestsPanel
+                        items={activeRequests?.items ?? []}
+                        total={activeRequests?.total ?? 0}
+                        isFetching={isFetchingActiveRequests}
+                        onRefresh={() => void refetchActiveRequests()}
+                    />
 
                     <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
                         <div className="relative">

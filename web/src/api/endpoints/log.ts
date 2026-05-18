@@ -128,6 +128,39 @@ export interface LogListResponse {
     has_more: boolean;
 }
 
+export interface ActiveRequestSnapshot {
+    id: string;
+    api_key_id?: number;
+    group_id?: number;
+    request_model: string;
+    request_source?: string;
+    request_stream: boolean;
+    client_ip?: string;
+    started_at: number;
+    updated_at: number;
+    elapsed_ms: number;
+    phase: string;
+    channel_id?: number;
+    channel_name?: string;
+    channel_key_id?: number;
+    model_name?: string;
+    site_id?: number;
+    site_account_id?: number;
+    attempts_count?: number;
+    last_status?: string;
+    last_http_status?: number;
+    last_failure_reason?: string;
+    written: boolean;
+    first_token_seen: boolean;
+    used_ws: boolean;
+}
+
+export interface ActiveRequestListResponse {
+    total: number;
+    updated_at: number;
+    items: ActiveRequestSnapshot[];
+}
+
 export function useClearLogs() {
     const queryClient = useQueryClient();
 
@@ -154,6 +187,17 @@ export function useLogDetail(logID: number | undefined, enabled: boolean) {
         },
         enabled: enabled && !!logID,
         staleTime: 60000,
+    });
+}
+
+export function useActiveRequests(options: { refetchIntervalMs?: number } = {}) {
+    const { refetchIntervalMs = 3000 } = options;
+    return useQuery({
+        queryKey: ['logs', 'active'],
+        queryFn: async () => apiClient.get<ActiveRequestListResponse>('/api/v1/log/active'),
+        refetchInterval: refetchIntervalMs,
+        refetchIntervalInBackground: false,
+        staleTime: 1000,
     });
 }
 

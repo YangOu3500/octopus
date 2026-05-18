@@ -88,6 +88,8 @@ func HandleResponsesCompact(c *gin.Context) {
 	metricsReq := &transformerModel.InternalLLMRequest{Model: requestModel, RawRequest: body, RawAPIFormat: transformerModel.APIFormatOpenAIResponse}
 	metrics := NewRelayMetrics(apiKeyID, requestModel, body, metricsReq)
 	metrics.SetGroupID(group.ID)
+	metrics.SetClientInfo(c.ClientIP(), "relay")
+	metrics.BeginActiveTracking("routing")
 
 	var lastErr error
 	var lastStatusCode int
@@ -172,7 +174,7 @@ func HandleResponsesCompact(c *gin.Context) {
 				}
 			}
 
-			statusCode, retryAfter, attemptErr = forwardResponsesCompact(c, metrics, iter, channel, usedKey, body)
+			statusCode, retryAfter, attemptErr = forwardResponsesCompact(c, metrics, iter, channel, usedKey, body, item.ModelName, runtimeState)
 			if attemptErr == nil {
 				success = true
 				break
@@ -254,11 +256,21 @@ func supportsResponsesCompact(channelType outbound.OutboundType) bool {
 	}
 }
 
-func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balancer.Iterator, channel *dbmodel.Channel, usedKey dbmodel.ChannelKey, requestBody []byte) (int, time.Duration, error) {
+func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balancer.Iterator, channel *dbmodel.Channel, usedKey dbmodel.ChannelKey, requestBody []byte, modelName string, runtimeState runtimeCandidateState) (int, time.Duration, error) {
 	span := iter.StartAttempt(channel.ID, usedKey.ID, channel.Name)
+	metrics.markActiveAttemptStart(activeAttemptInfo{
+		ChannelID:     channel.ID,
+		ChannelName:   channel.Name,
+		ChannelKeyID:  usedKey.ID,
+		ModelName:     modelName,
+		SiteID:        runtimeState.SiteID,
+		SiteAccountID: runtimeState.SiteAccountID,
+		AttemptCount:  len(iter.Attempts()) + 1,
+	})
 	request, err := buildResponsesCompactRequest(c.Request.Context(), channel, usedKey.ChannelKey, requestBody)
 	if err != nil {
 		span.End(dbmodel.AttemptFailed, 0, err.Error())
+		metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, 0, err.Error(), false, len(iter.Attempts()))
 		return 0, 0, fmt.Errorf("failed to create compact request: %w", err)
 	}
 	metrics.SetTransportRequestPayload(requestBody, metrics.RequestModel)
@@ -267,6 +279,7 @@ func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balanc
 	response, err := sendCompactRequest(channel, request)
 	if err != nil {
 		span.End(dbmodel.AttemptFailed, 0, err.Error())
+		metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, 0, err.Error(), false, len(iter.Attempts()))
 		return 0, 0, fmt.Errorf("failed to send compact request: %w", err)
 	}
 	defer response.Body.Close()
@@ -274,6 +287,7 @@ func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balanc
 	body, readErr := io.ReadAll(response.Body)
 	if readErr != nil {
 		span.End(dbmodel.AttemptFailed, response.StatusCode, readErr.Error())
+		metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, response.StatusCode, readErr.Error(), false, len(iter.Attempts()))
 		return response.StatusCode, 0, fmt.Errorf("failed to read compact response body: %w", readErr)
 	}
 
@@ -281,6 +295,7 @@ func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balanc
 		retryAfter := parseRetryAfter(response.Header.Get("Retry-After"))
 		statusCode := normalizeUpstreamStatusCode(response.StatusCode, string(body))
 		span.End(dbmodel.AttemptFailed, statusCode, string(body))
+		metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, statusCode, string(body), false, len(iter.Attempts()))
 		return statusCode, retryAfter, fmt.Errorf("upstream error: %d: %s", response.StatusCode, string(body))
 	}
 
@@ -298,6 +313,7 @@ func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balanc
 	}
 
 	span.End(dbmodel.AttemptSuccess, response.StatusCode, "")
+	metrics.markActiveAttemptEnd(dbmodel.AttemptSuccess, response.StatusCode, "", true, len(iter.Attempts()))
 	return response.StatusCode, 0, nil
 }
 

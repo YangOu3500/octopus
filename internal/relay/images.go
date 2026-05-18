@@ -123,6 +123,7 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 	metrics.ClientIP = c.ClientIP()
 	metrics.RequestSource = "images"
 	metrics.RequestContent = buildImagesRequestContentForLog(isMultipart, bc, jsonPayload)
+	metrics.BeginActiveTracking()
 
 	// === 早期心跳 ===
 	// 流式：启动早期心跳协程，覆盖前置阶段（连接慢、failover、退避）期间向客户端发 SSE 注释字节
@@ -194,6 +195,15 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 			iter.Index()+1, iter.Len(), iter.IsSticky(), stream)
 
 		span := iter.StartAttempt(channel.ID, usedKey.ID, channel.Name)
+		metrics.markActiveAttemptStart(activeAttemptInfo{
+			ChannelID:     channel.ID,
+			ChannelName:   channel.Name,
+			ChannelKeyID:  usedKey.ID,
+			ModelName:     item.ModelName,
+			SiteID:        runtimeState.SiteID,
+			SiteAccountID: runtimeState.SiteAccountID,
+			AttemptCount:  len(iter.Attempts()) + 1,
+		})
 
 		// 尝试一次转发
 		statusCode, written, usage, upstreamCT, fwdErr := imagesAttempt(ctx, endpoint, c, bc, isMultipart, boundary, jsonPayload, stream, channel, usedKey.ChannelKey, group.FirstTokenTimeOut, metrics, item.ModelName, hb)
@@ -214,6 +224,7 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 			op.ChannelKeyUpdate(usedKey)
 
 			span.End(model.AttemptSuccess, statusCode, "")
+			metrics.markActiveAttemptEnd(model.AttemptSuccess, statusCode, "", written, len(iter.Attempts()))
 
 			// Channel 维度统计
 			op.StatsChannelUpdate(channel.ID, model.StatsMetrics{
@@ -244,6 +255,7 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 		// ====== 失败 ======
 		op.ChannelKeyUpdate(usedKey)
 		span.End(model.AttemptFailed, statusCode, fwdErr.Error())
+		metrics.markActiveAttemptEnd(model.AttemptFailed, statusCode, fwdErr.Error(), written, len(iter.Attempts()))
 
 		// Channel 维度统计
 		op.StatsChannelUpdate(channel.ID, model.StatsMetrics{
@@ -298,6 +310,8 @@ type imagesRelayMetrics struct {
 
 	RequestContent  string
 	ResponseContent string
+
+	activeRequestID string
 }
 
 func newImagesRelayMetrics(apiKeyID int, requestModel string) *imagesRelayMetrics {
@@ -311,6 +325,7 @@ func newImagesRelayMetrics(apiKeyID int, requestModel string) *imagesRelayMetric
 func (m *imagesRelayMetrics) SetFirstTokenTime(t time.Time) {
 	if m.FirstToken.IsZero() {
 		m.FirstToken = t
+		m.markActiveFirstToken()
 	}
 }
 
@@ -329,6 +344,8 @@ func (m *imagesRelayMetrics) SetUsageFromImages(actualModel string, u imagesUsag
 }
 
 func (m *imagesRelayMetrics) Save(ctx context.Context, success bool, err error, attempts []model.ChannelAttempt) {
+	defer m.completeActiveTracking()
+
 	duration := time.Since(m.StartTime)
 
 	globalStats := model.StatsMetrics{

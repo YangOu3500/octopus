@@ -45,6 +45,8 @@ type RelayMetrics struct {
 	BillInputTokens      *int
 	CacheReadTokens      *int
 	CacheWriteTokens     *int
+
+	activeRequestID string
 }
 
 func NewRelayMetrics(apiKeyID int, requestModel string, rawBody []byte, req *transformerModel.InternalLLMRequest) *RelayMetrics {
@@ -61,6 +63,7 @@ func NewRelayMetrics(apiKeyID int, requestModel string, rawBody []byte, req *tra
 
 func (m *RelayMetrics) SetFirstTokenTime(t time.Time) {
 	m.FirstTokenTime = t
+	m.markActiveFirstToken()
 }
 
 func (m *RelayMetrics) SetTransportRequestPayload(payload []byte, modelName string) {
@@ -87,11 +90,13 @@ func (m *RelayMetrics) SetWSRecovery(recovery model.RelayLogWSRecovery) {
 
 func (m *RelayMetrics) SetGroupID(groupID int) {
 	m.GroupID = groupID
+	m.syncActiveBase()
 }
 
 func (m *RelayMetrics) SetClientInfo(clientIP string, requestSource string) {
 	m.ClientIP = strings.TrimSpace(clientIP)
 	m.RequestSource = strings.TrimSpace(requestSource)
+	m.syncActiveBase()
 }
 
 // SetSelectedChannel 记录此次命中的通道 ID，用于 SetInternalResponse 时按站点 (账号, 分组) 查询价格。
@@ -132,6 +137,8 @@ func (m *RelayMetrics) SetInternalResponse(resp *transformerModel.InternalLLMRes
 }
 
 func (m *RelayMetrics) Save(ctx context.Context, success bool, err error, attempts []model.ChannelAttempt) {
+	defer m.completeActiveTracking()
+
 	duration := time.Since(m.StartTime)
 	attempts = m.enrichTraceAttempts(ctx, attempts)
 

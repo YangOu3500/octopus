@@ -244,6 +244,10 @@
                     "label": "Trace / Attempts",
                     "entry": "日志详情 / 首页观测"
                 },
+                "liveDebug": {
+                    "label": "活跃请求 Debug",
+                    "entry": "日志页活跃请求"
+                },
                 "health": {
                     "label": "健康分 / 冷却",
                     "entry": "设置页 / 调度预览"
@@ -562,8 +566,8 @@
                 "liveDebug": {
                     "name": "实时 debug / 活跃请求视图",
                     "desc": "ccLoad 有更强的活跃请求和调试快照体验，适合排查未结束请求。",
-                    "ui": "当前已有自动刷新日志和详情，但未做到请求未结束时的实时 debug 快照。",
-                    "gap": "待补活跃请求面板、debug 事件流或请求进行中快照。"
+                    "ui": "日志页顶部已提供活跃请求快照，展示运行中请求的模型、阶段、候选渠道、Key ID、站点 / 账号、attempt 数、首 token 和写出状态。",
+                    "gap": "当前是内存态快照；debug 事件流、独立 request_traces 表和更细 raw 调试仍可后续增强。"
                 },
                 "quotaStatus": {
                     "name": "额度 / 配额状态解析",
@@ -1011,6 +1015,22 @@
     "log": {
         "list": {
             "noMore": "没有更多日志了"
+        },
+        "active": {
+            "title": "活跃请求 Debug",
+            "count": "{count} 个运行中",
+            "refresh": "刷新",
+            "empty": "当前没有运行中的请求",
+            "columns": {
+                "request": "请求",
+                "phase": "阶段",
+                "route": "当前候选",
+                "status": "状态",
+                "elapsed": "耗时"
+            },
+            "keySite": "Key #{key} / 站点 #{site} / 账号 #{account}",
+            "noFailure": "暂无失败",
+            "attempts": "{count} 次尝试"
         },
         "card": {
             "error": "错误",

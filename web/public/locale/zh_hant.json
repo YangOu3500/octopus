@@ -244,6 +244,10 @@
                     "label": "Trace / Attempts",
                     "entry": "日誌詳情 / 首頁觀測"
                 },
+                "liveDebug": {
+                    "label": "活躍請求 Debug",
+                    "entry": "日誌頁活躍請求"
+                },
                 "health": {
                     "label": "健康分 / 冷卻",
                     "entry": "設定頁 / 調度預覽"
@@ -562,8 +566,8 @@
                 "liveDebug": {
                     "name": "即時 debug / 活躍請求視圖",
                     "desc": "ccLoad 有更強的活躍請求和調試快照體驗，適合排查未結束請求。",
-                    "ui": "目前已有自動刷新日誌和詳情，但未做到請求未結束時的即時 debug 快照。",
-                    "gap": "待補活躍請求面板、debug 事件流或請求進行中快照。"
+                    "ui": "日誌頁頂部已提供活躍請求快照，展示執行中請求的模型、階段、候選渠道、Key ID、站點 / 帳號、attempt 數、首 token 和寫出狀態。",
+                    "gap": "目前是記憶體態快照；debug 事件流、獨立 request_traces 表和更細 raw 調試仍可後續增強。"
                 },
                 "quotaStatus": {
                     "name": "額度 / 配額狀態解析",
@@ -1011,6 +1015,22 @@
     "log": {
         "list": {
             "noMore": "沒有更多日誌了"
+        },
+        "active": {
+            "title": "活躍請求 Debug",
+            "count": "{count} 個執行中",
+            "refresh": "刷新",
+            "empty": "目前沒有執行中的請求",
+            "columns": {
+                "request": "請求",
+                "phase": "階段",
+                "route": "目前候選",
+                "status": "狀態",
+                "elapsed": "耗時"
+            },
+            "keySite": "Key #{key} / 站點 #{site} / 帳號 #{account}",
+            "noFailure": "暫無失敗",
+            "attempts": "{count} 次嘗試"
         },
         "card": {
             "error": "錯誤",

@@ -33,7 +33,7 @@ type OperationItem = {
 };
 
 type CapabilityItem = {
-    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'health' | 'selection' | 'probe' | 'quota';
+    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'liveDebug' | 'health' | 'selection' | 'probe' | 'quota';
     nav: NavItem;
     icon: LucideIcon;
     status: 'done' | 'partial';
@@ -153,6 +153,7 @@ export function GatewayOperationsPanel() {
         { id: 'failover', nav: 'log', icon: GitBranch, status: 'done' },
         { id: 'streamGate', nav: 'setting', icon: ListChecks, status: 'done' },
         { id: 'trace', nav: 'log', icon: Radar, status: 'done' },
+        { id: 'liveDebug', nav: 'log', icon: Activity, status: 'partial' },
         { id: 'health', nav: 'setting', icon: Activity, status: 'partial' },
         { id: 'selection', nav: 'group', icon: BarChart3, status: 'done' },
         { id: 'probe', nav: 'setting', icon: TestTubeDiagonal, status: 'partial' },

@@ -244,6 +244,10 @@
                     "label": "Trace / Attempts",
                     "entry": "Log detail / home observability"
                 },
+                "liveDebug": {
+                    "label": "Active Request Debug",
+                    "entry": "Log active requests"
+                },
                 "health": {
                     "label": "Health Score / Cooldown",
                     "entry": "Settings / routing preview"
@@ -562,8 +566,8 @@
                 "liveDebug": {
                     "name": "Live Debug / Active Requests",
                     "desc": "ccLoad has stronger active request and debug snapshot views for in-flight troubleshooting.",
-                    "ui": "Auto-refresh logs and details exist, but there is no in-flight debug snapshot yet.",
-                    "gap": "Pending active request panel, debug event stream, or in-progress request snapshots."
+                    "ui": "The Logs page now shows active request snapshots with model, phase, candidate channel, key ID, site/account, attempt count, first-token, and written state.",
+                    "gap": "Current snapshots are in memory. Debug event streams, dedicated request_traces tables, and deeper raw debugging can still be added later."
                 },
                 "quotaStatus": {
                     "name": "Quota / Capacity Status Resolver",
@@ -1011,6 +1015,22 @@
     "log": {
         "list": {
             "noMore": "No more logs"
+        },
+        "active": {
+            "title": "Active Request Debug",
+            "count": "{count} running",
+            "refresh": "Refresh",
+            "empty": "No requests are currently running",
+            "columns": {
+                "request": "Request",
+                "phase": "Phase",
+                "route": "Current Candidate",
+                "status": "Status",
+                "elapsed": "Elapsed"
+            },
+            "keySite": "Key #{key} / site #{site} / account #{account}",
+            "noFailure": "No failure",
+            "attempts": "{count} attempts"
         },
         "card": {
             "error": "Error",

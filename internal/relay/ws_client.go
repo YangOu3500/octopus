@@ -428,6 +428,8 @@ func newWSRelayRequest(
 
 	metrics := NewRelayMetrics(apiKeyID, requestModel, rawBody, metricsRequest)
 	metrics.SetGroupID(group.ID)
+	metrics.SetClientInfo("", "websocket")
+	metrics.BeginActiveTracking("routing")
 
 	return &relayRequest{
 		c:               nil,

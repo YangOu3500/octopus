@@ -103,6 +103,7 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 	metrics := NewRelayMetrics(apiKeyID, requestModel, rawBody, internalRequest)
 	metrics.SetGroupID(group.ID)
 	metrics.SetClientInfo(c.ClientIP(), "relay")
+	metrics.BeginActiveTracking("routing")
 	streamGate := newStreamGateConfig(group.FirstTokenTimeOut)
 	responsesPassthroughRequired := internalRequest.HasOpenAIResponsesPassthrough()
 	responsesPassthroughCapableFound := false
@@ -324,6 +325,15 @@ func circuitFailureKind(retryEnabled bool, statusCode int) balancer.FailureKind 
 // attempt 统一管理一次通道尝试的完整生命周期
 func (ra *relayAttempt) attempt() attemptResult {
 	span := ra.iter.StartAttempt(ra.channel.ID, ra.usedKey.ID, ra.channel.Name)
+	ra.metrics.markActiveAttemptStart(activeAttemptInfo{
+		ChannelID:     ra.channel.ID,
+		ChannelName:   ra.channel.Name,
+		ChannelKeyID:  ra.usedKey.ID,
+		ModelName:     ra.internalRequest.Model,
+		SiteID:        ra.siteID,
+		SiteAccountID: ra.siteAccountID,
+		AttemptCount:  len(ra.iter.Attempts()) + 1,
+	})
 
 	// 转发请求
 	statusCode, fwdErr := ra.forward()
@@ -366,6 +376,7 @@ func (ra *relayAttempt) attempt() attemptResult {
 		// 会话保持：更新粘性记录
 		balancer.SetSticky(ra.apiKeyID, ra.requestModel, ra.channel.ID, ra.usedKey.ID)
 
+		ra.metrics.markActiveAttemptEnd(dbmodel.AttemptSuccess, statusCode, "", ra.streamPayloadWritten.Load(), len(ra.iter.Attempts()))
 		return attemptResult{Success: true}
 	}
 
@@ -390,6 +401,7 @@ func (ra *relayAttempt) attempt() attemptResult {
 			RetryAfter:    ra.retryAfter,
 			TotalMS:       int(span.Duration().Milliseconds()),
 		})
+		ra.metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, statusCode, fwdErr.Error(), written, len(ra.iter.Attempts()))
 		return attemptResult{
 			Success:    false,
 			Written:    written,
@@ -428,6 +440,7 @@ func (ra *relayAttempt) attempt() attemptResult {
 	if written {
 		ra.collectResponse()
 	}
+	ra.metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, statusCode, fwdErr.Error(), written, len(ra.iter.Attempts()))
 	return attemptResult{
 		Success:           false,
 		Written:           written,
@@ -554,6 +567,7 @@ func (ra *relayAttempt) forwardViaWS(ctx context.Context) (int, error) {
 
 	// Read events from WS and process through the transform pipeline
 	ra.metrics.UsedWS = true
+	ra.metrics.MarkActiveUsedWS()
 	if ra.metrics.WSMode == nil {
 		ra.metrics.SetWSMode(defaultWSModeForRequest(ra.internalRequest))
 	}
@@ -610,6 +624,7 @@ func (ra *relayAttempt) retryViaFreshUpstreamWS(ctx context.Context, reqBody []b
 	}
 
 	ra.metrics.UsedWS = true
+	ra.metrics.MarkActiveUsedWS()
 	if ra.metrics.WSMode == nil {
 		ra.metrics.SetWSMode(defaultWSModeForRequest(ra.internalRequest))
 	}
