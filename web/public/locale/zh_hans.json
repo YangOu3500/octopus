@@ -257,6 +257,10 @@
                     "label": "Selection Tracker",
                     "entry": "分组调度预览"
                 },
+                "modelAssociation": {
+                    "label": "模型关联 / 别名归并",
+                    "entry": "模型分组批量生成"
+                },
                 "probe": {
                     "label": "慢速主动探测",
                     "entry": "设置页"
@@ -564,6 +568,12 @@
                     "desc": "按已获取模型名自动生成或补齐同名分组，相同模型名归入同一组。",
                     "ui": "模型分组页提供批量生成、选择生成、预览、筛选和结果摘要。",
                     "gap": "仍建议在真实同步站点模型和普通渠道各验证一次。"
+                },
+                "modelAssociation": {
+                    "name": "模型关联 / 别名归并",
+                    "desc": "在保留 Octopus 模型分组结构的前提下，把 provider/model、models/... 等常见上游别名归并到同一对外模型组。",
+                    "ui": "模型分组批量生成弹窗可切换精确同名 / 别名归并，并在预览中展示被归并的别名和候选数量。",
+                    "gap": "不引入 AxonHub Provider / GlobalModel / 完整 ModelAssociation 条件体系；更复杂的条件关联仍作为后续增强。"
                 },
                 "protocolTransform": {
                     "name": "协议转换与兼容链路",

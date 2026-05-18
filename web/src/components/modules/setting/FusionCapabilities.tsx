@@ -29,6 +29,7 @@ const capabilities: Capability[] = [
     { id: 'costUsage', status: 'done', source: 'AxonHub', nav: 'home', icon: CheckCircle2 },
     { id: 'modelTest', status: 'done', source: 'ccLoad', nav: 'modelTest', icon: ListChecks },
     { id: 'groupAutoGenerate', status: 'done', source: 'octopus', nav: 'group', icon: CheckCircle2 },
+    { id: 'modelAssociation', status: 'done', source: 'AxonHub', nav: 'group', icon: GitBranch },
     { id: 'protocolTransform', status: 'partial', source: 'AxonHub', nav: 'log', icon: GitBranch },
     { id: 'liveDebug', status: 'partial', source: 'ccLoad', nav: 'log', icon: TriangleAlert },
     { id: 'quotaStatus', status: 'partial', source: 'both', nav: 'group', icon: CircleDashed },

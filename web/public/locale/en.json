@@ -257,6 +257,10 @@
                     "label": "Selection Tracker",
                     "entry": "Group routing preview"
                 },
+                "modelAssociation": {
+                    "label": "Model Association / Alias Folding",
+                    "entry": "Group bulk generation"
+                },
                 "probe": {
                     "label": "Slow Active Probe",
                     "entry": "Settings"
@@ -564,6 +568,12 @@
                     "desc": "Creates or fills groups from discovered model names, grouping identical model names together.",
                     "ui": "The Groups page provides bulk generation, selected generation, preview, filters, and result summaries.",
                     "gap": "Still recommended to validate once with synced site models and once with regular channels."
+                },
+                "modelAssociation": {
+                    "name": "Model Association / Alias Folding",
+                    "desc": "Keeps the Octopus group model while folding common upstream aliases such as provider/model and models/... into the same public model group.",
+                    "ui": "The group bulk-generation dialog can switch between exact-name and alias-folding modes, with previewed aliases and candidate counts.",
+                    "gap": "Does not introduce AxonHub Provider / GlobalModel / full ModelAssociation conditions. Richer conditional associations remain future work."
                 },
                 "protocolTransform": {
                     "name": "Protocol Transform Compatibility",
