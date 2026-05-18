@@ -1179,6 +1179,19 @@
                 "disconnected": "事件流未连接",
                 "fallback": "轮询兜底"
             },
+            "events": {
+                "title": "最近 Debug 事件",
+                "limit": "最多保留 20 条",
+                "empty": "开启实时刷新后会显示活跃请求事件",
+                "snapshot": "快照",
+                "snapshotMeta": "当前 {count} 个运行中",
+                "types": {
+                    "snapshot": "快照",
+                    "started": "开始",
+                    "updated": "更新",
+                    "completed": "完成"
+                }
+            },
             "columns": {
                 "request": "请求",
                 "phase": "阶段",

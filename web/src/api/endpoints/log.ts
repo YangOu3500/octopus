@@ -169,6 +169,7 @@ export interface ActiveRequestEvent {
 }
 
 const activeRequestsQueryKey = ['logs', 'active'] as const;
+const activeRequestEventHistoryLimit = 20;
 
 function mergeActiveRequestEvent(
     current: ActiveRequestListResponse | undefined,
@@ -239,6 +240,7 @@ export function useActiveRequests(options: { refetchIntervalMs?: number | false;
     const eventSourceRef = useRef<EventSource | null>(null);
     const [isStreamConnected, setIsStreamConnected] = useState(false);
     const [streamError, setStreamError] = useState<Error | null>(null);
+    const [recentEvents, setRecentEvents] = useState<ActiveRequestEvent[]>([]);
 
     const query = useQuery({
         queryKey: activeRequestsQueryKey,
@@ -293,6 +295,7 @@ export function useActiveRequests(options: { refetchIntervalMs?: number | false;
                             activeRequestsQueryKey,
                             (old: ActiveRequestListResponse | undefined) => mergeActiveRequestEvent(old, activeEvent),
                         );
+                        setRecentEvents((current) => [activeEvent, ...current].slice(0, activeRequestEventHistoryLimit));
                     } catch (e) {
                         logger.error('failed to parse active request stream event:', e);
                     }
@@ -328,6 +331,7 @@ export function useActiveRequests(options: { refetchIntervalMs?: number | false;
         ...query,
         isStreamConnected,
         streamError,
+        recentEvents,
     };
 }
 

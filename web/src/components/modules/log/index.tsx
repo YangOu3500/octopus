@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type ActiveRequestSnapshot, type LogListFilters, useActiveRequests, useLogs } from '@/api/endpoints/log';
+import { type ActiveRequestEvent, type ActiveRequestSnapshot, type LogListFilters, useActiveRequests, useLogs } from '@/api/endpoints/log';
 import { LogCard, type LogSiteActionTarget, type LogSiteActionTargets } from './Item';
 import { Activity, Loader2, RefreshCw, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -150,12 +150,23 @@ function formatActiveMeta(item: ActiveRequestSnapshot) {
     return parts.join(' / ') || '-';
 }
 
+function formatEventTime(timestamp: number | undefined) {
+    if (!timestamp) return '-';
+    return new Date(timestamp).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    });
+}
+
 function ActiveRequestsPanel({
     items,
     total,
     isFetching,
     isStreamConnected,
     streamError,
+    recentEvents,
     onRefresh,
 }: {
     items: ActiveRequestSnapshot[];
@@ -163,10 +174,12 @@ function ActiveRequestsPanel({
     isFetching: boolean;
     isStreamConnected: boolean;
     streamError: Error | null;
+    recentEvents: ActiveRequestEvent[];
     onRefresh: () => void;
 }) {
     const t = useTranslations('log.active');
     const visibleItems = items.slice(0, 4);
+    const visibleEvents = recentEvents.slice(0, 5);
 
     return (
         <div className="rounded-md border bg-background/40 p-3">
@@ -251,6 +264,56 @@ function ActiveRequestsPanel({
                     </table>
                 </div>
             )}
+            <div className="mt-3 border-t pt-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="text-xs font-medium text-muted-foreground">{t('events.title')}</div>
+                    <div className="text-[11px] text-muted-foreground">{t('events.limit')}</div>
+                </div>
+                {visibleEvents.length === 0 ? (
+                    <div className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                        {t('events.empty')}
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[760px] text-left text-xs">
+                            <tbody>
+                                {visibleEvents.map((event, index) => {
+                                    const snapshot = event.snapshot;
+                                    const route = snapshot
+                                        ? `${snapshot.channel_name || `#${snapshot.channel_id || 0}`} / ${snapshot.model_name || '-'}`
+                                        : t('events.snapshotMeta', { count: event.list?.total ?? 0 });
+                                    return (
+                                        <tr key={`${event.type}-${event.updated_at}-${snapshot?.id ?? index}`} className="border-b last:border-0">
+                                            <td className="w-[96px] py-1.5 pr-3 font-mono text-muted-foreground">
+                                                {formatEventTime(event.updated_at)}
+                                            </td>
+                                            <td className="w-[110px] py-1.5 pr-3">
+                                                <Badge variant="outline" className="h-5 rounded-md px-1.5 text-[10px]">
+                                                    {t(`events.types.${event.type}`)}
+                                                </Badge>
+                                            </td>
+                                            <td className="max-w-[220px] py-1.5 pr-3">
+                                                <div className="truncate font-medium" title={snapshot?.request_model || undefined}>
+                                                    {snapshot?.request_model || t('events.snapshot')}
+                                                </div>
+                                                <div className="truncate text-muted-foreground" title={snapshot ? formatActiveMeta(snapshot) : undefined}>
+                                                    {snapshot ? formatActiveMeta(snapshot) : t('events.snapshot')}
+                                                </div>
+                                            </td>
+                                            <td className="max-w-[240px] py-1.5 pr-3">
+                                                <div className="truncate" title={route}>{route}</div>
+                                                <div className="truncate text-muted-foreground" title={snapshot?.last_failure_reason || undefined}>
+                                                    {snapshot?.last_status || snapshot?.phase || '-'} {snapshot?.last_http_status ? `/ ${snapshot.last_http_status}` : ''}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -291,6 +354,7 @@ export function Log() {
         refetch: refetchActiveRequests,
         isStreamConnected: isActiveRequestStreamConnected,
         streamError: activeRequestStreamError,
+        recentEvents: activeRequestEvents,
     } = useActiveRequests({
         refetchIntervalMs: autoRefresh ? Number(refreshInterval) : false,
         streamEvents: autoRefresh,
@@ -525,6 +589,7 @@ export function Log() {
                         isFetching={isFetchingActiveRequests}
                         isStreamConnected={autoRefresh && isActiveRequestStreamConnected}
                         streamError={autoRefresh ? activeRequestStreamError : null}
+                        recentEvents={autoRefresh ? activeRequestEvents : []}
                         onRefresh={() => void refetchActiveRequests()}
                     />
 

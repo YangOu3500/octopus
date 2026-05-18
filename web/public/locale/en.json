@@ -1179,6 +1179,19 @@
                 "disconnected": "Event stream disconnected",
                 "fallback": "Polling fallback"
             },
+            "events": {
+                "title": "Recent Debug Events",
+                "limit": "Keeps up to 20",
+                "empty": "Realtime refresh will show active request events here",
+                "snapshot": "Snapshot",
+                "snapshotMeta": "{count} currently running",
+                "types": {
+                    "snapshot": "Snapshot",
+                    "started": "Started",
+                    "updated": "Updated",
+                    "completed": "Completed"
+                }
+            },
             "columns": {
                 "request": "Request",
                 "phase": "Phase",

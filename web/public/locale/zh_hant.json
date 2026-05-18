@@ -1179,6 +1179,19 @@
                 "disconnected": "事件流未連接",
                 "fallback": "輪詢兜底"
             },
+            "events": {
+                "title": "最近 Debug 事件",
+                "limit": "最多保留 20 條",
+                "empty": "開啟即時刷新後會顯示活躍請求事件",
+                "snapshot": "快照",
+                "snapshotMeta": "目前 {count} 個執行中",
+                "types": {
+                    "snapshot": "快照",
+                    "started": "開始",
+                    "updated": "更新",
+                    "completed": "完成"
+                }
+            },
             "columns": {
                 "request": "請求",
                 "phase": "階段",
