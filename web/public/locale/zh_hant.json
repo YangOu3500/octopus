@@ -245,6 +245,14 @@
                     "label": "Trace / Attempts",
                     "entry": "日誌詳情 / 首頁觀測"
                 },
+                "costUsage": {
+                    "label": "用量 / 成本統計",
+                    "entry": "首頁觀測 / 日誌"
+                },
+                "modelTest": {
+                    "label": "真實請求模型測試",
+                    "entry": "模型測試工作台"
+                },
                 "liveDebug": {
                     "label": "活躍請求 Debug",
                     "entry": "日誌頁活躍請求"
@@ -269,9 +277,17 @@
                     "label": "硬並發隊列",
                     "entry": "設定頁 / 模型健康"
                 },
+                "groupAutoGenerate": {
+                    "label": "模型分組生成",
+                    "entry": "分組批量生成"
+                },
                 "modelAssociation": {
                     "label": "模型關聯 / 別名歸併",
                     "entry": "模型分組批量生成"
+                },
+                "protocolTransform": {
+                    "label": "協議轉換鏈路",
+                    "entry": "渠道 / 日誌 attempts"
                 },
                 "probe": {
                     "label": "慢速主動探測",

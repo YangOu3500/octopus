@@ -37,7 +37,7 @@ type OperationItem = {
 };
 
 type CapabilityItem = {
-    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'liveDebug' | 'safeExport' | 'health' | 'channelHealth' | 'selection' | 'channelConcurrency' | 'modelAssociation' | 'probe' | 'quota';
+    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'costUsage' | 'modelTest' | 'liveDebug' | 'safeExport' | 'health' | 'channelHealth' | 'selection' | 'channelConcurrency' | 'groupAutoGenerate' | 'modelAssociation' | 'protocolTransform' | 'probe' | 'quota';
     nav: NavItem;
     channelTab?: ChannelTab;
     icon: LucideIcon;
@@ -159,13 +159,17 @@ export function GatewayOperationsPanel() {
         { id: 'failover', nav: 'log', icon: GitBranch, status: 'done' },
         { id: 'streamGate', nav: 'setting', icon: ListChecks, status: 'done' },
         { id: 'trace', nav: 'traces', icon: Radar, status: 'done' },
+        { id: 'costUsage', nav: 'log', icon: BarChart3, status: 'done' },
+        { id: 'modelTest', nav: 'modelTest', icon: TestTubeDiagonal, status: 'done' },
         { id: 'liveDebug', nav: 'log', icon: Activity, status: 'partial' },
         { id: 'safeExport', nav: 'log', icon: Download, status: 'done' },
         { id: 'health', nav: 'setting', icon: Activity, status: 'partial' },
         { id: 'channelHealth', nav: 'channel', channelTab: 'health', icon: Thermometer, status: 'done' },
         { id: 'selection', nav: 'group', icon: BarChart3, status: 'done' },
         { id: 'channelConcurrency', nav: 'setting', icon: Network, status: 'done' },
+        { id: 'groupAutoGenerate', nav: 'group', icon: ListChecks, status: 'done' },
         { id: 'modelAssociation', nav: 'group', icon: GitBranch, status: 'done' },
+        { id: 'protocolTransform', nav: 'log', icon: GitBranch, status: 'partial' },
         { id: 'probe', nav: 'setting', icon: TestTubeDiagonal, status: 'partial' },
         { id: 'quota', nav: 'channel', channelTab: 'health', icon: Settings2, status: 'done' },
     ], []);

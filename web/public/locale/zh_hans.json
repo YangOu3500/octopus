@@ -245,6 +245,14 @@
                     "label": "Trace / Attempts",
                     "entry": "日志详情 / 首页观测"
                 },
+                "costUsage": {
+                    "label": "用量 / 成本统计",
+                    "entry": "首页观测 / 日志"
+                },
+                "modelTest": {
+                    "label": "真实请求模型测试",
+                    "entry": "模型测试工作台"
+                },
                 "liveDebug": {
                     "label": "活跃请求 Debug",
                     "entry": "日志页活跃请求"
@@ -269,9 +277,17 @@
                     "label": "硬并发队列",
                     "entry": "设置页 / 模型健康"
                 },
+                "groupAutoGenerate": {
+                    "label": "模型分组生成",
+                    "entry": "分组批量生成"
+                },
                 "modelAssociation": {
                     "label": "模型关联 / 别名归并",
                     "entry": "模型分组批量生成"
+                },
+                "protocolTransform": {
+                    "label": "协议转换链路",
+                    "entry": "渠道 / 日志 attempts"
                 },
                 "probe": {
                     "label": "慢速主动探测",

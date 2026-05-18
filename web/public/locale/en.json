@@ -245,6 +245,14 @@
                     "label": "Trace / Attempts",
                     "entry": "Log detail / home observability"
                 },
+                "costUsage": {
+                    "label": "Usage / Cost Accounting",
+                    "entry": "Home observability / logs"
+                },
+                "modelTest": {
+                    "label": "Real Request Model Test",
+                    "entry": "Model Test workbench"
+                },
                 "liveDebug": {
                     "label": "Active Request Debug",
                     "entry": "Log active requests"
@@ -269,9 +277,17 @@
                     "label": "Hard Concurrency Queue",
                     "entry": "Settings / model health"
                 },
+                "groupAutoGenerate": {
+                    "label": "Model Group Generation",
+                    "entry": "Group bulk generation"
+                },
                 "modelAssociation": {
                     "label": "Model Association / Alias Folding",
                     "entry": "Group bulk generation"
+                },
+                "protocolTransform": {
+                    "label": "Protocol Transform Path",
+                    "entry": "Channels / log attempts"
                 },
                 "probe": {
                     "label": "Slow Active Probe",
