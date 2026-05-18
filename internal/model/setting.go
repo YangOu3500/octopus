@@ -37,8 +37,10 @@ const (
 	SettingKeyEmptyResponsePenaltyWeight SettingKey = "empty_response_penalty_weight"        // 空响应惩罚权重
 	SettingKeyLatencyPenaltyWeight       SettingKey = "latency_penalty_weight"               // 延迟惩罚权重
 	SettingKeyChannelConcurrencyEnabled  SettingKey = "channel_concurrency_enabled"          // 是否启用 channel+model 硬并发限制
+	SettingKeyChannelConcurrencyMode     SettingKey = "channel_concurrency_mode"             // channel+model 并发后端：local/database
 	SettingKeyChannelConcurrencyMax      SettingKey = "channel_concurrency_max_in_flight"    // 单 channel+model 最大在途请求数
 	SettingKeyChannelConcurrencyQueueMS  SettingKey = "channel_concurrency_queue_timeout_ms" // 单 channel+model 排队等待上限（毫秒）
+	SettingKeyChannelConcurrencyLeaseMS  SettingKey = "channel_concurrency_lease_ttl_ms"     // database 模式 lease TTL（毫秒）
 	SettingKeyProbeEnabled               SettingKey = "probe.enabled"                        // 是否启用慢速主动探测
 	SettingKeyProbeSiteMinInterval       SettingKey = "probe.site_min_interval_minutes"      // 同一站点最小探测间隔（分钟）
 	SettingKeyProbeModelMinInterval      SettingKey = "probe.model_min_interval_hours"       // 同一站点同一模型最小探测间隔（小时）
@@ -87,8 +89,10 @@ func DefaultSettings() []Setting {
 		{Key: SettingKeyEmptyResponsePenaltyWeight, Value: "25"},
 		{Key: SettingKeyLatencyPenaltyWeight, Value: "8"},
 		{Key: SettingKeyChannelConcurrencyEnabled, Value: "false"},
+		{Key: SettingKeyChannelConcurrencyMode, Value: "local"},
 		{Key: SettingKeyChannelConcurrencyMax, Value: "1"},
 		{Key: SettingKeyChannelConcurrencyQueueMS, Value: "1000"},
+		{Key: SettingKeyChannelConcurrencyLeaseMS, Value: "120000"},
 		{Key: SettingKeyProbeEnabled, Value: "false"},
 		{Key: SettingKeyProbeSiteMinInterval, Value: "30"},
 		{Key: SettingKeyProbeModelMinInterval, Value: "12"},
@@ -134,6 +138,22 @@ func (s *Setting) Validate() error {
 			return fmt.Errorf("setting value must be non-negative")
 		}
 		return nil
+	case SettingKeyChannelConcurrencyLeaseMS:
+		value, err := strconv.Atoi(s.Value)
+		if err != nil {
+			return fmt.Errorf("setting value must be an integer")
+		}
+		if value <= 0 {
+			return fmt.Errorf("setting value must be greater than 0")
+		}
+		return nil
+	case SettingKeyChannelConcurrencyMode:
+		switch strings.ToLower(strings.TrimSpace(s.Value)) {
+		case "local", "database":
+			return nil
+		default:
+			return fmt.Errorf("setting value must be local or database")
+		}
 	case SettingKeyProbeSiteMinInterval, SettingKeyProbeModelMinInterval:
 		value, err := strconv.Atoi(s.Value)
 		if err != nil {

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Activity, FileWarning, Gauge, Hash, HeartPulse, HelpCircle, MessageSquare, Network, Percent, Send, ShieldAlert, Shuffle, Thermometer, Timer, type LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useHealthCooldownPolicy, useSettingList, useSetSetting, SettingKey } from '@/api/endpoints/setting';
 import { toast } from '@/components/common/Toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/animate-ui/components/animate/tooltip';
@@ -36,8 +37,10 @@ const defaultValues: Record<string, string> = {
     [SettingKey.SuccessRatePenaltyWeight]: '70',
     [SettingKey.EmptyResponsePenaltyWeight]: '25',
     [SettingKey.LatencyPenaltyWeight]: '8',
+    [SettingKey.ChannelConcurrencyMode]: 'local',
     [SettingKey.ChannelConcurrencyMax]: '1',
     [SettingKey.ChannelConcurrencyQueueMS]: '1000',
+    [SettingKey.ChannelConcurrencyLeaseMS]: '120000',
     [SettingKey.StreamFirstValidTimeout]: '15',
     [SettingKey.StreamFirstValidMaxBuffer]: '65536',
     [SettingKey.StreamEmptyDoneAsFailure]: 'true',
@@ -233,6 +236,14 @@ export function SettingHealthProbe() {
             inputMode: 'numeric',
             min: '0',
         },
+        {
+            key: SettingKey.ChannelConcurrencyLeaseMS,
+            icon: Timer,
+            label: t('healthProbe.channelConcurrency.lease.label'),
+            hint: t('healthProbe.channelConcurrency.lease.hint'),
+            inputMode: 'numeric',
+            min: '1',
+        },
     ];
 
     const probeSwitchFields: SwitchConfig[] = [
@@ -324,6 +335,11 @@ export function SettingHealthProbe() {
                 setValues(prev => ({ ...prev, [key]: initialValue }));
             },
         });
+    };
+
+    const handleSelectSave = (key: string, value: string) => {
+        setValues(prev => ({ ...prev, [key]: value }));
+        handleValueSave(key, value);
     };
 
     const handleSwitchSave = (key: string, checked: boolean) => {
@@ -453,6 +469,20 @@ export function SettingHealthProbe() {
                     <Switch checked={channelConcurrencyEnabled} onCheckedChange={handleChannelConcurrencyChange} />
                 </div>
                 <div className="space-y-4">
+                    <SettingRow icon={Network} label={t('healthProbe.channelConcurrency.mode.label')} hint={t('healthProbe.channelConcurrency.mode.hint')}>
+                        <Select
+                            value={values[SettingKey.ChannelConcurrencyMode] ?? 'local'}
+                            onValueChange={(value) => handleSelectSave(SettingKey.ChannelConcurrencyMode, value)}
+                        >
+                            <SelectTrigger className="w-full rounded-xl sm:w-48">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="local">{t('healthProbe.channelConcurrency.mode.local')}</SelectItem>
+                                <SelectItem value="database">{t('healthProbe.channelConcurrency.mode.database')}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </SettingRow>
                     {channelConcurrencyFields.map(renderField)}
                 </div>
             </div>

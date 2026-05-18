@@ -66,7 +66,9 @@ func BuildChannelModelHealth(ctx context.Context, query model.ChannelModelHealth
 	}
 	concurrencyConfig := balancer.CurrentChannelConcurrencyConfig()
 	result.Summary.ChannelConcurrencyEnabled = concurrencyConfig.Enabled
+	result.Summary.ChannelConcurrencyMode = concurrencyConfig.Mode
 	result.Summary.ChannelConcurrencyMax = concurrencyConfig.MaxInFlight
+	result.Summary.ChannelConcurrencyLeaseMS = int64(concurrencyConfig.LeaseTTL / time.Millisecond)
 	startTime, endTime := channelModelHealthWindow(query.TimeRange, logs)
 	result.Summary.StartTime = startTime
 	result.Summary.EndTime = endTime
@@ -335,6 +337,7 @@ func finalizeChannelModelHealthRow(acc *channelModelHealthAccumulator, channels 
 	if concurrencyConfig.Enabled {
 		row.ChannelConcurrencyActive = balancer.ActiveChannelConcurrencyCount(row.ChannelID, row.ModelName)
 		row.ChannelConcurrencyLimit = concurrencyConfig.MaxInFlight
+		row.ChannelConcurrencyMode = concurrencyConfig.Mode
 	}
 
 	channel, ok := channels[row.ChannelID]

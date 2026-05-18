@@ -86,6 +86,7 @@ func InitDB(dbType, dsn string, debug bool) error {
 		&model.StatsSiteModelHourly{},
 		&model.GroupHealthSnapshot{},
 		&model.GroupHealthAttempt{},
+		&model.ChannelConcurrencyLease{},
 		&model.RelayLog{},
 		&model.RequestTrace{},
 		&model.RequestAttempt{},

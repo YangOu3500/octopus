@@ -29,6 +29,11 @@ func BuildRoutingPreview(ctx context.Context, groupID int) (*model.GroupRoutingP
 		HealthScoreEnabled: balancer.IsHealthSchedulingEnabled(),
 		Candidates:         make([]model.GroupRoutingCandidate, 0, len(group.Items)),
 	}
+	concurrencyConfig := balancer.CurrentChannelConcurrencyConfig()
+	preview.ChannelConcurrencyEnabled = concurrencyConfig.Enabled
+	preview.ChannelConcurrencyMode = concurrencyConfig.Mode
+	preview.ChannelConcurrencyMax = concurrencyConfig.MaxInFlight
+	preview.ChannelConcurrencyLeaseMS = int64(concurrencyConfig.LeaseTTL / time.Millisecond)
 
 	for _, item := range group.Items {
 		preview.Candidates = append(preview.Candidates, routingCandidate(ctx, group.Mode, preview.HealthScoreEnabled, item, bindingPointer(bindings, item.ChannelID)))
@@ -44,24 +49,30 @@ func BuildRoutingPreview(ctx context.Context, groupID int) (*model.GroupRoutingP
 func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled bool, item model.GroupItem, binding *model.SiteChannelBinding) model.GroupRoutingCandidate {
 	stats := balancer.GetHealthStats(item.ChannelID, item.ModelName)
 	candidate := model.GroupRoutingCandidate{
-		GroupItemID:       item.ID,
-		ChannelID:         item.ChannelID,
-		ModelName:         item.ModelName,
-		Priority:          item.Priority,
-		Weight:            normalizedWeight(item.Weight),
-		HealthScore:       stats.HealthScore,
-		SampleCount:       stats.SampleCount,
-		SuccessCount:      stats.SuccessCount,
-		FailureCount:      stats.FailureCount,
-		SuccessRate:       stats.SuccessRate,
-		EmptyResponseRate: stats.EmptyResponseRate,
-		RateLimitCount:    stats.RateLimitCount,
-		AvgTTFBMS:         stats.AvgTTFBMS,
-		AvgTotalMS:        stats.AvgTotalMS,
-		ActiveSelections:  activeSelectionsForPreview(healthEnabled, item),
-		QuotaStatus:       "unknown",
-		CapacityStatus:    "unknown",
-		Decision:          "ready",
+		GroupItemID:              item.ID,
+		ChannelID:                item.ChannelID,
+		ModelName:                item.ModelName,
+		Priority:                 item.Priority,
+		Weight:                   normalizedWeight(item.Weight),
+		HealthScore:              stats.HealthScore,
+		SampleCount:              stats.SampleCount,
+		SuccessCount:             stats.SuccessCount,
+		FailureCount:             stats.FailureCount,
+		SuccessRate:              stats.SuccessRate,
+		EmptyResponseRate:        stats.EmptyResponseRate,
+		RateLimitCount:           stats.RateLimitCount,
+		AvgTTFBMS:                stats.AvgTTFBMS,
+		AvgTotalMS:               stats.AvgTotalMS,
+		ActiveSelections:         activeSelectionsForPreview(healthEnabled, item),
+		ChannelConcurrencyActive: channelConcurrencyActiveForPreview(item),
+		QuotaStatus:              "unknown",
+		CapacityStatus:           "unknown",
+		Decision:                 "ready",
+	}
+	concurrencyConfig := balancer.CurrentChannelConcurrencyConfig()
+	if concurrencyConfig.Enabled {
+		candidate.ChannelConcurrencyLimit = concurrencyConfig.MaxInFlight
+		candidate.ChannelConcurrencyMode = concurrencyConfig.Mode
 	}
 	if candidate.ActiveSelections > 0 {
 		candidate.Notes = append(candidate.Notes, "active selections: "+strconv.Itoa(candidate.ActiveSelections))
@@ -299,4 +310,12 @@ func activeSelectionsForPreview(healthEnabled bool, item model.GroupItem) int {
 		return 0
 	}
 	return balancer.ActiveSelectionCount(item.ChannelID, item.ModelName)
+}
+
+func channelConcurrencyActiveForPreview(item model.GroupItem) int {
+	cfg := balancer.CurrentChannelConcurrencyConfig()
+	if !cfg.Enabled {
+		return 0
+	}
+	return balancer.ActiveChannelConcurrencyCount(item.ChannelID, item.ModelName)
 }

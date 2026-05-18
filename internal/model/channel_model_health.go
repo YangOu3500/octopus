@@ -20,7 +20,9 @@ type ChannelModelHealthSummary struct {
 	HealthScoreEnabled        bool           `json:"health_score_enabled"`
 	LoadBalancingStrategy     string         `json:"load_balancing_strategy"`
 	ChannelConcurrencyEnabled bool           `json:"channel_concurrency_enabled"`
+	ChannelConcurrencyMode    string         `json:"channel_concurrency_mode"`
 	ChannelConcurrencyMax     int            `json:"channel_concurrency_max"`
+	ChannelConcurrencyLeaseMS int64          `json:"channel_concurrency_lease_ttl_ms"`
 	TotalRows                 int            `json:"total_rows"`
 	TotalRequests             int            `json:"total_requests"`
 	SuccessCount              int            `json:"success_count"`
@@ -66,6 +68,7 @@ type ChannelModelHealthRow struct {
 	ActiveSelections         int     `json:"active_selections"`
 	ChannelConcurrencyActive int     `json:"channel_concurrency_active"`
 	ChannelConcurrencyLimit  int     `json:"channel_concurrency_limit,omitempty"`
+	ChannelConcurrencyMode   string  `json:"channel_concurrency_mode,omitempty"`
 	CoolingDown              bool    `json:"cooling_down"`
 	CooldownRemainingMS      int64   `json:"cooldown_remaining_ms"`
 	CooldownReason           string  `json:"cooldown_reason,omitempty"`

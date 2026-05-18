@@ -601,8 +601,14 @@
                 "channelConcurrency": {
                     "name": "Channel + Model Hard Concurrency Queue",
                     "desc": "Limits real in-flight requests by channel_id + model_name. Overflow waits briefly in-process, then fails over to later candidates on timeout.",
-                    "ui": "Settings expose enablement, per-channel-model max in-flight, and queue timeout in milliseconds. Channel model health shows current hard-concurrency load.",
-                    "gap": "Off by default and currently process-local. A shared queue for multi-replica deployments can be added later."
+                    "ui": "Settings expose enablement, local / database mode, per-channel-model max in-flight, queue timeout, and lease TTL. Channel model health shows current hard-concurrency load.",
+                    "gap": "Off by default and local by default. Database mode now provides the shared lease foundation; real multi-replica load testing is still needed."
+                },
+                "distributedQueue": {
+                    "name": "Distributed Shared Queue / Limit",
+                    "desc": "Adds an optional database lease backend for multi-replica deployments, sharing channel + model in-flight slots across processes with TTL cleanup.",
+                    "ui": "Settings can select local / database mode and lease TTL. Channel Model Health and Group Routing Preview show the current queue mode and load.",
+                    "gap": "The database lease foundation, TTL cleanup, and backend tests are in place. Finer queue wait logs, crash-cleanup stress tests, and NAS / Docker multi-replica acceptance are still pending."
                 },
                 "slowProbe": {
                     "name": "Slow Active Probe",
@@ -766,6 +772,12 @@
             "channelConcurrency": {
                 "title": "Channel Model Hard Concurrency",
                 "subtitle": "Off by default. Limits real in-flight requests by channel + model; queue timeout allows later candidates to be tried.",
+                "mode": {
+                    "label": "Queue Mode",
+                    "hint": "local limits only this process; database uses database leases to share slots across replicas.",
+                    "local": "Local",
+                    "database": "Database shared"
+                },
                 "max": {
                     "label": "Max In-flight Requests",
                     "hint": "Concurrent upstream requests allowed for each channel + model."
@@ -773,6 +785,10 @@
                 "queue": {
                     "label": "Queue Wait (ms)",
                     "hint": "Local wait time after the limit is reached. 0 switches to the next candidate immediately."
+                },
+                "lease": {
+                    "label": "Lease TTL (ms)",
+                    "hint": "Slot lease time in database mode. Active requests renew it automatically; abnormal exits release after expiry."
                 }
             },
             "probe": {
@@ -981,8 +997,14 @@
             "ttfb": "TTFB",
             "emptyRate": "Empty",
             "activeSelections": "In flight",
+            "channelConcurrency": "Hard concurrency",
             "effectiveScore": "Effective",
             "cooldown": "Cooling down",
+            "queueMode": {
+                "local": "Local queue",
+                "database": "Shared queue",
+                "disabled": "Hard concurrency off"
+            },
             "quota": {
                 "available": "Balance Available",
                 "zeroBalance": "Zero Balance",
@@ -1498,6 +1520,12 @@
             "tokenCache": "Cache",
             "activeSelections": "Active selections",
             "channelConcurrency": "Hard concurrency",
+            "queueMode": {
+                "local": "Local queue",
+                "database": "Shared queue",
+                "enabled": "{mode}",
+                "disabled": "Hard concurrency off"
+            },
             "healthSamples": "{success}/{total} · {rate}",
             "noSamples": "No health samples",
             "emptyRate": "Empty",
@@ -1556,7 +1584,7 @@
                 "healthScore": "Avg health score",
                 "load": "Current load",
                 "loadSub": "{cooldown} cooling down",
-                "loadSubWithConcurrency": "{cooldown} cooling down · hard concurrency {active}/{limit}",
+                "loadSubWithConcurrency": "{cooldown} cooling down · {mode} {active}/{limit}",
                 "capacity": "Capacity blocks",
                 "capacitySub": "{available} available · {unknown} unknown"
             },

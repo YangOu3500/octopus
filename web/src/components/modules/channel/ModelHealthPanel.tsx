@@ -27,7 +27,7 @@ const QUOTA_FILTER_STATUSES = [
     'model_disabled',
     'unknown',
 ] as const;
-const CHANNEL_MODEL_HEALTH_EXPORT_VERSION = 2;
+const CHANNEL_MODEL_HEALTH_EXPORT_VERSION = 3;
 
 function formatNumber(value: number | undefined) {
     if (!value || value <= 0) return '-';
@@ -126,6 +126,7 @@ function sanitizeChannelModelHealthRowForExport(row: ChannelModelHealthRow) {
         active_selections: row.active_selections,
         channel_concurrency_active: row.channel_concurrency_active,
         channel_concurrency_limit: row.channel_concurrency_limit,
+        channel_concurrency_mode: row.channel_concurrency_mode,
         cooling_down: row.cooling_down,
         cooldown_remaining_ms: row.cooldown_remaining_ms,
         cooldown_reason: row.cooldown_reason,
@@ -235,6 +236,16 @@ function capacityLabel(t: ReturnType<typeof useTranslations<'channel.health'>>, 
             return t('capacity.blocked');
         default:
             return t('capacity.unknown');
+    }
+}
+
+function queueModeLabel(t: ReturnType<typeof useTranslations<'channel.health'>>, mode: string | undefined) {
+    switch (mode) {
+        case 'database':
+            return t('queueMode.database');
+        case 'local':
+        default:
+            return t('queueMode.local');
     }
 }
 
@@ -351,6 +362,7 @@ export function ChannelModelHealthPanel() {
                     cooldown: summary?.cooling_down_count ?? 0,
                     active: summary?.channel_concurrency_active ?? 0,
                     limit: summary?.channel_concurrency_max ?? 0,
+                    mode: queueModeLabel(t, summary?.channel_concurrency_mode),
                 })
                 : t('stats.loadSub', { cooldown: summary?.cooling_down_count ?? 0 }),
         },
@@ -379,6 +391,11 @@ export function ChannelModelHealthPanel() {
                             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                 <Badge variant="outline" className="rounded-md">
                                     {summary?.health_score_enabled ? t('healthEnabled') : t('healthDisabled')}
+                                </Badge>
+                                <Badge variant="outline" className="rounded-md">
+                                    {summary?.channel_concurrency_enabled
+                                        ? t('queueMode.enabled', { mode: queueModeLabel(t, summary.channel_concurrency_mode) })
+                                        : t('queueMode.disabled')}
                                 </Badge>
                                 <span>{sourceLabel(t, source)}</span>
                             </div>
@@ -630,6 +647,11 @@ export function ChannelModelHealthPanel() {
                                                     {row.channel_concurrency_limit ? (
                                                         <div className="mt-1 text-xs text-muted-foreground">
                                                             {t('channelConcurrency')}: {(row.channel_concurrency_active ?? 0).toLocaleString()} / {row.channel_concurrency_limit}
+                                                        </div>
+                                                    ) : null}
+                                                    {row.channel_concurrency_mode ? (
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {queueModeLabel(t, row.channel_concurrency_mode)}
                                                         </div>
                                                     ) : null}
                                                     {row.cooling_down ? (

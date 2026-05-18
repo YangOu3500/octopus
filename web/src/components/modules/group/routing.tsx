@@ -18,7 +18,7 @@ import { useGroupRoutingPreview, type GroupRoutingCandidate } from '@/api/endpoi
 import { MODE_LABELS } from './utils';
 import { cn } from '@/lib/utils';
 
-const GROUP_ROUTING_EXPORT_VERSION = 2;
+const GROUP_ROUTING_EXPORT_VERSION = 3;
 
 function formatPercent(value: number | undefined) {
     if (!value || value <= 0) return '-';
@@ -104,6 +104,9 @@ function sanitizeRoutingCandidateForExport(candidate: GroupRoutingCandidate) {
         avg_ttfb_ms: candidate.avg_ttfb_ms,
         avg_total_ms: candidate.avg_total_ms,
         active_selections: candidate.active_selections,
+        channel_concurrency_active: candidate.channel_concurrency_active,
+        channel_concurrency_limit: candidate.channel_concurrency_limit,
+        channel_concurrency_mode: candidate.channel_concurrency_mode,
         cooling_down: candidate.cooling_down,
         cooldown_remaining_ms: candidate.cooldown_remaining_ms,
         cooldown_reason: candidate.cooldown_reason,
@@ -233,6 +236,16 @@ function capacityLabel(t: Translator, status: string | undefined) {
     }
 }
 
+function queueModeLabel(t: Translator, mode: string | undefined) {
+    switch (mode) {
+        case 'database':
+            return t('queueMode.database');
+        case 'local':
+        default:
+            return t('queueMode.local');
+    }
+}
+
 function CandidateRow({ candidate }: { candidate: GroupRoutingCandidate }) {
     const t = useTranslations('group.routing');
     return (
@@ -264,6 +277,14 @@ function CandidateRow({ candidate }: { candidate: GroupRoutingCandidate }) {
             </td>
             <td className="px-3 py-3 text-xs tabular-nums">
                 <div>{t('activeSelections')}: {candidate.active_selections || '-'}</div>
+                {candidate.channel_concurrency_limit ? (
+                    <div className="text-muted-foreground">
+                        {t('channelConcurrency')}: {candidate.channel_concurrency_active || 0} / {candidate.channel_concurrency_limit}
+                    </div>
+                ) : null}
+                {candidate.channel_concurrency_mode ? (
+                    <div className="text-muted-foreground">{queueModeLabel(t, candidate.channel_concurrency_mode)}</div>
+                ) : null}
                 <div className="text-muted-foreground">{t('effectiveScore')}: {candidate.effective_score.toFixed(1)}</div>
             </td>
             <td className="px-3 py-3 text-xs tabular-nums">
@@ -333,11 +354,12 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
         const ready = candidates.filter((item) => item.decision === 'ready').length;
         const cooling = candidates.filter((item) => item.cooling_down).length;
         const activeSelections = candidates.reduce((sum, item) => sum + item.active_selections, 0);
+        const channelConcurrencyActive = candidates.reduce((sum, item) => sum + item.channel_concurrency_active, 0);
         const blocked = candidates.length - ready;
         const avgScore = candidates.length
             ? candidates.reduce((sum, item) => sum + item.health_score, 0) / candidates.length
             : 100;
-        return { total: candidates.length, ready, cooling, activeSelections, blocked, avgScore };
+        return { total: candidates.length, ready, cooling, activeSelections, channelConcurrencyActive, blocked, avgScore };
     }, [data]);
 
     const exportRoutingPreview = () => {
@@ -357,6 +379,10 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                     group_mode: data.group_mode,
                     group_mode_label: modeText,
                     health_score_enabled: data.health_score_enabled,
+                    channel_concurrency_enabled: data.channel_concurrency_enabled,
+                    channel_concurrency_mode: data.channel_concurrency_mode,
+                    channel_concurrency_max: data.channel_concurrency_max,
+                    channel_concurrency_lease_ttl_ms: data.channel_concurrency_lease_ttl_ms,
                 },
                 summary,
                 candidates: data.candidates.map(sanitizeRoutingCandidateForExport),
@@ -432,7 +458,14 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                                     <Activity className="size-3.5" />
                                     {t('currentLoad')}
                                 </div>
-                                <div className="mt-1 font-medium">{summary.activeSelections}</div>
+                                <div className="mt-1 font-medium">
+                                    {summary.activeSelections + summary.channelConcurrencyActive}
+                                </div>
+                                <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                                    {data?.channel_concurrency_enabled
+                                        ? `${queueModeLabel(t, data.channel_concurrency_mode)} · ${summary.channelConcurrencyActive}/${data.channel_concurrency_max || 0}`
+                                        : t('queueMode.disabled')}
+                                </div>
                             </div>
                             <div className="rounded-lg border bg-background/40 px-3 py-2">
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">

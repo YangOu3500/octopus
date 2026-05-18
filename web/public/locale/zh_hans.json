@@ -601,8 +601,14 @@
                 "channelConcurrency": {
                     "name": "Channel + Model 硬并发队列",
                     "desc": "按 channel_id + model_name 限制真实在途请求数，超出后在本地短暂排队，超时后切换后续候选。",
-                    "ui": "设置页可开关、配置单渠道模型最大在途数和排队等待毫秒；渠道模型健康页展示当前硬并发负载。",
-                    "gap": "默认关闭，当前为内存态本机限流；分布式多副本共享队列仍可后续增强。"
+                    "ui": "设置页可开关、配置 local / database 模式、单渠道模型最大在途数、排队等待和 lease TTL；渠道模型健康页展示当前硬并发负载。",
+                    "gap": "默认关闭且默认 local；database 模式已提供共享 lease 基础，仍需真实多副本压测。"
+                },
+                "distributedQueue": {
+                    "name": "分布式共享队列 / 限流",
+                    "desc": "为多副本部署提供可选 database lease 后端，跨进程共享 channel + model 在途 slot，并用 TTL 避免异常退出后永久占用。",
+                    "ui": "设置页可选择 local / database 模式并配置 lease TTL；渠道模型健康页和分组调度预览展示当前队列模式与负载。",
+                    "gap": "已完成数据库 lease 基础、TTL 清理与后端测试；仍需补充更细的队列等待日志、异常退出清理压测和 NAS / Docker 多副本验收。"
                 },
                 "slowProbe": {
                     "name": "慢速主动探测",
@@ -766,6 +772,12 @@
             "channelConcurrency": {
                 "title": "渠道模型硬并发",
                 "subtitle": "默认关闭，开启后按 channel + model 限制真实在途请求，排队超时会尝试后续候选",
+                "mode": {
+                    "label": "队列模式",
+                    "hint": "local 只在当前进程内限流；database 使用数据库 lease 跨副本共享 slot",
+                    "local": "本机 local",
+                    "database": "数据库 shared"
+                },
                 "max": {
                     "label": "最大在途请求",
                     "hint": "每个 channel + model 同时允许转发到上游的请求数"
@@ -773,6 +785,10 @@
                 "queue": {
                     "label": "排队等待（毫秒）",
                     "hint": "达到上限后的本地等待时间，0 表示不等待直接切换候选"
+                },
+                "lease": {
+                    "label": "Lease TTL（毫秒）",
+                    "hint": "database 模式下 slot 的租约时间；请求进行中会自动续租，进程异常退出后到期释放"
                 }
             },
             "probe": {
@@ -981,8 +997,14 @@
             "ttfb": "首字",
             "emptyRate": "空响应",
             "activeSelections": "进行中",
+            "channelConcurrency": "硬并发",
             "effectiveScore": "有效分",
             "cooldown": "冷却中",
+            "queueMode": {
+                "local": "本机队列",
+                "database": "共享队列",
+                "disabled": "硬并发关闭"
+            },
             "quota": {
                 "available": "余额可用",
                 "zeroBalance": "余额为 0",
@@ -1498,6 +1520,12 @@
             "tokenCache": "缓存",
             "activeSelections": "活跃选择",
             "channelConcurrency": "硬并发",
+            "queueMode": {
+                "local": "本机队列",
+                "database": "共享队列",
+                "enabled": "{mode}",
+                "disabled": "硬并发关闭"
+            },
             "healthSamples": "{success}/{total} · {rate}",
             "noSamples": "暂无健康样本",
             "emptyRate": "空响应",
@@ -1556,7 +1584,7 @@
                 "healthScore": "平均健康分",
                 "load": "当前负载",
                 "loadSub": "{cooldown} 个冷却中",
-                "loadSubWithConcurrency": "{cooldown} 个冷却中 · 硬并发 {active}/{limit}",
+                "loadSubWithConcurrency": "{cooldown} 个冷却中 · {mode} {active}/{limit}",
                 "capacity": "容量阻断",
                 "capacitySub": "{available} 个可用 · {unknown} 个未知"
             },

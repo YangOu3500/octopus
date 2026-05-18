@@ -26,6 +26,9 @@ export interface GroupRoutingCandidate {
     avg_ttfb_ms: number;
     avg_total_ms: number;
     active_selections: number;
+    channel_concurrency_active: number;
+    channel_concurrency_limit?: number;
+    channel_concurrency_mode?: string;
     cooling_down: boolean;
     cooldown_remaining_ms: number;
     cooldown_reason?: string;
@@ -49,6 +52,10 @@ export interface GroupRoutingPreview {
     group_name: string;
     group_mode: GroupMode;
     health_score_enabled: boolean;
+    channel_concurrency_enabled: boolean;
+    channel_concurrency_mode: string;
+    channel_concurrency_max: number;
+    channel_concurrency_lease_ttl_ms: number;
     candidates: GroupRoutingCandidate[];
 }
 
@@ -77,6 +84,9 @@ function normalizeCandidate(candidate: Partial<GroupRoutingCandidate>): GroupRou
         avg_ttfb_ms: typeof candidate.avg_ttfb_ms === 'number' ? candidate.avg_ttfb_ms : 0,
         avg_total_ms: typeof candidate.avg_total_ms === 'number' ? candidate.avg_total_ms : 0,
         active_selections: typeof candidate.active_selections === 'number' ? candidate.active_selections : 0,
+        channel_concurrency_active: typeof candidate.channel_concurrency_active === 'number' ? candidate.channel_concurrency_active : 0,
+        channel_concurrency_limit: typeof candidate.channel_concurrency_limit === 'number' ? candidate.channel_concurrency_limit : undefined,
+        channel_concurrency_mode: candidate.channel_concurrency_mode ?? '',
         cooling_down: candidate.cooling_down === true,
         cooldown_remaining_ms: typeof candidate.cooldown_remaining_ms === 'number' ? candidate.cooldown_remaining_ms : 0,
         cooldown_reason: candidate.cooldown_reason ?? '',
@@ -102,6 +112,10 @@ function normalizePreview(preview: Partial<GroupRoutingPreview>): GroupRoutingPr
         group_name: preview.group_name ?? '',
         group_mode: typeof preview.group_mode === 'number' ? preview.group_mode : 1,
         health_score_enabled: preview.health_score_enabled === true,
+        channel_concurrency_enabled: preview.channel_concurrency_enabled === true,
+        channel_concurrency_mode: preview.channel_concurrency_mode ?? 'local',
+        channel_concurrency_max: typeof preview.channel_concurrency_max === 'number' ? preview.channel_concurrency_max : 0,
+        channel_concurrency_lease_ttl_ms: typeof preview.channel_concurrency_lease_ttl_ms === 'number' ? preview.channel_concurrency_lease_ttl_ms : 0,
         candidates: (preview.candidates ?? []).map(normalizeCandidate),
     };
 }

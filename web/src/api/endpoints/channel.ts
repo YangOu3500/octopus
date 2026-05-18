@@ -115,6 +115,7 @@ export type ChannelModelHealthRow = {
     active_selections: number;
     channel_concurrency_active: number;
     channel_concurrency_limit?: number;
+    channel_concurrency_mode?: string;
     cooling_down: boolean;
     cooldown_remaining_ms: number;
     cooldown_reason?: string;
@@ -140,7 +141,9 @@ export type ChannelModelHealthSummary = {
     health_score_enabled: boolean;
     load_balancing_strategy: string;
     channel_concurrency_enabled: boolean;
+    channel_concurrency_mode: string;
     channel_concurrency_max: number;
+    channel_concurrency_lease_ttl_ms: number;
     total_rows: number;
     total_requests: number;
     success_count: number;
@@ -276,7 +279,9 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             health_score_enabled: summary.health_score_enabled === true,
             load_balancing_strategy: summary.load_balancing_strategy ?? 'static_group_mode',
             channel_concurrency_enabled: summary.channel_concurrency_enabled === true,
+            channel_concurrency_mode: summary.channel_concurrency_mode ?? 'local',
             channel_concurrency_max: typeof summary.channel_concurrency_max === 'number' ? summary.channel_concurrency_max : 0,
+            channel_concurrency_lease_ttl_ms: typeof summary.channel_concurrency_lease_ttl_ms === 'number' ? summary.channel_concurrency_lease_ttl_ms : 0,
             total_rows: typeof summary.total_rows === 'number' ? summary.total_rows : 0,
             total_requests: typeof summary.total_requests === 'number' ? summary.total_requests : 0,
             success_count: typeof summary.success_count === 'number' ? summary.success_count : 0,
@@ -321,6 +326,7 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             active_selections: typeof row.active_selections === 'number' ? row.active_selections : 0,
             channel_concurrency_active: typeof row.channel_concurrency_active === 'number' ? row.channel_concurrency_active : 0,
             channel_concurrency_limit: typeof row.channel_concurrency_limit === 'number' ? row.channel_concurrency_limit : undefined,
+            channel_concurrency_mode: row.channel_concurrency_mode ?? '',
             cooling_down: row.cooling_down === true,
             cooldown_remaining_ms: typeof row.cooldown_remaining_ms === 'number' ? row.cooldown_remaining_ms : 0,
             cooldown_reason: row.cooldown_reason ?? '',

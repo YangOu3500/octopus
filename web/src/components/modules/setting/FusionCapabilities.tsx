@@ -41,6 +41,7 @@ const capabilities: Capability[] = [
     { id: 'channelModelHealth', status: 'done', source: 'both', nav: 'channel', channelTab: 'health', icon: Thermometer },
     { id: 'selectionTracker', status: 'done', source: 'AxonHub', nav: 'group', icon: Activity },
     { id: 'channelConcurrency', status: 'done', source: 'AxonHub', nav: 'setting', icon: Network },
+    { id: 'distributedQueue', status: 'partial', source: 'AxonHub', nav: 'setting', icon: Network },
     { id: 'slowProbe', status: 'partial', source: 'ccLoad', nav: 'setting', icon: CircleDashed },
     { id: 'costUsage', status: 'done', source: 'AxonHub', nav: 'home', icon: CheckCircle2 },
     { id: 'modelTest', status: 'done', source: 'ccLoad', nav: 'modelTest', icon: ListChecks },
