@@ -948,6 +948,14 @@
             "noSamples": "暫無樣本",
             "sampleMeta": "{success}/{total} · {rate}",
             "empty": "暫無候選。",
+            "export": {
+                "button": "匯出",
+                "empty": "沒有可匯出的調度候選",
+                "success": "調度預覽已匯出",
+                "failed": "調度預覽匯出失敗",
+                "safe": "匯出僅包含結構化脫敏欄位，不包含完整 Key 或認證資訊",
+                "hint": "匯出目前候選排序、健康分、負載、額度和決策原因。"
+            },
             "mode": {
                 "roundRobin": "輪詢",
                 "random": "隨機",

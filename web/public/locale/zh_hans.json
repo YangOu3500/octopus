@@ -948,6 +948,14 @@
             "noSamples": "暂无样本",
             "sampleMeta": "{success}/{total} · {rate}",
             "empty": "暂无候选。",
+            "export": {
+                "button": "导出",
+                "empty": "没有可导出的调度候选",
+                "success": "调度预览已导出",
+                "failed": "调度预览导出失败",
+                "safe": "导出仅包含结构化脱敏字段，不包含完整 Key 或认证信息",
+                "hint": "导出当前候选排序、健康分、负载、额度和决策原因。"
+            },
             "mode": {
                 "roundRobin": "轮询",
                 "random": "随机",

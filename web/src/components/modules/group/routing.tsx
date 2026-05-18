@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Activity, Clock3, Gauge, GitBranch, LoaderCircle, ShieldAlert, Thermometer, Wallet } from 'lucide-react';
+import { Activity, Clock3, Download, Gauge, GitBranch, LoaderCircle, ShieldAlert, Thermometer, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { toast } from '@/components/common/Toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +17,8 @@ import {
 import { useGroupRoutingPreview, type GroupRoutingCandidate } from '@/api/endpoints/group-routing';
 import { MODE_LABELS } from './utils';
 import { cn } from '@/lib/utils';
+
+const GROUP_ROUTING_EXPORT_VERSION = 1;
 
 function formatPercent(value: number | undefined) {
     if (!value || value <= 0) return '-';
@@ -38,6 +41,75 @@ function formatCooldown(value: number | undefined) {
 function formatQuota(value: number | undefined) {
     if (typeof value !== 'number') return '-';
     return Math.abs(value) >= 1 ? value.toFixed(2) : value.toFixed(4);
+}
+
+function exportTimestamp() {
+    return new Date().toISOString();
+}
+
+function exportFilenameTimestamp() {
+    return exportTimestamp().replace(/[:.]/g, '-');
+}
+
+function safeFilenamePart(value: string | undefined) {
+    const normalized = (value || 'group').trim().replace(/[^a-zA-Z0-9_-]+/g, '-');
+    return normalized.slice(0, 80) || 'group';
+}
+
+function compactObject<T extends Record<string, unknown>>(input: T) {
+    return Object.fromEntries(
+        Object.entries(input).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+    );
+}
+
+function downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function sanitizeRoutingCandidateForExport(candidate: GroupRoutingCandidate) {
+    return compactObject({
+        group_item_id: candidate.group_item_id,
+        rank: candidate.rank,
+        channel_id: candidate.channel_id,
+        channel_name: candidate.channel_name,
+        channel_key_id: candidate.channel_key_id,
+        site_id: candidate.site_id,
+        site_name: candidate.site_name,
+        site_account_id: candidate.site_account_id,
+        site_account_name: candidate.site_account_name,
+        model_name: candidate.model_name,
+        priority: candidate.priority,
+        weight: candidate.weight,
+        enabled: candidate.enabled,
+        health_score: candidate.health_score,
+        sample_count: candidate.sample_count,
+        success_count: candidate.success_count,
+        failure_count: candidate.failure_count,
+        success_rate: candidate.success_rate,
+        empty_response_rate: candidate.empty_response_rate,
+        rate_limit_count: candidate.rate_limit_count,
+        avg_ttfb_ms: candidate.avg_ttfb_ms,
+        avg_total_ms: candidate.avg_total_ms,
+        active_selections: candidate.active_selections,
+        cooling_down: candidate.cooling_down,
+        cooldown_remaining_ms: candidate.cooldown_remaining_ms,
+        cooldown_reason: candidate.cooldown_reason,
+        quota_status: candidate.quota_status,
+        quota_reason: candidate.quota_reason,
+        quota_balance: candidate.quota_balance,
+        quota_used: candidate.quota_used,
+        effective_score: candidate.effective_score,
+        decision: candidate.decision,
+        notes: candidate.notes,
+    });
 }
 
 function scoreTone(score: number) {
@@ -226,6 +298,33 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
         return { total: candidates.length, ready, cooling, avgScore };
     }, [data]);
 
+    const exportRoutingPreview = () => {
+        if (!data || data.candidates.length === 0) {
+            toast.warning(t('export.empty'));
+            return;
+        }
+        try {
+            const exportedAt = exportTimestamp();
+            const modeText = t(`mode.${MODE_LABELS[data.group_mode]}`);
+            downloadJson(`octopus-group-routing-${safeFilenamePart(data.group_name)}-${exportFilenameTimestamp()}.json`, {
+                export_version: GROUP_ROUTING_EXPORT_VERSION,
+                exported_at: exportedAt,
+                group: {
+                    group_id: data.group_id,
+                    group_name: data.group_name,
+                    group_mode: data.group_mode,
+                    group_mode_label: modeText,
+                    health_score_enabled: data.health_score_enabled,
+                },
+                summary,
+                candidates: data.candidates.map(sanitizeRoutingCandidateForExport),
+            });
+            toast.success(t('export.success'), { description: t('export.safe') });
+        } catch (err) {
+            toast.error(t('export.failed'), { description: err instanceof Error ? err.message : String(err) });
+        }
+    };
+
     if (!groupId) return null;
 
     const modeLabel = data ? t(`mode.${MODE_LABELS[data.group_mode]}`) : '';
@@ -293,6 +392,23 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                                 </div>
                                 <div className="mt-1 font-medium">{summary.cooling} · {summary.avgScore.toFixed(1)}</div>
                             </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="text-xs text-muted-foreground">
+                                {t('export.hint')}
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 rounded-lg"
+                                onClick={exportRoutingPreview}
+                                disabled={!data?.candidates.length}
+                            >
+                                <Download className="size-4" />
+                                {t('export.button')}
+                            </Button>
                         </div>
 
                         <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-border">

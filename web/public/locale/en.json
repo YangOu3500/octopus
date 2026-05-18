@@ -948,6 +948,14 @@
             "noSamples": "No samples",
             "sampleMeta": "{success}/{total} / {rate}",
             "empty": "No candidates.",
+            "export": {
+                "button": "Export",
+                "empty": "No routing candidates to export",
+                "success": "Routing preview exported",
+                "failed": "Failed to export routing preview",
+                "safe": "The export only contains structured redacted fields, without full keys or auth data",
+                "hint": "Export current candidate ordering, health score, load, quota, and decision reasons."
+            },
             "mode": {
                 "roundRobin": "Round robin",
                 "random": "Random",
