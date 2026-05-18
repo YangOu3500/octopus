@@ -33,6 +33,14 @@ type ChannelAttempt struct {
 	HTTPStatus                 int           `json:"http_status,omitempty"`
 	FailureReason              string        `json:"failure_reason,omitempty"`
 	Retryable                  bool          `json:"retryable,omitempty"`
+	QuotaStatus                string        `json:"quota_status,omitempty"`
+	QuotaReason                string        `json:"quota_reason,omitempty"`
+	CapacityStatus             string        `json:"capacity_status,omitempty"`
+	CapacityReason             string        `json:"capacity_reason,omitempty"`
+	CapacityScope              string        `json:"capacity_scope,omitempty"`
+	CapacitySource             string        `json:"capacity_source,omitempty"`
+	LastObservedAt             int64         `json:"last_observed_at,omitempty"`
+	ExpiresAt                  int64         `json:"expires_at,omitempty"`
 	ChannelConcurrencyMode     string        `json:"channel_concurrency_mode,omitempty"`
 	ChannelConcurrencyLimit    int           `json:"channel_concurrency_limit,omitempty"`
 	ChannelConcurrencyWaitMS   int           `json:"channel_concurrency_wait_ms,omitempty"`
@@ -169,6 +177,14 @@ type RequestAttempt struct {
 	HTTPStatus                 int           `json:"http_status,omitempty" gorm:"index"`
 	FailureReason              string        `json:"failure_reason,omitempty" gorm:"index"`
 	Retryable                  bool          `json:"retryable,omitempty" gorm:"index"`
+	QuotaStatus                string        `json:"quota_status,omitempty" gorm:"index"`
+	QuotaReason                string        `json:"quota_reason,omitempty"`
+	CapacityStatus             string        `json:"capacity_status,omitempty" gorm:"index"`
+	CapacityReason             string        `json:"capacity_reason,omitempty"`
+	CapacityScope              string        `json:"capacity_scope,omitempty"`
+	CapacitySource             string        `json:"capacity_source,omitempty"`
+	LastObservedAt             int64         `json:"last_observed_at,omitempty"`
+	ExpiresAt                  int64         `json:"expires_at,omitempty"`
 	ChannelConcurrencyMode     string        `json:"channel_concurrency_mode,omitempty"`
 	ChannelConcurrencyLimit    int           `json:"channel_concurrency_limit,omitempty"`
 	ChannelConcurrencyWaitMS   int           `json:"channel_concurrency_wait_ms,omitempty"`

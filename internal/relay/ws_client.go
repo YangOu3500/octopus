@@ -547,7 +547,7 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 		}
 		if usedKey.ChannelKey == "" {
 			if len(selectOpts.ExcludeKeyIDs) == 0 {
-				req.iter.Skip(channel.ID, 0, channel.Name, "no available key")
+				req.iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", dbmodel.AttemptCapacityMetaForNoAvailableKey())
 			}
 			continue
 		}
@@ -582,6 +582,7 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 				usedKey:              usedKey,
 				siteID:               runtimeState.SiteID,
 				siteAccountID:        runtimeState.SiteAccountID,
+				attemptMeta:          runtimeState.AttemptMeta,
 				firstTokenTimeOutSec: streamGate.firstValidTimeoutSec,
 				streamGate:           streamGate,
 			}

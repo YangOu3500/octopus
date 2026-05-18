@@ -120,6 +120,14 @@ function sameAttemptGroup(left: ChannelAttempt, right: ChannelAttempt) {
         && (left.http_status ?? 0) === (right.http_status ?? 0)
         && (left.failure_reason ?? '') === (right.failure_reason ?? '')
         && (left.retryable ?? false) === (right.retryable ?? false)
+        && (left.quota_status ?? '') === (right.quota_status ?? '')
+        && (left.quota_reason ?? '') === (right.quota_reason ?? '')
+        && (left.capacity_status ?? '') === (right.capacity_status ?? '')
+        && (left.capacity_reason ?? '') === (right.capacity_reason ?? '')
+        && (left.capacity_scope ?? '') === (right.capacity_scope ?? '')
+        && (left.capacity_source ?? '') === (right.capacity_source ?? '')
+        && (left.last_observed_at ?? 0) === (right.last_observed_at ?? 0)
+        && (left.expires_at ?? 0) === (right.expires_at ?? 0)
         && (left.channel_concurrency_mode ?? '') === (right.channel_concurrency_mode ?? '')
         && (left.channel_concurrency_limit ?? 0) === (right.channel_concurrency_limit ?? 0)
         && (left.channel_concurrency_wait_ms ?? 0) === (right.channel_concurrency_wait_ms ?? 0)
@@ -231,6 +239,19 @@ function hasQueueMetadata(attempt: ChannelAttempt) {
     );
 }
 
+function hasCapacityMetadata(attempt: ChannelAttempt) {
+    return Boolean(
+        attempt.quota_status
+        || attempt.quota_reason
+        || attempt.capacity_status
+        || attempt.capacity_reason
+        || attempt.capacity_scope
+        || attempt.capacity_source
+        || attempt.last_observed_at
+        || attempt.expires_at,
+    );
+}
+
 function formatQueueMode(mode: string | undefined, t: LogCardTranslations) {
     switch ((mode ?? '').trim()) {
         case 'database':
@@ -247,6 +268,48 @@ function formatQueueOutcome(attempt: ChannelAttempt, t: LogCardTranslations) {
     if (attempt.channel_concurrency_acquired) return t('queueOutcomeAcquired');
     if (hasQueueMetadata(attempt)) return t('unknown');
     return '鈥?';
+}
+
+function formatAttemptQuotaStatus(status: string | undefined, t: LogCardTranslations) {
+    switch ((status ?? '').trim()) {
+        case 'available':
+            return t('quotaStatusAvailable');
+        case 'zero_balance':
+            return t('quotaStatusZeroBalance');
+        case 'account_disabled':
+            return t('quotaStatusAccountDisabled');
+        case 'quota_error':
+            return t('quotaStatusQuotaError');
+        case 'auth_error':
+            return t('quotaStatusAuthError');
+        case 'rate_limited':
+            return t('quotaStatusRateLimited');
+        case 'no_key':
+            return t('quotaStatusNoKey');
+        case 'site_disabled':
+            return t('quotaStatusSiteDisabled');
+        case 'account_missing':
+            return t('quotaStatusAccountMissing');
+        case 'model_disabled':
+            return t('quotaStatusModelDisabled');
+        case 'unknown':
+            return t('quotaStatusUnknown');
+        default:
+            return formatOptionalText(status);
+    }
+}
+
+function formatAttemptCapacityStatus(status: string | undefined, t: LogCardTranslations) {
+    switch ((status ?? '').trim()) {
+        case 'available':
+            return t('capacityStatusAvailable');
+        case 'blocked':
+            return t('capacityStatusBlocked');
+        case 'unknown':
+            return t('capacityStatusUnknown');
+        default:
+            return formatOptionalText(status);
+    }
 }
 
 function formatOptionalText(value: string | null | undefined) {
@@ -376,6 +439,14 @@ function buildSafeLogDetailExport(log: RelayLog) {
                 http_status: attempt.http_status,
                 failure_reason: sanitizeErrorMessage(attempt.failure_reason),
                 retryable: attempt.retryable,
+                quota_status: attempt.quota_status,
+                quota_reason: attempt.quota_reason,
+                capacity_status: attempt.capacity_status,
+                capacity_reason: attempt.capacity_reason,
+                capacity_scope: attempt.capacity_scope,
+                capacity_source: attempt.capacity_source,
+                last_observed_at: attempt.last_observed_at,
+                expires_at: attempt.expires_at,
                 duration_ms: attempt.duration_ms || attempt.duration,
                 ttfb_ms: attempt.ttfb_ms,
                 total_ms: attempt.total_ms,
@@ -807,6 +878,18 @@ function AttemptTraceDetails({ attempt, target }: { attempt: MergedAttempt; targ
     const failureReason = getAttemptFailureReason(attempt);
     const errorSummary = getAttemptErrorSummary(attempt);
     const totalMS = attempt.total_ms || attempt.duration_ms || attempt.totalDuration || attempt.duration;
+    const capacityRows = hasCapacityMetadata(attempt)
+        ? [
+            { label: t('quotaStatus'), value: formatAttemptQuotaStatus(attempt.quota_status, t), title: formatAttemptQuotaStatus(attempt.quota_status, t) },
+            { label: t('quotaReason'), value: formatOptionalText(attempt.quota_reason), title: formatOptionalText(attempt.quota_reason) },
+            { label: t('capacityStatus'), value: formatAttemptCapacityStatus(attempt.capacity_status, t), title: formatAttemptCapacityStatus(attempt.capacity_status, t) },
+            { label: t('capacityReason'), value: formatOptionalText(attempt.capacity_reason), title: formatOptionalText(attempt.capacity_reason) },
+            { label: t('capacityScope'), value: formatOptionalText(attempt.capacity_scope), title: formatOptionalText(attempt.capacity_scope) },
+            { label: t('capacitySource'), value: formatOptionalText(attempt.capacity_source), title: formatOptionalText(attempt.capacity_source) },
+            { label: t('lastObservedAt'), value: formatOptionalDateTime(attempt.last_observed_at) },
+            { label: t('expiresAt'), value: formatOptionalDateTime(attempt.expires_at) },
+        ]
+        : [];
     const queueRows = hasQueueMetadata(attempt)
         ? [
             { label: t('queueMode'), value: formatQueueMode(attempt.channel_concurrency_mode, t), title: formatQueueMode(attempt.channel_concurrency_mode, t) },
@@ -835,6 +918,7 @@ function AttemptTraceDetails({ attempt, target }: { attempt: MergedAttempt; targ
         { label: t('serviceTier'), value: formatOptionalText(attempt.service_tier), title: formatOptionalText(attempt.service_tier) },
         { label: t('protocol'), value: formatProtocolPath(attempt), title: formatProtocolPath(attempt) },
         { label: t('baseUrl'), value: attempt.base_url?.trim() || '—', title: attempt.base_url?.trim() || undefined },
+        ...capacityRows,
         ...queueRows,
         { label: t('startedAt'), value: formatOptionalDateTime(attempt.created_at) },
     ];

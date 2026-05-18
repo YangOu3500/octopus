@@ -157,6 +157,19 @@ function hasQueueMetadata(attempt: RequestAttempt) {
     );
 }
 
+function hasCapacityMetadata(attempt: RequestAttempt) {
+    return Boolean(
+        attempt.quota_status
+        || attempt.quota_reason
+        || attempt.capacity_status
+        || attempt.capacity_reason
+        || attempt.capacity_scope
+        || attempt.capacity_source
+        || attempt.last_observed_at
+        || attempt.expires_at,
+    );
+}
+
 function queueModeLabel(mode: string | undefined, t: ReturnType<typeof useTranslations<'traces.detail'>>) {
     switch ((mode ?? '').trim()) {
         case 'database':
@@ -173,6 +186,48 @@ function queueOutcomeLabel(attempt: RequestAttempt, t: ReturnType<typeof useTran
     if (attempt.channel_concurrency_acquired) return t('queueAcquired');
     if (hasQueueMetadata(attempt)) return t('no');
     return '-';
+}
+
+function quotaStatusLabel(status: string | undefined, t: ReturnType<typeof useTranslations<'traces.detail'>>) {
+    switch ((status ?? '').trim()) {
+        case 'available':
+            return t('quotaStatusAvailable');
+        case 'zero_balance':
+            return t('quotaStatusZeroBalance');
+        case 'account_disabled':
+            return t('quotaStatusAccountDisabled');
+        case 'quota_error':
+            return t('quotaStatusQuotaError');
+        case 'auth_error':
+            return t('quotaStatusAuthError');
+        case 'rate_limited':
+            return t('quotaStatusRateLimited');
+        case 'no_key':
+            return t('quotaStatusNoKey');
+        case 'site_disabled':
+            return t('quotaStatusSiteDisabled');
+        case 'account_missing':
+            return t('quotaStatusAccountMissing');
+        case 'model_disabled':
+            return t('quotaStatusModelDisabled');
+        case 'unknown':
+            return t('quotaStatusUnknown');
+        default:
+            return status?.trim() || '-';
+    }
+}
+
+function capacityStatusLabel(status: string | undefined, t: ReturnType<typeof useTranslations<'traces.detail'>>) {
+    switch ((status ?? '').trim()) {
+        case 'available':
+            return t('capacityStatusAvailable');
+        case 'blocked':
+            return t('capacityStatusBlocked');
+        case 'unknown':
+            return t('capacityStatusUnknown');
+        default:
+            return status?.trim() || '-';
+    }
 }
 
 function compactObject<T extends Record<string, unknown>>(input: T) {
@@ -237,6 +292,14 @@ function sanitizeAttemptForExport(attempt: RequestAttempt) {
         http_status: attempt.http_status,
         failure_reason: attempt.failure_reason,
         retryable: attempt.retryable,
+        quota_status: attempt.quota_status,
+        quota_reason: attempt.quota_reason,
+        capacity_status: attempt.capacity_status,
+        capacity_reason: attempt.capacity_reason,
+        capacity_scope: attempt.capacity_scope,
+        capacity_source: attempt.capacity_source,
+        last_observed_at: attempt.last_observed_at,
+        expires_at: attempt.expires_at,
         channel_concurrency_mode: attempt.channel_concurrency_mode,
         channel_concurrency_limit: attempt.channel_concurrency_limit,
         channel_concurrency_wait_ms: attempt.channel_concurrency_wait_ms,
@@ -916,6 +979,42 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                                     <div className="text-muted-foreground">{t('retryable')}</div>
                                     <div>{attempt.retryable ? t('yes') : t('no')}</div>
                                 </div>
+                                {hasCapacityMetadata(attempt) ? (
+                                    <>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('quotaStatus')}</div>
+                                            <div>{quotaStatusLabel(attempt.quota_status, t)}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('quotaReason')}</div>
+                                            <div className="truncate" title={attempt.quota_reason || undefined}>{attempt.quota_reason || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('capacityStatus')}</div>
+                                            <div>{capacityStatusLabel(attempt.capacity_status, t)}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('capacityReason')}</div>
+                                            <div className="truncate" title={attempt.capacity_reason || undefined}>{attempt.capacity_reason || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('capacityScope')}</div>
+                                            <div className="truncate" title={attempt.capacity_scope || undefined}>{attempt.capacity_scope || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('capacitySource')}</div>
+                                            <div className="truncate" title={attempt.capacity_source || undefined}>{attempt.capacity_source || '-'}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('lastObservedAt')}</div>
+                                            <div className="font-mono">{formatTime(attempt.last_observed_at)}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground">{t('expiresAt')}</div>
+                                            <div className="font-mono">{formatTime(attempt.expires_at)}</div>
+                                        </div>
+                                    </>
+                                ) : null}
                                 {hasQueueMetadata(attempt) ? (
                                     <>
                                         <div>

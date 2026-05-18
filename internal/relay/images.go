@@ -185,7 +185,7 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 		}
 		if usedKey.ChannelKey == "" {
 			if len(selectOpts.ExcludeKeyIDs) == 0 {
-				iter.Skip(channel.ID, 0, channel.Name, "no available key")
+				iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", model.AttemptCapacityMetaForNoAvailableKey())
 			}
 			continue
 		}
@@ -195,6 +195,7 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 			iter.Index()+1, iter.Len(), iter.IsSticky(), stream)
 
 		span := iter.StartAttempt(channel.ID, usedKey.ID, channel.Name)
+		span.SetCapacityMeta(runtimeState.AttemptMeta)
 		metrics.markActiveAttemptStart(activeAttemptInfo{
 			ChannelID:     channel.ID,
 			ChannelName:   channel.Name,

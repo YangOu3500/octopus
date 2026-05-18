@@ -214,7 +214,7 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 		}
 		if usedKey.ChannelKey == "" {
 			if len(selectOpts.ExcludeKeyIDs) == 0 {
-				iter.Skip(channel.ID, 0, channel.Name, "no available key")
+				iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", dbmodel.AttemptCapacityMetaForNoAvailableKey())
 			}
 			continue
 		}
@@ -247,6 +247,7 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 				usedKey:              usedKey,
 				siteID:               runtimeState.SiteID,
 				siteAccountID:        runtimeState.SiteAccountID,
+				attemptMeta:          runtimeState.AttemptMeta,
 				firstTokenTimeOutSec: streamGate.firstValidTimeoutSec,
 				streamGate:           streamGate,
 			}
@@ -325,6 +326,7 @@ func circuitFailureKind(retryEnabled bool, statusCode int) balancer.FailureKind 
 // attempt 统一管理一次通道尝试的完整生命周期
 func (ra *relayAttempt) attempt() attemptResult {
 	span := ra.iter.StartAttempt(ra.channel.ID, ra.usedKey.ID, ra.channel.Name)
+	span.SetCapacityMeta(ra.attemptMeta)
 	ra.metrics.markActiveAttemptStart(activeAttemptInfo{
 		ChannelID:     ra.channel.ID,
 		ChannelName:   ra.channel.Name,

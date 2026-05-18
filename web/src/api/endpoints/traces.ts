@@ -56,6 +56,14 @@ export interface RequestAttempt {
     http_status?: number;
     failure_reason?: string;
     retryable?: boolean;
+    quota_status?: string;
+    quota_reason?: string;
+    capacity_status?: string;
+    capacity_reason?: string;
+    capacity_scope?: string;
+    capacity_source?: string;
+    last_observed_at?: number;
+    expires_at?: number;
     channel_concurrency_mode?: string;
     channel_concurrency_limit?: number;
     channel_concurrency_wait_ms?: number;

@@ -822,6 +822,15 @@ func TestHandlerSkipsKnownZeroBalanceManagedCandidate(t *testing.T) {
 	if firstAttempt.SiteID != site.ID || firstAttempt.SiteAccountID != account.ID {
 		t.Fatalf("expected skipped attempt site/account metadata, got %#v", firstAttempt)
 	}
+	if firstAttempt.QuotaStatus != "zero_balance" || firstAttempt.QuotaReason != "site_account_zero_balance" {
+		t.Fatalf("expected zero balance quota metadata, got %#v", firstAttempt)
+	}
+	if firstAttempt.CapacityStatus != "blocked" ||
+		firstAttempt.CapacityReason != "site_account_zero_balance" ||
+		firstAttempt.CapacityScope != "site_account" ||
+		firstAttempt.CapacitySource != "site_account_balance" {
+		t.Fatalf("expected zero balance capacity metadata, got %#v", firstAttempt)
+	}
 	if logs[0].Attempts[1].Status != model.AttemptSuccess || logs[0].Attempts[1].ChannelID != secondChannel.ID {
 		t.Fatalf("expected second attempt success, got %#v", logs[0].Attempts[1])
 	}

@@ -120,6 +120,7 @@ type relayAttempt struct {
 	usedKey              dbmodel.ChannelKey
 	siteID               int
 	siteAccountID        int
+	attemptMeta          dbmodel.AttemptCapacityMeta
 	firstTokenTimeOutSec int
 	streamGate           streamGateConfig
 	retryAfter           time.Duration // forward() 提取后暂存

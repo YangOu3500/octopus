@@ -28,7 +28,7 @@ func TestSanitizeTraceBaseURLDropsCredentialsAndQuery(t *testing.T) {
 	}
 }
 
-func TestEnrichTraceAttemptsPreservesQueueMetadata(t *testing.T) {
+func TestEnrichTraceAttemptsPreservesQueueAndCapacityMetadata(t *testing.T) {
 	metrics := &RelayMetrics{}
 	attempts := metrics.enrichTraceAttempts(t.Context(), []model.ChannelAttempt{{
 		AttemptNum:                 1,
@@ -38,6 +38,14 @@ func TestEnrichTraceAttemptsPreservesQueueMetadata(t *testing.T) {
 		ModelName:                  "gpt-4o",
 		Status:                     model.AttemptFailed,
 		FailureReason:              "channel_concurrency_queue_timeout",
+		QuotaStatus:                "rate_limited",
+		QuotaReason:                "http_429",
+		CapacityStatus:             "blocked",
+		CapacityReason:             "http_429",
+		CapacityScope:              "channel_key",
+		CapacitySource:             "key_status_code",
+		LastObservedAt:             123,
+		ExpiresAt:                  456,
 		ChannelConcurrencyMode:     "database",
 		ChannelConcurrencyLimit:    4,
 		ChannelConcurrencyWaitMS:   1000,
@@ -55,5 +63,15 @@ func TestEnrichTraceAttemptsPreservesQueueMetadata(t *testing.T) {
 		attempt.ChannelConcurrencyAcquired ||
 		!attempt.ChannelConcurrencyTimedOut {
 		t.Fatalf("unexpected queue metadata after enrich: %+v", attempt)
+	}
+	if attempt.QuotaStatus != "rate_limited" ||
+		attempt.QuotaReason != "http_429" ||
+		attempt.CapacityStatus != "blocked" ||
+		attempt.CapacityReason != "http_429" ||
+		attempt.CapacityScope != "channel_key" ||
+		attempt.CapacitySource != "key_status_code" ||
+		attempt.LastObservedAt != 123 ||
+		attempt.ExpiresAt != 456 {
+		t.Fatalf("unexpected capacity metadata after enrich: %+v", attempt)
 	}
 }

@@ -221,6 +221,14 @@ func TestRelayLogAddMirrorsRequestTraceTables(t *testing.T) {
 				HTTPStatus:                 200,
 				FailureReason:              "empty_choices",
 				Retryable:                  true,
+				QuotaStatus:                "rate_limited",
+				QuotaReason:                "http_429",
+				CapacityStatus:             "blocked",
+				CapacityReason:             "http_429",
+				CapacityScope:              "channel_key",
+				CapacitySource:             "key_status_code",
+				LastObservedAt:             777,
+				ExpiresAt:                  888,
 				ChannelConcurrencyMode:     "database",
 				ChannelConcurrencyLimit:    4,
 				ChannelConcurrencyWaitMS:   875,
@@ -298,6 +306,16 @@ func TestRelayLogAddMirrorsRequestTraceTables(t *testing.T) {
 	if attempts[0].ChannelConcurrencyMode != "database" || attempts[0].ChannelConcurrencyLimit != 4 || attempts[0].ChannelConcurrencyWaitMS != 875 || attempts[0].ChannelConcurrencyAcquired || !attempts[0].ChannelConcurrencyTimedOut {
 		t.Fatalf("unexpected mirrored queue fields: %+v", attempts[0])
 	}
+	if attempts[0].QuotaStatus != "rate_limited" ||
+		attempts[0].QuotaReason != "http_429" ||
+		attempts[0].CapacityStatus != "blocked" ||
+		attempts[0].CapacityReason != "http_429" ||
+		attempts[0].CapacityScope != "channel_key" ||
+		attempts[0].CapacitySource != "key_status_code" ||
+		attempts[0].LastObservedAt != 777 ||
+		attempts[0].ExpiresAt != 888 {
+		t.Fatalf("unexpected mirrored capacity fields: %+v", attempts[0])
+	}
 	if strings.Contains(attempts[0].ErrorSummary, "secret-token") || !strings.Contains(attempts[0].ErrorSummary, "[REDACTED]") {
 		t.Fatalf("expected attempt error summary to be redacted, got %q", attempts[0].ErrorSummary)
 	}
@@ -350,6 +368,14 @@ func TestRequestTraceListAndDetailReadFromMirrorTables(t *testing.T) {
 				HTTPStatus:                 502,
 				FailureReason:              "server_error",
 				Retryable:                  true,
+				QuotaStatus:                "no_key",
+				QuotaReason:                "no_available_key",
+				CapacityStatus:             "blocked",
+				CapacityReason:             "no_available_key",
+				CapacityScope:              "channel_key",
+				CapacitySource:             "key_selection",
+				LastObservedAt:             901,
+				ExpiresAt:                  0,
 				ChannelConcurrencyMode:     "local",
 				ChannelConcurrencyLimit:    1,
 				ChannelConcurrencyWaitMS:   250,
@@ -444,6 +470,15 @@ func TestRequestTraceListAndDetailReadFromMirrorTables(t *testing.T) {
 	}
 	if detail.Attempts[0].ChannelConcurrencyMode != "local" || detail.Attempts[0].ChannelConcurrencyLimit != 1 || detail.Attempts[0].ChannelConcurrencyWaitMS != 250 || !detail.Attempts[0].ChannelConcurrencyAcquired || detail.Attempts[0].ChannelConcurrencyTimedOut {
 		t.Fatalf("expected mirrored queue metadata in detail, got %+v", detail.Attempts[0])
+	}
+	if detail.Attempts[0].QuotaStatus != "no_key" ||
+		detail.Attempts[0].QuotaReason != "no_available_key" ||
+		detail.Attempts[0].CapacityStatus != "blocked" ||
+		detail.Attempts[0].CapacityReason != "no_available_key" ||
+		detail.Attempts[0].CapacityScope != "channel_key" ||
+		detail.Attempts[0].CapacitySource != "key_selection" ||
+		detail.Attempts[0].LastObservedAt != 901 {
+		t.Fatalf("expected mirrored capacity metadata in detail, got %+v", detail.Attempts[0])
 	}
 	if strings.Contains(detail.Attempts[0].ErrorSummary, "secret-token") || !strings.Contains(detail.Attempts[0].ErrorSummary, "[REDACTED]") {
 		t.Fatalf("expected sanitized attempt error summary, got %q", detail.Attempts[0].ErrorSummary)

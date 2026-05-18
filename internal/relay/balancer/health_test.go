@@ -200,6 +200,48 @@ func TestIteratorRecordsHealthCooldownSkip(t *testing.T) {
 	if attempts[0].FailureReason != "health_cooldown_active" {
 		t.Fatalf("failure reason = %q, want health_cooldown_active", attempts[0].FailureReason)
 	}
+	if attempts[0].QuotaStatus != "" || attempts[0].QuotaReason != "" {
+		t.Fatalf("unexpected quota metadata: %+v", attempts[0])
+	}
+	if attempts[0].CapacityStatus != "blocked" ||
+		attempts[0].CapacityReason != "empty_choices" ||
+		attempts[0].CapacityScope != "channel" ||
+		attempts[0].CapacitySource != "health_cooldown" ||
+		attempts[0].LastObservedAt == 0 ||
+		attempts[0].ExpiresAt == 0 {
+		t.Fatalf("unexpected capacity metadata: %+v", attempts[0])
+	}
+}
+
+func TestAttemptSpanRecordsHTTPStatusQuotaMetadata(t *testing.T) {
+	group := model.Group{
+		Mode: model.GroupModeFailover,
+		Items: []model.GroupItem{
+			{ID: 1, ChannelID: 1, ModelName: "gpt-test", Priority: 1, Weight: 1},
+		},
+	}
+	iter := NewIterator(group, 0, "gpt-test")
+	if !iter.Next() {
+		t.Fatal("expected first candidate")
+	}
+	span := iter.StartAttempt(1, 11, "rate-limited")
+	span.End(model.AttemptFailed, 429, "upstream error: 429: rate limited")
+
+	attempts := iter.Attempts()
+	if len(attempts) != 1 {
+		t.Fatalf("attempt count = %d, want 1", len(attempts))
+	}
+	attempt := attempts[0]
+	if attempt.QuotaStatus != "rate_limited" || attempt.QuotaReason != "http_429" {
+		t.Fatalf("unexpected quota metadata: %+v", attempt)
+	}
+	if attempt.CapacityStatus != "blocked" ||
+		attempt.CapacityReason != "http_429" ||
+		attempt.CapacityScope != "channel_key" ||
+		attempt.CapacitySource != "key_status_code" ||
+		attempt.LastObservedAt == 0 {
+		t.Fatalf("unexpected capacity metadata: %+v", attempt)
+	}
 }
 
 func TestHealthCooldownUsesManagedAccountAndSiteScopes(t *testing.T) {

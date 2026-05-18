@@ -153,7 +153,7 @@ func HandleResponsesCompact(c *gin.Context) {
 		}
 		if usedKey.ChannelKey == "" {
 			if len(selectOpts.ExcludeKeyIDs) == 0 {
-				iter.Skip(channel.ID, 0, channel.Name, "no available key")
+				iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", dbmodel.AttemptCapacityMetaForNoAvailableKey())
 			}
 			continue
 		}
@@ -266,6 +266,7 @@ func supportsResponsesCompact(channelType outbound.OutboundType) bool {
 
 func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balancer.Iterator, channel *dbmodel.Channel, usedKey dbmodel.ChannelKey, requestBody []byte, modelName string, runtimeState runtimeCandidateState) (int, time.Duration, error) {
 	span := iter.StartAttempt(channel.ID, usedKey.ID, channel.Name)
+	span.SetCapacityMeta(runtimeState.AttemptMeta)
 	metrics.markActiveAttemptStart(activeAttemptInfo{
 		ChannelID:     channel.ID,
 		ChannelName:   channel.Name,

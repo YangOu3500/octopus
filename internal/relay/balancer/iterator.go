@@ -112,8 +112,12 @@ func (it *Iterator) Index() int {
 
 // Skip 记录当前通道被跳过（通道禁用、无Key、类型不兼容等）
 func (it *Iterator) Skip(channelID, channelKeyID int, channelName, msg string) {
+	it.SkipWithMeta(channelID, channelKeyID, channelName, msg, model.AttemptCapacityMeta{})
+}
+
+func (it *Iterator) SkipWithMeta(channelID, channelKeyID int, channelName, msg string, meta model.AttemptCapacityMeta) {
 	it.count++
-	it.attempts = append(it.attempts, model.ChannelAttempt{
+	attempt := model.ChannelAttempt{
 		ChannelID:     channelID,
 		ChannelKeyID:  channelKeyID,
 		KeyID:         channelKeyID,
@@ -127,7 +131,9 @@ func (it *Iterator) Skip(channelID, channelKeyID int, channelName, msg string) {
 		CreatedAt:     time.Now().UnixMilli(),
 		Sticky:        it.IsSticky(),
 		Msg:           msg,
-	})
+	}
+	attempt.ApplyCapacityMeta(meta)
+	it.attempts = append(it.attempts, attempt)
 }
 
 // SkipCircuitBreak 检查熔断状态，若已熔断自动记录（含剩余冷却时间）并返回 true
@@ -142,7 +148,7 @@ func (it *Iterator) SkipCircuitBreak(channelID, channelKeyID int, channelName st
 		msg = fmt.Sprintf("circuit breaker tripped, remaining cooldown: %ds", int(remaining.Seconds()))
 	}
 	it.count++
-	it.attempts = append(it.attempts, model.ChannelAttempt{
+	attempt := model.ChannelAttempt{
 		ChannelID:     channelID,
 		ChannelKeyID:  channelKeyID,
 		KeyID:         channelKeyID,
@@ -156,7 +162,9 @@ func (it *Iterator) SkipCircuitBreak(channelID, channelKeyID int, channelName st
 		CreatedAt:     time.Now().UnixMilli(),
 		Sticky:        it.IsSticky(),
 		Msg:           msg,
-	})
+	}
+	attempt.ApplyCapacityMeta(model.AttemptCapacityMetaForCircuitBreak(remaining))
+	it.attempts = append(it.attempts, attempt)
 	return true
 }
 
@@ -179,7 +187,7 @@ func (it *Iterator) SkipHealthCooldownWithScope(channelID, channelKeyID, siteID,
 		msg = fmt.Sprintf("%s, remaining cooldown: %ds", msg, int(remaining.Seconds()))
 	}
 	it.count++
-	it.attempts = append(it.attempts, model.ChannelAttempt{
+	attempt := model.ChannelAttempt{
 		ChannelID:     channelID,
 		ChannelKeyID:  channelKeyID,
 		KeyID:         channelKeyID,
@@ -194,7 +202,9 @@ func (it *Iterator) SkipHealthCooldownWithScope(channelID, channelKeyID, siteID,
 		CreatedAt:     time.Now().UnixMilli(),
 		Sticky:        it.IsSticky(),
 		Msg:           msg,
-	})
+	}
+	attempt.ApplyCapacityMeta(model.AttemptCapacityMetaForCooldown(reason, remaining))
+	it.attempts = append(it.attempts, attempt)
 	return true
 }
 
@@ -253,6 +263,7 @@ func (s *AttemptSpan) End(status model.AttemptStatus, statusCode int, msg string
 	s.attempt.FailureReason = normalizeAttemptFailureReason(msg)
 	s.attempt.Retryable = isAttemptRetryable(status, statusCode, msg)
 	s.attempt.Msg = msg
+	s.attempt.ApplyCapacityMeta(model.AttemptCapacityMetaFromHTTPStatus(statusCode, time.Now().Unix()))
 	s.iter.attempts = append(s.iter.attempts, s.attempt)
 }
 
@@ -281,6 +292,13 @@ func (s *AttemptSpan) SetChannelConcurrency(mode string, limit int, waited time.
 	}
 	s.attempt.ChannelConcurrencyAcquired = acquired
 	s.attempt.ChannelConcurrencyTimedOut = timedOut
+}
+
+func (s *AttemptSpan) SetCapacityMeta(meta model.AttemptCapacityMeta) {
+	if s == nil {
+		return
+	}
+	s.attempt.ApplyCapacityMeta(meta)
 }
 
 func normalizeAttemptFailureReason(msg string) string {
