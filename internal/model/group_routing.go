@@ -39,6 +39,12 @@ type GroupRoutingCandidate struct {
 	QuotaReason         string   `json:"quota_reason,omitempty"`
 	QuotaBalance        float64  `json:"quota_balance,omitempty"`
 	QuotaUsed           float64  `json:"quota_used,omitempty"`
+	CapacityStatus      string   `json:"capacity_status,omitempty"`
+	CapacityReason      string   `json:"capacity_reason,omitempty"`
+	CapacityScope       string   `json:"capacity_scope,omitempty"`
+	CapacitySource      string   `json:"capacity_source,omitempty"`
+	LastObservedAt      int64    `json:"last_observed_at,omitempty"`
+	ExpiresAt           int64    `json:"expires_at,omitempty"`
 	EffectiveScore      float64  `json:"effective_score"`
 	Decision            string   `json:"decision"`
 	Notes               []string `json:"notes,omitempty"`

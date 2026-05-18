@@ -141,6 +141,9 @@ func TestEvaluateRuntimeCandidateSkipsManagedRuntimeGuards(t *testing.T) {
 			if state.QuotaReason == "" {
 				t.Fatalf("expected quota reason for guarded runtime state: %+v", state)
 			}
+			if state.CapacityStatus != "blocked" || state.CapacityReason == "" || state.CapacityScope == "" || state.CapacitySource == "" {
+				t.Fatalf("expected structured capacity block for guarded runtime state: %+v", state)
+			}
 		})
 	}
 }

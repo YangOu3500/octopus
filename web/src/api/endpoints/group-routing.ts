@@ -33,6 +33,12 @@ export interface GroupRoutingCandidate {
     quota_reason?: string;
     quota_balance?: number;
     quota_used?: number;
+    capacity_status?: string;
+    capacity_reason?: string;
+    capacity_scope?: string;
+    capacity_source?: string;
+    last_observed_at?: number;
+    expires_at?: number;
     effective_score: number;
     decision: string;
     notes?: string[];
@@ -78,6 +84,12 @@ function normalizeCandidate(candidate: Partial<GroupRoutingCandidate>): GroupRou
         quota_reason: candidate.quota_reason ?? '',
         quota_balance: typeof candidate.quota_balance === 'number' ? candidate.quota_balance : undefined,
         quota_used: typeof candidate.quota_used === 'number' ? candidate.quota_used : undefined,
+        capacity_status: candidate.capacity_status ?? 'unknown',
+        capacity_reason: candidate.capacity_reason ?? '',
+        capacity_scope: candidate.capacity_scope ?? '',
+        capacity_source: candidate.capacity_source ?? '',
+        last_observed_at: typeof candidate.last_observed_at === 'number' ? candidate.last_observed_at : undefined,
+        expires_at: typeof candidate.expires_at === 'number' ? candidate.expires_at : undefined,
         effective_score: typeof candidate.effective_score === 'number' ? candidate.effective_score : 0,
         decision: candidate.decision ?? 'ready',
         notes: candidate.notes ?? [],

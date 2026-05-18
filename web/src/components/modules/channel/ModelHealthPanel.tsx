@@ -27,7 +27,7 @@ const QUOTA_FILTER_STATUSES = [
     'model_disabled',
     'unknown',
 ] as const;
-const CHANNEL_MODEL_HEALTH_EXPORT_VERSION = 1;
+const CHANNEL_MODEL_HEALTH_EXPORT_VERSION = 2;
 
 function formatNumber(value: number | undefined) {
     if (!value || value <= 0) return '-';
@@ -61,6 +61,11 @@ function formatCooldown(value: number | undefined) {
     const minutes = Math.ceil(seconds / 60);
     if (minutes < 60) return `${minutes}m`;
     return `${Math.ceil(minutes / 60)}h`;
+}
+
+function formatUnixTime(value: number | undefined) {
+    if (!value || value <= 0) return '-';
+    return new Date(value * 1000).toLocaleString();
 }
 
 function exportTimestamp() {
@@ -128,6 +133,12 @@ function sanitizeChannelModelHealthRowForExport(row: ChannelModelHealthRow) {
         quota_reason: row.quota_reason,
         quota_balance: row.quota_balance,
         quota_used: row.quota_used,
+        capacity_status: row.capacity_status,
+        capacity_reason: row.capacity_reason,
+        capacity_scope: row.capacity_scope,
+        capacity_source: row.capacity_source,
+        last_observed_at: row.last_observed_at,
+        expires_at: row.expires_at,
         last_http_status: row.last_http_status,
         last_failure_reason: row.last_failure_reason,
         last_seen_time: row.last_seen_time,
@@ -213,6 +224,17 @@ function quotaLabel(t: ReturnType<typeof useTranslations<'channel.health'>>, sta
             return t('quota.modelDisabled');
         default:
             return t('quota.unknown');
+    }
+}
+
+function capacityLabel(t: ReturnType<typeof useTranslations<'channel.health'>>, status: string | undefined) {
+    switch (status) {
+        case 'available':
+            return t('capacity.available');
+        case 'blocked':
+            return t('capacity.blocked');
+        default:
+            return t('capacity.unknown');
     }
 }
 
@@ -629,6 +651,24 @@ export function ChannelModelHealthPanel() {
                                                     {row.quota_reason ? (
                                                         <div className="mt-0.5 truncate text-xs text-muted-foreground" title={row.quota_reason}>
                                                             {t('quota.reason')}: {row.quota_reason}
+                                                        </div>
+                                                    ) : null}
+                                                    <div className="mt-0.5 truncate text-xs text-muted-foreground" title={`${row.capacity_source || '-'} / ${row.capacity_scope || '-'}`}>
+                                                        {t('capacity.label')}: {capacityLabel(t, row.capacity_status)}
+                                                    </div>
+                                                    {row.capacity_source || row.capacity_scope ? (
+                                                        <div className="truncate text-xs text-muted-foreground" title={`${row.capacity_source || '-'} / ${row.capacity_scope || '-'}`}>
+                                                            {row.capacity_source || '-'} / {row.capacity_scope || '-'}
+                                                        </div>
+                                                    ) : null}
+                                                    {row.expires_at ? (
+                                                        <div className="truncate text-xs text-muted-foreground" title={formatUnixTime(row.expires_at)}>
+                                                            {t('capacity.expires')}: {formatUnixTime(row.expires_at)}
+                                                        </div>
+                                                    ) : null}
+                                                    {row.last_observed_at ? (
+                                                        <div className="truncate text-xs text-muted-foreground" title={formatUnixTime(row.last_observed_at)}>
+                                                            {t('capacity.observed')}: {formatUnixTime(row.last_observed_at)}
                                                         </div>
                                                     ) : null}
                                                 </div>

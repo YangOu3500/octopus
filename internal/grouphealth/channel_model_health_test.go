@@ -168,6 +168,7 @@ func TestBuildChannelModelHealthShowsProjectedQuotaMetadata(t *testing.T) {
 
 func TestBuildChannelModelHealthShowsKeyCapacityStatus(t *testing.T) {
 	ctx := setupGroupHealthTestDB(t)
+	observedAt := time.Now().Unix()
 
 	channel := &model.Channel{
 		Name:     "health-key-capacity",
@@ -175,7 +176,7 @@ func TestBuildChannelModelHealthShowsKeyCapacityStatus(t *testing.T) {
 		Enabled:  true,
 		BaseUrls: []model.BaseUrl{{URL: "https://health-key-capacity.example.test/v1"}},
 		Model:    "capacity-model",
-		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-capacity-secret", StatusCode: 429}},
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-capacity-secret", StatusCode: 429, LastUseTimeStamp: observedAt}},
 	}
 	if err := op.ChannelCreate(channel, ctx); err != nil {
 		t.Fatalf("ChannelCreate failed: %v", err)
@@ -191,6 +192,13 @@ func TestBuildChannelModelHealthShowsKeyCapacityStatus(t *testing.T) {
 	}
 	if row.QuotaStatus != "rate_limited" || row.QuotaReason != "http_429" {
 		t.Fatalf("unexpected quota status: %+v", row)
+	}
+	if row.CapacityStatus != "blocked" ||
+		row.CapacityReason != "http_429" ||
+		row.CapacityScope != "channel_key" ||
+		row.CapacitySource != "key_status_code" ||
+		row.LastObservedAt != observedAt {
+		t.Fatalf("unexpected structured capacity status: %+v", row)
 	}
 	if result.Summary.QuotaStatusCounts["rate_limited"] == 0 ||
 		result.Summary.CapacityBlockedCount != result.Summary.QuotaStatusCounts["rate_limited"] {

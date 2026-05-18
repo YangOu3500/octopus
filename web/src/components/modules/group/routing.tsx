@@ -18,7 +18,7 @@ import { useGroupRoutingPreview, type GroupRoutingCandidate } from '@/api/endpoi
 import { MODE_LABELS } from './utils';
 import { cn } from '@/lib/utils';
 
-const GROUP_ROUTING_EXPORT_VERSION = 1;
+const GROUP_ROUTING_EXPORT_VERSION = 2;
 
 function formatPercent(value: number | undefined) {
     if (!value || value <= 0) return '-';
@@ -41,6 +41,11 @@ function formatCooldown(value: number | undefined) {
 function formatQuota(value: number | undefined) {
     if (typeof value !== 'number') return '-';
     return Math.abs(value) >= 1 ? value.toFixed(2) : value.toFixed(4);
+}
+
+function formatUnixTime(value: number | undefined) {
+    if (!value || value <= 0) return '-';
+    return new Date(value * 1000).toLocaleString();
 }
 
 function exportTimestamp() {
@@ -106,6 +111,12 @@ function sanitizeRoutingCandidateForExport(candidate: GroupRoutingCandidate) {
         quota_reason: candidate.quota_reason,
         quota_balance: candidate.quota_balance,
         quota_used: candidate.quota_used,
+        capacity_status: candidate.capacity_status,
+        capacity_reason: candidate.capacity_reason,
+        capacity_scope: candidate.capacity_scope,
+        capacity_source: candidate.capacity_source,
+        last_observed_at: candidate.last_observed_at,
+        expires_at: candidate.expires_at,
         effective_score: candidate.effective_score,
         decision: candidate.decision,
         notes: candidate.notes,
@@ -211,6 +222,17 @@ function quotaLabel(t: Translator, status: string) {
     }
 }
 
+function capacityLabel(t: Translator, status: string | undefined) {
+    switch (status) {
+        case 'available':
+            return t('capacity.available');
+        case 'blocked':
+            return t('capacity.blocked');
+        default:
+            return t('capacity.unknown');
+    }
+}
+
 function CandidateRow({ candidate }: { candidate: GroupRoutingCandidate }) {
     const t = useTranslations('group.routing');
     return (
@@ -266,6 +288,24 @@ function CandidateRow({ candidate }: { candidate: GroupRoutingCandidate }) {
                 {candidate.quota_reason ? (
                     <div className="mt-0.5 truncate text-muted-foreground" title={candidate.quota_reason}>
                         {t('quota.reason')}: {candidate.quota_reason}
+                    </div>
+                ) : null}
+                <div className="mt-0.5 truncate text-muted-foreground" title={`${candidate.capacity_source || '-'} / ${candidate.capacity_scope || '-'}`}>
+                    {t('capacity.label')}: {capacityLabel(t, candidate.capacity_status)}
+                </div>
+                {candidate.capacity_source || candidate.capacity_scope ? (
+                    <div className="truncate text-muted-foreground" title={`${candidate.capacity_source || '-'} / ${candidate.capacity_scope || '-'}`}>
+                        {candidate.capacity_source || '-'} / {candidate.capacity_scope || '-'}
+                    </div>
+                ) : null}
+                {candidate.expires_at ? (
+                    <div className="truncate text-muted-foreground" title={formatUnixTime(candidate.expires_at)}>
+                        {t('capacity.expires')}: {formatUnixTime(candidate.expires_at)}
+                    </div>
+                ) : null}
+                {candidate.last_observed_at ? (
+                    <div className="truncate text-muted-foreground" title={formatUnixTime(candidate.last_observed_at)}>
+                        {t('capacity.observed')}: {formatUnixTime(candidate.last_observed_at)}
                     </div>
                 ) : null}
             </td>

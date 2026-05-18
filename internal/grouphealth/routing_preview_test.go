@@ -195,10 +195,11 @@ func TestBuildRoutingPreviewShowsProjectedAccountQuotaStatus(t *testing.T) {
 	}
 	siteID, accountID := createProbeSite(t)
 	createProbeBinding(t, siteID, accountID, channel.ID, "preview-model", false)
+	now := time.Now()
 	if err := dbpkg.GetDB().WithContext(ctx).
 		Model(&model.SiteAccount{}).
 		Where("id = ?", accountID).
-		Updates(map[string]any{"balance": 12.5, "balance_used": 3.5}).Error; err != nil {
+		Updates(map[string]any{"balance": 12.5, "balance_used": 3.5, "last_sync_at": now}).Error; err != nil {
 		t.Fatalf("update account balance failed: %v", err)
 	}
 
@@ -219,10 +220,17 @@ func TestBuildRoutingPreviewShowsProjectedAccountQuotaStatus(t *testing.T) {
 	if candidate.QuotaBalance != 12.5 || candidate.QuotaUsed != 3.5 {
 		t.Fatalf("unexpected quota values: %+v", candidate)
 	}
+	if candidate.CapacityStatus != "available" ||
+		candidate.CapacityScope != "site_account" ||
+		candidate.CapacitySource != "site_account_balance" ||
+		candidate.LastObservedAt <= 0 {
+		t.Fatalf("unexpected structured capacity status: %+v", candidate)
+	}
 }
 
 func TestBuildRoutingPreviewShowsKeyCapacityStatus(t *testing.T) {
 	ctx := setupGroupHealthTestDB(t)
+	observedAt := time.Now().Unix()
 
 	channel := &model.Channel{
 		Name:     "routing-key-capacity",
@@ -230,7 +238,7 @@ func TestBuildRoutingPreviewShowsKeyCapacityStatus(t *testing.T) {
 		Enabled:  true,
 		BaseUrls: []model.BaseUrl{{URL: "https://key-capacity.example.test/v1"}},
 		Model:    "preview-model",
-		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-key-capacity", StatusCode: 402}},
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-key-capacity", StatusCode: 402, LastUseTimeStamp: observedAt}},
 	}
 	if err := op.ChannelCreate(channel, ctx); err != nil {
 		t.Fatalf("ChannelCreate failed: %v", err)
@@ -253,6 +261,13 @@ func TestBuildRoutingPreviewShowsKeyCapacityStatus(t *testing.T) {
 	candidate := preview.Candidates[0]
 	if candidate.QuotaStatus != "quota_error" || candidate.QuotaReason != "http_402" {
 		t.Fatalf("unexpected quota status: %+v", candidate)
+	}
+	if candidate.CapacityStatus != "blocked" ||
+		candidate.CapacityReason != "http_402" ||
+		candidate.CapacityScope != "channel_key" ||
+		candidate.CapacitySource != "key_status_code" ||
+		candidate.LastObservedAt != observedAt {
+		t.Fatalf("unexpected structured capacity status: %+v", candidate)
 	}
 }
 

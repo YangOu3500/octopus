@@ -122,6 +122,12 @@ export type ChannelModelHealthRow = {
     quota_reason?: string;
     quota_balance?: number;
     quota_used?: number;
+    capacity_status?: string;
+    capacity_reason?: string;
+    capacity_scope?: string;
+    capacity_source?: string;
+    last_observed_at?: number;
+    expires_at?: number;
     last_http_status?: number;
     last_failure_reason?: string;
     last_seen_time?: number;
@@ -322,6 +328,12 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             quota_reason: row.quota_reason ?? '',
             quota_balance: typeof row.quota_balance === 'number' ? row.quota_balance : undefined,
             quota_used: typeof row.quota_used === 'number' ? row.quota_used : undefined,
+            capacity_status: row.capacity_status ?? 'unknown',
+            capacity_reason: row.capacity_reason ?? '',
+            capacity_scope: row.capacity_scope ?? '',
+            capacity_source: row.capacity_source ?? '',
+            last_observed_at: typeof row.last_observed_at === 'number' ? row.last_observed_at : undefined,
+            expires_at: typeof row.expires_at === 'number' ? row.expires_at : undefined,
             last_http_status: typeof row.last_http_status === 'number' ? row.last_http_status : undefined,
             last_failure_reason: row.last_failure_reason ?? '',
             last_seen_time: typeof row.last_seen_time === 'number' ? row.last_seen_time : undefined,

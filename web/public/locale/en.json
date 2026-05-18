@@ -654,9 +654,9 @@
                 },
                 "quotaStatus": {
                     "name": "Quota / Capacity Status Resolver",
-                    "desc": "Explains candidate capacity from managed account balance, disabled site-models, key status codes, and health cooldown reasons.",
-                    "ui": "Group routing preview and Channel Model Health show quota/auth/rate-limit/no-key states with reasons; real relay already enforces managed account disabled, known zero balance, and disabled site-model skips.",
-                    "gap": "Keeps the Octopus site/account/channel structure and does not import AxonHub Provider / GlobalModel quota objects or a distributed quota store."
+                    "desc": "Explains candidate capacity from managed account balance, disabled site-models, key status codes, and health cooldown reasons with structured capacity status, scope, source, observation time, and expiry.",
+                    "ui": "Group routing preview and Channel Model Health show quota status, capacity status, source / scope, observation time, and cooldown expiry; real relay already enforces managed account disabled, known zero balance, and disabled site-model skips.",
+                    "gap": "Keeps the Octopus site/account/channel structure and does not import AxonHub Provider / GlobalModel quota objects. Distributed quota storage remains future work."
                 }
             },
             "note": "This panel is the UI parity index for Fusion capabilities. It does not replace the feature pages; it ensures fused backend capabilities remain visible, understandable, and diagnosable."
@@ -997,6 +997,14 @@
                 "unknown": "Unknown",
                 "balance": "Balance / Used",
                 "reason": "Reason"
+            },
+            "capacity": {
+                "label": "Capacity",
+                "available": "Available",
+                "blocked": "Blocked",
+                "unknown": "Unknown",
+                "observed": "Observed",
+                "expires": "Expires"
             },
             "noSamples": "No samples",
             "sampleMeta": "{success}/{total} / {rate}",
@@ -1525,6 +1533,14 @@
                 "modelDisabled": "Model disabled",
                 "reason": "Reason",
                 "unknown": "Quota unknown"
+            },
+            "capacity": {
+                "label": "Capacity",
+                "available": "Available",
+                "blocked": "Blocked",
+                "unknown": "Unknown",
+                "observed": "Observed",
+                "expires": "Expires"
             },
             "status": {
                 "cooldown": "Cooldown",

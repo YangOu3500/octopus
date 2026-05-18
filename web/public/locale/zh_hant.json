@@ -654,9 +654,9 @@
                 },
                 "quotaStatus": {
                     "name": "額度 / 配額狀態解析",
-                    "desc": "結合託管帳號餘額、站點模型停用、Key 最近狀態碼和健康冷卻原因解釋候選容量。",
-                    "ui": "分組調度預覽和渠道模型健康頁會顯示額度、認證、限流、無 Key 等狀態與原因；真實 relay 已執行帳號停用、已知零餘額、站點模型停用跳過。",
-                    "gap": "保留 Octopus 站點 / 帳號 / 渠道結構，不引入 AxonHub Provider / GlobalModel 配額物件或分散式配額儲存。"
+                    "desc": "結合託管帳號餘額、站點模型停用、Key 最近狀態碼和健康冷卻原因，輸出結構化 capacity 狀態、範圍、來源、觀測時間和到期時間。",
+                    "ui": "分組調度預覽和渠道模型健康頁會顯示額度狀態、容量狀態、來源 / 範圍、觀測時間和冷卻到期時間；真實 relay 已執行帳號停用、已知零餘額、站點模型停用跳過。",
+                    "gap": "保留 Octopus 站點 / 帳號 / 渠道結構，不引入 AxonHub Provider / GlobalModel 配額物件；分散式配額儲存仍作為後續增強。"
                 }
             },
             "note": "這個面板是融合能力的 UI 對齊索引。它不替代具體功能頁面，但用於保證「已接入後端能力就必須能被使用者看到、理解和排障」。"
@@ -997,6 +997,14 @@
                 "unknown": "未知",
                 "balance": "餘額 / 已用",
                 "reason": "原因"
+            },
+            "capacity": {
+                "label": "容量",
+                "available": "可用",
+                "blocked": "阻斷",
+                "unknown": "未知",
+                "observed": "觀測",
+                "expires": "到期"
             },
             "noSamples": "暫無樣本",
             "sampleMeta": "{success}/{total} · {rate}",
@@ -1525,6 +1533,14 @@
                 "modelDisabled": "模型停用",
                 "reason": "原因",
                 "unknown": "配額未知"
+            },
+            "capacity": {
+                "label": "容量",
+                "available": "可用",
+                "blocked": "阻斷",
+                "unknown": "未知",
+                "observed": "觀測",
+                "expires": "到期"
             },
             "status": {
                 "cooldown": "冷卻",

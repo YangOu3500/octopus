@@ -60,6 +60,7 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 		AvgTotalMS:        stats.AvgTotalMS,
 		ActiveSelections:  activeSelectionsForPreview(healthEnabled, item),
 		QuotaStatus:       "unknown",
+		CapacityStatus:    "unknown",
 		Decision:          "ready",
 	}
 	if candidate.ActiveSelections > 0 {
@@ -87,12 +88,15 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 	usedKey, skippedDecision, skippedRemaining, skippedReason, skippedCount := selectPreviewKey(channel, item.ModelName, candidate.SiteID, candidate.SiteAccountID)
 	candidate.ChannelKeyID = usedKey.ID
 	applyCandidateKeyCapacity(&candidate, usedKey)
-	applyCandidateCooldownCapacity(&candidate, skippedReason)
+	applyCandidateCooldownCapacity(&candidate, skippedReason, skippedRemaining.Milliseconds())
 	if skippedCount > 0 {
 		candidate.Notes = append(candidate.Notes, "skipped cooling keys: "+strconv.Itoa(skippedCount))
 	}
 	if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
-		applyCandidateQuotaStatus(&candidate, quotaStatusNoKey, "no_available_key")
+		if skippedDecision == "" {
+			applyCandidateQuotaStatus(&candidate, quotaStatusNoKey, "no_available_key")
+			applyCandidateCapacitySignal(&candidate, capacityStatusBlocked, "no_available_key", "channel_key", "key_selection", 0, 0)
+		}
 		if candidate.Decision != "ready" {
 			candidate.Notes = append(candidate.Notes, "no available key")
 		} else if skippedDecision != "" {
@@ -115,7 +119,7 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 		}
 		candidate.CooldownReason = reason
 		if cooling {
-			applyCandidateCooldownCapacity(&candidate, reason)
+			applyCandidateCooldownCapacity(&candidate, reason, candidate.CooldownRemainingMS)
 			if candidate.Decision == "ready" {
 				candidate.Decision = "health_cooldown"
 			}
@@ -132,6 +136,7 @@ func applyCandidateRuntimeState(ctx context.Context, candidate *model.GroupRouti
 		return
 	}
 	candidate.QuotaStatus = "unknown"
+	candidate.CapacityStatus = "unknown"
 	if binding == nil {
 		return
 	}
@@ -150,6 +155,12 @@ func applyCandidateRuntimeState(ctx context.Context, candidate *model.GroupRouti
 	candidate.QuotaReason = state.QuotaReason
 	candidate.QuotaBalance = state.QuotaBalance
 	candidate.QuotaUsed = state.QuotaUsed
+	candidate.CapacityStatus = state.CapacityStatus
+	candidate.CapacityReason = state.CapacityReason
+	candidate.CapacityScope = state.CapacityScope
+	candidate.CapacitySource = state.CapacitySource
+	candidate.LastObservedAt = state.LastObservedAt
+	candidate.ExpiresAt = state.ExpiresAt
 	if state.SkipReason != "" {
 		candidate.Decision = state.SkipReason
 		candidate.Notes = append(candidate.Notes, state.SkipReason)

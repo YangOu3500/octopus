@@ -254,10 +254,11 @@ func ensureChannelModelRow(rows map[string]*channelModelHealthAccumulator, chann
 	}
 	acc := &channelModelHealthAccumulator{
 		row: model.ChannelModelHealthRow{
-			ChannelID:   channelID,
-			ChannelName: "channel-" + strconv.Itoa(channelID),
-			ModelName:   modelName,
-			QuotaStatus: "unknown",
+			ChannelID:      channelID,
+			ChannelName:    "channel-" + strconv.Itoa(channelID),
+			ModelName:      modelName,
+			QuotaStatus:    "unknown",
+			CapacityStatus: "unknown",
 		},
 	}
 	rows[key] = acc
@@ -341,7 +342,11 @@ func finalizeChannelModelHealthRow(acc *channelModelHealthAccumulator, channels 
 		usedKey := channel.GetChannelKey()
 		row.CoolingDown, row.CooldownRemainingMS, row.CooldownReason = channelModelCoolingState(channel.ID, usedKey.ID, row.SiteID, row.SiteAccountID, row.ModelName, channel.GetBaseUrl())
 		applyChannelModelKeyCapacity(row, usedKey)
-		applyChannelModelCooldownCapacity(row, row.CooldownReason)
+		if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
+			applyChannelModelQuotaStatus(row, quotaStatusNoKey, "no_available_key")
+			applyChannelModelCapacitySignal(row, capacityStatusBlocked, "no_available_key", "channel_key", "key_selection", 0, 0)
+		}
+		applyChannelModelCooldownCapacity(row, row.CooldownReason, row.CooldownRemainingMS)
 	}
 }
 
@@ -357,11 +362,15 @@ func applyChannelModelChannelMetadata(ctx context.Context, row *model.ChannelMod
 		if row.QuotaStatus == "" {
 			row.QuotaStatus = "unknown"
 		}
+		if row.CapacityStatus == "" {
+			row.CapacityStatus = "unknown"
+		}
 		return
 	}
 	channel, ok := channels[row.ChannelID]
 	if !ok {
 		row.QuotaStatus = "unknown"
+		row.CapacityStatus = "unknown"
 		return
 	}
 	state, err := EvaluateRuntimeCandidate(ctx, channel, row.ModelName)
@@ -380,6 +389,12 @@ func applyChannelModelChannelMetadata(ctx context.Context, row *model.ChannelMod
 	row.QuotaReason = state.QuotaReason
 	row.QuotaBalance = state.QuotaBalance
 	row.QuotaUsed = state.QuotaUsed
+	row.CapacityStatus = state.CapacityStatus
+	row.CapacityReason = state.CapacityReason
+	row.CapacityScope = state.CapacityScope
+	row.CapacitySource = state.CapacitySource
+	row.LastObservedAt = state.LastObservedAt
+	row.ExpiresAt = state.ExpiresAt
 }
 
 func channelModelCoolingState(channelID, channelKeyID, siteID, siteAccountID int, modelName, baseURL string) (bool, int64, string) {
