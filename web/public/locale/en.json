@@ -1107,7 +1107,8 @@
         },
         "audit": {
             "title": "Audit Aggregation",
-            "scope": "{page} on this page / {total} total",
+            "scope": "{page} on this page / {matched} matched / {total} total",
+            "aggregateUnavailable": "Full aggregation unavailable; showing current page sample",
             "unknown": "Unknown",
             "failed": "Failed requests",
             "failover": "Failover",
@@ -1117,7 +1118,8 @@
             "costTokens": "Cost / Tokens",
             "statusBreakdown": "Status breakdown",
             "sourceBreakdown": "Source breakdown",
-            "modelBreakdown": "Model breakdown"
+            "modelBreakdown": "Model breakdown",
+            "serviceTierBreakdown": "Service tier breakdown"
         },
         "summary": {
             "total": "Total traces",

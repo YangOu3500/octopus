@@ -18,8 +18,11 @@ import {
 } from 'lucide-react';
 import {
     type RequestAttempt,
+    type RequestTraceAuditBucket,
+    type RequestTraceAuditSummary,
     type RequestTrace,
     type RequestTraceListParams,
+    useRequestTraceAudit,
     useRequestTraceDetail,
     useRequestTraces,
 } from '@/api/endpoints/traces';
@@ -307,6 +310,19 @@ function buildAuditBuckets(
         .slice(0, limit);
 }
 
+function mapAuditBuckets(
+    buckets: RequestTraceAuditBucket[] | undefined,
+    labelForKey: (key: string) => string,
+) {
+    return (buckets ?? []).map((bucket) => ({
+        key: bucket.key || 'unknown',
+        label: labelForKey(bucket.key || 'unknown'),
+        count: bucket.count || 0,
+        cost: bucket.cost || 0,
+        tokens: bucket.total_tokens || 0,
+    }));
+}
+
 function AuditList({
     title,
     items,
@@ -341,56 +357,101 @@ function AuditList({
     );
 }
 
-function TraceAuditPanel({ traces, total }: { traces: RequestTrace[]; total: number }) {
+function TraceAuditPanel({
+    traces,
+    total,
+    audit,
+    isLoading,
+    isError,
+}: {
+    traces: RequestTrace[];
+    total: number;
+    audit?: RequestTraceAuditSummary;
+    isLoading: boolean;
+    isError: boolean;
+}) {
     const t = useTranslations('traces.audit');
 
-    if (traces.length === 0) return null;
+    if (traces.length === 0 && !audit?.total) return null;
 
-    const failed = traces.filter((trace) => (trace.final_status || '').toLowerCase() === 'failed').length;
-    const failover = traces.filter((trace) => (trace.attempts_count || 0) > 1).length;
-    const stream = traces.filter((trace) => trace.request_stream).length;
-    const totalCost = traces.reduce((sum, trace) => sum + traceCost(trace), 0);
-    const tokens = traces.reduce((sum, trace) => sum + totalTokens(trace), 0);
-    const avgAttempts = traces.reduce((sum, trace) => sum + (trace.attempts_count || 0), 0) / traces.length;
-    const avgLatency = Math.round(traces.reduce((sum, trace) => sum + (trace.total_latency_ms || 0), 0) / traces.length);
-    const statusBuckets = buildAuditBuckets(
-        traces,
-        (trace) => trace.final_status,
-        (_trace, key) => key === 'unknown' ? t('unknown') : key,
-    );
-    const sourceBuckets = buildAuditBuckets(
-        traces,
-        (trace) => trace.request_source,
-        (trace, key) => key === 'unknown' ? t('unknown') : sourceLabel(trace.request_source),
-    );
-    const modelBuckets = buildAuditBuckets(
-        traces,
-        (trace) => trace.client_model || trace.final_upstream_model,
-        (_trace, key) => key === 'unknown' ? t('unknown') : key,
-    );
+    const hasAudit = !!audit && audit.total > 0;
+    const pageFailed = traces.filter((trace) => (trace.final_status || '').toLowerCase() === 'failed').length;
+    const pageFailover = traces.filter((trace) => (trace.attempts_count || 0) > 1).length;
+    const pageStream = traces.filter((trace) => trace.request_stream).length;
+    const pageCost = traces.reduce((sum, trace) => sum + traceCost(trace), 0);
+    const pageTokens = traces.reduce((sum, trace) => sum + totalTokens(trace), 0);
+    const pageAvgAttempts = traces.length > 0
+        ? traces.reduce((sum, trace) => sum + (trace.attempts_count || 0), 0) / traces.length
+        : 0;
+    const pageAvgLatency = traces.length > 0
+        ? Math.round(traces.reduce((sum, trace) => sum + (trace.total_latency_ms || 0), 0) / traces.length)
+        : 0;
+    const scopeTotal = hasAudit ? audit.total : traces.length;
+    const failed = hasAudit ? audit.failed : pageFailed;
+    const failover = hasAudit ? audit.failover : pageFailover;
+    const stream = hasAudit ? audit.stream : pageStream;
+    const totalCost = hasAudit ? audit.cost : pageCost;
+    const tokens = hasAudit ? audit.total_tokens : pageTokens;
+    const avgAttempts = hasAudit ? audit.avg_attempts : pageAvgAttempts;
+    const avgLatency = hasAudit ? Math.round(audit.avg_latency_ms) : pageAvgLatency;
+    const statusBuckets = hasAudit
+        ? mapAuditBuckets(audit.status_buckets, (key) => key === 'unknown' ? t('unknown') : key)
+        : buildAuditBuckets(
+            traces,
+            (trace) => trace.final_status,
+            (_trace, key) => key === 'unknown' ? t('unknown') : key,
+        );
+    const sourceBuckets = hasAudit
+        ? mapAuditBuckets(audit.source_buckets, (key) => key === 'unknown' ? t('unknown') : sourceLabel(key))
+        : buildAuditBuckets(
+            traces,
+            (trace) => trace.request_source,
+            (trace, key) => key === 'unknown' ? t('unknown') : sourceLabel(trace.request_source || key),
+        );
+    const modelBuckets = hasAudit
+        ? mapAuditBuckets(audit.model_buckets, (key) => key === 'unknown' ? t('unknown') : key)
+        : buildAuditBuckets(
+            traces,
+            (trace) => trace.client_model || trace.final_upstream_model,
+            (_trace, key) => key === 'unknown' ? t('unknown') : key,
+        );
+    const serviceTierBuckets = hasAudit
+        ? mapAuditBuckets(audit.service_tier_buckets, (key) => key === 'unknown' ? t('unknown') : key)
+        : buildAuditBuckets(
+            traces,
+            (trace) => trace.service_tier,
+            (_trace, key) => key === 'unknown' ? t('unknown') : key,
+        );
 
     return (
         <div className="rounded-lg border bg-card p-3">
             <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="h-7 rounded-md px-2">
-                    <ShieldAlert className="size-3.5" />
+                    {isLoading ? <Loader2 className="size-3.5 animate-spin" /> : <ShieldAlert className="size-3.5" />}
                     {t('title')}
                 </Badge>
-                <span className="text-xs text-muted-foreground">{t('scope', { page: traces.length, total })}</span>
+                <span className="text-xs text-muted-foreground">
+                    {t('scope', { page: traces.length, matched: scopeTotal, total })}
+                </span>
+                {isError ? (
+                    <Badge variant="outline" className="h-7 border-amber-500/30 px-2 text-amber-700 dark:text-amber-300">
+                        {t('aggregateUnavailable')}
+                    </Badge>
+                ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b pb-3 text-xs md:grid-cols-3 xl:grid-cols-6">
                 <div>
                     <div className="text-muted-foreground">{t('failed')}</div>
-                    <div className="mt-1 font-mono text-sm tabular-nums">{failed} / {traces.length}</div>
+                    <div className="mt-1 font-mono text-sm tabular-nums">{failed} / {scopeTotal}</div>
                 </div>
                 <div>
                     <div className="text-muted-foreground">{t('failover')}</div>
-                    <div className="mt-1 font-mono text-sm tabular-nums">{failover} / {traces.length}</div>
+                    <div className="mt-1 font-mono text-sm tabular-nums">{failover} / {scopeTotal}</div>
                 </div>
                 <div>
                     <div className="text-muted-foreground">{t('stream')}</div>
-                    <div className="mt-1 font-mono text-sm tabular-nums">{stream} / {traces.length}</div>
+                    <div className="mt-1 font-mono text-sm tabular-nums">{stream} / {scopeTotal}</div>
                 </div>
                 <div>
                     <div className="text-muted-foreground">{t('avgAttempts')}</div>
@@ -406,10 +467,11 @@ function TraceAuditPanel({ traces, total }: { traces: RequestTrace[]; total: num
                 </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <AuditList title={t('statusBreakdown')} items={statusBuckets} total={traces.length} />
-                <AuditList title={t('sourceBreakdown')} items={sourceBuckets} total={traces.length} />
-                <AuditList title={t('modelBreakdown')} items={modelBuckets} total={traces.length} />
+            <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <AuditList title={t('statusBreakdown')} items={statusBuckets} total={scopeTotal} />
+                <AuditList title={t('sourceBreakdown')} items={sourceBuckets} total={scopeTotal} />
+                <AuditList title={t('modelBreakdown')} items={modelBuckets} total={scopeTotal} />
+                <AuditList title={t('serviceTierBreakdown')} items={serviceTierBuckets} total={scopeTotal} />
             </div>
         </div>
     );
@@ -903,11 +965,20 @@ export function Traces() {
         timeRange,
         traceFilter,
     ]);
+    const auditParams = useMemo<RequestTraceListParams>(() => ({
+        ...params,
+        page: undefined,
+        page_size: undefined,
+    }), [params]);
 
     const tracesQuery = useRequestTraces(params, {
         refetchIntervalMs: autoRefresh ? Number(refreshInterval) : false,
     });
+    const auditQuery = useRequestTraceAudit(auditParams, {
+        refetchIntervalMs: autoRefresh ? Number(refreshInterval) : false,
+    });
     const refetchTraces = tracesQuery.refetch;
+    const refetchAudit = auditQuery.refetch;
 
     const resetTraceListPosition = useCallback(() => {
         setPage(1);
@@ -918,7 +989,8 @@ export function Traces() {
     useEffect(() => {
         if (!autoRefresh) return;
         void refetchTraces();
-    }, [autoRefresh, refreshInterval, refetchTraces]);
+        void refetchAudit();
+    }, [autoRefresh, refreshInterval, refetchAudit, refetchTraces]);
 
     const traces = useMemo(() => tracesQuery.data?.items ?? [], [tracesQuery.data?.items]);
     const total = tracesQuery.data?.total ?? 0;
@@ -1072,8 +1144,17 @@ export function Traces() {
                                 <SelectItem value="30000">{t('interval.30s')}</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Button type="button" variant="outline" size="sm" onClick={() => void tracesQuery.refetch()} disabled={tracesQuery.isFetching}>
-                            {tracesQuery.isFetching ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                void tracesQuery.refetch();
+                                void auditQuery.refetch();
+                            }}
+                            disabled={tracesQuery.isFetching || auditQuery.isFetching}
+                        >
+                            {tracesQuery.isFetching || auditQuery.isFetching ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
                             {t('refresh')}
                         </Button>
                         <Button
@@ -1238,7 +1319,13 @@ export function Traces() {
                 </div>
             </div>
 
-            <TraceAuditPanel traces={traces} total={total} />
+            <TraceAuditPanel
+                traces={traces}
+                total={total}
+                audit={auditQuery.data}
+                isLoading={auditQuery.isFetching}
+                isError={!!auditQuery.error}
+            />
 
             <TraceComparisonPanel
                 traces={compareTraces}

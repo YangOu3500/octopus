@@ -242,6 +242,40 @@ type RequestTraceListResult struct {
 	HasMore  bool           `json:"has_more"`
 }
 
+type RequestTraceAuditBucket struct {
+	Key          string  `json:"key" gorm:"column:key"`
+	Count        int64   `json:"count" gorm:"column:count"`
+	InputTokens  int64   `json:"input_tokens" gorm:"column:input_tokens"`
+	OutputTokens int64   `json:"output_tokens" gorm:"column:output_tokens"`
+	CacheTokens  int64   `json:"cache_tokens" gorm:"column:cache_tokens"`
+	TotalTokens  int64   `json:"total_tokens" gorm:"column:total_tokens"`
+	Cost         float64 `json:"cost" gorm:"column:cost"`
+	AvgLatency   float64 `json:"avg_latency_ms" gorm:"column:avg_latency_ms"`
+}
+
+type RequestTraceAuditSummary struct {
+	Total                      int64                     `json:"total" gorm:"column:total"`
+	Success                    int64                     `json:"success" gorm:"column:success"`
+	Failed                     int64                     `json:"failed" gorm:"column:failed"`
+	Failover                   int64                     `json:"failover" gorm:"column:failover"`
+	Stream                     int64                     `json:"stream" gorm:"column:stream"`
+	AvgAttempts                float64                   `json:"avg_attempts" gorm:"column:avg_attempts"`
+	AvgLatency                 float64                   `json:"avg_latency_ms" gorm:"column:avg_latency_ms"`
+	InputTokens                int64                     `json:"input_tokens" gorm:"column:input_tokens"`
+	OutputTokens               int64                     `json:"output_tokens" gorm:"column:output_tokens"`
+	CacheTokens                int64                     `json:"cache_tokens" gorm:"column:cache_tokens"`
+	TotalTokens                int64                     `json:"total_tokens" gorm:"column:total_tokens"`
+	EstimatedCost              float64                   `json:"estimated_cost" gorm:"column:estimated_cost"`
+	FinalSuccessCost           float64                   `json:"final_success_cost" gorm:"column:final_success_cost"`
+	TotalAttemptCost           float64                   `json:"total_attempt_cost" gorm:"column:total_attempt_cost"`
+	FailedAttemptEstimatedCost float64                   `json:"failed_attempt_estimated_cost" gorm:"column:failed_attempt_estimated_cost"`
+	Cost                       float64                   `json:"cost" gorm:"column:cost"`
+	StatusBuckets              []RequestTraceAuditBucket `json:"status_buckets" gorm:"-"`
+	SourceBuckets              []RequestTraceAuditBucket `json:"source_buckets" gorm:"-"`
+	ModelBuckets               []RequestTraceAuditBucket `json:"model_buckets" gorm:"-"`
+	ServiceTierBuckets         []RequestTraceAuditBucket `json:"service_tier_buckets" gorm:"-"`
+}
+
 type RequestTraceDetail struct {
 	Trace    RequestTrace     `json:"trace"`
 	Attempts []RequestAttempt `json:"attempts"`

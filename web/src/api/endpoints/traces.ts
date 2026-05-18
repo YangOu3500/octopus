@@ -104,6 +104,40 @@ export interface RequestTraceListResponse {
     has_more: boolean;
 }
 
+export interface RequestTraceAuditBucket {
+    key: string;
+    count: number;
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_tokens?: number;
+    total_tokens?: number;
+    cost?: number;
+    avg_latency_ms?: number;
+}
+
+export interface RequestTraceAuditSummary {
+    total: number;
+    success: number;
+    failed: number;
+    failover: number;
+    stream: number;
+    avg_attempts: number;
+    avg_latency_ms: number;
+    input_tokens: number;
+    output_tokens: number;
+    cache_tokens: number;
+    total_tokens: number;
+    estimated_cost: number;
+    final_success_cost: number;
+    total_attempt_cost: number;
+    failed_attempt_estimated_cost: number;
+    cost: number;
+    status_buckets?: RequestTraceAuditBucket[];
+    source_buckets?: RequestTraceAuditBucket[];
+    model_buckets?: RequestTraceAuditBucket[];
+    service_tier_buckets?: RequestTraceAuditBucket[];
+}
+
 export interface RequestTraceDetail {
     trace: RequestTrace;
     attempts: RequestAttempt[];
@@ -125,6 +159,19 @@ export function useRequestTraces(params: RequestTraceListParams = {}, options: {
     return useQuery({
         queryKey: ['request-traces', cleanParams],
         queryFn: async () => apiClient.get<RequestTraceListResponse>('/api/v1/log/traces', cleanParams),
+        refetchInterval: refetchIntervalMs,
+        refetchIntervalInBackground: false,
+        staleTime: 0,
+    });
+}
+
+export function useRequestTraceAudit(params: RequestTraceListParams = {}, options: { refetchIntervalMs?: number | false } = {}) {
+    const cleanParams = cleanTraceParams(params);
+    const { refetchIntervalMs = false } = options;
+
+    return useQuery({
+        queryKey: ['request-traces', 'audit', cleanParams],
+        queryFn: async () => apiClient.get<RequestTraceAuditSummary>('/api/v1/log/traces/audit', cleanParams),
         refetchInterval: refetchIntervalMs,
         refetchIntervalInBackground: false,
         staleTime: 0,

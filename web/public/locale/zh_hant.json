@@ -1107,7 +1107,8 @@
         },
         "audit": {
             "title": "審計聚合",
-            "scope": "目前頁 {page} 條 / 總計 {total} 條",
+            "scope": "目前頁 {page} 條 / 匹配 {matched} 條 / 總計 {total} 條",
+            "aggregateUnavailable": "全量聚合暫不可用，已顯示目前頁樣本",
             "unknown": "未知",
             "failed": "失敗請求",
             "failover": "故障轉移",
@@ -1117,7 +1118,8 @@
             "costTokens": "成本 / Token",
             "statusBreakdown": "狀態分布",
             "sourceBreakdown": "來源分布",
-            "modelBreakdown": "模型分布"
+            "modelBreakdown": "模型分布",
+            "serviceTierBreakdown": "服務層級分布"
         },
         "summary": {
             "total": "Trace 總數",

@@ -696,6 +696,86 @@ func RequestTraceList(ctx context.Context, query model.RequestTraceListQuery) (m
 	}, nil
 }
 
+func RequestTraceAudit(ctx context.Context, query model.RequestTraceListQuery) (model.RequestTraceAuditSummary, error) {
+	query = normalizeRequestTraceListQuery(query)
+	baseQuery := func() *gorm.DB {
+		return applyRequestTraceFilters(db.GetDB().WithContext(ctx).Model(&model.RequestTrace{}), query)
+	}
+
+	costExpr := requestTraceAggregateCostExpr()
+	var summary model.RequestTraceAuditSummary
+	if err := baseQuery().
+		Select(
+			"COUNT(*) AS total, "+
+				"COALESCE(SUM(CASE WHEN final_status = ? THEN 1 ELSE 0 END), 0) AS success, "+
+				"COALESCE(SUM(CASE WHEN final_status = ? THEN 1 ELSE 0 END), 0) AS failed, "+
+				"COALESCE(SUM(CASE WHEN attempts_count > 1 THEN 1 ELSE 0 END), 0) AS failover, "+
+				"COALESCE(SUM(CASE WHEN request_stream = ? THEN 1 ELSE 0 END), 0) AS stream, "+
+				"COALESCE(AVG(attempts_count), 0) AS avg_attempts, "+
+				"COALESCE(AVG(total_latency_ms), 0) AS avg_latency_ms, "+
+				"COALESCE(SUM(input_tokens), 0) AS input_tokens, "+
+				"COALESCE(SUM(output_tokens), 0) AS output_tokens, "+
+				"COALESCE(SUM(cache_tokens), 0) AS cache_tokens, "+
+				"COALESCE(SUM(input_tokens + output_tokens + cache_tokens), 0) AS total_tokens, "+
+				"COALESCE(SUM(estimated_cost), 0) AS estimated_cost, "+
+				"COALESCE(SUM(final_success_cost), 0) AS final_success_cost, "+
+				"COALESCE(SUM(total_attempt_cost), 0) AS total_attempt_cost, "+
+				"COALESCE(SUM(failed_attempt_cost), 0) AS failed_attempt_estimated_cost, "+
+				"COALESCE(SUM("+costExpr+"), 0) AS cost",
+			"success",
+			"failed",
+			true,
+		).
+		Scan(&summary).Error; err != nil {
+		return model.RequestTraceAuditSummary{}, err
+	}
+
+	var err error
+	if summary.StatusBuckets, err = requestTraceAuditBuckets(baseQuery(), "COALESCE(NULLIF(final_status, ''), 'unknown')", 6); err != nil {
+		return model.RequestTraceAuditSummary{}, err
+	}
+	if summary.SourceBuckets, err = requestTraceAuditBuckets(baseQuery(), "COALESCE(NULLIF(request_source, ''), 'unknown')", 6); err != nil {
+		return model.RequestTraceAuditSummary{}, err
+	}
+	if summary.ModelBuckets, err = requestTraceAuditBuckets(baseQuery(), "COALESCE(NULLIF(client_model, ''), NULLIF(final_upstream_model, ''), 'unknown')", 8); err != nil {
+		return model.RequestTraceAuditSummary{}, err
+	}
+	if summary.ServiceTierBuckets, err = requestTraceAuditBuckets(baseQuery(), "COALESCE(NULLIF(service_tier, ''), 'unknown')", 5); err != nil {
+		return model.RequestTraceAuditSummary{}, err
+	}
+
+	return summary, nil
+}
+
+func requestTraceAuditBuckets(query *gorm.DB, keyExpr string, limit int) ([]model.RequestTraceAuditBucket, error) {
+	if limit <= 0 {
+		limit = 5
+	}
+	costExpr := requestTraceAggregateCostExpr()
+	var buckets []model.RequestTraceAuditBucket
+	err := query.
+		Select(
+			keyExpr + " AS key, " +
+				"COUNT(*) AS count, " +
+				"COALESCE(SUM(input_tokens), 0) AS input_tokens, " +
+				"COALESCE(SUM(output_tokens), 0) AS output_tokens, " +
+				"COALESCE(SUM(cache_tokens), 0) AS cache_tokens, " +
+				"COALESCE(SUM(input_tokens + output_tokens + cache_tokens), 0) AS total_tokens, " +
+				"COALESCE(SUM(" + costExpr + "), 0) AS cost, " +
+				"COALESCE(AVG(total_latency_ms), 0) AS avg_latency_ms",
+		).
+		Group(keyExpr).
+		Order("count DESC").
+		Order("cost DESC").
+		Limit(limit).
+		Scan(&buckets).Error
+	return buckets, err
+}
+
+func requestTraceAggregateCostExpr() string {
+	return "CASE WHEN total_attempt_cost > 0 THEN total_attempt_cost ELSE estimated_cost END"
+}
+
 func normalizeRequestTraceListQuery(query model.RequestTraceListQuery) model.RequestTraceListQuery {
 	if query.Page < 1 {
 		query.Page = 1

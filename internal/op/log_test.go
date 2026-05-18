@@ -443,6 +443,124 @@ func TestRequestTraceListAndDetailReadFromMirrorTables(t *testing.T) {
 	}
 }
 
+func TestRequestTraceAuditAggregatesFilteredRows(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+	resetRelayLogCacheForTest(t)
+
+	cacheRead := 1
+	entries := []model.RelayLog{
+		{
+			Time:             900,
+			TraceID:          "trace-audit-success",
+			RequestModelName: "gpt-4o",
+			RequestSource:    "relay",
+			RequestStream:    true,
+			FinalStatus:      "success",
+			AttemptsCount:    2,
+			TotalLatencyMS:   100,
+			InputTokens:      10,
+			OutputTokens:     5,
+			CacheReadTokens:  &cacheRead,
+			TotalAttemptCost: 0.003,
+			ServiceTier:      "standard",
+			Attempts: []model.ChannelAttempt{
+				{
+					AttemptIndex:  1,
+					ChannelID:     1,
+					ModelName:     "gpt-4o",
+					UpstreamModel: "gpt-4o-a",
+					Status:        model.AttemptFailed,
+					HTTPStatus:    502,
+				},
+				{
+					AttemptIndex:  2,
+					ChannelID:     2,
+					ModelName:     "gpt-4o",
+					UpstreamModel: "gpt-4o-b",
+					Status:        model.AttemptSuccess,
+					HTTPStatus:    200,
+				},
+			},
+		},
+		{
+			Time:             950,
+			TraceID:          "trace-audit-failed",
+			RequestModelName: "claude-3",
+			RequestSource:    "relay",
+			FinalStatus:      "failed",
+			AttemptsCount:    1,
+			TotalLatencyMS:   300,
+			InputTokens:      7,
+			EstimatedCost:    0.002,
+			Attempts: []model.ChannelAttempt{{
+				AttemptIndex: 1,
+				ChannelID:    3,
+				ModelName:    "claude-3",
+				Status:       model.AttemptFailed,
+				HTTPStatus:   429,
+			}},
+		},
+		{
+			Time:             980,
+			TraceID:          "trace-audit-model-test",
+			RequestModelName: "gemini-pro",
+			RequestSource:    "model_test",
+			FinalStatus:      "success",
+			AttemptsCount:    1,
+			TotalLatencyMS:   50,
+			InputTokens:      100,
+			OutputTokens:     20,
+			TotalAttemptCost: 0.01,
+		},
+	}
+	for _, entry := range entries {
+		if _, err := RelayLogAddWithResult(ctx, entry); err != nil {
+			t.Fatalf("RelayLogAddWithResult failed: %v", err)
+		}
+	}
+
+	audit, err := RequestTraceAudit(ctx, model.RequestTraceListQuery{
+		Page:     1,
+		PageSize: 1,
+		Source:   "relay",
+	})
+	if err != nil {
+		t.Fatalf("RequestTraceAudit failed: %v", err)
+	}
+	if audit.Total != 2 || audit.Success != 1 || audit.Failed != 1 || audit.Failover != 1 || audit.Stream != 1 {
+		t.Fatalf("unexpected audit counts: %+v", audit)
+	}
+	if audit.InputTokens != 17 || audit.OutputTokens != 5 || audit.CacheTokens != 1 || audit.TotalTokens != 23 {
+		t.Fatalf("unexpected audit token totals: %+v", audit)
+	}
+	if audit.AvgAttempts != 1.5 || audit.AvgLatency != 200 {
+		t.Fatalf("unexpected audit averages: %+v", audit)
+	}
+	if audit.Cost != 0.005 {
+		t.Fatalf("expected cost fallback total 0.005, got %.6f", audit.Cost)
+	}
+	if findAuditBucket(audit.StatusBuckets, "failed").Count != 1 {
+		t.Fatalf("expected failed status bucket, got %+v", audit.StatusBuckets)
+	}
+	if findAuditBucket(audit.SourceBuckets, "relay").Count != 2 {
+		t.Fatalf("expected relay source bucket, got %+v", audit.SourceBuckets)
+	}
+	if findAuditBucket(audit.ModelBuckets, "gpt-4o").Count != 1 {
+		t.Fatalf("expected gpt-4o model bucket, got %+v", audit.ModelBuckets)
+	}
+
+	failoverAudit, err := RequestTraceAudit(ctx, model.RequestTraceListQuery{
+		Source:   "relay",
+		Failover: boolPtr(true),
+	})
+	if err != nil {
+		t.Fatalf("RequestTraceAudit failover failed: %v", err)
+	}
+	if failoverAudit.Total != 1 || failoverAudit.Failover != 1 || findAuditBucket(failoverAudit.ModelBuckets, "gpt-4o").Count != 1 {
+		t.Fatalf("unexpected failover audit: %+v", failoverAudit)
+	}
+}
+
 func TestRelayLogMirrorRespectsKeepDisabledAndClear(t *testing.T) {
 	ctx := setupSiteOpTestDB(t)
 	resetRelayLogCacheForTest(t)
@@ -727,4 +845,13 @@ func boolPtr(value bool) *bool {
 
 func intPtr(value int) *int {
 	return &value
+}
+
+func findAuditBucket(buckets []model.RequestTraceAuditBucket, key string) model.RequestTraceAuditBucket {
+	for _, bucket := range buckets {
+		if bucket.Key == key {
+			return bucket
+		}
+	}
+	return model.RequestTraceAuditBucket{}
 }

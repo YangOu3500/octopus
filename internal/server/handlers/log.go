@@ -37,6 +37,10 @@ func init() {
 				Handle(listRequestTraces),
 		).
 		AddRoute(
+			router.NewRoute("/traces/audit", http.MethodGet).
+				Handle(getRequestTraceAudit),
+		).
+		AddRoute(
 			router.NewRoute("/traces/:trace_id", http.MethodGet).
 				Handle(getRequestTraceDetail),
 		).
@@ -134,6 +138,34 @@ func listLog(c *gin.Context) {
 }
 
 func listRequestTraces(c *gin.Context) {
+	query, ok := parseRequestTraceQuery(c)
+	if !ok {
+		return
+	}
+
+	traces, err := op.RequestTraceList(c.Request.Context(), query)
+	if err != nil {
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, traces)
+}
+
+func getRequestTraceAudit(c *gin.Context) {
+	query, ok := parseRequestTraceQuery(c)
+	if !ok {
+		return
+	}
+
+	audit, err := op.RequestTraceAudit(c.Request.Context(), query)
+	if err != nil {
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, audit)
+}
+
+func parseRequestTraceQuery(c *gin.Context) (model.RequestTraceListQuery, bool) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 	startTimeStr := c.Query("start_time")
@@ -144,12 +176,12 @@ func listRequestTraces(c *gin.Context) {
 		st, err := strconv.Atoi(startTimeStr)
 		if err != nil {
 			resp.Error(c, http.StatusBadRequest, err.Error())
-			return
+			return model.RequestTraceListQuery{}, false
 		}
 		et, err := strconv.Atoi(endTimeStr)
 		if err != nil {
 			resp.Error(c, http.StatusBadRequest, err.Error())
-			return
+			return model.RequestTraceListQuery{}, false
 		}
 		startTime = &st
 		endTime = &et
@@ -181,13 +213,7 @@ func listRequestTraces(c *gin.Context) {
 	if failover := parseOptionalLogBool(c.Query("failover")); failover != nil {
 		query.Failover = failover
 	}
-
-	traces, err := op.RequestTraceList(c.Request.Context(), query)
-	if err != nil {
-		resp.Error(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	resp.Success(c, traces)
+	return query, true
 }
 
 func getRequestTraceDetail(c *gin.Context) {
