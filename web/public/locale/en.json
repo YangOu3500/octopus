@@ -1081,6 +1081,30 @@
             "failed": "Export failed",
             "safe": "Only sanitized structured fields are included"
         },
+        "compare": {
+            "title": "Trace Compare: {count}",
+            "hint": "Select up to {count} traces on the current page",
+            "clear": "Clear compare",
+            "selectTrace": "Add to compare",
+            "limitReached": "You can compare up to {count} traces",
+            "fastest": "Fastest request",
+            "slowest": "Slowest request",
+            "failover": "Failover ratio",
+            "costTokens": "Cost / Tokens",
+            "routeIds": "Channel #{channel} / Site #{site}",
+            "focus": "Inspect",
+            "remove": "Remove",
+            "table": {
+                "trace": "Trace / Model",
+                "status": "Status",
+                "route": "Final route",
+                "attempts": "Attempts",
+                "latency": "Latency",
+                "tokens": "Tokens",
+                "cost": "Cost",
+                "action": "Action"
+            }
+        },
         "summary": {
             "total": "Total traces",
             "page": "{count} on this page",
@@ -1137,6 +1161,7 @@
             "page": "{page} / {total}"
         },
         "table": {
+            "compare": "Compare",
             "request": "Request / Trace / Source",
             "status": "Status",
             "route": "Final route",

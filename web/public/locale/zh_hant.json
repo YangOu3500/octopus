@@ -1081,6 +1081,30 @@
             "failed": "匯出失敗",
             "safe": "僅包含脫敏結構化欄位"
         },
+        "compare": {
+            "title": "跨 Trace 對比：{count} 條",
+            "hint": "勾選目前頁最多 {count} 條 trace",
+            "clear": "清空對比",
+            "selectTrace": "加入對比",
+            "limitReached": "最多只能對比 {count} 條 trace",
+            "fastest": "最快請求",
+            "slowest": "最慢請求",
+            "failover": "故障轉移佔比",
+            "costTokens": "成本 / Token",
+            "routeIds": "渠道 #{channel} / 站點 #{site}",
+            "focus": "查看",
+            "remove": "移除",
+            "table": {
+                "trace": "Trace / 模型",
+                "status": "狀態",
+                "route": "最終路由",
+                "attempts": "嘗試",
+                "latency": "延遲",
+                "tokens": "Token",
+                "cost": "成本",
+                "action": "操作"
+            }
+        },
         "summary": {
             "total": "Trace 總數",
             "page": "目前頁 {count} 條",
@@ -1137,6 +1161,7 @@
             "page": "{page} / {total}"
         },
         "table": {
+            "compare": "對比",
             "request": "請求 / Trace / 來源",
             "status": "狀態",
             "route": "最終路由",

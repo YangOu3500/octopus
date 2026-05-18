@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 25;
 const TRACE_EXPORT_VERSION = 1;
+const MAX_COMPARE_TRACES = 4;
 
 function optionalBoolean(value: string): boolean | undefined {
     if (value === 'true') return true;
@@ -81,6 +82,14 @@ function formatTokens(trace: RequestTrace) {
     const output = trace.output_tokens ?? 0;
     const cache = trace.cache_tokens ?? 0;
     return `${input.toLocaleString()} / ${output.toLocaleString()} / ${cache.toLocaleString()}`;
+}
+
+function totalTokens(trace: RequestTrace) {
+    return (trace.input_tokens ?? 0) + (trace.output_tokens ?? 0) + (trace.cache_tokens ?? 0);
+}
+
+function traceCost(trace: RequestTrace) {
+    return trace.total_attempt_cost || trace.estimated_cost || 0;
 }
 
 function formatAttemptTokens(attempt: RequestAttempt) {
@@ -261,6 +270,125 @@ function downloadJson(filename: string, payload: unknown) {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+function TraceComparisonPanel({
+    traces,
+    onClear,
+    onRemove,
+    onFocus,
+}: {
+    traces: RequestTrace[];
+    onClear: () => void;
+    onRemove: (traceId: string) => void;
+    onFocus: (traceId: string) => void;
+}) {
+    const t = useTranslations('traces.compare');
+
+    if (traces.length === 0) return null;
+
+    const fastest = traces.reduce<RequestTrace | null>((current, trace) => {
+        if (!current) return trace;
+        return (trace.total_latency_ms || Number.MAX_SAFE_INTEGER) < (current.total_latency_ms || Number.MAX_SAFE_INTEGER)
+            ? trace
+            : current;
+    }, null);
+    const slowest = traces.reduce<RequestTrace | null>((current, trace) => {
+        if (!current) return trace;
+        return (trace.total_latency_ms || 0) > (current.total_latency_ms || 0) ? trace : current;
+    }, null);
+    const failoverCount = traces.filter((trace) => (trace.attempts_count || 0) > 1).length;
+    const costTotal = traces.reduce((sum, trace) => sum + traceCost(trace), 0);
+    const tokenTotal = traces.reduce((sum, trace) => sum + totalTokens(trace), 0);
+
+    return (
+        <div className="rounded-lg border bg-card p-3">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="h-7 rounded-md px-2">
+                    <GitBranch className="size-3.5" />
+                    {t('title', { count: traces.length })}
+                </Badge>
+                <span className="text-xs text-muted-foreground">{t('hint', { count: MAX_COMPARE_TRACES })}</span>
+                <Button type="button" variant="ghost" size="sm" className="ml-auto h-8 rounded-md px-2 text-xs" onClick={onClear}>
+                    <X className="size-3.5" />
+                    {t('clear')}
+                </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs lg:grid-cols-4">
+                <div className="rounded-md border bg-background/40 p-2">
+                    <div className="text-muted-foreground">{t('fastest')}</div>
+                    <div className="mt-1 truncate font-mono tabular-nums" title={fastest?.trace_id}>
+                        {fastest ? `${formatDuration(fastest.total_latency_ms)} / ${fastest.trace_id}` : '-'}
+                    </div>
+                </div>
+                <div className="rounded-md border bg-background/40 p-2">
+                    <div className="text-muted-foreground">{t('slowest')}</div>
+                    <div className="mt-1 truncate font-mono tabular-nums" title={slowest?.trace_id}>
+                        {slowest ? `${formatDuration(slowest.total_latency_ms)} / ${slowest.trace_id}` : '-'}
+                    </div>
+                </div>
+                <div className="rounded-md border bg-background/40 p-2">
+                    <div className="text-muted-foreground">{t('failover')}</div>
+                    <div className="mt-1 font-mono tabular-nums">{failoverCount} / {traces.length}</div>
+                </div>
+                <div className="rounded-md border bg-background/40 p-2">
+                    <div className="text-muted-foreground">{t('costTokens')}</div>
+                    <div className="mt-1 font-mono tabular-nums">{formatCost(costTotal)} / {tokenTotal.toLocaleString()}</div>
+                </div>
+            </div>
+
+            <div className="mt-3 overflow-auto rounded-md border">
+                <table className="w-full min-w-[920px] text-left text-xs">
+                    <thead className="bg-muted/70 text-muted-foreground">
+                        <tr>
+                            <th className="px-3 py-2 font-medium">{t('table.trace')}</th>
+                            <th className="px-3 py-2 font-medium">{t('table.status')}</th>
+                            <th className="px-3 py-2 font-medium">{t('table.route')}</th>
+                            <th className="px-3 py-2 font-medium">{t('table.attempts')}</th>
+                            <th className="px-3 py-2 font-medium">{t('table.latency')}</th>
+                            <th className="px-3 py-2 font-medium">{t('table.tokens')}</th>
+                            <th className="px-3 py-2 font-medium">{t('table.cost')}</th>
+                            <th className="px-3 py-2 font-medium">{t('table.action')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {traces.map((trace) => (
+                            <tr key={trace.trace_id || trace.id} className="border-t">
+                                <td className="max-w-[220px] px-3 py-2">
+                                    <div className="truncate font-medium" title={trace.client_model}>{trace.client_model || '-'}</div>
+                                    <div className="truncate font-mono text-[11px] text-muted-foreground" title={trace.trace_id}>{trace.trace_id}</div>
+                                </td>
+                                <td className="px-3 py-2">
+                                    <Badge variant="outline" className={cn('h-5 rounded-md px-1.5 text-[10px]', statusClass(trace.final_status))}>
+                                        {trace.final_status || '-'}
+                                    </Badge>
+                                </td>
+                                <td className="max-w-[220px] px-3 py-2">
+                                    <div className="truncate" title={trace.final_upstream_model || undefined}>{trace.final_upstream_model || '-'}</div>
+                                    <div className="text-muted-foreground">{t('routeIds', { channel: trace.final_channel_id || 0, site: trace.final_site_id || 0 })}</div>
+                                </td>
+                                <td className="px-3 py-2 font-mono tabular-nums">{trace.attempts_count || 0}</td>
+                                <td className="px-3 py-2 font-mono tabular-nums">{formatDuration(trace.total_latency_ms)}</td>
+                                <td className="px-3 py-2 font-mono tabular-nums">{totalTokens(trace).toLocaleString()}</td>
+                                <td className="px-3 py-2 font-mono tabular-nums">{formatCost(traceCost(trace))}</td>
+                                <td className="px-3 py-2">
+                                    <div className="flex items-center gap-1">
+                                        <Button type="button" variant="ghost" size="sm" className="h-7 rounded-md px-2 text-xs" onClick={() => onFocus(trace.trace_id)}>
+                                            {t('focus')}
+                                        </Button>
+                                        <Button type="button" variant="ghost" size="sm" className="h-7 rounded-md px-2 text-xs" onClick={() => onRemove(trace.trace_id)}>
+                                            {t('remove')}
+                                        </Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
 function SummaryTile({
     label,
     value,
@@ -287,19 +415,24 @@ function SummaryTile({
 function TraceTable({
     items,
     selectedTraceId,
+    compareTraceIds,
     onSelect,
+    onToggleCompare,
 }: {
     items: RequestTrace[];
     selectedTraceId: string | null;
+    compareTraceIds: string[];
     onSelect: (traceId: string) => void;
+    onToggleCompare: (traceId: string, checked: boolean) => void;
 }) {
     const t = useTranslations('traces');
 
     return (
         <div className="min-h-0 overflow-auto rounded-lg border bg-card">
-            <table className="w-full min-w-[1080px] text-left text-xs">
+            <table className="w-full min-w-[1140px] text-left text-xs">
                 <thead className="sticky top-0 z-10 border-b bg-muted/70 text-muted-foreground backdrop-blur">
                     <tr>
+                        <th className="w-[52px] px-3 py-2 font-medium">{t('table.compare')}</th>
                         <th className="px-3 py-2 font-medium">{t('table.request')}</th>
                         <th className="px-3 py-2 font-medium">{t('table.status')}</th>
                         <th className="px-3 py-2 font-medium">{t('table.route')}</th>
@@ -313,6 +446,7 @@ function TraceTable({
                 <tbody>
                     {items.map((trace) => {
                         const active = trace.trace_id === selectedTraceId;
+                        const compared = compareTraceIds.includes(trace.trace_id);
                         return (
                             <tr
                                 key={trace.trace_id || trace.id}
@@ -322,6 +456,16 @@ function TraceTable({
                                 )}
                                 onClick={() => onSelect(trace.trace_id)}
                             >
+                                <td className="px-3 py-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={compared}
+                                        aria-label={t('compare.selectTrace')}
+                                        className="size-4 rounded border-border accent-primary"
+                                        onChange={(event) => onToggleCompare(trace.trace_id, event.target.checked)}
+                                        onClick={(event) => event.stopPropagation()}
+                                    />
+                                </td>
                                 <td className="max-w-[260px] px-3 py-3">
                                     <div className="truncate font-medium" title={trace.client_model}>{trace.client_model || '-'}</div>
                                     <div className="mt-1 flex min-w-0 items-center gap-2">
@@ -584,6 +728,7 @@ export function Traces() {
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [refreshInterval, setRefreshInterval] = useState('10000');
     const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
+    const [compareTraceIds, setCompareTraceIds] = useState<string[]>([]);
 
     const params = useMemo<RequestTraceListParams>(() => ({
         page,
@@ -622,6 +767,7 @@ export function Traces() {
     const resetTraceListPosition = useCallback(() => {
         setPage(1);
         setSelectedTraceId(null);
+        setCompareTraceIds([]);
     }, []);
 
     useEffect(() => {
@@ -631,6 +777,11 @@ export function Traces() {
 
     const traces = useMemo(() => tracesQuery.data?.items ?? [], [tracesQuery.data?.items]);
     const total = tracesQuery.data?.total ?? 0;
+
+    const visibleCompareTraceIds = useMemo(() => {
+        const visibleTraceIds = new Set(traces.map((trace) => trace.trace_id));
+        return compareTraceIds.filter((traceId) => visibleTraceIds.has(traceId));
+    }, [compareTraceIds, traces]);
 
     const effectiveSelectedTraceId = useMemo(() => {
         if (selectedTraceId && traces.some((trace) => trace.trace_id === selectedTraceId)) {
@@ -648,6 +799,35 @@ export function Traces() {
             : Math.round(traces.reduce((sum, trace) => sum + (trace.total_latency_ms || 0), 0) / traces.length);
         return { success, failed, failover, avgLatency };
     }, [traces]);
+
+    const compareTraces = useMemo(() => {
+        const selected = new Set(visibleCompareTraceIds);
+        return traces.filter((trace) => selected.has(trace.trace_id));
+    }, [traces, visibleCompareTraceIds]);
+
+    const handleToggleCompare = useCallback((traceId: string, checked: boolean) => {
+        setCompareTraceIds((current) => {
+            if (!checked) return current.filter((item) => item !== traceId);
+            if (current.includes(traceId)) return current;
+            if (current.length >= MAX_COMPARE_TRACES) {
+                toast.warning(t('compare.limitReached', { count: MAX_COMPARE_TRACES }));
+                return current;
+            }
+            return [...current, traceId];
+        });
+    }, [t]);
+
+    const handleClearCompare = useCallback(() => {
+        setCompareTraceIds([]);
+    }, []);
+
+    const handleRemoveCompare = useCallback((traceId: string) => {
+        setCompareTraceIds((current) => current.filter((item) => item !== traceId));
+    }, []);
+
+    const handleFocusTrace = useCallback((traceId: string) => {
+        setSelectedTraceId(traceId);
+    }, []);
 
     const resetFilters = useCallback(() => {
         resetTraceListPosition();
@@ -885,6 +1065,7 @@ export function Traces() {
                             disabled={page <= 1 || tracesQuery.isFetching}
                             onClick={() => {
                                 setSelectedTraceId(null);
+                                setCompareTraceIds([]);
                                 setPage((current) => Math.max(1, current - 1));
                             }}
                         >
@@ -901,6 +1082,7 @@ export function Traces() {
                             disabled={!hasMore || tracesQuery.isFetching}
                             onClick={() => {
                                 setSelectedTraceId(null);
+                                setCompareTraceIds([]);
                                 setPage((current) => current + 1);
                             }}
                         >
@@ -910,6 +1092,13 @@ export function Traces() {
                     </div>
                 </div>
             </div>
+
+            <TraceComparisonPanel
+                traces={compareTraces}
+                onClear={handleClearCompare}
+                onRemove={handleRemoveCompare}
+                onFocus={handleFocusTrace}
+            />
 
             <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(420px,0.85fr)]">
                 <div className="relative min-h-0">
@@ -925,7 +1114,9 @@ export function Traces() {
                         <TraceTable
                             items={traces}
                             selectedTraceId={effectiveSelectedTraceId}
+                            compareTraceIds={visibleCompareTraceIds}
                             onSelect={setSelectedTraceId}
+                            onToggleCompare={handleToggleCompare}
                         />
                     )}
                 </div>

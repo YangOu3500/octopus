@@ -1081,6 +1081,30 @@
             "failed": "导出失败",
             "safe": "仅包含脱敏结构化字段"
         },
+        "compare": {
+            "title": "跨 Trace 对比：{count} 条",
+            "hint": "勾选当前页最多 {count} 条 trace",
+            "clear": "清空对比",
+            "selectTrace": "加入对比",
+            "limitReached": "最多只能对比 {count} 条 trace",
+            "fastest": "最快请求",
+            "slowest": "最慢请求",
+            "failover": "故障转移占比",
+            "costTokens": "成本 / Token",
+            "routeIds": "渠道 #{channel} / 站点 #{site}",
+            "focus": "查看",
+            "remove": "移除",
+            "table": {
+                "trace": "Trace / 模型",
+                "status": "状态",
+                "route": "最终路由",
+                "attempts": "尝试",
+                "latency": "延迟",
+                "tokens": "Token",
+                "cost": "成本",
+                "action": "操作"
+            }
+        },
         "summary": {
             "total": "Trace 总数",
             "page": "当前页 {count} 条",
@@ -1137,6 +1161,7 @@
             "page": "{page} / {total}"
         },
         "table": {
+            "compare": "对比",
             "request": "请求 / Trace / 来源",
             "status": "状态",
             "route": "最终路由",
