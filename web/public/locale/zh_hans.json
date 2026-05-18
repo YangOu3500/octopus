@@ -275,7 +275,7 @@
                 },
                 "quota": {
                     "label": "额度状态",
-                    "entry": "分组调度预览"
+                    "entry": "模型健康 / 调度预览"
                 }
             }
         }
@@ -603,9 +603,9 @@
                 },
                 "quotaStatus": {
                     "name": "额度 / 配额状态解析",
-                    "desc": "结合余额、quota、错误类型解释候选容量，并为后续提前过滤或降权提供依据。",
-                    "ui": "分组调度预览、渠道模型健康页和真实 relay 会展示或执行账号禁用、已知零余额、站点模型禁用等运行期决策。",
-                    "gap": "已实现托管渠道运行期强过滤；后续可继续补更复杂的 Provider quota 推导。"
+                    "desc": "结合托管账号余额、站点模型禁用、Key 最近状态码和健康冷却原因解释候选容量。",
+                    "ui": "分组调度预览和渠道模型健康页会显示额度、认证、限流、无 Key 等状态与原因；真实 relay 已执行账号禁用、已知零余额、站点模型禁用跳过。",
+                    "gap": "保留 Octopus 站点 / 账号 / 渠道结构，不引入 AxonHub Provider / GlobalModel 配额对象或分布式配额存储。"
                 }
             },
             "note": "这个面板是融合能力的 UI 对齐索引。它不替代具体功能页面，但用于保证“已接入后端能力就必须能被用户看到、理解和排障”。"
@@ -934,8 +934,16 @@
                 "available": "余额可用",
                 "zeroBalance": "余额为 0",
                 "accountDisabled": "账号禁用",
+                "quotaError": "额度错误",
+                "authError": "认证阻断",
+                "rateLimited": "限流中",
+                "noKey": "无 Key",
+                "siteDisabled": "站点禁用",
+                "accountMissing": "账号缺失",
+                "modelDisabled": "模型禁用",
                 "unknown": "未知",
-                "balance": "余额 / 已用"
+                "balance": "余额 / 已用",
+                "reason": "原因"
             },
             "noSamples": "暂无样本",
             "sampleMeta": "{success}/{total} · {rate}",
@@ -1401,6 +1409,14 @@
                 "available": "配额可用",
                 "zeroBalance": "余额不足",
                 "accountDisabled": "账号禁用",
+                "quotaError": "额度错误",
+                "authError": "认证阻断",
+                "rateLimited": "限流中",
+                "noKey": "无 Key",
+                "siteDisabled": "站点禁用",
+                "accountMissing": "账号缺失",
+                "modelDisabled": "模型禁用",
+                "reason": "原因",
                 "unknown": "配额未知"
             },
             "status": {

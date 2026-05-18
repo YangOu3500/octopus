@@ -58,9 +58,16 @@ function quotaTone(status: string) {
     switch (status) {
         case 'available':
             return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+        case 'rate_limited':
         case 'zero_balance':
+        case 'no_key':
             return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300';
+        case 'quota_error':
+        case 'auth_error':
+        case 'site_disabled':
         case 'account_disabled':
+        case 'account_missing':
+        case 'model_disabled':
             return 'border-destructive/20 bg-destructive/10 text-destructive';
         default:
             return 'border-muted-foreground/20 bg-muted text-muted-foreground';
@@ -104,6 +111,20 @@ function quotaLabel(t: ReturnType<typeof useTranslations<'channel.health'>>, sta
             return t('quota.zeroBalance');
         case 'account_disabled':
             return t('quota.accountDisabled');
+        case 'quota_error':
+            return t('quota.quotaError');
+        case 'auth_error':
+            return t('quota.authError');
+        case 'rate_limited':
+            return t('quota.rateLimited');
+        case 'no_key':
+            return t('quota.noKey');
+        case 'site_disabled':
+            return t('quota.siteDisabled');
+        case 'account_missing':
+            return t('quota.accountMissing');
+        case 'model_disabled':
+            return t('quota.modelDisabled');
         default:
             return t('quota.unknown');
     }
@@ -428,6 +449,11 @@ export function ChannelModelHealthPanel() {
                                                     <div className="mt-1 text-xs text-muted-foreground">
                                                         {row.quota_balance !== undefined ? `${formatDecimal(row.quota_balance, 2)} / ${formatDecimal(row.quota_used, 2)}` : '-'}
                                                     </div>
+                                                    {row.quota_reason ? (
+                                                        <div className="mt-0.5 truncate text-xs text-muted-foreground" title={row.quota_reason}>
+                                                            {t('quota.reason')}: {row.quota_reason}
+                                                        </div>
+                                                    ) : null}
                                                 </div>
                                                 <div className="max-w-[14rem] px-3 py-3">
                                                     <div className="text-xs tabular-nums text-muted-foreground">

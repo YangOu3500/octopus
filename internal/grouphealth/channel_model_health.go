@@ -333,6 +333,8 @@ func finalizeChannelModelHealthRow(acc *channelModelHealthAccumulator, channels 
 	if ok {
 		usedKey := channel.GetChannelKey()
 		row.CoolingDown, row.CooldownRemainingMS, row.CooldownReason = channelModelCoolingState(channel.ID, usedKey.ID, row.SiteID, row.SiteAccountID, row.ModelName, channel.GetBaseUrl())
+		applyChannelModelKeyCapacity(row, usedKey)
+		applyChannelModelCooldownCapacity(row, row.CooldownReason)
 	}
 }
 
@@ -368,6 +370,7 @@ func applyChannelModelChannelMetadata(ctx context.Context, row *model.ChannelMod
 	row.SiteAccountID = state.SiteAccountID
 	row.SiteAccountName = state.SiteAccountName
 	row.QuotaStatus = state.QuotaStatus
+	row.QuotaReason = state.QuotaReason
 	row.QuotaBalance = state.QuotaBalance
 	row.QuotaUsed = state.QuotaUsed
 }

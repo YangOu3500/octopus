@@ -35,7 +35,7 @@ const capabilities: Capability[] = [
     { id: 'modelAssociation', status: 'done', source: 'AxonHub', nav: 'group', icon: GitBranch },
     { id: 'protocolTransform', status: 'partial', source: 'AxonHub', nav: 'log', icon: GitBranch },
     { id: 'liveDebug', status: 'partial', source: 'ccLoad', nav: 'log', icon: TriangleAlert },
-    { id: 'quotaStatus', status: 'partial', source: 'both', nav: 'group', icon: CircleDashed },
+    { id: 'quotaStatus', status: 'done', source: 'both', nav: 'channel', channelTab: 'health', icon: CircleDashed },
 ];
 
 function statusClass(status: CapabilityStatus) {

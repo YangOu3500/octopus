@@ -67,6 +67,7 @@ type ChannelModelHealthRow struct {
 	CooldownRemainingMS      int64   `json:"cooldown_remaining_ms"`
 	CooldownReason           string  `json:"cooldown_reason,omitempty"`
 	QuotaStatus              string  `json:"quota_status"`
+	QuotaReason              string  `json:"quota_reason,omitempty"`
 	QuotaBalance             float64 `json:"quota_balance,omitempty"`
 	QuotaUsed                float64 `json:"quota_used,omitempty"`
 	LastHTTPStatus           int     `json:"last_http_status,omitempty"`

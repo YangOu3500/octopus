@@ -30,6 +30,7 @@ export interface GroupRoutingCandidate {
     cooldown_remaining_ms: number;
     cooldown_reason?: string;
     quota_status: string;
+    quota_reason?: string;
     quota_balance?: number;
     quota_used?: number;
     effective_score: number;
@@ -74,6 +75,7 @@ function normalizeCandidate(candidate: Partial<GroupRoutingCandidate>): GroupRou
         cooldown_remaining_ms: typeof candidate.cooldown_remaining_ms === 'number' ? candidate.cooldown_remaining_ms : 0,
         cooldown_reason: candidate.cooldown_reason ?? '',
         quota_status: candidate.quota_status ?? 'unknown',
+        quota_reason: candidate.quota_reason ?? '',
         quota_balance: typeof candidate.quota_balance === 'number' ? candidate.quota_balance : undefined,
         quota_used: typeof candidate.quota_used === 'number' ? candidate.quota_used : undefined,
         effective_score: typeof candidate.effective_score === 'number' ? candidate.effective_score : 0,

@@ -165,7 +165,7 @@ export function GatewayOperationsPanel() {
         { id: 'channelConcurrency', nav: 'setting', icon: Network, status: 'done' },
         { id: 'modelAssociation', nav: 'group', icon: GitBranch, status: 'done' },
         { id: 'probe', nav: 'setting', icon: TestTubeDiagonal, status: 'partial' },
-        { id: 'quota', nav: 'group', icon: Settings2, status: 'partial' },
+        { id: 'quota', nav: 'channel', channelTab: 'health', icon: Settings2, status: 'done' },
     ], []);
 
     return (

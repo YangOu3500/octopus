@@ -119,6 +119,7 @@ export type ChannelModelHealthRow = {
     cooldown_remaining_ms: number;
     cooldown_reason?: string;
     quota_status: string;
+    quota_reason?: string;
     quota_balance?: number;
     quota_used?: number;
     last_http_status?: number;
@@ -313,6 +314,7 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             cooldown_remaining_ms: typeof row.cooldown_remaining_ms === 'number' ? row.cooldown_remaining_ms : 0,
             cooldown_reason: row.cooldown_reason ?? '',
             quota_status: row.quota_status ?? 'unknown',
+            quota_reason: row.quota_reason ?? '',
             quota_balance: typeof row.quota_balance === 'number' ? row.quota_balance : undefined,
             quota_used: typeof row.quota_used === 'number' ? row.quota_used : undefined,
             last_http_status: typeof row.last_http_status === 'number' ? row.last_http_status : undefined,

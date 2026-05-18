@@ -166,6 +166,34 @@ func TestBuildChannelModelHealthShowsProjectedQuotaMetadata(t *testing.T) {
 	}
 }
 
+func TestBuildChannelModelHealthShowsKeyCapacityStatus(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+
+	channel := &model.Channel{
+		Name:     "health-key-capacity",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://health-key-capacity.example.test/v1"}},
+		Model:    "capacity-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-capacity-secret", StatusCode: 429}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+
+	result, err := BuildChannelModelHealth(ctx, model.ChannelModelHealthQuery{TimeRange: "all"})
+	if err != nil {
+		t.Fatalf("BuildChannelModelHealth failed: %v", err)
+	}
+	row := findChannelModelHealthRow(result.Rows, channel.ID, "capacity-model")
+	if row == nil {
+		t.Fatalf("expected channel/model row, got %+v", result.Rows)
+	}
+	if row.QuotaStatus != "rate_limited" || row.QuotaReason != "http_429" {
+		t.Fatalf("unexpected quota status: %+v", row)
+	}
+}
+
 func findChannelModelHealthRow(rows []model.ChannelModelHealthRow, channelID int, modelName string) *model.ChannelModelHealthRow {
 	for i := range rows {
 		if rows[i].ChannelID == channelID && rows[i].ModelName == modelName {

@@ -275,7 +275,7 @@
                 },
                 "quota": {
                     "label": "額度狀態",
-                    "entry": "分組調度預覽"
+                    "entry": "模型健康 / 調度預覽"
                 }
             }
         }
@@ -603,9 +603,9 @@
                 },
                 "quotaStatus": {
                     "name": "額度 / 配額狀態解析",
-                    "desc": "結合餘額、quota、錯誤類型解釋候選容量，並為後續提前過濾或降權提供依據。",
-                    "ui": "分組調度預覽、渠道模型健康頁和真實 relay 會展示或執行帳號停用、已知零餘額、站點模型停用等執行期決策。",
-                    "gap": "已實現託管渠道執行期強過濾；後續可繼續補更複雜的 Provider quota 推導。"
+                    "desc": "結合託管帳號餘額、站點模型停用、Key 最近狀態碼和健康冷卻原因解釋候選容量。",
+                    "ui": "分組調度預覽和渠道模型健康頁會顯示額度、認證、限流、無 Key 等狀態與原因；真實 relay 已執行帳號停用、已知零餘額、站點模型停用跳過。",
+                    "gap": "保留 Octopus 站點 / 帳號 / 渠道結構，不引入 AxonHub Provider / GlobalModel 配額物件或分散式配額儲存。"
                 }
             },
             "note": "這個面板是融合能力的 UI 對齊索引。它不替代具體功能頁面，但用於保證「已接入後端能力就必須能被使用者看到、理解和排障」。"
@@ -934,8 +934,16 @@
                 "available": "餘額可用",
                 "zeroBalance": "餘額為 0",
                 "accountDisabled": "帳號停用",
+                "quotaError": "額度錯誤",
+                "authError": "認證阻斷",
+                "rateLimited": "限流中",
+                "noKey": "無 Key",
+                "siteDisabled": "站點停用",
+                "accountMissing": "帳號缺失",
+                "modelDisabled": "模型停用",
                 "unknown": "未知",
-                "balance": "餘額 / 已用"
+                "balance": "餘額 / 已用",
+                "reason": "原因"
             },
             "noSamples": "暫無樣本",
             "sampleMeta": "{success}/{total} · {rate}",
@@ -1401,6 +1409,14 @@
                 "available": "配額可用",
                 "zeroBalance": "餘額不足",
                 "accountDisabled": "帳號停用",
+                "quotaError": "額度錯誤",
+                "authError": "認證阻斷",
+                "rateLimited": "限流中",
+                "noKey": "無 Key",
+                "siteDisabled": "站點停用",
+                "accountMissing": "帳號缺失",
+                "modelDisabled": "模型停用",
+                "reason": "原因",
                 "unknown": "配額未知"
             },
             "status": {

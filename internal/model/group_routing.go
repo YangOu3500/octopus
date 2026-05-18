@@ -36,6 +36,7 @@ type GroupRoutingCandidate struct {
 	CooldownRemainingMS int64    `json:"cooldown_remaining_ms"`
 	CooldownReason      string   `json:"cooldown_reason,omitempty"`
 	QuotaStatus         string   `json:"quota_status"`
+	QuotaReason         string   `json:"quota_reason,omitempty"`
 	QuotaBalance        float64  `json:"quota_balance,omitempty"`
 	QuotaUsed           float64  `json:"quota_used,omitempty"`
 	EffectiveScore      float64  `json:"effective_score"`

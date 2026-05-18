@@ -221,6 +221,41 @@ func TestBuildRoutingPreviewShowsProjectedAccountQuotaStatus(t *testing.T) {
 	}
 }
 
+func TestBuildRoutingPreviewShowsKeyCapacityStatus(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+
+	channel := &model.Channel{
+		Name:     "routing-key-capacity",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://key-capacity.example.test/v1"}},
+		Model:    "preview-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-key-capacity", StatusCode: 402}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	group := &model.Group{Name: "preview-key-capacity-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "preview-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd failed: %v", err)
+	}
+
+	preview, err := BuildRoutingPreview(ctx, group.ID)
+	if err != nil {
+		t.Fatalf("BuildRoutingPreview failed: %v", err)
+	}
+	if len(preview.Candidates) != 1 {
+		t.Fatalf("candidate count = %d, want 1", len(preview.Candidates))
+	}
+	candidate := preview.Candidates[0]
+	if candidate.QuotaStatus != "quota_error" || candidate.QuotaReason != "http_402" {
+		t.Fatalf("unexpected quota status: %+v", candidate)
+	}
+}
+
 func TestBuildRoutingPreviewMarksRuntimeGuardedCandidates(t *testing.T) {
 	ctx := setupGroupHealthTestDB(t)
 

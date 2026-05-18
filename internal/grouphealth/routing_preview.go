@@ -86,10 +86,13 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 
 	usedKey, skippedDecision, skippedRemaining, skippedReason, skippedCount := selectPreviewKey(channel, item.ModelName, candidate.SiteID, candidate.SiteAccountID)
 	candidate.ChannelKeyID = usedKey.ID
+	applyCandidateKeyCapacity(&candidate, usedKey)
+	applyCandidateCooldownCapacity(&candidate, skippedReason)
 	if skippedCount > 0 {
 		candidate.Notes = append(candidate.Notes, "skipped cooling keys: "+strconv.Itoa(skippedCount))
 	}
 	if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
+		applyCandidateQuotaStatus(&candidate, quotaStatusNoKey, "no_available_key")
 		if candidate.Decision != "ready" {
 			candidate.Notes = append(candidate.Notes, "no available key")
 		} else if skippedDecision != "" {
@@ -112,6 +115,7 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 		}
 		candidate.CooldownReason = reason
 		if cooling {
+			applyCandidateCooldownCapacity(&candidate, reason)
 			if candidate.Decision == "ready" {
 				candidate.Decision = "health_cooldown"
 			}
@@ -143,6 +147,7 @@ func applyCandidateRuntimeState(ctx context.Context, candidate *model.GroupRouti
 	candidate.SiteAccountID = state.SiteAccountID
 	candidate.SiteAccountName = state.SiteAccountName
 	candidate.QuotaStatus = state.QuotaStatus
+	candidate.QuotaReason = state.QuotaReason
 	candidate.QuotaBalance = state.QuotaBalance
 	candidate.QuotaUsed = state.QuotaUsed
 	if state.SkipReason != "" {

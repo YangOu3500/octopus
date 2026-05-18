@@ -275,7 +275,7 @@
                 },
                 "quota": {
                     "label": "Quota Status",
-                    "entry": "Group routing preview"
+                    "entry": "Channel health / routing preview"
                 }
             }
         }
@@ -603,9 +603,9 @@
                 },
                 "quotaStatus": {
                     "name": "Quota / Capacity Status Resolver",
-                    "desc": "Explains candidate capacity from balance, quota, and error types, and prepares for later filtering or down-ranking.",
-                    "ui": "Group routing preview, channel-model health, and real relay now expose or enforce account disabled, known zero balance, and disabled site-model decisions.",
-                    "gap": "Managed-channel runtime filtering is implemented. More complex provider quota inference can still be added later."
+                    "desc": "Explains candidate capacity from managed account balance, disabled site-models, key status codes, and health cooldown reasons.",
+                    "ui": "Group routing preview and Channel Model Health show quota/auth/rate-limit/no-key states with reasons; real relay already enforces managed account disabled, known zero balance, and disabled site-model skips.",
+                    "gap": "Keeps the Octopus site/account/channel structure and does not import AxonHub Provider / GlobalModel quota objects or a distributed quota store."
                 }
             },
             "note": "This panel is the UI parity index for Fusion capabilities. It does not replace the feature pages; it ensures fused backend capabilities remain visible, understandable, and diagnosable."
@@ -934,8 +934,16 @@
                 "available": "Balance Available",
                 "zeroBalance": "Zero Balance",
                 "accountDisabled": "Account Disabled",
+                "quotaError": "Quota Error",
+                "authError": "Auth Blocked",
+                "rateLimited": "Rate Limited",
+                "noKey": "No Key",
+                "siteDisabled": "Site Disabled",
+                "accountMissing": "Account Missing",
+                "modelDisabled": "Model Disabled",
                 "unknown": "Unknown",
-                "balance": "Balance / Used"
+                "balance": "Balance / Used",
+                "reason": "Reason"
             },
             "noSamples": "No samples",
             "sampleMeta": "{success}/{total} / {rate}",
@@ -1401,6 +1409,14 @@
                 "available": "Quota available",
                 "zeroBalance": "Zero balance",
                 "accountDisabled": "Account disabled",
+                "quotaError": "Quota error",
+                "authError": "Auth blocked",
+                "rateLimited": "Rate limited",
+                "noKey": "No key",
+                "siteDisabled": "Site disabled",
+                "accountMissing": "Account missing",
+                "modelDisabled": "Model disabled",
+                "reason": "Reason",
                 "unknown": "Quota unknown"
             },
             "status": {

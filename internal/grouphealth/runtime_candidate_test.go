@@ -101,7 +101,7 @@ func TestEvaluateRuntimeCandidateSkipsManagedRuntimeGuards(t *testing.T) {
 				}
 			},
 			wantReason: "site_model_disabled",
-			wantQuota:  "unknown",
+			wantQuota:  "model_disabled",
 		},
 	}
 
@@ -137,6 +137,9 @@ func TestEvaluateRuntimeCandidateSkipsManagedRuntimeGuards(t *testing.T) {
 			}
 			if state.SkipReason != tt.wantReason || state.QuotaStatus != tt.wantQuota {
 				t.Fatalf("unexpected runtime state: got %+v, want reason=%s quota=%s", state, tt.wantReason, tt.wantQuota)
+			}
+			if state.QuotaReason == "" {
+				t.Fatalf("expected quota reason for guarded runtime state: %+v", state)
 			}
 		})
 	}
