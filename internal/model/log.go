@@ -212,3 +212,37 @@ type RelayLogListResult struct {
 	PageSize int        `json:"page_size"`
 	HasMore  bool       `json:"has_more"`
 }
+
+type RequestTraceListQuery struct {
+	Page          int
+	PageSize      int
+	StartTime     *int
+	EndTime       *int
+	TimeRange     string
+	ChannelIDs    []int
+	Model         string
+	TraceID       string
+	APIKeyID      *int
+	Status        string
+	HTTPStatus    string
+	FailureReason string
+	Protocol      string
+	Source        string
+	Stream        *bool
+	Failover      *bool
+	SortBy        string
+	SortOrder     string
+}
+
+type RequestTraceListResult struct {
+	Items    []RequestTrace `json:"items"`
+	Total    int64          `json:"total"`
+	Page     int            `json:"page"`
+	PageSize int            `json:"page_size"`
+	HasMore  bool           `json:"has_more"`
+}
+
+type RequestTraceDetail struct {
+	Trace    RequestTrace     `json:"trace"`
+	Attempts []RequestAttempt `json:"attempts"`
+}

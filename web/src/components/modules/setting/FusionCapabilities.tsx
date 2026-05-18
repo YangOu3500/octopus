@@ -21,7 +21,7 @@ const capabilities: Capability[] = [
     { id: 'responseValidator', status: 'done', source: 'ccLoad', nav: 'log', icon: CheckCircle2 },
     { id: 'failoverRetry', status: 'done', source: 'ccLoad', nav: 'group', icon: GitBranch },
     { id: 'streamGate', status: 'done', source: 'ccLoad', nav: 'setting', icon: ListChecks },
-    { id: 'traceAttempts', status: 'done', source: 'both', nav: 'log', icon: Eye },
+    { id: 'traceAttempts', status: 'done', source: 'both', nav: 'traces', icon: Eye },
     { id: 'healthCooldown', status: 'partial', source: 'both', nav: 'setting', icon: Settings2 },
     { id: 'selectionTracker', status: 'done', source: 'AxonHub', nav: 'group', icon: Activity },
     { id: 'slowProbe', status: 'partial', source: 'ccLoad', nav: 'setting', icon: CircleDashed },

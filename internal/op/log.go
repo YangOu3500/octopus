@@ -653,6 +653,224 @@ func RequestAttemptsByTraceID(ctx context.Context, traceID string) ([]model.Requ
 	return attempts, nil
 }
 
+func RequestTraceDetailByTraceID(ctx context.Context, traceID string) (model.RequestTraceDetail, error) {
+	trace, err := RequestTraceGetByTraceID(ctx, traceID)
+	if err != nil {
+		return model.RequestTraceDetail{}, err
+	}
+	attempts, err := RequestAttemptsByTraceID(ctx, trace.TraceID)
+	if err != nil {
+		return model.RequestTraceDetail{}, err
+	}
+	return model.RequestTraceDetail{
+		Trace:    trace,
+		Attempts: attempts,
+	}, nil
+}
+
+func RequestTraceList(ctx context.Context, query model.RequestTraceListQuery) (model.RequestTraceListResult, error) {
+	query = normalizeRequestTraceListQuery(query)
+	dbQuery := applyRequestTraceFilters(db.GetDB().WithContext(ctx).Model(&model.RequestTrace{}), query)
+
+	var total int64
+	if err := dbQuery.Count(&total).Error; err != nil {
+		return model.RequestTraceListResult{}, err
+	}
+
+	var items []model.RequestTrace
+	offset := (query.Page - 1) * query.PageSize
+	if err := dbQuery.
+		Order(requestTraceOrderClause(query.SortBy, query.SortOrder)).
+		Offset(offset).
+		Limit(query.PageSize).
+		Find(&items).Error; err != nil {
+		return model.RequestTraceListResult{}, err
+	}
+
+	return model.RequestTraceListResult{
+		Items:    items,
+		Total:    total,
+		Page:     query.Page,
+		PageSize: query.PageSize,
+		HasMore:  int64(offset+len(items)) < total,
+	}, nil
+}
+
+func normalizeRequestTraceListQuery(query model.RequestTraceListQuery) model.RequestTraceListQuery {
+	if query.Page < 1 {
+		query.Page = 1
+	}
+	if query.PageSize < 1 || query.PageSize > 100 {
+		query.PageSize = 20
+	}
+	query.TimeRange = strings.ToLower(strings.TrimSpace(query.TimeRange))
+	query.Model = strings.TrimSpace(query.Model)
+	query.TraceID = strings.TrimSpace(query.TraceID)
+	query.Status = strings.ToLower(strings.TrimSpace(query.Status))
+	query.HTTPStatus = strings.ToLower(strings.TrimSpace(query.HTTPStatus))
+	query.FailureReason = strings.TrimSpace(query.FailureReason)
+	query.Protocol = strings.ToLower(strings.TrimSpace(query.Protocol))
+	query.Source = strings.ToLower(strings.TrimSpace(query.Source))
+	query.SortBy = strings.ToLower(strings.TrimSpace(query.SortBy))
+	query.SortOrder = strings.ToLower(strings.TrimSpace(query.SortOrder))
+	if query.SortOrder != "asc" {
+		query.SortOrder = "desc"
+	}
+	switch query.SortBy {
+	case "time", "created_at", "duration", "cost", "tokens", "attempts":
+	default:
+		query.SortBy = "time"
+	}
+	if query.StartTime == nil && query.EndTime == nil {
+		applyRequestTraceTimeRange(&query)
+	}
+	return query
+}
+
+func applyRequestTraceTimeRange(query *model.RequestTraceListQuery) {
+	var seconds int
+	switch query.TimeRange {
+	case "1h":
+		seconds = 3600
+	case "24h":
+		seconds = 24 * 3600
+	case "7d":
+		seconds = 7 * 24 * 3600
+	case "30d":
+		seconds = 30 * 24 * 3600
+	default:
+		return
+	}
+	end := int(time.Now().Unix())
+	start := end - seconds
+	query.StartTime = &start
+	query.EndTime = &end
+}
+
+func applyRequestTraceFilters(query *gorm.DB, filter model.RequestTraceListQuery) *gorm.DB {
+	if filter.StartTime != nil {
+		query = query.Where("created_at >= ?", *filter.StartTime)
+	}
+	if filter.EndTime != nil {
+		query = query.Where("created_at <= ?", *filter.EndTime)
+	}
+	if filter.TraceID != "" {
+		query = applyRequestTraceIDFilter(query, filter.TraceID)
+	}
+	if filter.Model != "" {
+		like := requestTraceLike(filter.Model)
+		attempts := db.GetDB().Model(&model.RequestAttempt{}).
+			Select("relay_log_id").
+			Where("model_name LIKE ? OR upstream_model LIKE ?", like, like)
+		query = query.Where(
+			"client_model LIKE ? OR final_upstream_model LIKE ? OR trace_id LIKE ? OR relay_log_id IN (?)",
+			like,
+			like,
+			like,
+			attempts,
+		)
+	}
+	if filter.APIKeyID != nil {
+		query = query.Where("client_api_key_id = ?", *filter.APIKeyID)
+	}
+	if filter.Status != "" {
+		query = query.Where("final_status = ?", filter.Status)
+	}
+	if filter.Stream != nil {
+		query = query.Where("request_stream = ?", *filter.Stream)
+	}
+	if filter.Source != "" {
+		query = query.Where("request_source = ?", filter.Source)
+	}
+	if len(filter.ChannelIDs) > 0 {
+		attempts := db.GetDB().Model(&model.RequestAttempt{}).
+			Select("relay_log_id").
+			Where("channel_id IN ?", filter.ChannelIDs)
+		query = query.Where("final_channel_id IN ? OR relay_log_id IN (?)", filter.ChannelIDs, attempts)
+	}
+	if filter.HTTPStatus != "" {
+		query = applyRequestTraceHTTPStatusFilter(query, filter.HTTPStatus)
+	}
+	if filter.FailureReason != "" {
+		like := requestTraceLike(filter.FailureReason)
+		attempts := db.GetDB().Model(&model.RequestAttempt{}).
+			Select("relay_log_id").
+			Where("failure_reason LIKE ? OR error_summary LIKE ?", like, like)
+		query = query.Where("relay_log_id IN (?)", attempts)
+	}
+	if filter.Protocol != "" {
+		like := requestTraceLike(filter.Protocol)
+		attempts := db.GetDB().Model(&model.RequestAttempt{}).
+			Select("relay_log_id").
+			Where("request_protocol LIKE ? OR upstream_protocol LIKE ? OR response_protocol LIKE ?", like, like, like)
+		query = query.Where("relay_log_id IN (?)", attempts)
+	}
+	if filter.Failover != nil {
+		if *filter.Failover {
+			query = query.Where("attempts_count > ?", 1)
+		} else {
+			query = query.Where("attempts_count <= ?", 1)
+		}
+	}
+	return query
+}
+
+func applyRequestTraceIDFilter(query *gorm.DB, traceID string) *gorm.DB {
+	like := requestTraceLike(traceID)
+	if id, err := strconv.ParseInt(traceID, 10, 64); err == nil {
+		return query.Where("trace_id LIKE ? OR relay_log_id = ? OR id = ?", like, id, id)
+	}
+	return query.Where("trace_id LIKE ?", like)
+}
+
+func applyRequestTraceHTTPStatusFilter(query *gorm.DB, wanted string) *gorm.DB {
+	attempts := db.GetDB().Model(&model.RequestAttempt{}).Select("relay_log_id")
+	if strings.HasSuffix(wanted, "xx") && len(wanted) == 3 {
+		class, err := strconv.Atoi(wanted[:1])
+		if err == nil {
+			return query.Where("relay_log_id IN (?)", attempts.Where("http_status >= ? AND http_status <= ?", class*100, class*100+99))
+		}
+	}
+	if strings.Contains(wanted, "-") {
+		parts := strings.SplitN(wanted, "-", 2)
+		start, startErr := strconv.Atoi(strings.TrimSpace(parts[0]))
+		end, endErr := strconv.Atoi(strings.TrimSpace(parts[1]))
+		if startErr == nil && endErr == nil {
+			return query.Where("relay_log_id IN (?)", attempts.Where("http_status >= ? AND http_status <= ?", start, end))
+		}
+	}
+	code, err := strconv.Atoi(wanted)
+	if err != nil {
+		return query.Where("1 = 0")
+	}
+	return query.Where("relay_log_id IN (?)", attempts.Where("http_status = ?", code))
+}
+
+func requestTraceLike(value string) string {
+	return "%" + strings.TrimSpace(value) + "%"
+}
+
+func requestTraceOrderClause(sortBy, sortOrder string) string {
+	direction := "DESC"
+	if sortOrder == "asc" {
+		direction = "ASC"
+	}
+	switch sortBy {
+	case "duration":
+		return "total_latency_ms " + direction + ", id " + direction
+	case "cost":
+		return "total_attempt_cost " + direction + ", estimated_cost " + direction + ", id " + direction
+	case "tokens":
+		return "(input_tokens + output_tokens + cache_tokens) " + direction + ", id " + direction
+	case "attempts":
+		return "attempts_count " + direction + ", id " + direction
+	case "created_at", "time":
+		fallthrough
+	default:
+		return "created_at " + direction + ", id " + direction
+	}
+}
+
 // logMatchesChannels 检查日志是否属于指定的渠道集合
 // 检查顶层 ChannelId 和 Attempts 中的 ChannelID
 func normalizeRelayLogListQuery(query model.RelayLogListQuery) model.RelayLogListQuery {

@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type NavItem = 'home' | 'site' | 'channel' | 'group' | 'modelTest' | 'model' | 'log' | 'setting'
+export type NavItem = 'home' | 'site' | 'channel' | 'group' | 'modelTest' | 'model' | 'traces' | 'log' | 'setting'
 
-const NAV_ORDER: NavItem[] = ['home', 'site', 'channel', 'group', 'modelTest', 'model', 'log', 'setting']
+const NAV_ORDER: NavItem[] = ['home', 'site', 'channel', 'group', 'modelTest', 'model', 'traces', 'log', 'setting']
 
 export type LogNavigationTarget = {
     logId?: number

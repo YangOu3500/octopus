@@ -161,6 +161,21 @@ export function AppContainer() {
                     );
                     break;
                 }
+                case 'traces': {
+                    prefetches.push(
+                        queryClient.prefetchQuery({
+                            queryKey: ['request-traces', { page: 1, page_size: 25, time_range: '24h', sort_by: 'time', sort_order: 'desc' }],
+                            queryFn: async () => apiClient.get('/api/v1/log/traces', {
+                                page: 1,
+                                page_size: 25,
+                                time_range: '24h',
+                                sort_by: 'time',
+                                sort_order: 'desc',
+                            }),
+                        })
+                    );
+                    break;
+                }
                 case 'setting': {
                     prefetches.push(
                         queryClient.prefetchQuery({

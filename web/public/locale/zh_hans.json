@@ -51,6 +51,7 @@
         "key": "密钥",
         "modelTest": "模型测试",
         "model": "价格",
+        "traces": "链路",
         "log": "日志",
         "setting": "设置"
     },
@@ -493,6 +494,7 @@
                 "group": "模型分组",
                 "modelTest": "模型测试",
                 "model": "模型",
+                "traces": "链路",
                 "log": "日志",
                 "setting": "设置"
             },
@@ -518,8 +520,8 @@
                 "traceAttempts": {
                     "name": "Trace / Attempt 日志",
                     "desc": "一次客户端请求下记录多个上游尝试，展示渠道、上游模型、状态、错误、TTFB、耗时、usage 和成本。",
-                    "ui": "日志列表、日志详情、模型测试跳转日志详情、首页观测台均可查看。",
-                    "gap": "当前复用 RelayLog / ChannelAttempt JSON，尚未拆独立 request_traces / request_attempts 表。"
+                    "ui": "独立链路工作台、日志详情、模型测试跳转日志详情、首页观测台均可查看。",
+                    "gap": "已落到独立 request_traces / request_attempts 表；后续只剩更复杂的审计聚合与导出。"
                 },
                 "healthCooldown": {
                     "name": "健康分 / 冷却 / 智能调度",
@@ -1010,6 +1012,105 @@
             "cacheRead": "缓存读取",
             "cacheWrite": "缓存写入",
             "save": "保存"
+        }
+    },
+    "traces": {
+        "title": "独立 Requests / Traces 工作台",
+        "loadFailed": "链路加载失败",
+        "autoRefresh": "实时刷新",
+        "refresh": "刷新",
+        "reset": "重置筛选",
+        "empty": "当前筛选条件下没有 request trace",
+        "summary": {
+            "total": "Trace 总数",
+            "page": "当前页 {count} 条",
+            "success": "当前页成功",
+            "failed": "失败 {count} 条",
+            "failover": "故障转移",
+            "failoverSub": "attempts > 1",
+            "latency": "平均延迟",
+            "latencySub": "当前页样本"
+        },
+        "filters": {
+            "model": "模型 / 上游模型",
+            "trace": "Trace ID / Request ID",
+            "http": "HTTP，如 200 / 429 / 5xx",
+            "failure": "失败原因"
+        },
+        "interval": {
+            "5s": "5 秒",
+            "10s": "10 秒",
+            "30s": "30 秒"
+        },
+        "range": {
+            "1h": "近 1 小时",
+            "24h": "近 24 小时",
+            "7d": "近 7 天",
+            "30d": "近 30 天",
+            "all": "全部时间"
+        },
+        "status": {
+            "all": "全部状态",
+            "success": "成功",
+            "failed": "失败",
+            "canceled": "已取消"
+        },
+        "source": {
+            "all": "全部来源"
+        },
+        "stream": {
+            "all": "全部模式",
+            "stream": "流式",
+            "nonStream": "非流式"
+        },
+        "failover": {
+            "all": "全部链路",
+            "yes": "已故障转移",
+            "no": "未故障转移"
+        },
+        "protocol": {
+            "all": "全部协议"
+        },
+        "pager": {
+            "prev": "上一页",
+            "next": "下一页",
+            "page": "{page} / {total}"
+        },
+        "table": {
+            "request": "请求 / Trace / 来源",
+            "status": "状态",
+            "route": "最终路由",
+            "attempts": "尝试",
+            "latency": "延迟",
+            "tokens": "Token 入 / 出 / 缓存",
+            "cost": "链路成本",
+            "time": "时间"
+        },
+        "ids": {
+            "channelSite": "渠道 #{channel} / 站点 #{site}"
+        },
+        "detail": {
+            "title": "Trace 详情",
+            "empty": "选择一条 Trace 查看上游 attempt 时间线",
+            "loadFailed": "Trace 详情加载失败",
+            "openLog": "打开日志详情",
+            "clientModel": "客户端模型",
+            "finalStatus": "最终状态",
+            "latency": "总延迟",
+            "cost": "成本",
+            "attemptTimeline": "Attempt 时间线",
+            "noAttempts": "暂无 attempt 明细",
+            "channelFallback": "渠道 #{id}",
+            "http": "HTTP",
+            "key": "Key",
+            "siteAccount": "站点 / 账号",
+            "siteAccountValue": "站点 #{site} / 账号 #{account}",
+            "retryable": "可重试",
+            "tokens": "Token",
+            "protocol": "协议",
+            "baseUrl": "Base URL",
+            "yes": "是",
+            "no": "否"
         }
     },
     "log": {

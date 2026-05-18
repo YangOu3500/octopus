@@ -171,6 +171,7 @@ export function useClearLogs() {
         onSuccess: () => {
             logger.log('relay logs cleared');
             queryClient.invalidateQueries({ queryKey: ['logs'] });
+            queryClient.invalidateQueries({ queryKey: ['request-traces'] });
         },
         onError: (error) => {
             logger.error('failed to clear relay logs:', error);

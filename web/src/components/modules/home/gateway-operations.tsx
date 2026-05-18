@@ -106,14 +106,14 @@ export function GatewayOperationsPanel() {
     const operationItems = useMemo<OperationItem[]>(() => [
         {
             id: 'requests',
-            nav: 'log',
+            nav: 'traces',
             icon: ListChecks,
             value: compactCount(data?.total_requests),
             sub: t('items.requests.sub', { failover: data?.failover_requests ?? 0 }),
         },
         {
             id: 'traces',
-            nav: 'log',
+            nav: 'traces',
             icon: Radar,
             value: compactCount(data?.total_attempts),
             sub: t('items.traces.sub', { max: data?.max_attempts ?? 0 }),
@@ -152,7 +152,7 @@ export function GatewayOperationsPanel() {
         { id: 'validator', nav: 'log', icon: ShieldCheck, status: 'done' },
         { id: 'failover', nav: 'log', icon: GitBranch, status: 'done' },
         { id: 'streamGate', nav: 'setting', icon: ListChecks, status: 'done' },
-        { id: 'trace', nav: 'log', icon: Radar, status: 'done' },
+        { id: 'trace', nav: 'traces', icon: Radar, status: 'done' },
         { id: 'liveDebug', nav: 'log', icon: Activity, status: 'partial' },
         { id: 'health', nav: 'setting', icon: Activity, status: 'partial' },
         { id: 'selection', nav: 'group', icon: BarChart3, status: 'done' },

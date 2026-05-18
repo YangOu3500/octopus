@@ -51,6 +51,7 @@
         "key": "金鑰",
         "modelTest": "模型測試",
         "model": "價格",
+        "traces": "鏈路",
         "log": "日誌",
         "setting": "設定"
     },
@@ -493,6 +494,7 @@
                 "group": "模型分組",
                 "modelTest": "模型測試",
                 "model": "模型",
+                "traces": "鏈路",
                 "log": "日誌",
                 "setting": "設定"
             },
@@ -518,8 +520,8 @@
                 "traceAttempts": {
                     "name": "Trace / Attempt 日誌",
                     "desc": "一次客戶端請求下記錄多個上游嘗試，展示渠道、上游模型、狀態、錯誤、TTFB、耗時、usage 和成本。",
-                    "ui": "日誌列表、日誌詳情、模型測試跳轉日誌詳情、首頁觀測台均可查看。",
-                    "gap": "目前復用 RelayLog / ChannelAttempt JSON，尚未拆獨立 request_traces / request_attempts 表。"
+                    "ui": "獨立鏈路工作台、日誌詳情、模型測試跳轉日誌詳情、首頁觀測台均可查看。",
+                    "gap": "已落到獨立 request_traces / request_attempts 表；後續只剩更複雜的審計聚合與匯出。"
                 },
                 "healthCooldown": {
                     "name": "健康分 / 冷卻 / 智慧調度",
@@ -1010,6 +1012,105 @@
             "cacheRead": "快取讀取",
             "cacheWrite": "快取寫入",
             "save": "儲存"
+        }
+    },
+    "traces": {
+        "title": "獨立 Requests / Traces 工作台",
+        "loadFailed": "鏈路載入失敗",
+        "autoRefresh": "即時刷新",
+        "refresh": "刷新",
+        "reset": "重置篩選",
+        "empty": "目前篩選條件下沒有 request trace",
+        "summary": {
+            "total": "Trace 總數",
+            "page": "目前頁 {count} 條",
+            "success": "目前頁成功",
+            "failed": "失敗 {count} 條",
+            "failover": "故障轉移",
+            "failoverSub": "attempts > 1",
+            "latency": "平均延遲",
+            "latencySub": "目前頁樣本"
+        },
+        "filters": {
+            "model": "模型 / 上游模型",
+            "trace": "Trace ID / Request ID",
+            "http": "HTTP，如 200 / 429 / 5xx",
+            "failure": "失敗原因"
+        },
+        "interval": {
+            "5s": "5 秒",
+            "10s": "10 秒",
+            "30s": "30 秒"
+        },
+        "range": {
+            "1h": "近 1 小時",
+            "24h": "近 24 小時",
+            "7d": "近 7 天",
+            "30d": "近 30 天",
+            "all": "全部時間"
+        },
+        "status": {
+            "all": "全部狀態",
+            "success": "成功",
+            "failed": "失敗",
+            "canceled": "已取消"
+        },
+        "source": {
+            "all": "全部來源"
+        },
+        "stream": {
+            "all": "全部模式",
+            "stream": "流式",
+            "nonStream": "非流式"
+        },
+        "failover": {
+            "all": "全部鏈路",
+            "yes": "已故障轉移",
+            "no": "未故障轉移"
+        },
+        "protocol": {
+            "all": "全部協議"
+        },
+        "pager": {
+            "prev": "上一頁",
+            "next": "下一頁",
+            "page": "{page} / {total}"
+        },
+        "table": {
+            "request": "請求 / Trace / 來源",
+            "status": "狀態",
+            "route": "最終路由",
+            "attempts": "嘗試",
+            "latency": "延遲",
+            "tokens": "Token 入 / 出 / 快取",
+            "cost": "鏈路成本",
+            "time": "時間"
+        },
+        "ids": {
+            "channelSite": "渠道 #{channel} / 站點 #{site}"
+        },
+        "detail": {
+            "title": "Trace 詳情",
+            "empty": "選擇一條 Trace 查看上游 attempt 時間線",
+            "loadFailed": "Trace 詳情載入失敗",
+            "openLog": "打開日誌詳情",
+            "clientModel": "客戶端模型",
+            "finalStatus": "最終狀態",
+            "latency": "總延遲",
+            "cost": "成本",
+            "attemptTimeline": "Attempt 時間線",
+            "noAttempts": "暫無 attempt 明細",
+            "channelFallback": "渠道 #{id}",
+            "http": "HTTP",
+            "key": "Key",
+            "siteAccount": "站點 / 帳號",
+            "siteAccountValue": "站點 #{site} / 帳號 #{account}",
+            "retryable": "可重試",
+            "tokens": "Token",
+            "protocol": "協議",
+            "baseUrl": "Base URL",
+            "yes": "是",
+            "no": "否"
         }
     },
     "log": {

@@ -32,6 +32,14 @@ func init() {
 				Handle(getStreamToken),
 		).
 		AddRoute(
+			router.NewRoute("/traces", http.MethodGet).
+				Handle(listRequestTraces),
+		).
+		AddRoute(
+			router.NewRoute("/traces/:trace_id", http.MethodGet).
+				Handle(getRequestTraceDetail),
+		).
+		AddRoute(
 			router.NewRoute("/detail/:id", http.MethodGet).
 				Handle(getLogDetail),
 		).
@@ -118,6 +126,82 @@ func listLog(c *gin.Context) {
 	}
 
 	resp.Success(c, logs)
+}
+
+func listRequestTraces(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	startTimeStr := c.Query("start_time")
+	endTimeStr := c.Query("end_time")
+
+	var startTime, endTime *int
+	if startTimeStr != "" && endTimeStr != "" {
+		st, err := strconv.Atoi(startTimeStr)
+		if err != nil {
+			resp.Error(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		et, err := strconv.Atoi(endTimeStr)
+		if err != nil {
+			resp.Error(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		startTime = &st
+		endTime = &et
+	}
+
+	query := model.RequestTraceListQuery{
+		Page:          page,
+		PageSize:      pageSize,
+		StartTime:     startTime,
+		EndTime:       endTime,
+		TimeRange:     c.Query("time_range"),
+		ChannelIDs:    parseLogIntList(c.Query("channel_ids")),
+		Model:         c.Query("model"),
+		TraceID:       c.Query("trace_id"),
+		Status:        c.Query("status"),
+		HTTPStatus:    c.Query("http_status"),
+		FailureReason: c.Query("failure_reason"),
+		Protocol:      c.Query("protocol"),
+		Source:        c.Query("source"),
+		SortBy:        c.Query("sort_by"),
+		SortOrder:     c.Query("sort_order"),
+	}
+	if apiKeyID := parseOptionalLogInt(c.Query("api_key_id")); apiKeyID != nil {
+		query.APIKeyID = apiKeyID
+	}
+	if stream := parseOptionalLogBool(c.Query("stream")); stream != nil {
+		query.Stream = stream
+	}
+	if failover := parseOptionalLogBool(c.Query("failover")); failover != nil {
+		query.Failover = failover
+	}
+
+	traces, err := op.RequestTraceList(c.Request.Context(), query)
+	if err != nil {
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, traces)
+}
+
+func getRequestTraceDetail(c *gin.Context) {
+	traceID := strings.TrimSpace(c.Param("trace_id"))
+	if traceID == "" {
+		resp.Error(c, http.StatusBadRequest, "invalid trace id")
+		return
+	}
+
+	detail, err := op.RequestTraceDetailByTraceID(c.Request.Context(), traceID)
+	if err != nil {
+		if op.RelayLogIsNotFound(err) {
+			resp.Error(c, http.StatusNotFound, "trace not found")
+			return
+		}
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, detail)
 }
 
 func getLogDetail(c *gin.Context) {

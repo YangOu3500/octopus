@@ -51,6 +51,7 @@
         "key": "Key",
         "modelTest": "Model Test",
         "model": "Price",
+        "traces": "Traces",
         "log": "Log",
         "setting": "Setting"
     },
@@ -493,6 +494,7 @@
                 "group": "Groups",
                 "modelTest": "Model Test",
                 "model": "Models",
+                "traces": "Traces",
                 "log": "Logs",
                 "setting": "Settings"
             },
@@ -518,8 +520,8 @@
                 "traceAttempts": {
                     "name": "Trace / Attempt Logs",
                     "desc": "A client request can contain multiple upstream attempts with channel, model, status, error, TTFB, duration, usage, and cost.",
-                    "ui": "Available from log list, log detail, model-test log jump, and the home observability dashboard.",
-                    "gap": "Currently uses RelayLog / ChannelAttempt JSON. Separate request_traces / request_attempts tables are not implemented yet."
+                    "ui": "Available from the standalone traces workbench, log detail, model-test log jump, and the home observability dashboard.",
+                    "gap": "Backed by separate request_traces / request_attempts tables; remaining work is richer audit aggregation and export."
                 },
                 "healthCooldown": {
                     "name": "Health Score / Cooldown / Smart Routing",
@@ -1010,6 +1012,105 @@
             "cacheRead": "Cache Read",
             "cacheWrite": "Cache Write",
             "save": "Save"
+        }
+    },
+    "traces": {
+        "title": "Standalone Requests / Traces Workbench",
+        "loadFailed": "Failed to load traces",
+        "autoRefresh": "Live refresh",
+        "refresh": "Refresh",
+        "reset": "Reset filters",
+        "empty": "No request traces match the current filters",
+        "summary": {
+            "total": "Total traces",
+            "page": "{count} on this page",
+            "success": "Page successes",
+            "failed": "{count} failed",
+            "failover": "Failover",
+            "failoverSub": "attempts > 1",
+            "latency": "Average latency",
+            "latencySub": "Current page sample"
+        },
+        "filters": {
+            "model": "Model / upstream model",
+            "trace": "Trace ID / Request ID",
+            "http": "HTTP, e.g. 200 / 429 / 5xx",
+            "failure": "Failure reason"
+        },
+        "interval": {
+            "5s": "5 sec",
+            "10s": "10 sec",
+            "30s": "30 sec"
+        },
+        "range": {
+            "1h": "Last 1 hour",
+            "24h": "Last 24 hours",
+            "7d": "Last 7 days",
+            "30d": "Last 30 days",
+            "all": "All time"
+        },
+        "status": {
+            "all": "All statuses",
+            "success": "Success",
+            "failed": "Failed",
+            "canceled": "Canceled"
+        },
+        "source": {
+            "all": "All sources"
+        },
+        "stream": {
+            "all": "All modes",
+            "stream": "Stream",
+            "nonStream": "Non-stream"
+        },
+        "failover": {
+            "all": "All chains",
+            "yes": "Failover",
+            "no": "No failover"
+        },
+        "protocol": {
+            "all": "All protocols"
+        },
+        "pager": {
+            "prev": "Previous",
+            "next": "Next",
+            "page": "{page} / {total}"
+        },
+        "table": {
+            "request": "Request / Trace / Source",
+            "status": "Status",
+            "route": "Final route",
+            "attempts": "Attempts",
+            "latency": "Latency",
+            "tokens": "Tokens in / out / cache",
+            "cost": "Chain cost",
+            "time": "Time"
+        },
+        "ids": {
+            "channelSite": "Channel #{channel} / Site #{site}"
+        },
+        "detail": {
+            "title": "Trace Detail",
+            "empty": "Select a trace to inspect the upstream attempt timeline",
+            "loadFailed": "Failed to load trace detail",
+            "openLog": "Open log detail",
+            "clientModel": "Client model",
+            "finalStatus": "Final status",
+            "latency": "Total latency",
+            "cost": "Cost",
+            "attemptTimeline": "Attempt timeline",
+            "noAttempts": "No attempt details",
+            "channelFallback": "Channel #{id}",
+            "http": "HTTP",
+            "key": "Key",
+            "siteAccount": "Site / Account",
+            "siteAccountValue": "Site #{site} / Account #{account}",
+            "retryable": "Retryable",
+            "tokens": "Tokens",
+            "protocol": "Protocol",
+            "baseUrl": "Base URL",
+            "yes": "Yes",
+            "no": "No"
         }
     },
     "log": {

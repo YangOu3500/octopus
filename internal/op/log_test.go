@@ -1,6 +1,7 @@
 package op
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -297,6 +298,151 @@ func TestRelayLogAddMirrorsRequestTraceTables(t *testing.T) {
 	}
 }
 
+func TestRequestTraceListAndDetailReadFromMirrorTables(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+	resetRelayLogCacheForTest(t)
+
+	entry := model.RelayLog{
+		Time:               800,
+		TraceID:            "trace-table-failover",
+		ThreadID:           "thread-table",
+		ClientAPIKeyID:     99,
+		GroupID:            12,
+		RequestModelName:   "gpt-4o",
+		ActualModelName:    "gpt-4o-final",
+		RequestSource:      "relay",
+		RequestStream:      true,
+		ClientIP:           "172.16.1.20",
+		ChannelId:          22,
+		ChannelName:        "final",
+		FinalStatus:        "success",
+		FinalChannelID:     22,
+		FinalSiteID:        5,
+		AttemptsCount:      2,
+		TotalLatencyMS:     1000,
+		InputTokens:        20,
+		OutputTokens:       10,
+		TotalAttemptCost:   0.003,
+		RequestContent:     `{"authorization":"Bearer secret-token","api_key":"sk-live-secret"}`,
+		ResponseContent:    `{"set-cookie":"session=secret-token","choices":[{"message":{"content":"ok"}}]}`,
+		FinalUpstreamModel: "gpt-4o-final",
+		Attempts: []model.ChannelAttempt{
+			{
+				AttemptIndex:    1,
+				ChannelID:       21,
+				ChannelKeyID:    210,
+				ChannelName:     "bad",
+				SiteID:          4,
+				AccountID:       40,
+				BaseURL:         "https://user:secret@example.test/v1?token=secret-token#frag",
+				ModelName:       "gpt-4o",
+				UpstreamModel:   "gpt-4o-bad",
+				RequestProtocol: "openai_chat",
+				Status:          model.AttemptFailed,
+				HTTPStatus:      502,
+				FailureReason:   "server_error",
+				Retryable:       true,
+				DurationMS:      300,
+				TTFBMS:          100,
+				TotalMS:         300,
+				ErrorSummary:    "Cookie: session=secret-token",
+			},
+			{
+				AttemptIndex:    2,
+				ChannelID:       22,
+				ChannelName:     "final",
+				SiteID:          5,
+				ModelName:       "gpt-4o",
+				UpstreamModel:   "gpt-4o-final",
+				RequestProtocol: "openai_chat",
+				Status:          model.AttemptSuccess,
+				HTTPStatus:      200,
+				DurationMS:      700,
+				TTFBMS:          120,
+				TotalMS:         700,
+				InputTokens:     20,
+				OutputTokens:    10,
+				EstimatedCost:   0.002,
+			},
+		},
+	}
+	saved, err := RelayLogAddWithResult(ctx, entry)
+	if err != nil {
+		t.Fatalf("RelayLogAddWithResult failed: %v", err)
+	}
+
+	if _, err := RelayLogAddWithResult(ctx, model.RelayLog{
+		Time:             700,
+		TraceID:          "trace-table-other",
+		ClientAPIKeyID:   100,
+		RequestModelName: "claude-3",
+		RequestSource:    "model_test",
+		FinalStatus:      "failed",
+		AttemptsCount:    1,
+		Attempts: []model.ChannelAttempt{{
+			AttemptIndex:    1,
+			ChannelID:       30,
+			ModelName:       "claude-3",
+			RequestProtocol: "anthropic",
+			Status:          model.AttemptFailed,
+			HTTPStatus:      400,
+			FailureReason:   "bad_request",
+		}},
+	}); err != nil {
+		t.Fatalf("RelayLogAddWithResult second entry failed: %v", err)
+	}
+
+	result, err := RequestTraceList(ctx, model.RequestTraceListQuery{
+		Page:          1,
+		PageSize:      10,
+		ChannelIDs:    []int{21},
+		Model:         "gpt-4o",
+		TraceID:       "failover",
+		APIKeyID:      intPtr(99),
+		Status:        "success",
+		HTTPStatus:    "5xx",
+		FailureReason: "server",
+		Protocol:      "openai",
+		Source:        "relay",
+		Stream:        boolPtr(true),
+		Failover:      boolPtr(true),
+		SortBy:        "time",
+		SortOrder:     "desc",
+	})
+	if err != nil {
+		t.Fatalf("RequestTraceList failed: %v", err)
+	}
+	if result.Total != 1 || len(result.Items) != 1 || result.Items[0].TraceID != saved.TraceID {
+		t.Fatalf("unexpected trace list result: %+v", result)
+	}
+	if result.Items[0].ClientModel != "gpt-4o" || result.Items[0].AttemptsCount != 2 || result.Items[0].TotalLatencyMS != 1000 {
+		t.Fatalf("unexpected trace summary: %+v", result.Items[0])
+	}
+
+	detail, err := RequestTraceDetailByTraceID(ctx, saved.TraceID)
+	if err != nil {
+		t.Fatalf("RequestTraceDetailByTraceID failed: %v", err)
+	}
+	if detail.Trace.TraceID != saved.TraceID || len(detail.Attempts) != 2 {
+		t.Fatalf("unexpected trace detail: %+v", detail)
+	}
+	if detail.Attempts[0].BaseURL != "https://example.test/v1" {
+		t.Fatalf("expected sanitized attempt base url, got %q", detail.Attempts[0].BaseURL)
+	}
+	if strings.Contains(detail.Attempts[0].ErrorSummary, "secret-token") || !strings.Contains(detail.Attempts[0].ErrorSummary, "[REDACTED]") {
+		t.Fatalf("expected sanitized attempt error summary, got %q", detail.Attempts[0].ErrorSummary)
+	}
+	encoded, err := json.Marshal(detail)
+	if err != nil {
+		t.Fatalf("marshal detail failed: %v", err)
+	}
+	for _, forbidden := range []string{"request_content", "response_content", "sk-live-secret", "secret-token"} {
+		if strings.Contains(string(encoded), forbidden) {
+			t.Fatalf("trace detail leaked forbidden value %q: %s", forbidden, string(encoded))
+		}
+	}
+}
+
 func TestRelayLogMirrorRespectsKeepDisabledAndClear(t *testing.T) {
 	ctx := setupSiteOpTestDB(t)
 	resetRelayLogCacheForTest(t)
@@ -576,5 +722,9 @@ func resetRelayLogCacheForTest(t *testing.T) {
 }
 
 func boolPtr(value bool) *bool {
+	return &value
+}
+
+func intPtr(value int) *int {
 	return &value
 }
