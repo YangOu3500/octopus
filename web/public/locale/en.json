@@ -516,6 +516,7 @@
                 "searchPlaceholder": "Search capability, UI entry, gap, or source",
                 "allStatuses": "All statuses",
                 "allSources": "All sources",
+                "allEntries": "All entries",
                 "summary": "Showing {shown} / {total}",
                 "clear": "Clear filters",
                 "noResults": "No capabilities match the current filters"
@@ -530,6 +531,11 @@
                 "title": "Source Coverage",
                 "description": "Summarizes integrated, partial, and planned capabilities by reference source. Click a source to filter the table.",
                 "total": "{count} capabilities"
+            },
+            "entryCoverage": {
+                "title": "Entry Coverage",
+                "description": "Summarizes capability distribution by Octopus page entry. Click an entry to filter matching capabilities.",
+                "total": "{count} items"
             },
             "columns": {
                 "capability": "Capability",

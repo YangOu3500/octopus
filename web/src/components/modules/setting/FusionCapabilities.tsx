@@ -28,6 +28,9 @@ type SourceFilter = CapabilitySource | 'all';
 
 const capabilityStatuses: CapabilityStatus[] = ['done', 'partial', 'planned'];
 const capabilitySources: CapabilitySource[] = ['both', 'AxonHub', 'ccLoad', 'octopus'];
+const capabilityEntries = ['home', 'log', 'traces', 'channel', 'group', 'modelTest', 'setting'] as const satisfies readonly NavItem[];
+type CapabilityEntry = (typeof capabilityEntries)[number];
+type EntryFilter = CapabilityEntry | 'all';
 
 const capabilities: Capability[] = [
     { id: 'responseValidator', status: 'done', source: 'ccLoad', nav: 'log', icon: CheckCircle2 },
@@ -49,7 +52,7 @@ const capabilities: Capability[] = [
     { id: 'quotaStatus', status: 'done', source: 'both', nav: 'channel', channelTab: 'health', icon: CircleDashed },
 ];
 
-const FUSION_CAPABILITY_EXPORT_VERSION = 2;
+const FUSION_CAPABILITY_EXPORT_VERSION = 3;
 
 function emptyStatusCounts(): Record<CapabilityStatus, number> {
     return { done: 0, partial: 0, planned: 0 };
@@ -108,6 +111,7 @@ export function SettingFusionCapabilities() {
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+    const [entryFilter, setEntryFilter] = useState<EntryFilter>('all');
 
     const counts = capabilities.reduce(
         (acc, item) => {
@@ -138,13 +142,28 @@ export function SettingFusionCapabilities() {
         } satisfies Record<CapabilitySource, Record<CapabilityStatus, number>>,
     );
 
+    const entryCounts = capabilityEntries.reduce((acc, entry) => {
+        acc[entry] = capabilities.filter((item) => item.nav === entry).length;
+        return acc;
+    }, {} as Record<CapabilityEntry, number>);
+
+    const entryStatusCounts = capabilityEntries.reduce((acc, entry) => {
+        acc[entry] = capabilities.reduce((statusAcc, item) => {
+            if (item.nav === entry) statusAcc[item.status] += 1;
+            return statusAcc;
+        }, emptyStatusCounts());
+        return acc;
+    }, {} as Record<CapabilityEntry, Record<CapabilityStatus, number>>);
+
     const sourceOptions: SourceFilter[] = ['all', ...capabilitySources];
     const statusOptions: StatusFilter[] = ['all', ...capabilityStatuses];
+    const entryOptions: EntryFilter[] = ['all', ...capabilityEntries];
     const normalizedQuery = query.trim().toLowerCase();
 
     const filteredCapabilities = useMemo(() => capabilities.filter((item) => {
         if (statusFilter !== 'all' && item.status !== statusFilter) return false;
         if (sourceFilter !== 'all' && item.source !== sourceFilter) return false;
+        if (entryFilter !== 'all' && item.nav !== entryFilter) return false;
         if (!normalizedQuery) return true;
 
         const searchText = [
@@ -159,9 +178,9 @@ export function SettingFusionCapabilities() {
         ].join(' ').toLowerCase();
 
         return searchText.includes(normalizedQuery);
-    }), [normalizedQuery, sourceFilter, statusFilter, t]);
+    }), [entryFilter, normalizedQuery, sourceFilter, statusFilter, t]);
 
-    const hasActiveFilters = normalizedQuery.length > 0 || statusFilter !== 'all' || sourceFilter !== 'all';
+    const hasActiveFilters = normalizedQuery.length > 0 || statusFilter !== 'all' || sourceFilter !== 'all' || entryFilter !== 'all';
 
     const exportCurrentView = () => {
         if (filteredCapabilities.length === 0) {
@@ -178,6 +197,7 @@ export function SettingFusionCapabilities() {
                 query: query.trim(),
                 status: statusFilter,
                 source: sourceFilter,
+                entry: entryFilter,
             },
             counts: {
                 shown: filteredCapabilities.length,
@@ -185,6 +205,8 @@ export function SettingFusionCapabilities() {
                 statuses: counts,
                 sources: sourceCounts,
                 statuses_by_source: sourceStatusCounts,
+                entries: entryCounts,
+                statuses_by_entry: entryStatusCounts,
             },
             capabilities: filteredCapabilities.map((item) => ({
                 id: item.id,
@@ -267,6 +289,46 @@ export function SettingFusionCapabilities() {
                 </div>
             </div>
 
+            <div className="mb-4 rounded-lg border border-border bg-background/40 p-3">
+                <div className="mb-3 flex flex-col gap-1">
+                    <div className="text-sm font-medium text-card-foreground">
+                        {t('fusionCapabilities.entryCoverage.title')}
+                    </div>
+                    <div className="text-xs leading-relaxed text-muted-foreground">
+                        {t('fusionCapabilities.entryCoverage.description')}
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
+                    {capabilityEntries.map((entry) => (
+                        <button
+                            key={entry}
+                            type="button"
+                            className={cn(
+                                'rounded-lg border border-border bg-card/60 p-3 text-left transition-colors hover:bg-muted/50',
+                                entryFilter === entry && 'border-primary/60 bg-primary/5',
+                            )}
+                            onClick={() => setEntryFilter(entry)}
+                        >
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="truncate text-sm font-medium text-card-foreground">
+                                    {t(`fusionCapabilities.nav.${entry}`)}
+                                </span>
+                                <span className="shrink-0 text-xs text-muted-foreground">
+                                    {t('fusionCapabilities.entryCoverage.total', { count: entryCounts[entry] })}
+                                </span>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                                {capabilityStatuses.map((status) => (
+                                    <Badge key={status} variant="outline" className={cn('rounded-md text-[11px]', statusClass(status))}>
+                                        {t(`fusionCapabilities.status.${status}`)} {entryStatusCounts[entry][status]}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <div className="mb-4 space-y-3 rounded-lg border border-border bg-background/40 p-3">
                 <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(260px,1fr)_auto] xl:items-center">
                     <div className="relative min-w-0">
@@ -295,6 +357,7 @@ export function SettingFusionCapabilities() {
                                     setQuery('');
                                     setStatusFilter('all');
                                     setSourceFilter('all');
+                                    setEntryFilter('all');
                                 }}
                             >
                                 {t('fusionCapabilities.filters.clear')}
@@ -342,6 +405,23 @@ export function SettingFusionCapabilities() {
                             onClick={() => setSourceFilter(source)}
                         >
                             {source === 'all' ? t('fusionCapabilities.filters.allSources') : sourceLabel(source, t)}
+                        </Button>
+                    ))}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                    {entryOptions.map((entry) => (
+                        <Button
+                            key={entry}
+                            type="button"
+                            variant={entryFilter === entry ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-7 rounded-md px-2 text-xs"
+                            onClick={() => setEntryFilter(entry)}
+                        >
+                            {entry === 'all'
+                                ? t('fusionCapabilities.filters.allEntries')
+                                : `${t(`fusionCapabilities.nav.${entry}`)} ${entryCounts[entry]}`}
                         </Button>
                     ))}
                 </div>

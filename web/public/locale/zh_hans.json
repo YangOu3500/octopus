@@ -516,6 +516,7 @@
                 "searchPlaceholder": "搜索能力、UI 入口、缺口或来源",
                 "allStatuses": "全部状态",
                 "allSources": "全部来源",
+                "allEntries": "全部入口",
                 "summary": "显示 {shown} / {total}",
                 "clear": "清除筛选",
                 "noResults": "没有匹配当前筛选的能力"
@@ -530,6 +531,11 @@
                 "title": "来源覆盖总览",
                 "description": "按参考来源汇总已接入、部分接入和待补齐能力，点击来源可直接筛选。",
                 "total": "{count} 项能力"
+            },
+            "entryCoverage": {
+                "title": "入口覆盖总览",
+                "description": "按 Octopus 页面入口汇总能力分布，点击入口可直接筛选对应能力。",
+                "total": "{count} 项"
             },
             "columns": {
                 "capability": "能力",
