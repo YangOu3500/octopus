@@ -601,6 +601,12 @@
                     "ui": "The Logs page now shows active request snapshots with model, phase, candidate channel, key ID, site/account, attempt count, first-token, written state, and redacted request / response previews.",
                     "gap": "Current snapshots are in memory. Debug event streaming and redacted payload previews are connected, structured traces are covered by the standalone workbench, and deeper on-demand raw debugging can still be added later."
                 },
+                "safeDiagnosticsExport": {
+                    "name": "Safe Export / Redacted Diagnostics",
+                    "desc": "Structured exports use whitelisted fields for logs, log detail, active debug, traces, channel model health, group routing preview, and model test results.",
+                    "ui": "Logs, log detail, active debug, traces, channel model health, group routing preview, and model test all expose export actions with safety notes or toast feedback.",
+                    "gap": "Full raw request / response debugging still needs a confirmed safety policy. Current exports do not include full bodies or authentication data."
+                },
                 "quotaStatus": {
                     "name": "Quota / Capacity Status Resolver",
                     "desc": "Explains candidate capacity from managed account balance, disabled site-models, key status codes, and health cooldown reasons.",

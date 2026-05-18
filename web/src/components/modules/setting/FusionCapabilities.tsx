@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Activity, ArrowRight, CheckCircle2, CircleDashed, Eye, GitBranch, ListChecks, Network, Settings2, Thermometer, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { Activity, ArrowRight, CheckCircle2, CircleDashed, Download, Eye, GitBranch, ListChecks, Network, Settings2, Thermometer, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavStore, type NavItem } from '@/components/modules/navbar';
@@ -35,6 +35,7 @@ const capabilities: Capability[] = [
     { id: 'modelAssociation', status: 'done', source: 'AxonHub', nav: 'group', icon: GitBranch },
     { id: 'protocolTransform', status: 'partial', source: 'AxonHub', nav: 'log', icon: GitBranch },
     { id: 'liveDebug', status: 'partial', source: 'ccLoad', nav: 'log', icon: TriangleAlert },
+    { id: 'safeDiagnosticsExport', status: 'done', source: 'both', nav: 'log', icon: Download },
     { id: 'quotaStatus', status: 'done', source: 'both', nav: 'channel', channelTab: 'health', icon: CircleDashed },
 ];
 
