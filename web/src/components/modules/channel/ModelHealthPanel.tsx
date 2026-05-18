@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
-const HEALTH_ROW_GRID_COLUMNS = 'minmax(15rem,1.45fr) minmax(10rem,0.95fr) minmax(11rem,1fr) minmax(11rem,1fr) minmax(11rem,1fr) minmax(15rem,1.2fr)';
+const HEALTH_ROW_GRID_COLUMNS = 'minmax(13rem,1.35fr) minmax(9rem,0.9fr) minmax(10rem,0.95fr) minmax(9rem,0.9fr) minmax(9rem,0.9fr) minmax(14rem,1.1fr)';
 const QUOTA_FILTER_STATUSES = [
     'available',
     'rate_limited',
@@ -380,7 +380,7 @@ export function ChannelModelHealthPanel() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <section className="shrink-0 rounded-lg border border-border bg-card p-3">
+            <section className="shrink-0 rounded-xl border border-border bg-card p-4">
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-3">
                         <div className="min-w-0">
@@ -401,7 +401,7 @@ export function ChannelModelHealthPanel() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[9rem_minmax(14rem,1.25fr)_9rem_10rem_minmax(18rem,1fr)]">
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-[8rem_minmax(12rem,1fr)_8rem_9rem_minmax(14rem,1fr)]">
                             <Select value={timeRange} onValueChange={setTimeRange}>
                                 <SelectTrigger className="h-9 w-full rounded-lg">
                                     <SelectValue />
@@ -463,7 +463,7 @@ export function ChannelModelHealthPanel() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
                         {metricCards.map((item) => {
                             const Icon = item.icon;
                             return (
@@ -481,7 +481,7 @@ export function ChannelModelHealthPanel() {
                         })}
                     </div>
 
-                    <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div className="flex flex-wrap items-center gap-2">
                             <Button
                                 type="button"
@@ -543,7 +543,7 @@ export function ChannelModelHealthPanel() {
                 </div>
             </section>
 
-            <section className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-card">
+            <section className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
                 {isLoading ? (
                     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                         <LoaderCircle className="mr-2 size-4 animate-spin" />
@@ -556,7 +556,7 @@ export function ChannelModelHealthPanel() {
                     </div>
                 ) : (
                     <div ref={scrollRef} className="h-full overflow-auto overscroll-contain">
-                        <div className="min-w-[74rem] text-left text-sm">
+                        <div className="min-w-[64rem] text-left text-sm">
                             <div
                                 className="sticky top-0 z-10 grid border-b border-border bg-muted/90 text-xs text-muted-foreground backdrop-blur"
                                 style={{ gridTemplateColumns: HEALTH_ROW_GRID_COLUMNS }}
@@ -590,7 +590,7 @@ export function ChannelModelHealthPanel() {
                                                     transform: `translateY(${virtualRow.start}px)`,
                                                 }}
                                             >
-                                                <div className="max-w-[18rem] px-3 py-3">
+                                                <div className="max-w-[16rem] px-3 py-3">
                                                     <div className="flex min-w-0 items-center gap-2">
                                                         <div className="truncate font-medium" title={row.channel_name}>{row.channel_name || `#${row.channel_id}`}</div>
                                                         {row.managed ? <Badge variant="outline" className="h-5 rounded-md px-1.5 text-[10px]">{t('managed')}</Badge> : null}

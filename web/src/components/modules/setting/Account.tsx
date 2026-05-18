@@ -76,7 +76,7 @@ export function SettingAccount() {
     };
 
     return (
-        <div className="min-w-0 overflow-hidden rounded-3xl border border-border bg-card p-6 space-y-6">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-5 space-y-5 shadow-sm">
             <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
                 <User className="h-5 w-5" />
                 {t('account.title')}
@@ -174,4 +174,3 @@ export function SettingAccount() {
         </div>
     );
 }
-

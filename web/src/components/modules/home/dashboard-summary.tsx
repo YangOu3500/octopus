@@ -30,7 +30,7 @@ function SummaryCard({
     return (
         <article
             className={cn(
-                'min-h-28 rounded-lg border bg-card p-4 text-card-foreground shadow-sm',
+                'rounded-xl border bg-card p-3.5 text-card-foreground shadow-sm',
                 tone === 'good' && 'border-emerald-500/25 bg-emerald-500/5',
                 tone === 'warning' && 'border-amber-500/25 bg-amber-500/5',
                 tone === 'accent' && 'border-primary/30 bg-primary text-primary-foreground',
@@ -38,16 +38,16 @@ function SummaryCard({
         >
             <div className="flex items-start justify-between gap-3">
                 <div className={cn(
-                    'flex size-9 items-center justify-center rounded-lg border bg-background/60 text-primary',
+                    'flex size-8 items-center justify-center rounded-lg border bg-background/60 text-primary',
                     tone === 'accent' && 'border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground',
                 )}>
-                    <Icon className="size-4" />
+                    <Icon className="size-3.5" />
                 </div>
             </div>
-            <div className="mt-4 text-sm font-medium opacity-90">{label}</div>
-            <div className="mt-1 text-3xl font-semibold tabular-nums tracking-normal">{value}</div>
+            <div className="mt-3 text-sm font-medium opacity-90">{label}</div>
+            <div className="mt-1 text-[1.9rem] font-semibold leading-none tabular-nums tracking-normal">{value}</div>
             <div className={cn(
-                'mt-2 text-xs text-muted-foreground',
+                'mt-2 line-clamp-2 text-xs text-muted-foreground',
                 tone === 'accent' && 'text-primary-foreground/75',
             )}>
                 {sub}
@@ -68,7 +68,7 @@ export function DashboardSummaryCards() {
     const failoverCount = observability?.failover_requests ?? 0;
 
     return (
-        <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
             <SummaryCard
                 icon={BarChart3}
                 label={t('totalRequests')}

@@ -156,7 +156,7 @@ export function ObservabilityPanel() {
     const failoverRequests = data?.failover_requests ?? 0;
 
     return (
-        <section className="rounded-lg bg-card border-card-border border text-card-foreground shadow-sm p-4">
+        <section className="rounded-xl border border-card-border bg-card p-4 text-card-foreground shadow-sm">
             <header className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                     <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ export function ObservabilityPanel() {
                 </Badge>
             </header>
 
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
                 <MetricTile
                     label={t('successRate')}
                     value={formatPercent(data?.success_rate)}
@@ -201,7 +201,7 @@ export function ObservabilityPanel() {
                 />
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+            <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-3">
                 <div className="rounded-md border bg-background/40 p-3">
                     <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                         <Sigma className="size-4 text-muted-foreground" />
@@ -249,7 +249,7 @@ export function ObservabilityPanel() {
                 </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-2 xl:grid-cols-5">
+            <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2 2xl:grid-cols-[minmax(0,1.25fr)_repeat(4,minmax(0,1fr))]">
                 <RecentFailureList items={data?.recent_failures ?? []} />
                 <BreakdownList title={t('topChannels')} items={data?.top_channels ?? []} />
                 <BreakdownList title={t('topModels')} items={data?.top_models ?? []} />

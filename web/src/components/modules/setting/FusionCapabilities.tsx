@@ -246,16 +246,13 @@ export function SettingFusionCapabilities() {
     };
 
     return (
-        <div className="rounded-lg border border-border bg-card p-4 sm:p-5">
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                     <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
                         <Eye className="h-5 w-5" />
                         {t('fusionCapabilities.title')}
                     </h2>
-                    <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-                        {t('fusionCapabilities.subtitle')}
-                    </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {(['done', 'partial', 'planned'] as CapabilityStatus[]).map((status) => (
@@ -571,9 +568,6 @@ export function SettingFusionCapabilities() {
                             </AccordionItem>
                         </Accordion>
 
-                        <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                            {t('fusionCapabilities.note')}
-                        </p>
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>

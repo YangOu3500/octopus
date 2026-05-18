@@ -58,7 +58,7 @@ export function SettingBackup() {
     };
 
     return (
-        <div className="rounded-3xl border border-border bg-card p-6 space-y-5">
+        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
             <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
                 <Database className="h-5 w-5" />
                 {t('backup.title')}
@@ -132,5 +132,4 @@ export function SettingBackup() {
         </div>
     );
 }
-
 

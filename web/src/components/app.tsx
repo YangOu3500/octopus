@@ -234,13 +234,13 @@ export function AppContainer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.16 }}
-            className="flex h-dvh w-full max-w-none flex-col overflow-hidden px-3 md:grid md:grid-cols-[auto_minmax(0,1fr)] md:gap-4 md:px-4 xl:px-6"
+            className="flex h-dvh w-full max-w-none flex-col overflow-hidden px-3 md:grid md:grid-cols-[4.5rem_minmax(0,1fr)] md:gap-3 md:px-4 xl:px-5"
         >
             <NavBar />
             <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
-                <header className="my-6 flex flex-none items-center gap-x-2 px-2">
-                    <Logo size={48} />
-                    <div className="flex-1 overflow-hidden">
+                <header className="my-4 flex flex-none flex-col gap-3 px-1 lg:flex-row lg:items-center">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Logo size={40} />
                         <AnimatePresence mode="wait" custom={direction}>
                             <motion.div
                                 key={activeItem}
@@ -263,14 +263,14 @@ export function AppContainer() {
                                 animate="animate"
                                 exit="exit"
                                 transition={{ duration: 0.15 }}
-                                className="flex items-baseline gap-6"
+                                className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-end lg:gap-5"
                             >
-                                <span className="text-3xl font-bold mt-1">{t(activeItem)}</span>
+                                <span className="truncate text-2xl font-bold lg:text-[2rem]">{t(activeItem)}</span>
                                 {activeItem === 'channel' && <ChannelTabSwitcher />}
                             </motion.div>
                         </AnimatePresence>
                     </div>
-                    <div className="ml-auto flex items-center gap-3">
+                    <div className="flex items-center gap-2 lg:ml-auto">
                         {activeItem === 'channel' && <ChannelHeaderActions />}
                         <Toolbar />
                     </div>
