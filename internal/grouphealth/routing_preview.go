@@ -96,26 +96,34 @@ func routingCandidate(ctx context.Context, mode model.GroupMode, healthEnabled b
 		candidate.Notes = append(candidate.Notes, "channel disabled")
 	}
 
-	usedKey, skippedDecision, skippedRemaining, skippedReason, skippedCount := selectPreviewKey(channel, item.ModelName, candidate.SiteID, candidate.SiteAccountID)
+	keySelection := selectPreviewKey(channel, item.ModelName, candidate.SiteID, candidate.SiteAccountID)
+	usedKey := keySelection.Key
 	candidate.ChannelKeyID = usedKey.ID
 	applyCandidateKeyCapacity(&candidate, usedKey)
-	applyCandidateCooldownCapacity(&candidate, skippedReason, skippedRemaining.Milliseconds())
-	if skippedCount > 0 {
-		candidate.Notes = append(candidate.Notes, "skipped cooling keys: "+strconv.Itoa(skippedCount))
+	applyCandidateCooldownCapacity(&candidate, keySelection.SkippedReason, keySelection.SkippedRemaining.Milliseconds())
+	if keySelection.SkippedCoolingCount > 0 {
+		candidate.Notes = append(candidate.Notes, "skipped cooling keys: "+strconv.Itoa(keySelection.SkippedCoolingCount))
+	}
+	if keySelection.SkippedUnavailableCount > 0 {
+		candidate.Notes = append(candidate.Notes, "skipped blocked keys: "+strconv.Itoa(keySelection.SkippedUnavailableCount))
 	}
 	if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
-		if skippedDecision == "" {
-			applyCandidateQuotaStatus(&candidate, quotaStatusNoKey, "no_available_key")
-			applyCandidateCapacitySignal(&candidate, capacityStatusBlocked, "no_available_key", "channel_key", "key_selection", 0, 0)
+		if keySelection.SkippedDecision == "" {
+			if model.HasAttemptCapacityMeta(keySelection.BlockedMeta) {
+				applyCandidateAttemptCapacityMeta(&candidate, keySelection.BlockedMeta)
+			} else {
+				applyCandidateQuotaStatus(&candidate, quotaStatusNoKey, "no_available_key")
+				applyCandidateCapacitySignal(&candidate, capacityStatusBlocked, "no_available_key", "channel_key", "key_selection", 0, 0)
+			}
 		}
 		if candidate.Decision != "ready" {
 			candidate.Notes = append(candidate.Notes, "no available key")
-		} else if skippedDecision != "" {
-			candidate.Decision = skippedDecision
+		} else if keySelection.SkippedDecision != "" {
+			candidate.Decision = keySelection.SkippedDecision
 			candidate.CoolingDown = true
-			candidate.CooldownRemainingMS = skippedRemaining.Milliseconds()
-			candidate.CooldownReason = skippedReason
-			candidate.Notes = append(candidate.Notes, skippedDecision)
+			candidate.CooldownRemainingMS = keySelection.SkippedRemaining.Milliseconds()
+			candidate.CooldownReason = keySelection.SkippedReason
+			candidate.Notes = append(candidate.Notes, keySelection.SkippedDecision)
 		} else {
 			candidate.Decision = "no_available_key"
 			candidate.Notes = append(candidate.Notes, "no available key")
@@ -178,39 +186,8 @@ func applyCandidateRuntimeState(ctx context.Context, candidate *model.GroupRouti
 	}
 }
 
-func selectPreviewKey(channel *model.Channel, modelName string, siteID int, siteAccountID int) (model.ChannelKey, string, time.Duration, string, int) {
-	exclude := map[int]struct{}{}
-	var lastDecision string
-	var lastRemaining time.Duration
-	var lastReason string
-	var skipped int
-
-	for {
-		usedKey := channel.GetChannelKey(model.ChannelKeySelectOptions{ExcludeKeyIDs: exclude})
-		if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
-			return model.ChannelKey{}, lastDecision, lastRemaining, lastReason, skipped
-		}
-
-		if tripped, remaining := balancer.IsTripped(channel.ID, usedKey.ID, modelName); tripped {
-			exclude[usedKey.ID] = struct{}{}
-			lastDecision = "circuit_breaker"
-			lastRemaining = remaining
-			lastReason = "circuit_breaker"
-			skipped++
-			continue
-		}
-
-		if cooling, remaining, reason := previewKeyCoolingState(channel.ID, usedKey.ID, siteID, siteAccountID, modelName, channel.GetBaseUrl()); cooling {
-			exclude[usedKey.ID] = struct{}{}
-			lastDecision = "health_cooldown"
-			lastRemaining = remaining
-			lastReason = reason
-			skipped++
-			continue
-		}
-
-		return usedKey, lastDecision, lastRemaining, lastReason, skipped
-	}
+func selectPreviewKey(channel *model.Channel, modelName string, siteID int, siteAccountID int) channelKeySelection {
+	return selectGroupHealthChannelKey(channel, modelName, siteID, siteAccountID)
 }
 
 func previewKeyCoolingState(channelID, channelKeyID, siteID, siteAccountID int, modelName, baseURL string) (bool, time.Duration, string) {

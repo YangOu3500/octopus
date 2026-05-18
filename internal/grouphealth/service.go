@@ -114,24 +114,6 @@ func (s *Service) RunGroupHealth(ctx context.Context, groupID int) error {
 			continue
 		}
 
-		usedKey := channel.GetChannelKey()
-		if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
-			appendErr := s.repo.AppendAttempt(ctx, snapshot.ID, model.GroupHealthAttempt{
-				GroupItemID:  item.ID,
-				ChannelID:    item.ChannelID,
-				ChannelName:  channel.Name,
-				ModelName:    item.ModelName,
-				Priority:     item.Priority,
-				Weight:       item.Weight,
-				Status:       model.GroupHealthAttemptStatusFailed,
-				ErrorMessage: "no available key",
-			})
-			if appendErr != nil {
-				return appendErr
-			}
-			continue
-		}
-
 		runtimeState, err := EvaluateRuntimeCandidate(ctx, *channel, item.ModelName)
 		if err != nil || runtimeState.SkipReason != "" {
 			message := runtimeState.SkipReason
@@ -142,13 +124,30 @@ func (s *Service) RunGroupHealth(ctx context.Context, groupID int) error {
 				GroupItemID:  item.ID,
 				ChannelID:    item.ChannelID,
 				ChannelName:  channel.Name,
-				ChannelKeyID: usedKey.ID,
-				KeyRemark:    usedKey.Remark,
 				ModelName:    item.ModelName,
 				Priority:     item.Priority,
 				Weight:       item.Weight,
 				Status:       model.GroupHealthAttemptStatusFailed,
 				ErrorMessage: message,
+			})
+			if appendErr != nil {
+				return appendErr
+			}
+			continue
+		}
+
+		keySelection := selectGroupHealthChannelKey(channel, item.ModelName, runtimeState.SiteID, runtimeState.SiteAccountID)
+		usedKey := keySelection.Key
+		if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
+			appendErr := s.repo.AppendAttempt(ctx, snapshot.ID, model.GroupHealthAttempt{
+				GroupItemID:  item.ID,
+				ChannelID:    item.ChannelID,
+				ChannelName:  channel.Name,
+				ModelName:    item.ModelName,
+				Priority:     item.Priority,
+				Weight:       item.Weight,
+				Status:       model.GroupHealthAttemptStatusFailed,
+				ErrorMessage: channelKeySelectionFailureMessage(keySelection),
 			})
 			if appendErr != nil {
 				return appendErr

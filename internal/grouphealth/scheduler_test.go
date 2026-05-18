@@ -210,6 +210,67 @@ func TestSlowProbeSchedulerBacksOffAfterFailure(t *testing.T) {
 	}
 }
 
+func TestSlowProbeSchedulerUsesFallbackKeyWhenPrimaryKeyHardBlocked(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	var requests int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt64(&requests, 1)
+		writeValidChatProbeResponse(w)
+	}))
+	defer server.Close()
+
+	channel := &model.Channel{
+		Name:     "probe-hard-blocked-fallback-channel",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
+		Model:    "probe-model",
+		Keys: []model.ChannelKey{
+			{Enabled: true, ChannelKey: "sk-hard-blocked", Remark: "hard-blocked", TotalCost: 1, StatusCode: http.StatusPaymentRequired, LastUseTimeStamp: time.Now().Unix()},
+			{Enabled: true, ChannelKey: "sk-fallback", Remark: "fallback", TotalCost: 100},
+		},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	group := &model.Group{Name: "probe-hard-blocked-fallback-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "probe-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd failed: %v", err)
+	}
+	storedChannel, err := op.ChannelGet(channel.ID, ctx)
+	if err != nil {
+		t.Fatalf("ChannelGet failed: %v", err)
+	}
+
+	scheduler := NewSlowProbeScheduler(op.NewGroupHealthRepository(), &Prober{CandidateTimeout: time.Second})
+	if err := scheduler.RunOnceWithConfig(ctx, ProbeConfig{
+		Enabled:                 true,
+		SiteMinInterval:         time.Minute,
+		ModelMinInterval:        time.Hour,
+		MaxConcurrency:          1,
+		DailyMaxRequestsPerSite: 20,
+		Prompt:                  "鍙洖澶?OK",
+		MaxTokens:               8,
+		JitterRatio:             0,
+	}); err != nil {
+		t.Fatalf("RunOnceWithConfig failed: %v", err)
+	}
+	if requests != 1 {
+		t.Fatalf("expected one request, got %d", requests)
+	}
+
+	var attempt model.GroupHealthAttempt
+	if err := dbpkg.GetDB().Order("id desc").First(&attempt).Error; err != nil {
+		t.Fatalf("load latest attempt failed: %v", err)
+	}
+	if attempt.ChannelKeyID != storedChannel.Keys[1].ID {
+		t.Fatalf("expected fallback key %d, got %+v", storedChannel.Keys[1].ID, attempt)
+	}
+}
+
 func createProbeGroupWithChannel(t *testing.T, ctx context.Context, groupName string, channelName string, baseURL string) *model.Channel {
 	t.Helper()
 

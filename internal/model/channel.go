@@ -63,8 +63,15 @@ type ChannelKey struct {
 }
 
 type ChannelKeySelectOptions struct {
-	ExcludeKeyIDs  map[int]struct{}
-	PreferredKeyID int
+	ExcludeKeyIDs           map[int]struct{}
+	PreferredKeyID          int
+	SkipUnavailableStatuses bool
+}
+
+type ChannelKeySelectionResult struct {
+	Key                    ChannelKey
+	BlockedMeta            AttemptCapacityMeta
+	SkippedUnavailableKeys int
 }
 
 // ChannelUpdateRequest 渠道更新请求 - 仅包含变更的数据
@@ -136,8 +143,12 @@ func (c *Channel) GetBaseUrl() string {
 }
 
 func (c *Channel) GetChannelKey(opts ...ChannelKeySelectOptions) ChannelKey {
+	return c.SelectChannelKey(opts...).Key
+}
+
+func (c *Channel) SelectChannelKey(opts ...ChannelKeySelectOptions) ChannelKeySelectionResult {
 	if c == nil || len(c.Keys) == 0 {
-		return ChannelKey{}
+		return ChannelKeySelectionResult{}
 	}
 
 	var selectOpts ChannelKeySelectOptions
@@ -145,15 +156,26 @@ func (c *Channel) GetChannelKey(opts ...ChannelKeySelectOptions) ChannelKey {
 		selectOpts = opts[0]
 	}
 
+	result := ChannelKeySelectionResult{}
+
 	if selectOpts.PreferredKeyID > 0 {
 		for _, k := range c.Keys {
 			if k.ID != selectOpts.PreferredKeyID || !k.Enabled || k.ChannelKey == "" {
 				continue
 			}
 			if _, excluded := selectOpts.ExcludeKeyIDs[k.ID]; excluded {
-				break
+				continue
 			}
-			return k
+			if selectOpts.SkipUnavailableStatuses {
+				if meta := hardBlockedChannelKeyMeta(k); HasAttemptCapacityMeta(meta) {
+					result.BlockedMeta = higherPriorityKeyBlockedMeta(result.BlockedMeta, meta)
+					result.SkippedUnavailableKeys++
+					continue
+				}
+			}
+			result.Key = k
+			result.BlockedMeta = AttemptCapacityMeta{}
+			return result
 		}
 	}
 
@@ -168,6 +190,13 @@ func (c *Channel) GetChannelKey(opts ...ChannelKeySelectOptions) ChannelKey {
 		if _, excluded := selectOpts.ExcludeKeyIDs[k.ID]; excluded {
 			continue
 		}
+		if selectOpts.SkipUnavailableStatuses {
+			if meta := hardBlockedChannelKeyMeta(k); HasAttemptCapacityMeta(meta) {
+				result.BlockedMeta = higherPriorityKeyBlockedMeta(result.BlockedMeta, meta)
+				result.SkippedUnavailableKeys++
+				continue
+			}
+		}
 		if !bestSet || k.TotalCost < bestCost {
 			best = k
 			bestCost = k.TotalCost
@@ -176,7 +205,42 @@ func (c *Channel) GetChannelKey(opts ...ChannelKeySelectOptions) ChannelKey {
 	}
 
 	if !bestSet {
-		return ChannelKey{}
+		return result
 	}
-	return best
+	result.Key = best
+	result.BlockedMeta = AttemptCapacityMeta{}
+	return result
+}
+
+func hardBlockedChannelKeyMeta(key ChannelKey) AttemptCapacityMeta {
+	switch key.StatusCode {
+	case 402, 401, 403:
+		return AttemptCapacityMetaFromHTTPStatus(key.StatusCode, key.LastUseTimeStamp)
+	default:
+		return AttemptCapacityMeta{}
+	}
+}
+
+func higherPriorityKeyBlockedMeta(current, candidate AttemptCapacityMeta) AttemptCapacityMeta {
+	if !HasAttemptCapacityMeta(candidate) {
+		return current
+	}
+	if !HasAttemptCapacityMeta(current) {
+		return candidate
+	}
+	if keyBlockedMetaPriority(candidate) > keyBlockedMetaPriority(current) {
+		return candidate
+	}
+	return current
+}
+
+func keyBlockedMetaPriority(meta AttemptCapacityMeta) int {
+	switch meta.QuotaStatus {
+	case "quota_error":
+		return 20
+	case "auth_error":
+		return 10
+	default:
+		return 0
+	}
 }

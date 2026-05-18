@@ -194,12 +194,21 @@ func (s *SlowProbeScheduler) planJobs(ctx context.Context, groups []model.Group,
 			if err != nil || channel == nil || !channel.Enabled {
 				continue
 			}
-			usedKey := channel.GetChannelKey()
+			runtimeState, err := EvaluateRuntimeCandidate(ctx, *channel, item.ModelName)
+			if err != nil {
+				return nil, err
+			}
+			if runtimeState.SkipReason != "" {
+				continue
+			}
+
+			keySelection := selectGroupHealthChannelKey(channel, item.ModelName, runtimeState.SiteID, runtimeState.SiteAccountID)
+			usedKey := keySelection.Key
 			if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
 				continue
 			}
 			binding := bindingPointer(bindings, item.ChannelID)
-			shouldProbe, err := s.shouldProbeCandidate(ctx, cfg, now, item, *channel, usedKey, binding, latest)
+			shouldProbe, err := s.shouldProbeCandidate(cfg, now, item, *channel, usedKey, binding, latest, runtimeState)
 			if err != nil {
 				return nil, err
 			}
@@ -219,11 +228,7 @@ func (s *SlowProbeScheduler) planJobs(ctx context.Context, groups []model.Group,
 	return jobs, nil
 }
 
-func (s *SlowProbeScheduler) shouldProbeCandidate(ctx context.Context, cfg ProbeConfig, now time.Time, item model.GroupItem, channel model.Channel, usedKey model.ChannelKey, binding *model.SiteChannelBinding, latest *model.GroupHealthSnapshot) (bool, error) {
-	runtimeState, err := EvaluateRuntimeCandidate(ctx, channel, item.ModelName)
-	if err != nil {
-		return false, err
-	}
+func (s *SlowProbeScheduler) shouldProbeCandidate(cfg ProbeConfig, now time.Time, item model.GroupItem, channel model.Channel, usedKey model.ChannelKey, binding *model.SiteChannelBinding, latest *model.GroupHealthSnapshot, runtimeState CandidateRuntimeState) (bool, error) {
 	if runtimeState.SkipReason != "" {
 		return false, nil
 	}

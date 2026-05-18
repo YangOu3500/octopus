@@ -168,24 +168,10 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 			continue
 		}
 
-		selectOpts := model.ChannelKeySelectOptions{ExcludeKeyIDs: make(map[int]struct{})}
-		var usedKey model.ChannelKey
-		for {
-			usedKey = channel.GetChannelKey(selectOpts)
-			if usedKey.ChannelKey == "" {
-				break
-			}
-			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
-				iter.SkipHealthCooldownWithScope(channel.ID, usedKey.ID, runtimeState.SiteID, runtimeState.SiteAccountID, channel.Name, channel.GetBaseUrl()) {
-				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
-				usedKey = model.ChannelKey{}
-				continue
-			}
-			break
-		}
+		usedKey, blockedMeta, excludedCount := selectRelayChannelKey(channel, iter, runtimeState, 0)
 		if usedKey.ChannelKey == "" {
-			if len(selectOpts.ExcludeKeyIDs) == 0 {
-				iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", model.AttemptCapacityMetaForNoAvailableKey())
+			if excludedCount == 0 || model.HasAttemptCapacityMeta(blockedMeta) {
+				iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", relayNoAvailableKeyMeta(blockedMeta))
 			}
 			continue
 		}

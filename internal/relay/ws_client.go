@@ -345,12 +345,12 @@ func bestEffortWarmupUpstreamWS(
 		}
 
 		selectOpts := dbmodel.ChannelKeySelectOptions{
-			ExcludeKeyIDs:  make(map[int]struct{}),
-			PreferredKeyID: iter.StickyKeyID(),
+			ExcludeKeyIDs:           make(map[int]struct{}),
+			PreferredKeyID:          iter.StickyKeyID(),
+			SkipUnavailableStatuses: true,
 		}
-
 		for {
-			usedKey := channel.GetChannelKey(selectOpts)
+			usedKey := channel.SelectChannelKey(selectOpts).Key
 			if usedKey.ChannelKey == "" {
 				break
 			}
@@ -526,28 +526,10 @@ func runWSRelay(ctx context.Context, req *relayRequest, group *dbmodel.Group) ws
 
 		req.internalRequest.Model = item.ModelName
 
-		selectOpts := dbmodel.ChannelKeySelectOptions{
-			ExcludeKeyIDs:  make(map[int]struct{}),
-			PreferredKeyID: req.iter.StickyKeyID(),
-		}
-
-		var usedKey dbmodel.ChannelKey
-		for {
-			usedKey = channel.GetChannelKey(selectOpts)
-			if usedKey.ChannelKey == "" {
-				break
-			}
-			if req.iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
-				req.iter.SkipHealthCooldownWithScope(channel.ID, usedKey.ID, runtimeState.SiteID, runtimeState.SiteAccountID, channel.Name, channel.GetBaseUrl()) {
-				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
-				usedKey = dbmodel.ChannelKey{}
-				continue
-			}
-			break
-		}
+		usedKey, blockedMeta, excludedCount := selectRelayChannelKey(channel, req.iter, runtimeState, req.iter.StickyKeyID())
 		if usedKey.ChannelKey == "" {
-			if len(selectOpts.ExcludeKeyIDs) == 0 {
-				req.iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", dbmodel.AttemptCapacityMetaForNoAvailableKey())
+			if excludedCount == 0 || dbmodel.HasAttemptCapacityMeta(blockedMeta) {
+				req.iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", relayNoAvailableKeyMeta(blockedMeta))
 			}
 			continue
 		}

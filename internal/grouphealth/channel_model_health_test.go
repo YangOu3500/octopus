@@ -226,6 +226,76 @@ func TestBuildChannelModelHealthShowsKeyCapacityStatus(t *testing.T) {
 	}
 }
 
+func TestBuildChannelModelHealthUsesFallbackKeyWhenPrimaryKeyHardBlocked(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	observedAt := time.Now().Unix()
+
+	channel := &model.Channel{
+		Name:     "health-hard-blocked-fallback",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://health-hard-blocked-fallback.example.test/v1"}},
+		Model:    "fallback-model",
+		Keys: []model.ChannelKey{
+			{Enabled: true, ChannelKey: "sk-hard-blocked", TotalCost: 1, StatusCode: 402, LastUseTimeStamp: observedAt},
+			{Enabled: true, ChannelKey: "sk-fallback", TotalCost: 100},
+		},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+
+	result, err := BuildChannelModelHealth(ctx, model.ChannelModelHealthQuery{TimeRange: "all"})
+	if err != nil {
+		t.Fatalf("BuildChannelModelHealth failed: %v", err)
+	}
+	row := findChannelModelHealthRow(result.Rows, channel.ID, "fallback-model")
+	if row == nil {
+		t.Fatalf("expected channel/model row, got %+v", result.Rows)
+	}
+	if row.QuotaStatus == "quota_error" || row.CapacityStatus == "blocked" {
+		t.Fatalf("expected fallback key to keep row available, got %+v", row)
+	}
+}
+
+func TestBuildChannelModelHealthShowsBlockedMetaWhenAllKeysHardBlocked(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	observedAt := time.Now().Unix()
+
+	channel := &model.Channel{
+		Name:     "health-all-hard-blocked",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://health-all-hard-blocked.example.test/v1"}},
+		Model:    "blocked-model",
+		Keys: []model.ChannelKey{
+			{Enabled: true, ChannelKey: "sk-quota-blocked", TotalCost: 1, StatusCode: 402, LastUseTimeStamp: observedAt},
+			{Enabled: true, ChannelKey: "sk-auth-blocked", TotalCost: 2, StatusCode: 401, LastUseTimeStamp: observedAt},
+		},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+
+	result, err := BuildChannelModelHealth(ctx, model.ChannelModelHealthQuery{TimeRange: "all"})
+	if err != nil {
+		t.Fatalf("BuildChannelModelHealth failed: %v", err)
+	}
+	row := findChannelModelHealthRow(result.Rows, channel.ID, "blocked-model")
+	if row == nil {
+		t.Fatalf("expected channel/model row, got %+v", result.Rows)
+	}
+	if row.QuotaStatus != "quota_error" || row.QuotaReason != "http_402" {
+		t.Fatalf("unexpected quota status: %+v", row)
+	}
+	if row.CapacityStatus != "blocked" ||
+		row.CapacityReason != "http_402" ||
+		row.CapacityScope != "channel_key" ||
+		row.CapacitySource != "key_status_code" {
+		t.Fatalf("unexpected structured capacity status: %+v", row)
+	}
+}
+
 func findChannelModelHealthRow(rows []model.ChannelModelHealthRow, channelID int, modelName string) *model.ChannelModelHealthRow {
 	for i := range rows {
 		if rows[i].ChannelID == channelID && rows[i].ModelName == modelName {

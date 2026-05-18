@@ -271,6 +271,104 @@ func TestBuildRoutingPreviewShowsKeyCapacityStatus(t *testing.T) {
 	}
 }
 
+func TestBuildRoutingPreviewUsesFallbackKeyWhenPrimaryKeyHardBlocked(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	observedAt := time.Now().Unix()
+
+	channel := &model.Channel{
+		Name:     "routing-hard-blocked-fallback",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://hard-blocked-fallback.example.test/v1"}},
+		Model:    "preview-model",
+		Keys: []model.ChannelKey{
+			{Enabled: true, ChannelKey: "sk-hard-blocked", TotalCost: 1, StatusCode: 402, LastUseTimeStamp: observedAt},
+			{Enabled: true, ChannelKey: "sk-fallback", TotalCost: 100},
+		},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	storedChannel, err := op.ChannelGet(channel.ID, ctx)
+	if err != nil {
+		t.Fatalf("ChannelGet failed: %v", err)
+	}
+
+	group := &model.Group{Name: "preview-hard-blocked-fallback-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "preview-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd failed: %v", err)
+	}
+
+	preview, err := BuildRoutingPreview(ctx, group.ID)
+	if err != nil {
+		t.Fatalf("BuildRoutingPreview failed: %v", err)
+	}
+	if len(preview.Candidates) != 1 {
+		t.Fatalf("candidate count = %d, want 1", len(preview.Candidates))
+	}
+	candidate := preview.Candidates[0]
+	if candidate.Decision != "ready" {
+		t.Fatalf("candidate decision = %q, want ready: %+v", candidate.Decision, candidate)
+	}
+	if candidate.ChannelKeyID != storedChannel.Keys[1].ID {
+		t.Fatalf("expected fallback key %d, got %+v", storedChannel.Keys[1].ID, candidate)
+	}
+	if candidate.QuotaStatus == "quota_error" || candidate.CapacityStatus == "blocked" {
+		t.Fatalf("expected fallback key to keep candidate available, got %+v", candidate)
+	}
+}
+
+func TestBuildRoutingPreviewShowsBlockedMetaWhenAllKeysHardBlocked(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	observedAt := time.Now().Unix()
+
+	channel := &model.Channel{
+		Name:     "routing-all-hard-blocked",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://all-hard-blocked.example.test/v1"}},
+		Model:    "preview-model",
+		Keys: []model.ChannelKey{
+			{Enabled: true, ChannelKey: "sk-quota-blocked", TotalCost: 1, StatusCode: 402, LastUseTimeStamp: observedAt},
+			{Enabled: true, ChannelKey: "sk-auth-blocked", TotalCost: 2, StatusCode: 401, LastUseTimeStamp: observedAt},
+		},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	group := &model.Group{Name: "preview-all-hard-blocked-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "preview-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd failed: %v", err)
+	}
+
+	preview, err := BuildRoutingPreview(ctx, group.ID)
+	if err != nil {
+		t.Fatalf("BuildRoutingPreview failed: %v", err)
+	}
+	if len(preview.Candidates) != 1 {
+		t.Fatalf("candidate count = %d, want 1", len(preview.Candidates))
+	}
+	candidate := preview.Candidates[0]
+	if candidate.ChannelKeyID != 0 || candidate.Decision != "no_available_key" {
+		t.Fatalf("expected no selectable key, got %+v", candidate)
+	}
+	if candidate.QuotaStatus != "quota_error" || candidate.QuotaReason != "http_402" {
+		t.Fatalf("unexpected quota status: %+v", candidate)
+	}
+	if candidate.CapacityStatus != "blocked" ||
+		candidate.CapacityReason != "http_402" ||
+		candidate.CapacityScope != "channel_key" ||
+		candidate.CapacitySource != "key_status_code" {
+		t.Fatalf("unexpected structured capacity status: %+v", candidate)
+	}
+}
+
 func TestBuildRoutingPreviewMarksRuntimeGuardedCandidates(t *testing.T) {
 	ctx := setupGroupHealthTestDB(t)
 

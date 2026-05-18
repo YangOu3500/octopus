@@ -334,6 +334,22 @@ func applyChannelModelCooldownCapacity(row *model.ChannelModelHealthRow, reason 
 	}
 }
 
+func applyCandidateAttemptCapacityMeta(candidate *model.GroupRoutingCandidate, meta model.AttemptCapacityMeta) {
+	if candidate == nil || !model.HasAttemptCapacityMeta(meta) {
+		return
+	}
+	applyCandidateQuotaStatus(candidate, meta.QuotaStatus, meta.QuotaReason)
+	applyCandidateCapacitySignal(candidate, meta.CapacityStatus, meta.CapacityReason, meta.CapacityScope, meta.CapacitySource, meta.LastObservedAt, meta.ExpiresAt)
+}
+
+func applyChannelModelAttemptCapacityMeta(row *model.ChannelModelHealthRow, meta model.AttemptCapacityMeta) {
+	if row == nil || !model.HasAttemptCapacityMeta(meta) {
+		return
+	}
+	applyChannelModelQuotaStatus(row, meta.QuotaStatus, meta.QuotaReason)
+	applyChannelModelCapacitySignal(row, meta.CapacityStatus, meta.CapacityReason, meta.CapacityScope, meta.CapacitySource, meta.LastObservedAt, meta.ExpiresAt)
+}
+
 func normalizeQuotaStatus(status, reason string) (string, string) {
 	status = strings.TrimSpace(strings.ToLower(status))
 	reason = strings.TrimSpace(strings.ToLower(reason))

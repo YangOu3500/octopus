@@ -173,3 +173,59 @@ func TestRunGroupHealthReturnsAlreadyRunning(t *testing.T) {
 		t.Fatalf("expected ErrGroupHealthAlreadyRunning, got %v", err)
 	}
 }
+
+func TestRunGroupHealthUsesFallbackKeyWhenPrimaryKeyHardBlocked(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"resp_1","object":"response","status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"ok"}]}]}`))
+	}))
+	defer server.Close()
+
+	channel := &model.Channel{
+		Name:     "group-health-hard-blocked-fallback",
+		Type:     outbound.OutboundTypeOpenAIResponse,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
+		Model:    "probe-model",
+		Keys: []model.ChannelKey{
+			{Enabled: true, ChannelKey: "sk-hard-blocked", Remark: "hard-blocked", TotalCost: 1, StatusCode: http.StatusPaymentRequired, LastUseTimeStamp: time.Now().Unix()},
+			{Enabled: true, ChannelKey: "sk-fallback", Remark: "fallback", TotalCost: 100},
+		},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	storedChannel, err := op.ChannelGet(channel.ID, ctx)
+	if err != nil {
+		t.Fatalf("ChannelGet failed: %v", err)
+	}
+
+	group := &model.Group{Name: "probe-hard-blocked-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "probe-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd failed: %v", err)
+	}
+
+	service := NewService(op.NewGroupHealthRepository(), &Prober{CandidateTimeout: 5 * time.Second})
+	if err := service.RunGroupHealth(ctx, group.ID); err != nil {
+		t.Fatalf("RunGroupHealth failed: %v", err)
+	}
+
+	view, err := service.GetGroupHealthViewByID(ctx, group.ID)
+	if err != nil {
+		t.Fatalf("GetGroupHealthViewByID failed: %v", err)
+	}
+	if view.Latest == nil || len(view.Latest.Attempts) != 1 {
+		t.Fatalf("expected one latest attempt, got %+v", view.Latest)
+	}
+	if view.Latest.Attempts[0].Status != model.GroupHealthAttemptStatusSuccess {
+		t.Fatalf("expected successful probe attempt, got %+v", view.Latest.Attempts[0])
+	}
+	if view.Latest.Attempts[0].ChannelKeyID != storedChannel.Keys[1].ID {
+		t.Fatalf("expected fallback key %d, got %+v", storedChannel.Keys[1].ID, view.Latest.Attempts[0])
+	}
+}

@@ -17,6 +17,17 @@ type AttemptCapacityMeta struct {
 	ExpiresAt      int64
 }
 
+func HasAttemptCapacityMeta(meta AttemptCapacityMeta) bool {
+	return strings.TrimSpace(meta.QuotaStatus) != "" ||
+		strings.TrimSpace(meta.QuotaReason) != "" ||
+		strings.TrimSpace(meta.CapacityStatus) != "" ||
+		strings.TrimSpace(meta.CapacityReason) != "" ||
+		strings.TrimSpace(meta.CapacityScope) != "" ||
+		strings.TrimSpace(meta.CapacitySource) != "" ||
+		meta.LastObservedAt > 0 ||
+		meta.ExpiresAt > 0
+}
+
 func (a *ChannelAttempt) ApplyCapacityMeta(meta AttemptCapacityMeta) {
 	if a == nil {
 		return

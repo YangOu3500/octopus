@@ -194,27 +194,10 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 			requestModel, group.Mode, channel.Name, item.ModelName,
 			iter.Index()+1, iter.Len(), iter.IsSticky())
 
-		selectOpts := dbmodel.ChannelKeySelectOptions{
-			ExcludeKeyIDs:  make(map[int]struct{}),
-			PreferredKeyID: iter.StickyKeyID(),
-		}
-		var usedKey dbmodel.ChannelKey
-		for {
-			usedKey = channel.GetChannelKey(selectOpts)
-			if usedKey.ChannelKey == "" {
-				break
-			}
-			if iter.SkipCircuitBreak(channel.ID, usedKey.ID, channel.Name) ||
-				iter.SkipHealthCooldownWithScope(channel.ID, usedKey.ID, runtimeState.SiteID, runtimeState.SiteAccountID, channel.Name, channel.GetBaseUrl()) {
-				selectOpts.ExcludeKeyIDs[usedKey.ID] = struct{}{}
-				usedKey = dbmodel.ChannelKey{}
-				continue
-			}
-			break
-		}
+		usedKey, blockedMeta, excludedCount := selectRelayChannelKey(channel, iter, runtimeState, iter.StickyKeyID())
 		if usedKey.ChannelKey == "" {
-			if len(selectOpts.ExcludeKeyIDs) == 0 {
-				iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", dbmodel.AttemptCapacityMetaForNoAvailableKey())
+			if excludedCount == 0 || dbmodel.HasAttemptCapacityMeta(blockedMeta) {
+				iter.SkipWithMeta(channel.ID, 0, channel.Name, "no available key", relayNoAvailableKeyMeta(blockedMeta))
 			}
 			continue
 		}

@@ -342,13 +342,26 @@ func finalizeChannelModelHealthRow(acc *channelModelHealthAccumulator, channels 
 
 	channel, ok := channels[row.ChannelID]
 	if ok {
-		usedKey := channel.GetChannelKey()
+		keySelection := selectGroupHealthChannelKey(&channel, row.ModelName, row.SiteID, row.SiteAccountID)
+		usedKey := keySelection.Key
+		if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
+			if model.HasAttemptCapacityMeta(keySelection.BlockedMeta) {
+				applyChannelModelAttemptCapacityMeta(row, keySelection.BlockedMeta)
+			} else {
+				applyChannelModelQuotaStatus(row, quotaStatusNoKey, "no_available_key")
+				applyChannelModelCapacitySignal(row, capacityStatusBlocked, "no_available_key", "channel_key", "key_selection", 0, 0)
+			}
+			if keySelection.SkippedDecision != "" {
+				row.CoolingDown = true
+				row.CooldownRemainingMS = keySelection.SkippedRemaining.Milliseconds()
+				row.CooldownReason = keySelection.SkippedReason
+				applyChannelModelCooldownCapacity(row, row.CooldownReason, row.CooldownRemainingMS)
+			}
+			return
+		}
+
 		row.CoolingDown, row.CooldownRemainingMS, row.CooldownReason = channelModelCoolingState(channel.ID, usedKey.ID, row.SiteID, row.SiteAccountID, row.ModelName, channel.GetBaseUrl())
 		applyChannelModelKeyCapacity(row, usedKey)
-		if usedKey.ID == 0 || strings.TrimSpace(usedKey.ChannelKey) == "" {
-			applyChannelModelQuotaStatus(row, quotaStatusNoKey, "no_available_key")
-			applyChannelModelCapacitySignal(row, capacityStatusBlocked, "no_available_key", "channel_key", "key_selection", 0, 0)
-		}
 		applyChannelModelCooldownCapacity(row, row.CooldownReason, row.CooldownRemainingMS)
 	}
 }
