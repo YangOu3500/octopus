@@ -380,6 +380,16 @@ export function ModelTest() {
 
     const handleRun = () => handleRunRows(selectedRows);
 
+    const failedRows = useMemo(
+        () => rows.filter((row) => {
+            const result = results[row.key];
+            return row.enabled && !!result && !result.success && !runningKeys.has(row.key);
+        }),
+        [results, rows, runningKeys],
+    );
+
+    const handleRetryFailed = () => handleRunRows(failedRows);
+
     const visibleResultKeys = useMemo(
         () => rows.filter((row) => Boolean(results[row.key])).map((row) => row.key),
         [results, rows],
@@ -506,6 +516,10 @@ export function ModelTest() {
                             <Button type="button" variant="outline" size="sm" onClick={handleClear} disabled={Object.keys(results).length === 0}>
                                 <RotateCcw className="size-4" />
                                 {t('clear')}
+                            </Button>
+                            <Button type="button" variant="outline" size="sm" onClick={handleRetryFailed} disabled={runModelTest.isPending || failedRows.length === 0}>
+                                <XCircle className="size-4" />
+                                {t('retryFailed', { count: failedRows.length })}
                             </Button>
                             <Button type="button" size="sm" onClick={handleRun} disabled={runModelTest.isPending || selectedRows.length === 0}>
                                 <Play className="size-4" />

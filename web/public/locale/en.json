@@ -1002,6 +1002,7 @@
         "clearVisible": "Clear visible",
         "clearVisibleSuccess": "Cleared {count} visible results",
         "clear": "Clear all",
+        "retryFailed": "Retry failed {count}",
         "running": "Running...",
         "runSelected": "Test {count}",
         "runComplete": "Model test completed: {success} success, {failed} failed",

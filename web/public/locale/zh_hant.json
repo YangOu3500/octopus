@@ -1002,6 +1002,7 @@
         "clearVisible": "清空目前結果",
         "clearVisibleSuccess": "已清空目前結果 {count} 條",
         "clear": "清空全部",
+        "retryFailed": "重測失敗 {count}",
         "running": "測試中...",
         "runSelected": "測試 {count} 項",
         "runComplete": "模型測試完成：成功 {success}，失敗 {failed}",
