@@ -533,7 +533,7 @@
                     "name": "Trace / Attempt 日誌",
                     "desc": "一次客戶端請求下記錄多個上游嘗試，展示渠道、上游模型、狀態、錯誤、TTFB、耗時、usage 和成本。",
                     "ui": "獨立鏈路工作台、日誌詳情、模型測試跳轉日誌詳情、首頁觀測台均可查看。",
-                    "gap": "已落到獨立 request_traces / request_attempts 表；後續只剩更複雜的審計聚合與匯出。"
+                    "gap": "已落到獨立 request_traces / request_attempts 表，並補齊分頁 / 詳情匯出、Trace 對比和服務端審計聚合。"
                 },
                 "healthCooldown": {
                     "name": "健康分 / 冷卻 / 智慧調度",

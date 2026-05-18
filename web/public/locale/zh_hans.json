@@ -533,7 +533,7 @@
                     "name": "Trace / Attempt 日志",
                     "desc": "一次客户端请求下记录多个上游尝试，展示渠道、上游模型、状态、错误、TTFB、耗时、usage 和成本。",
                     "ui": "独立链路工作台、日志详情、模型测试跳转日志详情、首页观测台均可查看。",
-                    "gap": "已落到独立 request_traces / request_attempts 表；后续只剩更复杂的审计聚合与导出。"
+                    "gap": "已落到独立 request_traces / request_attempts 表，并补齐分页 / 详情导出、Trace 对比和服务端审计聚合。"
                 },
                 "healthCooldown": {
                     "name": "健康分 / 冷却 / 智能调度",

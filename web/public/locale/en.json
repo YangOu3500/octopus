@@ -533,7 +533,7 @@
                     "name": "Trace / Attempt Logs",
                     "desc": "A client request can contain multiple upstream attempts with channel, model, status, error, TTFB, duration, usage, and cost.",
                     "ui": "Available from the standalone traces workbench, log detail, model-test log jump, and the home observability dashboard.",
-                    "gap": "Backed by separate request_traces / request_attempts tables; remaining work is richer audit aggregation and export."
+                    "gap": "Backed by separate request_traces / request_attempts tables, page/detail export, trace comparison, and server-side audit aggregation."
                 },
                 "healthCooldown": {
                     "name": "Health Score / Cooldown / Smart Routing",
