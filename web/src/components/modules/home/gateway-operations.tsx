@@ -15,12 +15,14 @@ import {
     Settings2,
     ShieldCheck,
     TestTubeDiagonal,
+    Thermometer,
     type LucideIcon,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useStatsObservability, type StatsObservabilityBreakdown } from '@/api/endpoints/stats';
 import { useNavStore, type NavItem } from '@/components/modules/navbar';
+import { useChannelTabStore, type ChannelTab } from '@/components/modules/channel/tab-store';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn, formatCount, formatMoney, formatTime } from '@/lib/utils';
@@ -34,8 +36,9 @@ type OperationItem = {
 };
 
 type CapabilityItem = {
-    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'liveDebug' | 'health' | 'selection' | 'channelConcurrency' | 'modelAssociation' | 'probe' | 'quota';
+    id: 'validator' | 'failover' | 'streamGate' | 'trace' | 'liveDebug' | 'health' | 'channelHealth' | 'selection' | 'channelConcurrency' | 'modelAssociation' | 'probe' | 'quota';
     nav: NavItem;
+    channelTab?: ChannelTab;
     icon: LucideIcon;
     status: 'done' | 'partial';
 };
@@ -102,6 +105,7 @@ function BreakdownRows({ title, items }: { title: string; items: StatsObservabil
 export function GatewayOperationsPanel() {
     const t = useTranslations('home.operations');
     const setActiveItem = useNavStore((state) => state.setActiveItem);
+    const setChannelTab = useChannelTabStore((state) => state.setActiveTab);
     const { data } = useStatsObservability('24h');
 
     const operationItems = useMemo<OperationItem[]>(() => [
@@ -156,6 +160,7 @@ export function GatewayOperationsPanel() {
         { id: 'trace', nav: 'traces', icon: Radar, status: 'done' },
         { id: 'liveDebug', nav: 'log', icon: Activity, status: 'partial' },
         { id: 'health', nav: 'setting', icon: Activity, status: 'partial' },
+        { id: 'channelHealth', nav: 'channel', channelTab: 'health', icon: Thermometer, status: 'done' },
         { id: 'selection', nav: 'group', icon: BarChart3, status: 'done' },
         { id: 'channelConcurrency', nav: 'setting', icon: Network, status: 'done' },
         { id: 'modelAssociation', nav: 'group', icon: GitBranch, status: 'done' },
@@ -234,7 +239,10 @@ export function GatewayOperationsPanel() {
                                 key={item.id}
                                 type="button"
                                 className="rounded-lg border bg-background/40 px-3 py-2 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
-                                onClick={() => setActiveItem(item.nav)}
+                                onClick={() => {
+                                    if (item.channelTab) setChannelTab(item.channelTab);
+                                    setActiveItem(item.nav);
+                                }}
                             >
                                 <div className="flex items-start gap-2">
                                     <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

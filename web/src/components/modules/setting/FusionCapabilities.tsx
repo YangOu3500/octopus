@@ -1,10 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Activity, ArrowRight, CheckCircle2, CircleDashed, Eye, GitBranch, ListChecks, Network, Settings2, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { Activity, ArrowRight, CheckCircle2, CircleDashed, Eye, GitBranch, ListChecks, Network, Settings2, Thermometer, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavStore, type NavItem } from '@/components/modules/navbar';
+import { useChannelTabStore, type ChannelTab } from '@/components/modules/channel/tab-store';
 import { cn } from '@/lib/utils';
 
 type CapabilityStatus = 'done' | 'partial' | 'planned';
@@ -14,6 +15,7 @@ type Capability = {
     status: CapabilityStatus;
     source: 'ccLoad' | 'AxonHub' | 'both' | 'octopus';
     nav?: NavItem;
+    channelTab?: ChannelTab;
     icon: LucideIcon;
 };
 
@@ -23,6 +25,7 @@ const capabilities: Capability[] = [
     { id: 'streamGate', status: 'done', source: 'ccLoad', nav: 'setting', icon: ListChecks },
     { id: 'traceAttempts', status: 'done', source: 'both', nav: 'traces', icon: Eye },
     { id: 'healthCooldown', status: 'partial', source: 'both', nav: 'setting', icon: Settings2 },
+    { id: 'channelModelHealth', status: 'done', source: 'both', nav: 'channel', channelTab: 'health', icon: Thermometer },
     { id: 'selectionTracker', status: 'done', source: 'AxonHub', nav: 'group', icon: Activity },
     { id: 'channelConcurrency', status: 'done', source: 'AxonHub', nav: 'setting', icon: Network },
     { id: 'slowProbe', status: 'partial', source: 'ccLoad', nav: 'setting', icon: CircleDashed },
@@ -64,6 +67,7 @@ function sourceLabel(source: Capability['source'], t: ReturnType<typeof useTrans
 export function SettingFusionCapabilities() {
     const t = useTranslations('setting');
     const setActiveItem = useNavStore((state) => state.setActiveItem);
+    const setChannelTab = useChannelTabStore((state) => state.setActiveTab);
 
     const counts = capabilities.reduce(
         (acc, item) => {
@@ -142,7 +146,10 @@ export function SettingFusionCapabilities() {
                                                 variant="outline"
                                                 size="sm"
                                                 className="h-8 rounded-lg px-2 text-xs"
-                                                onClick={() => setActiveItem(item.nav!)}
+                                                onClick={() => {
+                                                    if (item.channelTab) setChannelTab(item.channelTab);
+                                                    setActiveItem(item.nav!);
+                                                }}
                                             >
                                                 {t(`fusionCapabilities.nav.${item.nav}`)}
                                                 <ArrowRight className="size-3.5" />

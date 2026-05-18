@@ -253,6 +253,10 @@
                     "label": "Health Score / Cooldown",
                     "entry": "Settings / routing preview"
                 },
+                "channelHealth": {
+                    "label": "Channel Model Health",
+                    "entry": "Channel model health"
+                },
                 "selection": {
                     "label": "Selection Tracker",
                     "entry": "Group routing preview"
@@ -536,6 +540,12 @@
                     "desc": "Uses real feedback, success rate, empty response rate, latency, and cooldown state to sort or skip candidates.",
                     "ui": "Settings expose health weights and cooldown policy. Group routing preview shows health score, cooldown, and decisions.",
                     "gap": "Key / channel / base_url / site / account cooldown scopes are implemented. Hard concurrency queues can still be added later."
+                },
+                "channelModelHealth": {
+                    "name": "Channel-Model Health Workbench",
+                    "desc": "Aggregates real relay, model test, and slow probe feedback by channel_id + model_name with health score, success rate, latency, throughput, cost, load, cooldown, and quota.",
+                    "ui": "The Channels > Model Health tab provides filters, realtime refresh, a virtualized table, and managed site/account context.",
+                    "gap": "Still needs NAS / Docker validation with real health samples."
                 },
                 "selectionTracker": {
                     "name": "Burst Selection Spreading / Selection Tracker",

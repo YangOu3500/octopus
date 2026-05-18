@@ -253,6 +253,10 @@
                     "label": "健康分 / 冷却",
                     "entry": "设置页 / 调度预览"
                 },
+                "channelHealth": {
+                    "label": "渠道模型健康",
+                    "entry": "渠道页模型健康"
+                },
                 "selection": {
                     "label": "Selection Tracker",
                     "entry": "分组调度预览"
@@ -536,6 +540,12 @@
                     "desc": "结合真实请求反馈、成功率、空响应率、延迟和冷却状态影响候选排序或跳过。",
                     "ui": "设置页可调健康分权重并查看冷却策略；分组调度预览展示健康分、冷却和决策原因。",
                     "gap": "已实现 key / channel / base_url / site / account 冷却范围；后续可继续补硬并发队列。"
+                },
+                "channelModelHealth": {
+                    "name": "渠道-模型健康工作台",
+                    "desc": "按 channel_id + model_name 聚合真实请求、模型测试和慢探测反馈，展示健康分、成功率、延迟、吞吐、成本、负载、冷却和配额。",
+                    "ui": "渠道页“模型健康”标签提供过滤、实时刷新、虚拟滚动表格和托管站点 / 账号信息。",
+                    "gap": "仍需 NAS / Docker 实例用真实健康样本确认展示效果。"
                 },
                 "selectionTracker": {
                     "name": "突发选择分散 / Selection Tracker",
