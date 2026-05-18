@@ -1004,6 +1004,8 @@
         "clear": "Clear all",
         "retryFailed": "Retry failed {count}",
         "running": "Running...",
+        "queued": "Queued...",
+        "queueSummary": "Batch {total} · Running {running} · Queued {queued}",
         "runSelected": "Test {count}",
         "runComplete": "Model test completed: {success} success, {failed} failed",
         "runFailed": "Model test failed",
@@ -1023,6 +1025,7 @@
             "success": "Success",
             "failed": "Failed",
             "running": "Running",
+            "queued": "Queued",
             "idle": "Idle"
         },
         "channel": "Channel",
@@ -1041,6 +1044,8 @@
             "visible": "Visible targets",
             "selected": "Selected",
             "concurrency": "Concurrency",
+            "running": "Running",
+            "queued": "Queued",
             "requestMode": "Request mode",
             "stream": "Stream",
             "nonStream": "Non-stream"
@@ -1048,6 +1053,7 @@
         "status": {
             "idle": "Idle",
             "running": "Running",
+            "queued": "Queued",
             "success": "Success",
             "failed": "Failed",
             "disabled": "Disabled"

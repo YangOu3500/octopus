@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, Circle, Download, FlaskConical, FileSearch, LoaderCircle, Play, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Circle, Clock3, Download, FlaskConical, FileSearch, LoaderCircle, Play, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
 import { useChannelList, ChannelType, type Channel } from '@/api/endpoints/channel';
 import { useModelChannelList } from '@/api/endpoints/model';
 import { useRunModelTest, type ModelTestMode, type ModelTestResult, type ModelTestTarget } from '@/api/endpoints/model-test';
@@ -25,14 +25,19 @@ type TestRow = {
     enabled: boolean;
 };
 
-type ModelTestResultFilter = 'all' | 'success' | 'failed' | 'running' | 'idle';
+type ModelTestResultFilter = 'all' | 'success' | 'failed' | 'running' | 'queued' | 'idle';
 type ModelTestResultStatus = Exclude<ModelTestResultFilter, 'all'>;
+type ModelTestRunStatus = 'running' | 'queued';
+type ActiveRunPlan = {
+    keys: string[];
+    concurrency: number;
+};
 
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
 const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.4fr) 7rem 9rem 5rem 6rem 6rem 9rem 6rem 7rem minmax(18rem,1.2fr) 8rem';
 const MODEL_TEST_EXPORT_VERSION = 1;
-const MODEL_TEST_RESULT_FILTERS: ModelTestResultFilter[] = ['all', 'success', 'failed', 'running', 'idle'];
+const MODEL_TEST_RESULT_FILTERS: ModelTestResultFilter[] = ['all', 'success', 'failed', 'running', 'queued', 'idle'];
 
 function channelProtocol(type: ChannelType | undefined): string {
     switch (type) {
@@ -102,8 +107,8 @@ function formatCost(value?: number) {
     return `$${value.toFixed(6)}`;
 }
 
-function resultStatus(result?: ModelTestResult, running = false): ModelTestResultStatus {
-    if (running) return 'running';
+function resultStatus(result?: ModelTestResult, runStatus?: ModelTestRunStatus): ModelTestResultStatus {
+    if (runStatus) return runStatus;
     if (!result) return 'idle';
     if (result.success) return 'success';
     return 'failed';
@@ -198,6 +203,7 @@ export function ModelTest() {
     const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
     const [results, setResults] = useState<Record<string, ModelTestResult>>({});
     const [runningKeys, setRunningKeys] = useState<Set<string>>(new Set());
+    const [activeRunPlan, setActiveRunPlan] = useState<ActiveRunPlan | null>(null);
 
     const modelNames = useMemo(() => {
         const names = new Set<string>();
@@ -271,24 +277,46 @@ export function ModelTest() {
         return searchedRows;
     }, [channelById, mode, modelChannels, query, selectedChannelId, selectedModelName]);
 
+    const runStateByKey = useMemo(() => {
+        const states = new Map<string, ModelTestRunStatus>();
+        if (!activeRunPlan) return states;
+        const activeLimit = Math.max(1, Math.min(activeRunPlan.concurrency, activeRunPlan.keys.length));
+        activeRunPlan.keys.forEach((key, index) => {
+            if (!runningKeys.has(key)) return;
+            states.set(key, index < activeLimit ? 'running' : 'queued');
+        });
+        return states;
+    }, [activeRunPlan, runningKeys]);
+
+    const runStats = useMemo(() => {
+        let running = 0;
+        let queued = 0;
+        for (const state of runStateByKey.values()) {
+            if (state === 'running') running += 1;
+            if (state === 'queued') queued += 1;
+        }
+        return { running, queued, total: running + queued };
+    }, [runStateByKey]);
+
     const resultCounts = useMemo<Record<ModelTestResultFilter, number>>(() => {
         const counts: Record<ModelTestResultFilter, number> = {
             all: filterableRows.length,
             success: 0,
             failed: 0,
             running: 0,
+            queued: 0,
             idle: 0,
         };
         for (const row of filterableRows) {
-            counts[resultStatus(results[row.key], runningKeys.has(row.key))] += 1;
+            counts[resultStatus(results[row.key], runStateByKey.get(row.key))] += 1;
         }
         return counts;
-    }, [filterableRows, results, runningKeys]);
+    }, [filterableRows, results, runStateByKey]);
 
     const rows = useMemo<TestRow[]>(() => {
         if (resultFilter === 'all') return filterableRows;
-        return filterableRows.filter((row) => resultStatus(results[row.key], runningKeys.has(row.key)) === resultFilter);
-    }, [filterableRows, resultFilter, results, runningKeys]);
+        return filterableRows.filter((row) => resultStatus(results[row.key], runStateByKey.get(row.key)) === resultFilter);
+    }, [filterableRows, resultFilter, results, runStateByKey]);
 
     useEffect(() => {
         queueMicrotask(() => setSelectedKeys(new Set(rows.filter((row) => row.enabled).map((row) => row.key))));
@@ -319,11 +347,13 @@ export function ModelTest() {
             toast.error(t('emptySelection'));
             return;
         }
+        const boundedConcurrency = Math.max(1, Math.min(MAX_CONCURRENCY, Number(runConcurrency) || 1));
         const rowKeys = rowsToRun.map((row) => row.key);
         const targets: ModelTestTarget[] = rowsToRun.map((row) => ({
             channel_id: row.channelId,
             model_name: row.modelName,
         }));
+        setActiveRunPlan({ keys: rowKeys, concurrency: boundedConcurrency });
         setRunningKeys((previous) => {
             const next = new Set(previous);
             for (const key of rowKeys) {
@@ -344,7 +374,7 @@ export function ModelTest() {
             prompt,
             max_tokens: maxTokens,
             temperature: 0,
-            concurrency: runConcurrency,
+            concurrency: boundedConcurrency,
             stream,
         }, {
             onSuccess: (data) => {
@@ -362,6 +392,7 @@ export function ModelTest() {
                     }
                     return next;
                 });
+                setActiveRunPlan(null);
                 toast.success(t('runComplete', { success: data.success, failed: data.failed }));
             },
             onError: (error) => {
@@ -372,6 +403,7 @@ export function ModelTest() {
                     }
                     return next;
                 });
+                setActiveRunPlan(null);
                 const message = error instanceof Error ? error.message : t('runFailed');
                 toast.error(message);
             },
@@ -503,6 +535,11 @@ export function ModelTest() {
                             <Badge variant="outline" className="rounded-md">
                                 {t('summary', { total: summary.total, success: summary.success, failed: summary.failed })}
                             </Badge>
+                            {runStats.total > 0 && (
+                                <Badge variant="secondary" className="rounded-md">
+                                    {t('queueSummary', { running: runStats.running, queued: runStats.queued, total: runStats.total })}
+                                </Badge>
+                            )}
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <Button type="button" variant="outline" size="sm" onClick={handleExport} disabled={exportableResults.length === 0}>
@@ -611,7 +648,7 @@ export function ModelTest() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
                         <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
                             <div className="text-xs text-muted-foreground">{t('stats.visible')}</div>
                             <div className="mt-1 text-lg font-semibold tabular-nums">{rows.length}</div>
@@ -623,6 +660,14 @@ export function ModelTest() {
                         <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
                             <div className="text-xs text-muted-foreground">{t('stats.concurrency')}</div>
                             <div className="mt-1 text-lg font-semibold tabular-nums">{concurrency}</div>
+                        </div>
+                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
+                            <div className="text-xs text-muted-foreground">{t('stats.running')}</div>
+                            <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.running}</div>
+                        </div>
+                        <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
+                            <div className="text-xs text-muted-foreground">{t('stats.queued')}</div>
+                            <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.queued}</div>
                         </div>
                         <div className="rounded-lg border border-border bg-background/50 px-3 py-2">
                             <div className="text-xs text-muted-foreground">{t('stats.requestMode')}</div>
@@ -649,6 +694,7 @@ export function ModelTest() {
                                 <SelectItem value="success">{t('filter.success')}</SelectItem>
                                 <SelectItem value="failed">{t('filter.failed')}</SelectItem>
                                 <SelectItem value="running">{t('filter.running')}</SelectItem>
+                                <SelectItem value="queued">{t('filter.queued')}</SelectItem>
                                 <SelectItem value="idle">{t('filter.idle')}</SelectItem>
                             </SelectContent>
                         </Select>
@@ -722,9 +768,10 @@ export function ModelTest() {
                                     overscan={12}
                                     getItemKey={(row) => row.key}
                                     renderItem={(row) => {
-                                        const isRunning = runningKeys.has(row.key);
+                                        const runStatus = runStateByKey.get(row.key);
+                                        const isRunning = Boolean(runStatus);
                                         const result = results[row.key];
-                                        const status = resultStatus(result, isRunning);
+                                        const status = resultStatus(result, runStatus);
                                         return (
                                             <div
                                                 className="grid border-b border-border/60 text-sm align-top last:border-0"
@@ -763,6 +810,11 @@ export function ModelTest() {
                                                             <LoaderCircle className="size-3 animate-spin" />
                                                             {t('status.running')}
                                                         </Badge>
+                                                    ) : status === 'queued' ? (
+                                                        <Badge variant="secondary" className="rounded-md">
+                                                            <Clock3 className="size-3" />
+                                                            {t('status.queued')}
+                                                        </Badge>
                                                     ) : status === 'success' ? (
                                                         <Badge className="rounded-md bg-emerald-600 text-white">
                                                             <CheckCircle2 className="size-3" />
@@ -795,7 +847,7 @@ export function ModelTest() {
                                                 <div className="px-3 py-3 tabular-nums">{formatCost(result?.estimated_cost)}</div>
                                                 <div className="min-w-0 px-3 py-3">
                                                     <div className="line-clamp-3 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
-                                                        {isRunning ? t('running') : result?.response_text || result?.error_message || '-'}
+                                                        {runStatus === 'queued' ? t('queued') : isRunning ? t('running') : result?.response_text || result?.error_message || '-'}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-start gap-1 px-3 py-3">

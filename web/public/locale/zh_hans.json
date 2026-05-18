@@ -1004,6 +1004,8 @@
         "clear": "清空全部",
         "retryFailed": "重测失败 {count}",
         "running": "测试中...",
+        "queued": "排队中...",
+        "queueSummary": "本批 {total} · 测试中 {running} · 排队 {queued}",
         "runSelected": "测试 {count} 项",
         "runComplete": "模型测试完成：成功 {success}，失败 {failed}",
         "runFailed": "模型测试失败",
@@ -1023,6 +1025,7 @@
             "success": "成功",
             "failed": "失败",
             "running": "测试中",
+            "queued": "排队中",
             "idle": "未测试"
         },
         "channel": "渠道",
@@ -1041,6 +1044,8 @@
             "visible": "当前目标",
             "selected": "已选择",
             "concurrency": "并发",
+            "running": "测试中",
+            "queued": "排队中",
             "requestMode": "请求模式",
             "stream": "流式",
             "nonStream": "非流式"
@@ -1048,6 +1053,7 @@
         "status": {
             "idle": "未测试",
             "running": "测试中",
+            "queued": "排队中",
             "success": "成功",
             "failed": "失败",
             "disabled": "已禁用"

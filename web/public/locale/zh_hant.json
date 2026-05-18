@@ -1004,6 +1004,8 @@
         "clear": "清空全部",
         "retryFailed": "重測失敗 {count}",
         "running": "測試中...",
+        "queued": "排隊中...",
+        "queueSummary": "本批 {total} · 測試中 {running} · 排隊 {queued}",
         "runSelected": "測試 {count} 項",
         "runComplete": "模型測試完成：成功 {success}，失敗 {failed}",
         "runFailed": "模型測試失敗",
@@ -1023,6 +1025,7 @@
             "success": "成功",
             "failed": "失敗",
             "running": "測試中",
+            "queued": "排隊中",
             "idle": "未測試"
         },
         "channel": "供應源",
@@ -1041,6 +1044,8 @@
             "visible": "目前目標",
             "selected": "已選擇",
             "concurrency": "並發",
+            "running": "測試中",
+            "queued": "排隊中",
             "requestMode": "請求模式",
             "stream": "串流",
             "nonStream": "非串流"
@@ -1048,6 +1053,7 @@
         "status": {
             "idle": "未測試",
             "running": "測試中",
+            "queued": "排隊中",
             "success": "成功",
             "failed": "失敗",
             "disabled": "已停用"
