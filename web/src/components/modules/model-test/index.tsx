@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, Circle, FlaskConical, FileSearch, LoaderCircle, Play, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Circle, Download, FlaskConical, FileSearch, LoaderCircle, Play, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
 import { useChannelList, ChannelType, type Channel } from '@/api/endpoints/channel';
 import { useModelChannelList } from '@/api/endpoints/model';
 import { useRunModelTest, type ModelTestMode, type ModelTestResult, type ModelTestTarget } from '@/api/endpoints/model-test';
@@ -28,6 +28,7 @@ type TestRow = {
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
 const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.4fr) 7rem 9rem 5rem 6rem 6rem 9rem 6rem 7rem minmax(18rem,1.2fr) 8rem';
+const MODEL_TEST_EXPORT_VERSION = 1;
 
 function channelProtocol(type: ChannelType | undefined): string {
     switch (type) {
@@ -106,6 +107,63 @@ function resultStatus(result?: ModelTestResult, running = false) {
 
 function modelSourceLabel(row: TestRow) {
     return `${row.channelName} · ${protocolLabel(row.protocol)}`;
+}
+
+function exportTimestamp() {
+    return new Date().toISOString();
+}
+
+function exportFilenameTimestamp() {
+    return exportTimestamp().replace(/[:.]/g, '-');
+}
+
+function compactObject<T extends Record<string, unknown>>(input: T) {
+    return Object.fromEntries(
+        Object.entries(input).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+    );
+}
+
+function downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function sanitizeModelTestResultForExport(result: ModelTestResult) {
+    return compactObject({
+        index: result.index,
+        channel_id: result.channel_id,
+        channel_name: result.channel_name,
+        channel_key_id: result.channel_key_id,
+        group_id: result.group_id,
+        group_name: result.group_name,
+        model_name: result.model_name,
+        protocol: result.protocol,
+        success: result.success,
+        status: result.status,
+        http_status: result.http_status,
+        failure_reason: result.failure_reason,
+        error_message: result.error_message,
+        duration_ms: result.duration_ms,
+        ttfb_ms: result.ttfb_ms,
+        input_tokens: result.input_tokens,
+        output_tokens: result.output_tokens,
+        cache_tokens: result.cache_tokens,
+        tokens_per_second: result.tokens_per_second,
+        input_cost: result.input_cost,
+        output_cost: result.output_cost,
+        estimated_cost: result.estimated_cost,
+        response_summary_present: Boolean(result.response_text),
+        response_summary_length: result.response_text?.length,
+        log_id: result.log_id,
+        trace_id: result.trace_id,
+    });
 }
 
 export function ModelTest() {
@@ -298,6 +356,41 @@ export function ModelTest() {
 
     const handleClear = () => setResults({});
 
+    const summary = useMemo(() => {
+        const values = Object.values(results);
+        const success = values.filter((item) => item.success).length;
+        return { total: values.length, success, failed: values.length - success };
+    }, [results]);
+
+    const handleExport = () => {
+        const values = Object.values(results);
+        if (values.length === 0) {
+            toast.warning(t('export.empty'));
+            return;
+        }
+        try {
+            const exportedAt = exportTimestamp();
+            downloadJson(`octopus-model-test-${exportFilenameTimestamp()}.json`, {
+                export_version: MODEL_TEST_EXPORT_VERSION,
+                exported_at: exportedAt,
+                config: {
+                    mode,
+                    stream,
+                    concurrency,
+                    max_tokens: maxTokens,
+                    prompt_length: prompt.length,
+                    selected_count: selectedRows.length,
+                    visible_count: rows.length,
+                },
+                summary,
+                results: values.map(sanitizeModelTestResultForExport),
+            });
+            toast.success(t('export.success'), { description: t('export.safe') });
+        } catch (error) {
+            toast.error(t('export.failed'), { description: error instanceof Error ? error.message : String(error) });
+        }
+    };
+
     const handleClearRow = (key: string) => {
         setResults((previous) => {
             const next = { ...previous };
@@ -314,12 +407,6 @@ export function ModelTest() {
             source: 'model_test',
         });
     };
-
-    const summary = useMemo(() => {
-        const values = Object.values(results);
-        const success = values.filter((item) => item.success).length;
-        return { total: values.length, success, failed: values.length - success };
-    }, [results]);
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
@@ -352,6 +439,10 @@ export function ModelTest() {
                             </Badge>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
+                            <Button type="button" variant="outline" size="sm" onClick={handleExport} disabled={Object.keys(results).length === 0}>
+                                <Download className="size-4" />
+                                {t('export.button')}
+                            </Button>
                             <Button type="button" variant="outline" size="sm" onClick={handleClear} disabled={Object.keys(results).length === 0}>
                                 <RotateCcw className="size-4" />
                                 {t('clear')}

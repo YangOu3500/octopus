@@ -1006,6 +1006,13 @@
         "viewLog": "Log detail",
         "runOne": "Test this row",
         "clearOne": "Clear this row result",
+        "export": {
+            "button": "Export",
+            "empty": "No model test results to export",
+            "success": "Model test results exported",
+            "failed": "Failed to export model test results",
+            "safe": "The export only contains structured redacted fields, without the full prompt, response body, or auth data"
+        },
         "channel": "Channel",
         "model": "Model",
         "prompt": "Prompt",
