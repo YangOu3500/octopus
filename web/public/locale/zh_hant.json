@@ -921,6 +921,8 @@
             "enabled": "已啟用",
             "disabled": "未啟用",
             "ready": "可用候選",
+            "currentLoad": "目前負載",
+            "blocked": "阻斷候選",
             "cooling": "冷卻 / 平均分",
             "priority": "優先級",
             "weight": "權重",

@@ -921,6 +921,8 @@
             "enabled": "Enabled",
             "disabled": "Disabled",
             "ready": "Ready candidates",
+            "currentLoad": "Current load",
+            "blocked": "Blocked candidates",
             "cooling": "Cooldown / avg score",
             "priority": "Priority",
             "weight": "Weight",

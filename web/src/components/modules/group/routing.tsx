@@ -292,10 +292,12 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
         const candidates = data?.candidates ?? [];
         const ready = candidates.filter((item) => item.decision === 'ready').length;
         const cooling = candidates.filter((item) => item.cooling_down).length;
+        const activeSelections = candidates.reduce((sum, item) => sum + item.active_selections, 0);
+        const blocked = candidates.length - ready;
         const avgScore = candidates.length
             ? candidates.reduce((sum, item) => sum + item.health_score, 0) / candidates.length
             : 100;
-        return { total: candidates.length, ready, cooling, avgScore };
+        return { total: candidates.length, ready, cooling, activeSelections, blocked, avgScore };
     }, [data]);
 
     const exportRoutingPreview = () => {
@@ -361,7 +363,7 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                     </div>
                 ) : (
                     <>
-                        <div className="grid gap-2 text-sm md:grid-cols-4">
+                        <div className="grid gap-2 text-sm md:grid-cols-3 xl:grid-cols-6">
                             <div className="rounded-lg border bg-background/40 px-3 py-2">
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <GitBranch className="size-3.5" />
@@ -384,6 +386,20 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                                     {t('ready')}
                                 </div>
                                 <div className="mt-1 font-medium">{summary.ready}/{summary.total}</div>
+                            </div>
+                            <div className="rounded-lg border bg-background/40 px-3 py-2">
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Activity className="size-3.5" />
+                                    {t('currentLoad')}
+                                </div>
+                                <div className="mt-1 font-medium">{summary.activeSelections}</div>
+                            </div>
+                            <div className="rounded-lg border bg-background/40 px-3 py-2">
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <ShieldAlert className="size-3.5" />
+                                    {t('blocked')}
+                                </div>
+                                <div className="mt-1 font-medium">{summary.blocked}</div>
                             </div>
                             <div className="rounded-lg border bg-background/40 px-3 py-2">
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
