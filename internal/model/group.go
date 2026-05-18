@@ -64,50 +64,62 @@ type GroupIDAndLLMName struct {
 	ModelName string
 }
 
+type GroupAutoGenerateAssociationMode string
+
+const (
+	GroupAutoGenerateAssociationExact GroupAutoGenerateAssociationMode = "exact"
+	GroupAutoGenerateAssociationAlias GroupAutoGenerateAssociationMode = "alias"
+)
+
 type GroupAutoGenerateRequest struct {
-	All               bool       `json:"all"`
-	ModelNames        []string   `json:"model_names,omitempty"`
-	Mode              *GroupMode `json:"mode,omitempty"`
-	FirstTokenTimeOut int        `json:"first_token_time_out,omitempty"`
-	SessionKeepTime   int        `json:"session_keep_time,omitempty"`
-	RetryEnabled      bool       `json:"retry_enabled,omitempty"`
-	MaxRetries        int        `json:"max_retries,omitempty"`
+	All               bool                             `json:"all"`
+	ModelNames        []string                         `json:"model_names,omitempty"`
+	Mode              *GroupMode                       `json:"mode,omitempty"`
+	AssociationMode   GroupAutoGenerateAssociationMode `json:"association_mode,omitempty"`
+	FirstTokenTimeOut int                              `json:"first_token_time_out,omitempty"`
+	SessionKeepTime   int                              `json:"session_keep_time,omitempty"`
+	RetryEnabled      bool                             `json:"retry_enabled,omitempty"`
+	MaxRetries        int                              `json:"max_retries,omitempty"`
 }
 
 type GroupAutoGeneratePreview struct {
-	TotalModels    int                            `json:"total_models"`
-	SelectedModels int                            `json:"selected_models"`
-	Items          []GroupAutoGeneratePreviewItem `json:"items"`
+	TotalModels     int                              `json:"total_models"`
+	SelectedModels  int                              `json:"selected_models"`
+	AssociationMode GroupAutoGenerateAssociationMode `json:"association_mode"`
+	Items           []GroupAutoGeneratePreviewItem   `json:"items"`
 }
 
 type GroupAutoGeneratePreviewItem struct {
-	ModelName             string `json:"model_name"`
-	CandidateCount        int    `json:"candidate_count"`
-	ExistingGroupID       int    `json:"existing_group_id,omitempty"`
-	ExistingItemCount     int    `json:"existing_item_count"`
-	MissingCandidateCount int    `json:"missing_candidate_count"`
-	WillCreate            bool   `json:"will_create"`
-	WillAddCount          int    `json:"will_add_count"`
-	SkippedReason         string `json:"skipped_reason,omitempty"`
+	ModelName             string   `json:"model_name"`
+	CandidateCount        int      `json:"candidate_count"`
+	ExistingGroupID       int      `json:"existing_group_id,omitempty"`
+	ExistingItemCount     int      `json:"existing_item_count"`
+	MissingCandidateCount int      `json:"missing_candidate_count"`
+	WillCreate            bool     `json:"will_create"`
+	WillAddCount          int      `json:"will_add_count"`
+	SkippedReason         string   `json:"skipped_reason,omitempty"`
+	Aliases               []string `json:"aliases,omitempty"`
 }
 
 type GroupAutoGenerateResult struct {
-	TotalModels    int                           `json:"total_models"`
-	SelectedModels int                           `json:"selected_models"`
-	CreatedGroups  int                           `json:"created_groups"`
-	UpdatedGroups  int                           `json:"updated_groups"`
-	SkippedGroups  int                           `json:"skipped_groups"`
-	AddedItems     int                           `json:"added_items"`
-	FailedGroups   int                           `json:"failed_groups"`
-	Items          []GroupAutoGenerateResultItem `json:"items"`
+	TotalModels     int                              `json:"total_models"`
+	SelectedModels  int                              `json:"selected_models"`
+	AssociationMode GroupAutoGenerateAssociationMode `json:"association_mode"`
+	CreatedGroups   int                              `json:"created_groups"`
+	UpdatedGroups   int                              `json:"updated_groups"`
+	SkippedGroups   int                              `json:"skipped_groups"`
+	AddedItems      int                              `json:"added_items"`
+	FailedGroups    int                              `json:"failed_groups"`
+	Items           []GroupAutoGenerateResultItem    `json:"items"`
 }
 
 type GroupAutoGenerateResultItem struct {
-	ModelName      string `json:"model_name"`
-	GroupID        int    `json:"group_id,omitempty"`
-	Created        bool   `json:"created"`
-	AddedItems     int    `json:"added_items"`
-	CandidateCount int    `json:"candidate_count"`
-	SkippedReason  string `json:"skipped_reason,omitempty"`
-	Error          string `json:"error,omitempty"`
+	ModelName      string   `json:"model_name"`
+	GroupID        int      `json:"group_id,omitempty"`
+	Created        bool     `json:"created"`
+	AddedItems     int      `json:"added_items"`
+	CandidateCount int      `json:"candidate_count"`
+	SkippedReason  string   `json:"skipped_reason,omitempty"`
+	Error          string   `json:"error,omitempty"`
+	Aliases        []string `json:"aliases,omitempty"`
 }

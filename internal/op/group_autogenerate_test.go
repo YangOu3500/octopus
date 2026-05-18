@@ -230,6 +230,99 @@ func TestGroupAutoGenerateSkipsDisabledProjectedModels(t *testing.T) {
 	}
 }
 
+func TestGroupAutoGenerateAliasAssociationFoldsProviderModelNames(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+
+	first := model.Channel{
+		Name:      "prefixed",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "openai/gpt-4o,models/gemini-1.5-pro",
+		BaseUrls:  []model.BaseUrl{{URL: "https://prefixed.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-prefixed"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&first, ctx); err != nil {
+		t.Fatalf("ChannelCreate first failed: %v", err)
+	}
+	second := model.Channel{
+		Name:      "plain",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "gpt-4o",
+		BaseUrls:  []model.BaseUrl{{URL: "https://plain.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-plain"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&second, ctx); err != nil {
+		t.Fatalf("ChannelCreate second failed: %v", err)
+	}
+
+	preview, err := GroupAutoGeneratePreview(&model.GroupAutoGenerateRequest{
+		All:             true,
+		AssociationMode: model.GroupAutoGenerateAssociationAlias,
+	}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGeneratePreview failed: %v", err)
+	}
+	if preview.AssociationMode != model.GroupAutoGenerateAssociationAlias {
+		t.Fatalf("association mode = %q, want alias", preview.AssociationMode)
+	}
+	if preview.TotalModels != 2 {
+		t.Fatalf("preview total models = %d, want 2: %+v", preview.TotalModels, preview)
+	}
+	var gpt4oPreview *model.GroupAutoGeneratePreviewItem
+	for i := range preview.Items {
+		if preview.Items[i].ModelName == "gpt-4o" {
+			gpt4oPreview = &preview.Items[i]
+		}
+	}
+	if gpt4oPreview == nil {
+		t.Fatalf("gpt-4o alias bucket missing: %+v", preview.Items)
+	}
+	if gpt4oPreview.CandidateCount != 2 || gpt4oPreview.WillAddCount != 2 {
+		t.Fatalf("unexpected gpt-4o preview: %+v", *gpt4oPreview)
+	}
+	if len(gpt4oPreview.Aliases) != 2 {
+		t.Fatalf("expected two aliases, got %+v", gpt4oPreview.Aliases)
+	}
+	foundGemini := false
+	for i := range preview.Items {
+		if preview.Items[i].ModelName == "gemini-1.5-pro" && len(preview.Items[i].Aliases) == 1 && preview.Items[i].Aliases[0] == "models/gemini-1.5-pro" {
+			foundGemini = true
+		}
+	}
+	if !foundGemini {
+		t.Fatalf("models/ namespace was not shown as gemini alias: %+v", preview.Items)
+	}
+
+	result, err := GroupAutoGenerate(&model.GroupAutoGenerateRequest{
+		ModelNames:      []string{"gpt-4o"},
+		AssociationMode: model.GroupAutoGenerateAssociationAlias,
+	}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGenerate failed: %v", err)
+	}
+	if result.CreatedGroups != 1 || result.AddedItems != 2 || result.SelectedModels != 1 {
+		t.Fatalf("unexpected alias generation result: %+v", result)
+	}
+
+	group := getGroupByNameForTest(t, "gpt-4o")
+	if len(group.Items) != 2 {
+		t.Fatalf("expected 2 alias-associated items, got %+v", group.Items)
+	}
+	modelsByChannel := map[int]string{}
+	for _, item := range group.Items {
+		modelsByChannel[item.ChannelID] = item.ModelName
+	}
+	if modelsByChannel[first.ID] != "openai/gpt-4o" {
+		t.Fatalf("prefixed channel model = %q, want openai/gpt-4o", modelsByChannel[first.ID])
+	}
+	if modelsByChannel[second.ID] != "gpt-4o" {
+		t.Fatalf("plain channel model = %q, want gpt-4o", modelsByChannel[second.ID])
+	}
+}
+
 func getGroupByNameForTest(t *testing.T, name string) model.Group {
 	t.Helper()
 	var group model.Group

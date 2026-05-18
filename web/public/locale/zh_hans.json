@@ -832,6 +832,14 @@
                 "all": "全部模型名",
                 "selected": "选择模型名"
             },
+            "association": {
+                "exact": "精确同名",
+                "alias": "别名归并"
+            },
+            "associationHint": {
+                "exact": "仅按大小写不敏感的同名模型聚合。",
+                "alias": "归并 openai/、models/ 等常见前缀，保留真实上游模型名。"
+            },
             "summary": {
                 "models": "将处理模型名",
                 "createFill": "新建 / 补齐分组",
@@ -853,7 +861,8 @@
                 "candidates": "{count} 个候选",
                 "create": "将新建分组",
                 "fill": "补齐 {count} 个候选",
-                "skip": "已完整"
+                "skip": "已完整",
+                "aliases": "别名：{aliases}"
             },
             "close": "关闭",
             "generate": "生成",

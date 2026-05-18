@@ -832,6 +832,14 @@
                 "all": "All Model Names",
                 "selected": "Selected Names"
             },
+            "association": {
+                "exact": "Exact names",
+                "alias": "Fold aliases"
+            },
+            "associationHint": {
+                "exact": "Only group case-insensitive identical names.",
+                "alias": "Fold common openai/ and models/ prefixes while keeping the real upstream model name."
+            },
             "summary": {
                 "models": "Model names to process",
                 "createFill": "Create / fill groups",
@@ -853,7 +861,8 @@
                 "candidates": "{count} candidates",
                 "create": "Will create group",
                 "fill": "Fill {count} candidates",
-                "skip": "Already complete"
+                "skip": "Already complete",
+                "aliases": "Aliases: {aliases}"
             },
             "close": "Close",
             "generate": "Generate",

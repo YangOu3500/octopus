@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, Layers3, Loader2, RefreshCw, Search, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
+    type GroupAutoGenerateAssociationMode,
     type GroupAutoGeneratePreviewItem,
     GroupMode,
     useAutoGenerateGroups,
@@ -42,6 +43,37 @@ function normalizedModelName(value: string) {
     return value.trim().toLowerCase();
 }
 
+function previewItemModelKeys(item: GroupAutoGeneratePreviewItem) {
+    const keys = new Set<string>();
+    keys.add(normalizedModelName(item.model_name));
+    item.aliases?.forEach((alias) => {
+        const key = normalizedModelName(alias);
+        if (key) keys.add(key);
+    });
+    keys.delete('');
+    return Array.from(keys);
+}
+
+function previewItemSources(item: GroupAutoGeneratePreviewItem, sourcesByModel: Map<string, LLMChannel[]>) {
+    const result: LLMChannel[] = [];
+    const seen = new Set<string>();
+    previewItemModelKeys(item).forEach((key) => {
+        const sources = sourcesByModel.get(key) ?? [];
+        sources.forEach((source) => {
+            const sourceKey = `${source.channel_id}\x00${source.name}`;
+            if (seen.has(sourceKey)) return;
+            seen.add(sourceKey);
+            result.push(source);
+        });
+    });
+    return result;
+}
+
+function previewItemAliasLabels(item: GroupAutoGeneratePreviewItem) {
+    const modelKey = normalizedModelName(item.model_name);
+    return (item.aliases ?? []).filter((alias) => normalizedModelName(alias) !== modelKey);
+}
+
 function modelSourceLabel(source: LLMChannel) {
     const siteParts = [source.site_name, source.site_account_name, source.site_group_name]
         .map((value) => value?.trim())
@@ -60,6 +92,7 @@ export function GroupBulkGenerateDialog() {
     const [query, setQuery] = useState('');
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [mode, setMode] = useState<GroupMode>(GroupMode.RoundRobin);
+    const [associationMode, setAssociationMode] = useState<GroupAutoGenerateAssociationMode>('exact');
     const [siteFilter, setSiteFilter] = useState(ALL_FILTER_VALUE);
     const [channelFilter, setChannelFilter] = useState(ALL_FILTER_VALUE);
 
@@ -69,10 +102,10 @@ export function GroupBulkGenerateDialog() {
 
     useEffect(() => {
         if (open) {
-            preview.mutate({ all: true });
+            preview.mutate({ all: true, association_mode: associationMode });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open]);
+    }, [open, associationMode]);
 
     const previewData = preview.data;
     const items = useMemo(() => previewData?.items ?? [], [previewData]);
@@ -132,10 +165,10 @@ export function GroupBulkGenerateDialog() {
     const normalizedQuery = query.trim().toLowerCase();
     const filteredItems = useMemo(() => {
         return items.filter((item) => {
-            if (normalizedQuery && !item.model_name.toLowerCase().includes(normalizedQuery)) return false;
+            if (normalizedQuery && !previewItemModelKeys(item).some((key) => key.includes(normalizedQuery))) return false;
             if (siteFilter === ALL_FILTER_VALUE && channelFilter === ALL_FILTER_VALUE) return true;
 
-            const sources = sourcesByModel.get(normalizedModelName(item.model_name)) ?? [];
+            const sources = previewItemSources(item, sourcesByModel);
             return sources.some((source) => {
                 const siteMatches = siteFilter === ALL_FILTER_VALUE
                     || (siteFilter === MANUAL_SITE_FILTER_VALUE && source.site_id == null)
@@ -193,6 +226,7 @@ export function GroupBulkGenerateDialog() {
                 all: scope === 'all',
                 model_names: scope === 'selected' ? selectedItems.map((item) => item.model_name) : undefined,
                 mode,
+                association_mode: associationMode,
             },
             {
                 onSuccess: (result) => {
@@ -201,7 +235,7 @@ export function GroupBulkGenerateDialog() {
                         updated: result.updated_groups,
                         added: result.added_items,
                     }));
-                    preview.mutate({ all: true });
+                    preview.mutate({ all: true, association_mode: associationMode });
                 },
                 onError: (error) => {
                     toast.error(bulkT('toast.failed'), { description: error.message });
@@ -260,6 +294,25 @@ export function GroupBulkGenerateDialog() {
                             </button>
                         ))}
                     </div>
+                    <div className="flex flex-wrap items-center gap-1 md:col-span-2">
+                        {(['exact', 'alias'] as const).map((value) => (
+                            <button
+                                key={value}
+                                type="button"
+                                onClick={() => {
+                                    setAssociationMode(value);
+                                    setSelected(new Set());
+                                }}
+                                className={cn(
+                                    'rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                                    associationMode === value ? 'bg-primary/90 text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                                )}
+                            >
+                                {bulkT(`association.${value}`)}
+                            </button>
+                        ))}
+                        <span className="text-xs text-muted-foreground">{bulkT(`associationHint.${associationMode}`)}</span>
+                    </div>
                     <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3 md:col-span-2">
                         <div className="rounded-lg border border-border/60 bg-background px-3 py-2">
                             <div className="font-medium text-foreground">{activeItems.length}</div>
@@ -287,7 +340,7 @@ export function GroupBulkGenerateDialog() {
                                 className="h-9 rounded-xl pl-8"
                             />
                         </div>
-                        <Button type="button" variant="secondary" className="h-9 rounded-xl" onClick={() => preview.mutate({ all: true })} disabled={preview.isPending}>
+                        <Button type="button" variant="secondary" className="h-9 rounded-xl" onClick={() => preview.mutate({ all: true, association_mode: associationMode })} disabled={preview.isPending}>
                             <RefreshCw className={cn('size-4', preview.isPending && 'animate-spin')} />
                             {bulkT('refresh')}
                         </Button>
@@ -352,9 +405,12 @@ export function GroupBulkGenerateDialog() {
                                     const selectedItem = selected.has(item.model_name);
                                     const status = itemStatus(item);
                                     const { Avatar } = getModelIcon(item.model_name);
-                                    const sources = sourcesByModel.get(normalizedModelName(item.model_name)) ?? [];
+                                    const sources = previewItemSources(item, sourcesByModel);
                                     const sourcePreview = sources.slice(0, 2).map(modelSourceLabel).join(' · ');
                                     const sourceOverflow = sources.length > 2 ? sources.length - 2 : 0;
+                                    const aliases = previewItemAliasLabels(item);
+                                    const aliasPreview = aliases.slice(0, 2).join(' / ');
+                                    const aliasOverflow = aliases.length > 2 ? aliases.length - 2 : 0;
                                     return (
                                         <button
                                             key={item.model_name}
@@ -384,6 +440,13 @@ export function GroupBulkGenerateDialog() {
                                                     <span className="block truncate text-[10px] text-muted-foreground/80">
                                                         {sourcePreview}
                                                         {sourceOverflow > 0 ? ` +${sourceOverflow}` : ''}
+                                                    </span>
+                                                )}
+                                                {aliases.length > 0 && (
+                                                    <span className="block truncate text-[10px] text-muted-foreground/80">
+                                                        {bulkT('row.aliases', {
+                                                            aliases: `${aliasPreview}${aliasOverflow > 0 ? ` +${aliasOverflow}` : ''}`,
+                                                        })}
                                                     </span>
                                                 )}
                                             </span>
