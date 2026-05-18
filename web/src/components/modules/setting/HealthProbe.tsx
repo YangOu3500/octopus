@@ -10,6 +10,7 @@ import { useHealthCooldownPolicy, useSettingList, useSetSetting, SettingKey } fr
 import { toast } from '@/components/common/Toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/animate-ui/components/animate/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type RuntimeSettingKey = typeof SettingKey[keyof typeof SettingKey];
 
@@ -433,6 +434,11 @@ export function SettingHealthProbe() {
 
     const reasonLabel = (reason: string) => t(`healthProbe.cooldown.reasons.${reason}`);
     const scopeLabel = (scope: string) => t(`healthProbe.cooldown.scopes.${scope}`);
+    const cooldownSummary = {
+        total: cooldownPolicies.length,
+        retryAfter: cooldownPolicies.filter(policy => policy.uses_retry_after).length,
+        modelScoped: cooldownPolicies.filter(policy => policy.model_scoped).length,
+    };
 
     return (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
@@ -495,55 +501,73 @@ export function SettingHealthProbe() {
                         <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.subtitle')}</div>
                     </div>
                 </div>
-                <div className="overflow-x-auto rounded-xl border border-border">
-                    <table className="w-full min-w-[680px] text-left text-xs">
-                        <thead className="bg-muted/40 text-muted-foreground">
-                            <tr>
-                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.reason')}</th>
-                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.scope')}</th>
-                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.base')}</th>
-                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.backoff')}</th>
-                                <th className="px-3 py-2 font-medium">{t('healthProbe.cooldown.columns.lifecycle')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {cooldownPolicies.map(policy => (
-                                <tr key={policy.reason} className="border-t border-border align-top">
-                                    <td className="px-3 py-2">
-                                        <div className="font-medium text-card-foreground">{reasonLabel(policy.reason)}</div>
-                                        <div className="font-mono text-[11px] text-muted-foreground">{policy.reason}</div>
-                                    </td>
-                                    <td className="px-3 py-2">
-                                        <div className="flex flex-wrap gap-1">
-                                            {policy.scopes.map(scope => (
-                                                <Badge key={`${policy.reason}-${scope}`} variant="outline">
-                                                    {scopeLabel(scope)}
-                                                </Badge>
-                                            ))}
+                <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary">{t('healthProbe.cooldown.summary.total', { value: cooldownSummary.total })}</Badge>
+                    <Badge variant="outline">{t('healthProbe.cooldown.summary.retryAfter', { value: cooldownSummary.retryAfter })}</Badge>
+                    <Badge variant="outline">{t('healthProbe.cooldown.summary.modelScoped', { value: cooldownSummary.modelScoped })}</Badge>
+                </div>
+                <div className="rounded-xl border border-border">
+                    <Accordion type="multiple" className="divide-y divide-border">
+                        {cooldownPolicies.map(policy => (
+                            <AccordionItem key={policy.reason} value={policy.reason} className="border-none">
+                                <AccordionTrigger className="px-3 py-3 text-left hover:no-underline">
+                                    <div className="flex min-w-0 flex-1 flex-col gap-3 md:flex-row md:items-center">
+                                        <div className="min-w-0 md:flex-1">
+                                            <div className="font-medium text-card-foreground">{reasonLabel(policy.reason)}</div>
+                                            <div className="mt-1 font-mono text-[11px] text-muted-foreground">{policy.reason}</div>
+                                            <div className="mt-2 flex flex-wrap gap-1">
+                                                {policy.scopes.map(scope => (
+                                                    <Badge key={`${policy.reason}-${scope}`} variant="outline">
+                                                        {scopeLabel(scope)}
+                                                    </Badge>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </td>
-                                    <td className="px-3 py-2 text-muted-foreground">
-                                        <div>{formatSeconds(policy.base_seconds)}</div>
-                                        <div>{t('healthProbe.cooldown.max', { value: formatSeconds(policy.max_seconds) })}</div>
-                                    </td>
-                                    <td className="px-3 py-2">
-                                        <div className="flex flex-wrap gap-1">
-                                            {policy.uses_retry_after && (
-                                                <Badge variant="secondary">{t('healthProbe.cooldown.retryAfter')}</Badge>
-                                            )}
-                                            {policy.exponential_backoff && (
-                                                <Badge variant="outline">{t('healthProbe.cooldown.exponential')}</Badge>
-                                            )}
+                                        <div className="flex flex-col gap-1 text-xs text-muted-foreground md:min-w-[14rem] md:items-end">
+                                            <div>{formatSeconds(policy.base_seconds)}</div>
+                                            <div>{t('healthProbe.cooldown.max', { value: formatSeconds(policy.max_seconds) })}</div>
+                                            <div className="flex flex-wrap gap-1 md:justify-end">
+                                                {policy.uses_retry_after ? (
+                                                    <Badge variant="secondary">{t('healthProbe.cooldown.retryAfter')}</Badge>
+                                                ) : null}
+                                                {policy.exponential_backoff ? (
+                                                    <Badge variant="outline">{t('healthProbe.cooldown.exponential')}</Badge>
+                                                ) : null}
+                                            </div>
                                         </div>
-                                    </td>
-                                    <td className="px-3 py-2 text-muted-foreground">
-                                        <div>{policy.model_scoped ? t('healthProbe.cooldown.modelScoped') : t('healthProbe.cooldown.notModelScoped')}</div>
-                                        <div>{policy.cleared_on_success ? t('healthProbe.cooldown.clearedOnSuccess') : t('healthProbe.cooldown.notClearedOnSuccess')}</div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="border-t border-border/70 px-3 pb-3 pt-3">
+                                    <div className="grid gap-3 text-sm md:grid-cols-3">
+                                        <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2">
+                                            <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.columns.scope')}</div>
+                                            <div className="mt-1 font-medium text-foreground">
+                                                {policy.scopes.map(scope => scopeLabel(scope)).join(' / ')}
+                                            </div>
+                                        </div>
+                                        <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2">
+                                            <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.columns.backoff')}</div>
+                                            <div className="mt-1 font-medium text-foreground">
+                                                {policy.uses_retry_after ? t('healthProbe.cooldown.retryAfter') : '—'}
+                                            </div>
+                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                {policy.exponential_backoff ? t('healthProbe.cooldown.exponential') : '—'}
+                                            </div>
+                                        </div>
+                                        <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2">
+                                            <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.columns.lifecycle')}</div>
+                                            <div className="mt-1 font-medium text-foreground">
+                                                {policy.model_scoped ? t('healthProbe.cooldown.modelScoped') : t('healthProbe.cooldown.notModelScoped')}
+                                            </div>
+                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                {policy.cleared_on_success ? t('healthProbe.cooldown.clearedOnSuccess') : t('healthProbe.cooldown.notClearedOnSuccess')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
                 </div>
                 <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.note')}</div>
             </div>

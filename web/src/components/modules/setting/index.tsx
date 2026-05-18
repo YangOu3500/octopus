@@ -1,7 +1,10 @@
 'use client';
 
+import { type ReactNode, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PageWrapper } from '@/components/common/PageWrapper';
+import { cn } from '@/lib/utils';
 import { SettingAppearance } from './Appearance';
 import { SettingSystem } from './System';
 import { SettingAPIKey } from './APIKey';
@@ -16,27 +19,37 @@ import { SettingCircuitBreaker } from './CircuitBreaker';
 import { SettingHealthProbe } from './HealthProbe';
 import { SettingFusionCapabilities } from './FusionCapabilities';
 import { SettingModelAssociation } from './ModelAssociation';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+
+type SettingSectionId =
+    | 'system'
+    | 'health'
+    | 'automation'
+    | 'association'
+    | 'fusion'
+    | 'maintenance';
 
 type SettingSection = {
-    id: string;
+    id: SettingSectionId;
     label: string;
+    content: ReactNode;
 };
 
-function scrollToSection(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
+const DEFAULT_SECTION: SettingSectionId = 'system';
+const STORAGE_KEY = 'setting-active-section';
 
 function SectionNav({
     sections,
+    activeSection,
+    onSelect,
 }: {
     sections: SettingSection[];
+    activeSection: SettingSectionId;
+    onSelect: (section: SettingSectionId) => void;
 }) {
     return (
-        <div className="space-y-2 rounded-xl border border-border/70 bg-card p-3 shadow-sm">
+        <div className="space-y-3 rounded-xl border border-border/70 bg-card p-3 shadow-sm">
             <div className="md:hidden">
-                <Select defaultValue={sections[0]?.id} onValueChange={scrollToSection}>
+                <Select value={activeSection} onValueChange={(value) => onSelect(value as SettingSectionId)}>
                     <SelectTrigger className="h-10 rounded-lg">
                         <SelectValue />
                     </SelectTrigger>
@@ -50,109 +63,138 @@ function SectionNav({
                 </Select>
             </div>
 
-            <div className="hidden md:block xl:hidden">
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                    {sections.map((section) => (
+            <nav className="hidden md:flex md:flex-col md:gap-1">
+                {sections.map((section) => {
+                    const isActive = section.id === activeSection;
+                    return (
                         <button
                             key={section.id}
                             type="button"
-                            className="shrink-0 rounded-lg border border-border bg-background/60 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground"
-                            onClick={() => scrollToSection(section.id)}
+                            onClick={() => onSelect(section.id)}
+                            className={cn(
+                                'rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors',
+                                isActive
+                                    ? 'border border-primary/20 bg-primary/10 text-foreground shadow-sm'
+                                    : 'border border-transparent text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground'
+                            )}
                         >
                             {section.label}
                         </button>
-                    ))}
-                </div>
-            </div>
-
-            <nav className="hidden xl:flex xl:flex-col xl:gap-1">
-                {sections.map((section) => (
-                    <button
-                        key={section.id}
-                        type="button"
-                        className={cn(
-                            'rounded-lg px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
-                        )}
-                        onClick={() => scrollToSection(section.id)}
-                    >
-                        {section.label}
-                    </button>
-                ))}
+                    );
+                })}
             </nav>
         </div>
     );
 }
 
-function SectionHeader({ title }: { title: string }) {
-    return <h2 className="text-sm font-semibold text-foreground">{title}</h2>;
+function SectionContent({ section }: { section: SettingSection }) {
+    return (
+        <section className="space-y-4">
+            <div className="rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm">
+                <h2 className="text-sm font-semibold text-foreground">{section.label}</h2>
+            </div>
+            <div className="space-y-4">{section.content}</div>
+        </section>
+    );
 }
 
 export function Setting() {
     const sectionT = useTranslations('setting.sections');
-    const sections = [
-        { id: 'setting-system', label: sectionT('system') },
-        { id: 'setting-health', label: sectionT('health') },
-        { id: 'setting-automation', label: sectionT('automation') },
-        { id: 'setting-model-association', label: sectionT('association') },
-        { id: 'setting-fusion-capabilities', label: sectionT('fusion') },
-        { id: 'setting-maintenance', label: sectionT('maintenance') },
-    ];
+    const [activeSection, setActiveSection] = useState<SettingSectionId>(() => {
+        if (typeof window === 'undefined') {
+            return DEFAULT_SECTION;
+        }
+        const stored = window.localStorage.getItem(STORAGE_KEY);
+        if (stored === 'system' || stored === 'health' || stored === 'automation' || stored === 'association' || stored === 'fusion' || stored === 'maintenance') {
+            return stored;
+        }
+        return DEFAULT_SECTION;
+    });
 
-    return (
-        <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
-            <PageWrapper
-                childLayout={false}
-                className="grid grid-cols-1 gap-4 pb-24 md:pb-4 xl:grid-cols-[13.5rem_minmax(0,1fr)]"
-            >
-                <aside className="xl:sticky xl:top-3 xl:self-start">
-                    <SectionNav sections={sections} />
-                </aside>
+    const handleSelectSection = (section: SettingSectionId) => {
+        setActiveSection(section);
+        window.localStorage.setItem(STORAGE_KEY, section);
+    };
 
-                <div className="space-y-5">
-                    <section id="setting-system" className="scroll-mt-24 space-y-3">
-                        <SectionHeader title={sectionT('system')} />
+    const sections = useMemo<SettingSection[]>(
+        () => [
+            {
+                id: 'system',
+                label: sectionT('system'),
+                content: (
+                    <>
                         <SettingSystem />
-                        <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
                             <SettingCircuitBreaker />
                             <SettingLog />
                         </div>
-                    </section>
-
-                    <section id="setting-health" className="scroll-mt-24 space-y-3">
-                        <SectionHeader title={sectionT('health')} />
-                        <SettingHealthProbe />
-                    </section>
-
-                    <section id="setting-automation" className="scroll-mt-24 space-y-3">
-                        <SectionHeader title={sectionT('automation')} />
+                    </>
+                ),
+            },
+            {
+                id: 'health',
+                label: sectionT('health'),
+                content: <SettingHealthProbe />,
+            },
+            {
+                id: 'automation',
+                label: sectionT('automation'),
+                content: (
+                    <>
                         <SettingSiteAutomation />
-                        <div className="grid grid-cols-1 gap-3 2xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
                             <SettingAPIKey />
                             <SettingLLMPrice />
                             <SettingLLMSync />
                         </div>
-                    </section>
-
-                    <section id="setting-model-association" className="scroll-mt-24 space-y-3">
-                        <SectionHeader title={sectionT('association')} />
-                        <SettingModelAssociation />
-                    </section>
-
-                    <section id="setting-fusion-capabilities" className="scroll-mt-24 space-y-3">
-                        <SectionHeader title={sectionT('fusion')} />
-                        <SettingFusionCapabilities />
-                    </section>
-
-                    <section id="setting-maintenance" className="scroll-mt-24 space-y-3">
-                        <SectionHeader title={sectionT('maintenance')} />
-                        <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
+                    </>
+                ),
+            },
+            {
+                id: 'association',
+                label: sectionT('association'),
+                content: <SettingModelAssociation />,
+            },
+            {
+                id: 'fusion',
+                label: sectionT('fusion'),
+                content: <SettingFusionCapabilities />,
+            },
+            {
+                id: 'maintenance',
+                label: sectionT('maintenance'),
+                content: (
+                    <>
+                        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
                             <SettingAppearance />
                             <SettingAccount />
                         </div>
                         <SettingBackup />
                         <SettingInfo />
-                    </section>
-                </div>
+                    </>
+                ),
+            },
+        ],
+        [sectionT]
+    );
+
+    const currentSection = sections.find((section) => section.id === activeSection) ?? sections[0];
+
+    return (
+        <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
+            <PageWrapper
+                childLayout={false}
+                className="grid grid-cols-1 gap-4 pb-24 md:pb-4 xl:grid-cols-[14.5rem_minmax(0,1fr)]"
+            >
+                <aside className="xl:sticky xl:top-3 xl:self-start">
+                    <SectionNav
+                        sections={sections}
+                        activeSection={currentSection.id}
+                        onSelect={handleSelectSection}
+                    />
+                </aside>
+
+                <SectionContent section={currentSection} />
             </PageWrapper>
         </div>
     );

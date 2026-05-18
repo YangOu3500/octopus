@@ -44,16 +44,25 @@
         "supportedModels": "支持的模型"
     },
     "navbar": {
-        "home": "主页",
+        "brand": "Octopus",
+        "shellHint": "网关工作台",
+        "collapse": "收起侧栏",
+        "expand": "展开侧栏",
+        "groups": {
+            "workbench": "工作台",
+            "resources": "资源管理",
+            "system": "系统"
+        },
+        "home": "首页",
         "site": "站点",
         "channel": "渠道",
-        "group": "分组",
+        "group": "模型分组",
         "key": "密钥",
         "modelTest": "模型测试",
-        "model": "价格",
-        "traces": "链路",
-        "log": "日志",
-        "setting": "设置"
+        "model": "模型价格",
+        "traces": "链路追踪",
+        "log": "请求日志",
+        "setting": "系统设置"
     },
     "toolbar": {
         "popover": {
@@ -777,6 +786,11 @@
             "cooldown": {
                 "title": "冷却策略",
                 "subtitle": "只读展示失败原因、冷却范围和退避规则，便于理解候选为什么被跳过",
+                "summary": {
+                    "total": "{value} 条规则",
+                    "retryAfter": "{value} 条支持 Retry-After",
+                    "modelScoped": "{value} 条按模型隔离"
+                },
                 "columns": {
                     "reason": "失败原因",
                     "scope": "冷却范围",

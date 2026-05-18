@@ -44,16 +44,25 @@
         "supportedModels": "Supported Models"
     },
     "navbar": {
+        "brand": "Octopus",
+        "shellHint": "Gateway Workbench",
+        "collapse": "Collapse sidebar",
+        "expand": "Expand sidebar",
+        "groups": {
+            "workbench": "Workbench",
+            "resources": "Resources",
+            "system": "System"
+        },
         "home": "Home",
         "site": "Site",
         "channel": "Channel",
-        "group": "Group",
+        "group": "Model Groups",
         "key": "Key",
         "modelTest": "Model Test",
-        "model": "Price",
+        "model": "Model Pricing",
         "traces": "Traces",
-        "log": "Log",
-        "setting": "Setting"
+        "log": "Request Logs",
+        "setting": "Settings"
     },
     "toolbar": {
         "popover": {
@@ -777,6 +786,11 @@
             "cooldown": {
                 "title": "Cooldown Policy",
                 "subtitle": "Read-only view of failure reasons, cooldown scopes, and backoff rules so skipped candidates are explainable.",
+                "summary": {
+                    "total": "{value} rules",
+                    "retryAfter": "{value} with Retry-After",
+                    "modelScoped": "{value} model-scoped"
+                },
                 "columns": {
                     "reason": "Failure Reason",
                     "scope": "Cooldown Scope",

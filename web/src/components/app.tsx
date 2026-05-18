@@ -17,13 +17,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { CONTENT_MAP } from '@/route';
 import { apiClient } from '@/api/client';
 import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 
 const RETURNING_USER_KEY = 'octopus_visited';
 const RETURNING_LOGO_MS = 300;
 
 export function AppContainer() {
     const { isAuthenticated, isAPIKeyAuth, isLoading: authLoading } = useAuth();
-    const { activeItem, direction } = useNavStore();
+    const { activeItem, direction, sidebarExpanded } = useNavStore();
     const t = useTranslations('navbar');
     const queryClient = useQueryClient();
 
@@ -234,13 +235,18 @@ export function AppContainer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.16 }}
-            className="flex h-dvh w-full max-w-none flex-col overflow-hidden px-3 md:grid md:grid-cols-[4.5rem_minmax(0,1fr)] md:gap-3 md:px-4 xl:px-5"
+            className={cn(
+                'flex h-dvh w-full max-w-none flex-col overflow-hidden px-3 md:grid md:gap-3 md:px-4 xl:px-5',
+                sidebarExpanded ? 'md:grid-cols-[14.5rem_minmax(0,1fr)]' : 'md:grid-cols-[4.75rem_minmax(0,1fr)]'
+            )}
         >
             <NavBar />
             <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
-                <header className="my-4 flex flex-none flex-col gap-3 px-1 lg:flex-row lg:items-center">
+                <header className="my-3 flex flex-none flex-col gap-3 px-1 lg:flex-row lg:items-center">
                     <div className="flex min-w-0 items-center gap-3">
-                        <Logo size={40} />
+                        <div className="md:hidden">
+                            <Logo size={36} />
+                        </div>
                         <AnimatePresence mode="wait" custom={direction}>
                             <motion.div
                                 key={activeItem}
@@ -263,7 +269,7 @@ export function AppContainer() {
                                 animate="animate"
                                 exit="exit"
                                 transition={{ duration: 0.15 }}
-                                className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-end lg:gap-5"
+                                className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-end lg:gap-4"
                             >
                                 <span className="truncate text-2xl font-bold lg:text-[2rem]">{t(activeItem)}</span>
                                 {activeItem === 'channel' && <ChannelTabSwitcher />}

@@ -44,16 +44,25 @@
         "supportedModels": "支援的模型"
     },
     "navbar": {
-        "home": "主頁",
+        "brand": "Octopus",
+        "shellHint": "閘道工作台",
+        "collapse": "收起側欄",
+        "expand": "展開側欄",
+        "groups": {
+            "workbench": "工作台",
+            "resources": "資源管理",
+            "system": "系統"
+        },
+        "home": "首頁",
         "site": "站點",
         "channel": "供應源",
-        "group": "分組",
+        "group": "模型分組",
         "key": "金鑰",
         "modelTest": "模型測試",
-        "model": "價格",
-        "traces": "鏈路",
-        "log": "日誌",
-        "setting": "設定"
+        "model": "模型價格",
+        "traces": "鏈路追蹤",
+        "log": "請求日誌",
+        "setting": "系統設定"
     },
     "toolbar": {
         "popover": {
@@ -777,6 +786,11 @@
             "cooldown": {
                 "title": "冷卻策略",
                 "subtitle": "唯讀展示失敗原因、冷卻範圍和退避規則，便於理解候選為什麼被跳過",
+                "summary": {
+                    "total": "{value} 條規則",
+                    "retryAfter": "{value} 條支援 Retry-After",
+                    "modelScoped": "{value} 條按模型隔離"
+                },
                 "columns": {
                     "reason": "失敗原因",
                     "scope": "冷卻範圍",

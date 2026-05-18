@@ -16,8 +16,11 @@ interface NavState {
     activeItem: NavItem
     prevItem: NavItem | null
     direction: number
+    sidebarExpanded: boolean
     pendingLogTarget: LogNavigationTarget | null
     setActiveItem: (item: NavItem) => void
+    setSidebarExpanded: (expanded: boolean) => void
+    toggleSidebarExpanded: () => void
     openLogTarget: (target: Omit<LogNavigationTarget, 'nonce'>) => void
     clearLogTarget: (nonce?: number) => void
 }
@@ -28,6 +31,7 @@ export const useNavStore = create<NavState>()(
             activeItem: 'home',
             prevItem: null,
             direction: 0,
+            sidebarExpanded: true,
             pendingLogTarget: null,
             setActiveItem: (item) => {
                 const { activeItem } = get()
@@ -40,6 +44,13 @@ export const useNavStore = create<NavState>()(
                     prevItem: activeItem,
                     direction
                 })
+            },
+            setSidebarExpanded: (expanded) => {
+                set({ sidebarExpanded: expanded })
+            },
+            toggleSidebarExpanded: () => {
+                const { sidebarExpanded } = get()
+                set({ sidebarExpanded: !sidebarExpanded })
             },
             openLogTarget: (target) => {
                 const { activeItem } = get()
@@ -68,6 +79,7 @@ export const useNavStore = create<NavState>()(
                 activeItem: state.activeItem,
                 prevItem: state.prevItem,
                 direction: state.direction,
+                sidebarExpanded: state.sidebarExpanded,
             }),
         }
     )

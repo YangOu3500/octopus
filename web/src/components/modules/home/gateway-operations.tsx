@@ -1,7 +1,6 @@
 'use client';
 
 import {
-    ArrowRight,
     Clock3,
     GitBranch,
     KeyRound,
@@ -13,13 +12,11 @@ import {
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useStatsObservability, type StatsObservabilityBreakdown } from '@/api/endpoints/stats';
-import { useNavStore, type NavItem } from '@/components/modules/navbar';
 import { Badge } from '@/components/ui/badge';
 import { formatCount, formatMoney, formatTime } from '@/lib/utils';
 
 type OperationItem = {
     id: 'requests' | 'traces' | 'channels' | 'models' | 'apiKeys' | 'performance';
-    nav: NavItem;
     icon: LucideIcon;
     value: string;
     sub: string;
@@ -81,48 +78,41 @@ function BreakdownRows({ title, items }: { title: string; items: StatsObservabil
 
 export function GatewayOperationsPanel() {
     const t = useTranslations('home.operations');
-    const setActiveItem = useNavStore((state) => state.setActiveItem);
     const { data } = useStatsObservability('24h');
 
     const operationItems = useMemo<OperationItem[]>(() => [
         {
             id: 'requests',
-            nav: 'traces',
             icon: ListChecks,
             value: compactCount(data?.total_requests),
             sub: t('items.requests.sub', { failover: data?.failover_requests ?? 0 }),
         },
         {
             id: 'traces',
-            nav: 'traces',
             icon: Radar,
             value: compactCount(data?.total_attempts),
             sub: t('items.traces.sub', { max: data?.max_attempts ?? 0 }),
         },
         {
             id: 'channels',
-            nav: 'channel',
             icon: Server,
             value: percent(data?.success_rate),
             sub: t('items.channels.sub', { failed: data?.failed_requests ?? 0 }),
         },
         {
             id: 'models',
-            nav: 'group',
             icon: GitBranch,
             value: compactCount(data?.top_models?.[0]?.requests),
             sub: data?.top_models?.[0]?.name || t('items.models.empty'),
         },
         {
             id: 'apiKeys',
-            nav: 'setting',
             icon: KeyRound,
             value: compactCount(data?.top_api_keys?.[0]?.requests),
             sub: data?.top_api_keys?.[0]?.name || t('items.apiKeys.empty'),
         },
         {
             id: 'performance',
-            nav: 'log',
             icon: Clock3,
             value: compactTime(data?.avg_latency_ms),
             sub: t('items.performance.sub', { ttfb: compactTime(data?.avg_ttfb_ms) }),
@@ -152,22 +142,19 @@ export function GatewayOperationsPanel() {
                     {operationItems.map((item) => {
                         const Icon = item.icon;
                         return (
-                            <button
+                            <article
                                 key={item.id}
-                                type="button"
-                                className="group rounded-xl border bg-background/40 p-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
-                                onClick={() => setActiveItem(item.nav)}
+                                className="cursor-default rounded-xl border bg-background/40 p-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/70 hover:shadow-sm"
                             >
-                                <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-start gap-2">
                                     <div className="flex size-8 items-center justify-center rounded-lg border bg-card text-primary">
                                         <Icon className="size-3.5" />
                                     </div>
-                                    <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                                 </div>
                                 <div className="mt-3 text-xs text-muted-foreground">{t(`items.${item.id}.label`)}</div>
                                 <div className="mt-1 text-xl font-semibold tabular-nums tracking-normal">{item.value}</div>
                                 <div className="mt-1 line-clamp-2 text-xs text-muted-foreground" title={item.sub}>{item.sub}</div>
-                            </button>
+                            </article>
                         );
                     })}
                 </div>
