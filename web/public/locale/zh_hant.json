@@ -637,8 +637,8 @@
                 "modelAssociation": {
                     "name": "模型關聯 / 別名歸併",
                     "desc": "在保留 Octopus 模型分組結構的前提下，把 provider/model、models/... 等常見上游別名歸併到同一對外模型組。",
-                    "ui": "模型分組批量生成彈窗可切換精確同名 / 別名歸併，並在預覽中展示被歸併的別名和候選數量。",
-                    "gap": "不引入 AxonHub Provider / GlobalModel / 完整 ModelAssociation 條件體系；更複雜的條件關聯仍作為後續增強。"
+                    "ui": "模型分組批量生成彈窗已補齊高階關聯規則、手動別名映射、匹配分與策略解釋，預覽會直接展示歸併依據。",
+                    "gap": "仍未引入 AxonHub Provider / GlobalModel / 完整 ModelAssociation 條件體系；標籤輔助歸併和持久化規則仍作為後續增強。"
                 },
                 "protocolTransform": {
                     "name": "協議轉換與相容鏈路",
@@ -934,7 +934,37 @@
             "summary": {
                 "models": "將處理模型名",
                 "createFill": "新建 / 補齊分組",
-                "items": "將新增候選"
+                "items": "將新增候選",
+                "score": "平均匹配分"
+            },
+            "rules": {
+                "title": "關聯規則",
+                "description": "在現有別名歸併之上追加更細的前綴、分隔符與手動映射規則。",
+                "manualCount": "{count} 條手動映射",
+                "reset": "重置規則",
+                "addManual": "新增映射",
+                "manualTitle": "手動別名映射",
+                "manualEmpty": "可選：手動把某個上游模型名歸併到指定公開模型名，預覽會自動更新。",
+                "manualAliasPlaceholder": "上游模型名 / 別名",
+                "manualTargetPlaceholder": "歸併到的模型名",
+                "options": {
+                    "strip_provider_prefix": {
+                        "label": "去掉 provider/model 前綴",
+                        "help": "把 openai/、anthropic/、openrouter/ 等前綴折疊到同一模型名。"
+                    },
+                    "strip_models_namespace": {
+                        "label": "去掉 models/ 前綴",
+                        "help": "把 models/gemini-1.5-pro 這類命名歸併到真實模型名。"
+                    },
+                    "normalize_case": {
+                        "label": "大小寫歸一化",
+                        "help": "把 GPT-4O 與 gpt-4o 視作同一模型名。"
+                    },
+                    "normalize_separators": {
+                        "label": "分隔符歸一化",
+                        "help": "把空格、底線和重複連字號統一為同一模型名。"
+                    }
+                }
             },
             "searchPlaceholder": "搜尋模型名",
             "refresh": "重新整理",
@@ -953,7 +983,16 @@
                 "create": "將新建分組",
                 "fill": "補齊 {count} 個候選",
                 "skip": "已完整",
-                "aliases": "別名：{aliases}"
+                "aliases": "別名：{aliases}",
+                "score": "匹配分 {score} · {strategies}"
+            },
+            "strategy": {
+                "exact": "精確同名",
+                "manual_alias": "手動映射",
+                "strip_provider_prefix": "去前綴",
+                "strip_models_namespace": "去 models/",
+                "normalize_case": "大小寫",
+                "normalize_separators": "分隔符"
             },
             "close": "關閉",
             "generate": "生成",

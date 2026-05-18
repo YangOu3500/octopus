@@ -71,15 +71,29 @@ const (
 	GroupAutoGenerateAssociationAlias GroupAutoGenerateAssociationMode = "alias"
 )
 
+type GroupAutoGenerateAssociationOptions struct {
+	StripProviderPrefix  *bool `json:"strip_provider_prefix,omitempty"`
+	StripModelsNamespace *bool `json:"strip_models_namespace,omitempty"`
+	NormalizeCase        *bool `json:"normalize_case,omitempty"`
+	NormalizeSeparators  *bool `json:"normalize_separators,omitempty"`
+}
+
+type GroupAutoGenerateManualAlias struct {
+	Alias  string `json:"alias"`
+	Target string `json:"target"`
+}
+
 type GroupAutoGenerateRequest struct {
-	All               bool                             `json:"all"`
-	ModelNames        []string                         `json:"model_names,omitempty"`
-	Mode              *GroupMode                       `json:"mode,omitempty"`
-	AssociationMode   GroupAutoGenerateAssociationMode `json:"association_mode,omitempty"`
-	FirstTokenTimeOut int                              `json:"first_token_time_out,omitempty"`
-	SessionKeepTime   int                              `json:"session_keep_time,omitempty"`
-	RetryEnabled      bool                             `json:"retry_enabled,omitempty"`
-	MaxRetries        int                              `json:"max_retries,omitempty"`
+	All                bool                                 `json:"all"`
+	ModelNames         []string                             `json:"model_names,omitempty"`
+	Mode               *GroupMode                           `json:"mode,omitempty"`
+	AssociationMode    GroupAutoGenerateAssociationMode     `json:"association_mode,omitempty"`
+	AssociationOptions *GroupAutoGenerateAssociationOptions `json:"association_options,omitempty"`
+	ManualAliases      []GroupAutoGenerateManualAlias       `json:"manual_aliases,omitempty"`
+	FirstTokenTimeOut  int                                  `json:"first_token_time_out,omitempty"`
+	SessionKeepTime    int                                  `json:"session_keep_time,omitempty"`
+	RetryEnabled       bool                                 `json:"retry_enabled,omitempty"`
+	MaxRetries         int                                  `json:"max_retries,omitempty"`
 }
 
 type GroupAutoGeneratePreview struct {
@@ -97,6 +111,8 @@ type GroupAutoGeneratePreviewItem struct {
 	MissingCandidateCount int      `json:"missing_candidate_count"`
 	WillCreate            bool     `json:"will_create"`
 	WillAddCount          int      `json:"will_add_count"`
+	MatchScore            int      `json:"match_score,omitempty"`
+	MatchStrategies       []string `json:"match_strategies,omitempty"`
 	SkippedReason         string   `json:"skipped_reason,omitempty"`
 	Aliases               []string `json:"aliases,omitempty"`
 }
@@ -114,12 +130,14 @@ type GroupAutoGenerateResult struct {
 }
 
 type GroupAutoGenerateResultItem struct {
-	ModelName      string   `json:"model_name"`
-	GroupID        int      `json:"group_id,omitempty"`
-	Created        bool     `json:"created"`
-	AddedItems     int      `json:"added_items"`
-	CandidateCount int      `json:"candidate_count"`
-	SkippedReason  string   `json:"skipped_reason,omitempty"`
-	Error          string   `json:"error,omitempty"`
-	Aliases        []string `json:"aliases,omitempty"`
+	ModelName       string   `json:"model_name"`
+	GroupID         int      `json:"group_id,omitempty"`
+	Created         bool     `json:"created"`
+	AddedItems      int      `json:"added_items"`
+	CandidateCount  int      `json:"candidate_count"`
+	MatchScore      int      `json:"match_score,omitempty"`
+	MatchStrategies []string `json:"match_strategies,omitempty"`
+	SkippedReason   string   `json:"skipped_reason,omitempty"`
+	Error           string   `json:"error,omitempty"`
+	Aliases         []string `json:"aliases,omitempty"`
 }

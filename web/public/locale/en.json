@@ -637,8 +637,8 @@
                 "modelAssociation": {
                     "name": "Model Association / Alias Folding",
                     "desc": "Keeps the Octopus group model while folding common upstream aliases such as provider/model and models/... into the same public model group.",
-                    "ui": "The group bulk-generation dialog can switch between exact-name and alias-folding modes, with previewed aliases and candidate counts.",
-                    "gap": "Does not introduce AxonHub Provider / GlobalModel / full ModelAssociation conditions. Richer conditional associations remain future work."
+                    "ui": "The group bulk-generation dialog now includes advanced association rules, manual alias mapping, match scores, and strategy explanations directly in preview.",
+                    "gap": "Still does not introduce AxonHub Provider / GlobalModel / full ModelAssociation conditions. Tag-assisted folding and persisted rules remain future work."
                 },
                 "protocolTransform": {
                     "name": "Protocol Transform Compatibility",
@@ -934,7 +934,37 @@
             "summary": {
                 "models": "Model names to process",
                 "createFill": "Create / fill groups",
-                "items": "Candidates to add"
+                "items": "Candidates to add",
+                "score": "Average match score"
+            },
+            "rules": {
+                "title": "Association rules",
+                "description": "Layer more specific prefix, separator, and manual mapping rules on top of the current alias folding flow.",
+                "manualCount": "{count} manual mappings",
+                "reset": "Reset rules",
+                "addManual": "Add mapping",
+                "manualTitle": "Manual alias mapping",
+                "manualEmpty": "Optional: map one upstream model name into a chosen public model name. The preview updates automatically.",
+                "manualAliasPlaceholder": "Upstream model / alias",
+                "manualTargetPlaceholder": "Public model name",
+                "options": {
+                    "strip_provider_prefix": {
+                        "label": "Strip provider/model prefixes",
+                        "help": "Fold openai/, anthropic/, openrouter/, and similar prefixes into the same model name."
+                    },
+                    "strip_models_namespace": {
+                        "label": "Strip models/ prefix",
+                        "help": "Fold names such as models/gemini-1.5-pro into the real model name."
+                    },
+                    "normalize_case": {
+                        "label": "Normalize case",
+                        "help": "Treat GPT-4O and gpt-4o as the same model name."
+                    },
+                    "normalize_separators": {
+                        "label": "Normalize separators",
+                        "help": "Treat spaces, underscores, and repeated hyphens as the same model name."
+                    }
+                }
             },
             "searchPlaceholder": "Search model names",
             "refresh": "Refresh",
@@ -953,7 +983,16 @@
                 "create": "Will create group",
                 "fill": "Fill {count} candidates",
                 "skip": "Already complete",
-                "aliases": "Aliases: {aliases}"
+                "aliases": "Aliases: {aliases}",
+                "score": "Score {score} · {strategies}"
+            },
+            "strategy": {
+                "exact": "Exact",
+                "manual_alias": "Manual map",
+                "strip_provider_prefix": "Provider prefix",
+                "strip_models_namespace": "models/",
+                "normalize_case": "Case",
+                "normalize_separators": "Separators"
             },
             "close": "Close",
             "generate": "Generate",

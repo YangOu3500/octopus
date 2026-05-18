@@ -323,6 +323,190 @@ func TestGroupAutoGenerateAliasAssociationFoldsProviderModelNames(t *testing.T) 
 	}
 }
 
+func TestGroupAutoGenerateAliasAssociationHonorsAdvancedOptions(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+
+	first := model.Channel{
+		Name:      "provider-prefixed",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "openai/gpt-4o",
+		BaseUrls:  []model.BaseUrl{{URL: "https://provider-prefixed.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-provider-prefixed"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&first, ctx); err != nil {
+		t.Fatalf("ChannelCreate first failed: %v", err)
+	}
+	second := model.Channel{
+		Name:      "separator-variant",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "GPT_4O",
+		BaseUrls:  []model.BaseUrl{{URL: "https://separator-variant.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-separator-variant"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&second, ctx); err != nil {
+		t.Fatalf("ChannelCreate second failed: %v", err)
+	}
+	third := model.Channel{
+		Name:      "plain",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "gpt-4o",
+		BaseUrls:  []model.BaseUrl{{URL: "https://plain.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-plain"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&third, ctx); err != nil {
+		t.Fatalf("ChannelCreate third failed: %v", err)
+	}
+
+	stripProviderPrefix := false
+	stripModelsNamespace := true
+	normalizeCase := true
+	normalizeSeparators := true
+	preview, err := GroupAutoGeneratePreview(&model.GroupAutoGenerateRequest{
+		All:             true,
+		AssociationMode: model.GroupAutoGenerateAssociationAlias,
+		AssociationOptions: &model.GroupAutoGenerateAssociationOptions{
+			StripProviderPrefix:  &stripProviderPrefix,
+			StripModelsNamespace: &stripModelsNamespace,
+			NormalizeCase:        &normalizeCase,
+			NormalizeSeparators:  &normalizeSeparators,
+		},
+	}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGeneratePreview failed: %v", err)
+	}
+	if preview.TotalModels != 2 {
+		t.Fatalf("preview total models = %d, want 2: %+v", preview.TotalModels, preview)
+	}
+	var plainPreview *model.GroupAutoGeneratePreviewItem
+	var prefixedPreview *model.GroupAutoGeneratePreviewItem
+	for i := range preview.Items {
+		switch preview.Items[i].ModelName {
+		case "gpt-4o":
+			plainPreview = &preview.Items[i]
+		case "openai/gpt-4o":
+			prefixedPreview = &preview.Items[i]
+		}
+	}
+	if plainPreview == nil || prefixedPreview == nil {
+		t.Fatalf("expected split preview buckets, got %+v", preview.Items)
+	}
+	if plainPreview.CandidateCount != 2 {
+		t.Fatalf("plain preview candidate count = %d, want 2: %+v", plainPreview.CandidateCount, plainPreview)
+	}
+	if !containsStrategy(plainPreview.MatchStrategies, "normalize_case") || !containsStrategy(plainPreview.MatchStrategies, "normalize_separators") {
+		t.Fatalf("plain preview strategies = %+v, want normalize_case + normalize_separators", plainPreview.MatchStrategies)
+	}
+	if containsStrategy(plainPreview.MatchStrategies, "strip_provider_prefix") {
+		t.Fatalf("plain preview should not include strip_provider_prefix when disabled: %+v", plainPreview.MatchStrategies)
+	}
+	if prefixedPreview.CandidateCount != 1 {
+		t.Fatalf("prefixed preview candidate count = %d, want 1: %+v", prefixedPreview.CandidateCount, prefixedPreview)
+	}
+}
+
+func TestGroupAutoGenerateAliasAssociationSupportsManualAliasesAndScores(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+
+	first := model.Channel{
+		Name:      "manual-alias",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "gpt4o-mini-preview",
+		BaseUrls:  []model.BaseUrl{{URL: "https://manual-alias.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-manual-alias"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&first, ctx); err != nil {
+		t.Fatalf("ChannelCreate first failed: %v", err)
+	}
+	second := model.Channel{
+		Name:      "models-prefix",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "models/gpt-4o-mini",
+		BaseUrls:  []model.BaseUrl{{URL: "https://models-prefix.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-models-prefix"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&second, ctx); err != nil {
+		t.Fatalf("ChannelCreate second failed: %v", err)
+	}
+
+	preview, err := GroupAutoGeneratePreview(&model.GroupAutoGenerateRequest{
+		All:             true,
+		AssociationMode: model.GroupAutoGenerateAssociationAlias,
+		ManualAliases: []model.GroupAutoGenerateManualAlias{
+			{Alias: "gpt4o-mini-preview", Target: "gpt-4o-mini"},
+		},
+	}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGeneratePreview failed: %v", err)
+	}
+	if preview.TotalModels != 1 || len(preview.Items) != 1 {
+		t.Fatalf("expected one merged preview bucket, got %+v", preview)
+	}
+	item := preview.Items[0]
+	if item.ModelName != "gpt-4o-mini" {
+		t.Fatalf("preview model name = %q, want gpt-4o-mini", item.ModelName)
+	}
+	if item.CandidateCount != 2 || item.WillAddCount != 2 {
+		t.Fatalf("unexpected preview counts: %+v", item)
+	}
+	if !containsStrategy(item.MatchStrategies, "manual_alias") || !containsStrategy(item.MatchStrategies, "strip_models_namespace") {
+		t.Fatalf("preview strategies = %+v, want manual_alias + strip_models_namespace", item.MatchStrategies)
+	}
+	if item.MatchScore <= 0 || item.MatchScore >= 100 {
+		t.Fatalf("preview match score = %d, want transformed score between 1 and 99", item.MatchScore)
+	}
+
+	result, err := GroupAutoGenerate(&model.GroupAutoGenerateRequest{
+		ModelNames:      []string{"gpt-4o-mini"},
+		AssociationMode: model.GroupAutoGenerateAssociationAlias,
+		ManualAliases: []model.GroupAutoGenerateManualAlias{
+			{Alias: "gpt4o-mini-preview", Target: "gpt-4o-mini"},
+		},
+	}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGenerate failed: %v", err)
+	}
+	if result.CreatedGroups != 1 || result.AddedItems != 2 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if len(result.Items) != 1 || !containsStrategy(result.Items[0].MatchStrategies, "manual_alias") {
+		t.Fatalf("result strategies missing manual alias: %+v", result.Items)
+	}
+
+	group := getGroupByNameForTest(t, "gpt-4o-mini")
+	if len(group.Items) != 2 {
+		t.Fatalf("expected 2 manual-alias items, got %+v", group.Items)
+	}
+	modelsByChannel := map[int]string{}
+	for _, groupItem := range group.Items {
+		modelsByChannel[groupItem.ChannelID] = groupItem.ModelName
+	}
+	if modelsByChannel[first.ID] != "gpt4o-mini-preview" {
+		t.Fatalf("manual alias channel model = %q, want gpt4o-mini-preview", modelsByChannel[first.ID])
+	}
+	if modelsByChannel[second.ID] != "models/gpt-4o-mini" {
+		t.Fatalf("models prefix channel model = %q, want models/gpt-4o-mini", modelsByChannel[second.ID])
+	}
+}
+
+func containsStrategy(strategies []string, target string) bool {
+	for _, strategy := range strategies {
+		if strategy == target {
+			return true
+		}
+	}
+	return false
+}
+
 func getGroupByNameForTest(t *testing.T, name string) model.Group {
 	t.Helper()
 	var group model.Group

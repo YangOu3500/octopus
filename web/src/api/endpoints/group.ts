@@ -26,6 +26,18 @@ export enum GroupMode {
 
 export type GroupAutoGenerateAssociationMode = 'exact' | 'alias';
 
+export interface GroupAutoGenerateAssociationOptions {
+    strip_provider_prefix?: boolean;
+    strip_models_namespace?: boolean;
+    normalize_case?: boolean;
+    normalize_separators?: boolean;
+}
+
+export interface GroupAutoGenerateManualAlias {
+    alias: string;
+    target: string;
+}
+
 /**
  * 分组信息
  */
@@ -93,6 +105,8 @@ export interface GroupAutoGenerateRequest {
     model_names?: string[];
     mode?: GroupMode;
     association_mode?: GroupAutoGenerateAssociationMode;
+    association_options?: GroupAutoGenerateAssociationOptions;
+    manual_aliases?: GroupAutoGenerateManualAlias[];
     first_token_time_out?: number;
     session_keep_time?: number;
     retry_enabled?: boolean;
@@ -107,6 +121,8 @@ export interface GroupAutoGeneratePreviewItem {
     missing_candidate_count: number;
     will_create: boolean;
     will_add_count: number;
+    match_score?: number;
+    match_strategies?: string[];
     skipped_reason?: string;
     aliases?: string[];
 }
@@ -124,6 +140,8 @@ export interface GroupAutoGenerateResultItem {
     created: boolean;
     added_items: number;
     candidate_count: number;
+    match_score?: number;
+    match_strategies?: string[];
     skipped_reason?: string;
     error?: string;
     aliases?: string[];

@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Layers3, Loader2, RefreshCw, Search, Sparkles } from 'lucide-react';
+import { Check, Layers3, Loader2, Plus, RefreshCw, Search, Settings2, Sparkles, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
+    type GroupAutoGenerateAssociationOptions,
     type GroupAutoGenerateAssociationMode,
+    type GroupAutoGenerateManualAlias,
     type GroupAutoGeneratePreviewItem,
+    type GroupAutoGenerateRequest,
     GroupMode,
     useAutoGenerateGroups,
     usePreviewAutoGenerateGroups,
@@ -23,20 +26,63 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/common/Toast';
 import { cn } from '@/lib/utils';
 import { getModelIcon } from '@/lib/model-icons';
 import { MODE_LABELS } from './utils';
 
 type GenerateScope = 'all' | 'selected';
+type ManualAliasDraft = { id: string; alias: string; target: string };
+type AssociationOptionKey = keyof GroupAutoGenerateAssociationOptions;
 
 const ALL_FILTER_VALUE = 'all';
 const MANUAL_SITE_FILTER_VALUE = 'manual';
+const ASSOCIATION_OPTION_KEYS = [
+    'strip_provider_prefix',
+    'strip_models_namespace',
+    'normalize_case',
+    'normalize_separators',
+] as const satisfies readonly AssociationOptionKey[];
 
 function itemStatus(item: GroupAutoGeneratePreviewItem) {
     if (item.will_create) return 'create';
     if (item.will_add_count > 0) return 'fill';
     return 'skip';
+}
+
+function defaultAssociationOptions(mode: GroupAutoGenerateAssociationMode): GroupAutoGenerateAssociationOptions {
+    if (mode === 'alias') {
+        return {
+            strip_provider_prefix: true,
+            strip_models_namespace: true,
+            normalize_case: true,
+            normalize_separators: true,
+        };
+    }
+    return {
+        strip_provider_prefix: false,
+        strip_models_namespace: false,
+        normalize_case: true,
+        normalize_separators: false,
+    };
+}
+
+function createManualAliasDraft(): ManualAliasDraft {
+    return {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        alias: '',
+        target: '',
+    };
+}
+
+function sanitizeManualAliases(items: ManualAliasDraft[]): GroupAutoGenerateManualAlias[] {
+    return items
+        .map((item) => ({
+            alias: item.alias.trim(),
+            target: item.target.trim(),
+        }))
+        .filter((item) => item.alias && item.target);
 }
 
 function normalizedModelName(value: string) {
@@ -93,19 +139,30 @@ export function GroupBulkGenerateDialog() {
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [mode, setMode] = useState<GroupMode>(GroupMode.RoundRobin);
     const [associationMode, setAssociationMode] = useState<GroupAutoGenerateAssociationMode>('exact');
+    const [associationOptions, setAssociationOptions] = useState<GroupAutoGenerateAssociationOptions>(() => defaultAssociationOptions('exact'));
+    const [manualAliases, setManualAliases] = useState<ManualAliasDraft[]>([]);
     const [siteFilter, setSiteFilter] = useState(ALL_FILTER_VALUE);
     const [channelFilter, setChannelFilter] = useState(ALL_FILTER_VALUE);
 
     const { data: modelChannels = [] } = useModelChannelList();
     const preview = usePreviewAutoGenerateGroups();
     const generate = useAutoGenerateGroups();
+    const normalizedManualAliases = useMemo(() => sanitizeManualAliases(manualAliases), [manualAliases]);
+    const previewPayload = useMemo<GroupAutoGenerateRequest>(() => ({
+        all: true,
+        association_mode: associationMode,
+        association_options: associationOptions,
+        manual_aliases: normalizedManualAliases.length > 0 ? normalizedManualAliases : undefined,
+    }), [associationMode, associationOptions, normalizedManualAliases]);
 
     useEffect(() => {
-        if (open) {
-            preview.mutate({ all: true, association_mode: associationMode });
-        }
+        if (!open) return;
+        const timer = window.setTimeout(() => {
+            preview.mutate(previewPayload);
+        }, 250);
+        return () => window.clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, associationMode]);
+    }, [open, previewPayload]);
 
     const previewData = preview.data;
     const items = useMemo(() => previewData?.items ?? [], [previewData]);
@@ -188,6 +245,11 @@ export function GroupBulkGenerateDialog() {
     const activeWillCreate = activeItems.filter((item) => item.will_create).length;
     const activeWillFill = activeItems.filter((item) => !item.will_create && item.will_add_count > 0).length;
     const activeWillAdd = activeItems.reduce((sum, item) => sum + item.will_add_count, 0);
+    const activeAverageScore = activeItems.length > 0
+        ? Math.round(activeItems.reduce((sum, item) => sum + (item.match_score ?? 0), 0) / activeItems.length)
+        : 0;
+    const hasCustomAssociationOptions = ASSOCIATION_OPTION_KEYS.some((key) => associationOptions[key] !== defaultAssociationOptions(associationMode)[key]);
+    const hasRuleChanges = hasCustomAssociationOptions || manualAliases.some((item) => item.alias.trim() || item.target.trim());
 
     const toggleSelected = (modelName: string) => {
         setSelected((prev) => {
@@ -219,6 +281,32 @@ export function GroupBulkGenerateDialog() {
 
     const clearSelected = () => setSelected(new Set());
 
+    const setAssociationOption = (key: AssociationOptionKey, value: boolean) => {
+        setAssociationOptions((prev) => ({
+            ...prev,
+            [key]: value,
+        }));
+    };
+
+    const addManualAlias = () => {
+        setManualAliases((prev) => [...prev, createManualAliasDraft()]);
+    };
+
+    const updateManualAlias = (id: string, field: 'alias' | 'target', value: string) => {
+        setManualAliases((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+    };
+
+    const removeManualAlias = (id: string) => {
+        setManualAliases((prev) => prev.filter((item) => item.id !== id));
+    };
+
+    const resetAssociationRules = () => {
+        setAssociationOptions(defaultAssociationOptions(associationMode));
+        setManualAliases([]);
+    };
+
+    const strategyLabel = (strategy: string) => bulkT(`strategy.${strategy}`);
+
     const handleGenerate = () => {
         if (scope === 'selected' && selectedItems.length === 0) return;
         generate.mutate(
@@ -227,6 +315,8 @@ export function GroupBulkGenerateDialog() {
                 model_names: scope === 'selected' ? selectedItems.map((item) => item.model_name) : undefined,
                 mode,
                 association_mode: associationMode,
+                association_options: associationOptions,
+                manual_aliases: normalizedManualAliases.length > 0 ? normalizedManualAliases : undefined,
             },
             {
                 onSuccess: (result) => {
@@ -235,7 +325,7 @@ export function GroupBulkGenerateDialog() {
                         updated: result.updated_groups,
                         added: result.added_items,
                     }));
-                    preview.mutate({ all: true, association_mode: associationMode });
+                    preview.mutate(previewPayload);
                 },
                 onError: (error) => {
                     toast.error(bulkT('toast.failed'), { description: error.message });
@@ -301,6 +391,7 @@ export function GroupBulkGenerateDialog() {
                                 type="button"
                                 onClick={() => {
                                     setAssociationMode(value);
+                                    setAssociationOptions(defaultAssociationOptions(value));
                                     setSelected(new Set());
                                 }}
                                 className={cn(
@@ -313,7 +404,71 @@ export function GroupBulkGenerateDialog() {
                         ))}
                         <span className="text-xs text-muted-foreground">{bulkT(`associationHint.${associationMode}`)}</span>
                     </div>
-                    <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3 md:col-span-2">
+                    <div className="rounded-xl border border-border/60 bg-background px-3 py-3 md:col-span-2">
+                        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                    <Settings2 className="size-4" />
+                                    {bulkT('rules.title')}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                    {bulkT('rules.description')}
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                <span>{bulkT('rules.manualCount', { count: normalizedManualAliases.length })}</span>
+                                <Button type="button" variant="secondary" className="h-8 rounded-lg px-2.5 text-xs" onClick={resetAssociationRules} disabled={!hasRuleChanges}>
+                                    {bulkT('rules.reset')}
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="grid gap-2 lg:grid-cols-2">
+                            {ASSOCIATION_OPTION_KEYS.map((key) => (
+                                <div key={key} className="flex items-start justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                                    <div className="min-w-0">
+                                        <div className="text-xs font-medium text-foreground">{bulkT(`rules.options.${key}.label`)}</div>
+                                        <div className="text-[11px] leading-relaxed text-muted-foreground">{bulkT(`rules.options.${key}.help`)}</div>
+                                    </div>
+                                    <Switch checked={Boolean(associationOptions[key])} onCheckedChange={(checked) => setAssociationOption(key, checked)} />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-3 space-y-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="text-xs font-medium text-foreground">{bulkT('rules.manualTitle')}</div>
+                                <Button type="button" variant="secondary" className="h-8 rounded-lg px-2.5 text-xs" onClick={addManualAlias}>
+                                    <Plus className="size-3.5" />
+                                    {bulkT('rules.addManual')}
+                                </Button>
+                            </div>
+                            {manualAliases.length === 0 ? (
+                                <div className="rounded-lg border border-dashed border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
+                                    {bulkT('rules.manualEmpty')}
+                                </div>
+                            ) : (
+                                manualAliases.map((item) => (
+                                    <div key={item.id} className="grid gap-2 rounded-lg border border-border/60 bg-muted/20 p-2 lg:grid-cols-[1fr_1fr_auto]">
+                                        <Input
+                                            value={item.alias}
+                                            onChange={(event) => updateManualAlias(item.id, 'alias', event.target.value)}
+                                            placeholder={bulkT('rules.manualAliasPlaceholder')}
+                                            className="h-9 rounded-lg"
+                                        />
+                                        <Input
+                                            value={item.target}
+                                            onChange={(event) => updateManualAlias(item.id, 'target', event.target.value)}
+                                            placeholder={bulkT('rules.manualTargetPlaceholder')}
+                                            className="h-9 rounded-lg"
+                                        />
+                                        <Button type="button" variant="secondary" className="h-9 rounded-lg px-3" onClick={() => removeManualAlias(item.id)}>
+                                            <X className="size-4" />
+                                        </Button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                    <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 xl:grid-cols-4 md:col-span-2">
                         <div className="rounded-lg border border-border/60 bg-background px-3 py-2">
                             <div className="font-medium text-foreground">{activeItems.length}</div>
                             <div>{bulkT('summary.models')}</div>
@@ -325,6 +480,10 @@ export function GroupBulkGenerateDialog() {
                         <div className="rounded-lg border border-border/60 bg-background px-3 py-2">
                             <div className="font-medium text-foreground">{activeWillAdd}</div>
                             <div>{bulkT('summary.items')}</div>
+                        </div>
+                        <div className="rounded-lg border border-border/60 bg-background px-3 py-2">
+                            <div className="font-medium text-foreground">{activeAverageScore}</div>
+                            <div>{bulkT('summary.score')}</div>
                         </div>
                     </div>
                 </div>
@@ -340,7 +499,7 @@ export function GroupBulkGenerateDialog() {
                                 className="h-9 rounded-xl pl-8"
                             />
                         </div>
-                        <Button type="button" variant="secondary" className="h-9 rounded-xl" onClick={() => preview.mutate({ all: true, association_mode: associationMode })} disabled={preview.isPending}>
+                        <Button type="button" variant="secondary" className="h-9 rounded-xl" onClick={() => preview.mutate(previewPayload)} disabled={preview.isPending}>
                             <RefreshCw className={cn('size-4', preview.isPending && 'animate-spin')} />
                             {bulkT('refresh')}
                         </Button>
@@ -411,6 +570,9 @@ export function GroupBulkGenerateDialog() {
                                     const aliases = previewItemAliasLabels(item);
                                     const aliasPreview = aliases.slice(0, 2).join(' / ');
                                     const aliasOverflow = aliases.length > 2 ? aliases.length - 2 : 0;
+                                    const strategies = (item.match_strategies ?? []).map(strategyLabel);
+                                    const strategyPreview = strategies.slice(0, 2).join(' / ');
+                                    const strategyOverflow = strategies.length > 2 ? strategies.length - 2 : 0;
                                     return (
                                         <button
                                             key={item.model_name}
@@ -446,6 +608,14 @@ export function GroupBulkGenerateDialog() {
                                                     <span className="block truncate text-[10px] text-muted-foreground/80">
                                                         {bulkT('row.aliases', {
                                                             aliases: `${aliasPreview}${aliasOverflow > 0 ? ` +${aliasOverflow}` : ''}`,
+                                                        })}
+                                                    </span>
+                                                )}
+                                                {typeof item.match_score === 'number' && strategies.length > 0 && (
+                                                    <span className="block truncate text-[10px] text-muted-foreground/80">
+                                                        {bulkT('row.score', {
+                                                            score: item.match_score,
+                                                            strategies: `${strategyPreview}${strategyOverflow > 0 ? ` +${strategyOverflow}` : ''}`,
                                                         })}
                                                     </span>
                                                 )}
