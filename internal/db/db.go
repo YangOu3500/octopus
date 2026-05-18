@@ -87,6 +87,8 @@ func InitDB(dbType, dsn string, debug bool) error {
 		&model.GroupHealthSnapshot{},
 		&model.GroupHealthAttempt{},
 		&model.RelayLog{},
+		&model.RequestTrace{},
+		&model.RequestAttempt{},
 		&migrate.MigrationRecord{},
 	); err != nil {
 		return err

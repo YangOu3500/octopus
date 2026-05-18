@@ -161,6 +161,205 @@ func TestRelayLogListWithQueryFiltersAndPaginates(t *testing.T) {
 	}
 }
 
+func TestRelayLogAddMirrorsRequestTraceTables(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+	resetRelayLogCacheForTest(t)
+
+	cacheRead := 3
+	cacheWrite := 2
+	wsMode := model.RelayLogWSModeContinuation
+	wsRecovery := model.RelayLogWSRecoveryReplay
+	entry := model.RelayLog{
+		Time:               500,
+		ThreadID:           "thread-1",
+		ClientAPIKeyID:     17,
+		GroupID:            23,
+		RequestModelName:   "gpt-4o",
+		ActualModelName:    "gpt-4o-final",
+		RequestSource:      "relay",
+		RequestStream:      true,
+		ClientIP:           "10.1.2.3",
+		ChannelId:          42,
+		ChannelName:        "final",
+		FinalStatus:        "success",
+		FinalChannelID:     42,
+		FinalSiteID:        7,
+		FinalUpstreamModel: "gpt-4o-final",
+		AttemptsCount:      2,
+		TotalLatencyMS:     900,
+		InputTokens:        120,
+		OutputTokens:       45,
+		CacheReadTokens:    &cacheRead,
+		CacheWriteTokens:   &cacheWrite,
+		EstimatedCost:      0.004,
+		FinalSuccessCost:   0.003,
+		TotalAttemptCost:   0.004,
+		FailedAttemptCost:  0.001,
+		ServiceTier:        "standard",
+		UsedWS:             true,
+		WSMode:             &wsMode,
+		WSRecovery:         &wsRecovery,
+		Attempts: []model.ChannelAttempt{
+			{
+				AttemptIndex:     1,
+				AttemptNum:       1,
+				ChannelID:        41,
+				ChannelKeyID:     410,
+				KeyID:            411,
+				ChannelName:      "bad",
+				SiteID:           6,
+				SiteAccountID:    61,
+				AccountID:        62,
+				BaseURL:          "https://user:secret@api.example.com/v1?token=hidden",
+				ModelName:        "gpt-4o",
+				UpstreamModel:    "gpt-4o-bad",
+				RequestProtocol:  "openai_chat",
+				UpstreamProtocol: "openai_chat",
+				ResponseProtocol: "openai_chat",
+				Status:           model.AttemptFailed,
+				HTTPStatus:       200,
+				FailureReason:    "empty_choices",
+				Retryable:        true,
+				DurationMS:       180,
+				TTFBMS:           50,
+				TotalMS:          180,
+				InputTokens:      120,
+				EstimatedCost:    0.001,
+				CostIncurred:     "unknown",
+				CostSource:       "estimated_input",
+				ServiceTier:      "standard",
+				ErrorSummary:     "Authorization: Bearer secret-token",
+				CreatedAt:        501,
+			},
+			{
+				AttemptIndex:  2,
+				AttemptNum:    1,
+				ChannelID:     42,
+				ChannelName:   "final",
+				SiteID:        7,
+				ModelName:     "gpt-4o",
+				UpstreamModel: "gpt-4o-final",
+				Status:        model.AttemptSuccess,
+				HTTPStatus:    200,
+				DurationMS:    700,
+				TTFBMS:        90,
+				InputTokens:   120,
+				OutputTokens:  45,
+				CacheTokens:   5,
+				InputCost:     0.001,
+				OutputCost:    0.002,
+				EstimatedCost: 0.003,
+				CreatedAt:     502,
+			},
+		},
+	}
+
+	saved, err := RelayLogAddWithResult(ctx, entry)
+	if err != nil {
+		t.Fatalf("RelayLogAddWithResult failed: %v", err)
+	}
+
+	trace, err := RequestTraceGetByTraceID(ctx, saved.TraceID)
+	if err != nil {
+		t.Fatalf("RequestTraceGetByTraceID failed: %v", err)
+	}
+	if trace.ID != saved.ID || trace.RelayLogID != saved.ID || trace.TraceID != saved.TraceID {
+		t.Fatalf("unexpected trace identity: trace=%+v saved=%+v", trace, saved)
+	}
+	if trace.ClientModel != "gpt-4o" || trace.FinalUpstreamModel != "gpt-4o-final" || trace.FinalStatus != "success" {
+		t.Fatalf("unexpected trace model/status fields: %+v", trace)
+	}
+	if trace.AttemptsCount != 2 || trace.TotalLatencyMS != 900 || trace.CacheTokens != 5 {
+		t.Fatalf("unexpected trace totals: %+v", trace)
+	}
+	if !trace.UsedWS || trace.WSMode != string(wsMode) || trace.WSRecovery != string(wsRecovery) {
+		t.Fatalf("unexpected websocket trace fields: %+v", trace)
+	}
+
+	attempts, err := RequestAttemptsByTraceID(ctx, saved.TraceID)
+	if err != nil {
+		t.Fatalf("RequestAttemptsByTraceID failed: %v", err)
+	}
+	if len(attempts) != 2 {
+		t.Fatalf("expected two mirrored attempts, got %+v", attempts)
+	}
+	if attempts[0].RelayLogID != saved.ID || attempts[0].AttemptIndex != 1 || attempts[0].Status != model.AttemptFailed || !attempts[0].Retryable {
+		t.Fatalf("unexpected failed attempt mirror: %+v", attempts[0])
+	}
+	if attempts[0].BaseURL != "https://api.example.com/v1" {
+		t.Fatalf("expected base url credentials and query to be stripped, got %q", attempts[0].BaseURL)
+	}
+	if strings.Contains(attempts[0].ErrorSummary, "secret-token") || !strings.Contains(attempts[0].ErrorSummary, "[REDACTED]") {
+		t.Fatalf("expected attempt error summary to be redacted, got %q", attempts[0].ErrorSummary)
+	}
+	if attempts[1].AttemptIndex != 2 || attempts[1].Status != model.AttemptSuccess || attempts[1].OutputTokens != 45 || attempts[1].EstimatedCost != 0.003 {
+		t.Fatalf("unexpected success attempt mirror: %+v", attempts[1])
+	}
+}
+
+func TestRelayLogMirrorRespectsKeepDisabledAndClear(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+	resetRelayLogCacheForTest(t)
+	if err := settingRefreshCache(ctx); err != nil {
+		t.Fatalf("settingRefreshCache failed: %v", err)
+	}
+	if err := SettingSetString(model.SettingKeyRelayLogKeepEnabled, "false"); err != nil {
+		t.Fatalf("disable relay log keep failed: %v", err)
+	}
+	t.Cleanup(func() {
+		settingCache.Set(model.SettingKeyRelayLogKeepEnabled, "true")
+	})
+
+	disabledSaved, err := RelayLogAddWithResult(ctx, model.RelayLog{
+		Time:             600,
+		RequestModelName: "disabled",
+		Attempts: []model.ChannelAttempt{{
+			AttemptIndex: 1,
+			ChannelID:    1,
+			Status:       model.AttemptSuccess,
+		}},
+	})
+	if err != nil {
+		t.Fatalf("RelayLogAddWithResult with keep disabled failed: %v", err)
+	}
+	if _, err := RequestTraceGetByTraceID(ctx, disabledSaved.TraceID); !RelayLogIsNotFound(err) {
+		t.Fatalf("expected disabled relay log keep to skip trace mirror, got err=%v", err)
+	}
+
+	if err := SettingSetString(model.SettingKeyRelayLogKeepEnabled, "true"); err != nil {
+		t.Fatalf("enable relay log keep failed: %v", err)
+	}
+	enabledSaved, err := RelayLogAddWithResult(ctx, model.RelayLog{
+		Time:             700,
+		RequestModelName: "enabled",
+		Attempts: []model.ChannelAttempt{{
+			AttemptIndex: 1,
+			ChannelID:    2,
+			Status:       model.AttemptSuccess,
+		}},
+	})
+	if err != nil {
+		t.Fatalf("RelayLogAddWithResult with keep enabled failed: %v", err)
+	}
+	if _, err := RequestTraceGetByTraceID(ctx, enabledSaved.TraceID); err != nil {
+		t.Fatalf("expected enabled relay log keep to mirror trace: %v", err)
+	}
+
+	if err := RelayLogClear(ctx); err != nil {
+		t.Fatalf("RelayLogClear failed: %v", err)
+	}
+	if _, err := RequestTraceGetByTraceID(ctx, enabledSaved.TraceID); !RelayLogIsNotFound(err) {
+		t.Fatalf("expected RelayLogClear to delete mirrored trace, got err=%v", err)
+	}
+	attempts, err := RequestAttemptsByTraceID(ctx, enabledSaved.TraceID)
+	if err != nil {
+		t.Fatalf("RequestAttemptsByTraceID after clear failed: %v", err)
+	}
+	if len(attempts) != 0 {
+		t.Fatalf("expected RelayLogClear to delete mirrored attempts, got %+v", attempts)
+	}
+}
+
 func TestRelayLogListOmitsBodyAndDetailRedacts(t *testing.T) {
 	ctx := setupSiteOpTestDB(t)
 	resetRelayLogCacheForTest(t)

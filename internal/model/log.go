@@ -110,6 +110,77 @@ type RelayLog struct {
 	WSRecovery           *RelayLogWSRecovery `json:"ws_recovery,omitempty"`
 }
 
+type RequestTrace struct {
+	ID                 int64   `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	TraceID            string  `json:"trace_id" gorm:"index"`
+	RelayLogID         int64   `json:"relay_log_id" gorm:"uniqueIndex"`
+	ThreadID           string  `json:"thread_id,omitempty" gorm:"index"`
+	ClientAPIKeyID     int     `json:"client_api_key_id,omitempty" gorm:"index"`
+	GroupID            int     `json:"group_id,omitempty" gorm:"index"`
+	ClientModel        string  `json:"client_model" gorm:"index"`
+	RequestSource      string  `json:"request_source,omitempty" gorm:"index"`
+	RequestStream      bool    `json:"request_stream,omitempty" gorm:"index"`
+	ClientIP           string  `json:"client_ip,omitempty" gorm:"index"`
+	FinalStatus        string  `json:"final_status,omitempty" gorm:"index"`
+	FinalChannelID     int     `json:"final_channel_id,omitempty" gorm:"index"`
+	FinalSiteID        int     `json:"final_site_id,omitempty" gorm:"index"`
+	FinalUpstreamModel string  `json:"final_upstream_model,omitempty" gorm:"index"`
+	AttemptsCount      int     `json:"attempts_count,omitempty"`
+	TotalLatencyMS     int     `json:"total_latency_ms,omitempty"`
+	InputTokens        int     `json:"input_tokens,omitempty"`
+	OutputTokens       int     `json:"output_tokens,omitempty"`
+	CacheTokens        int     `json:"cache_tokens,omitempty"`
+	EstimatedCost      float64 `json:"estimated_cost,omitempty"`
+	FinalSuccessCost   float64 `json:"final_success_cost,omitempty"`
+	TotalAttemptCost   float64 `json:"total_attempt_cost,omitempty"`
+	FailedAttemptCost  float64 `json:"failed_attempt_estimated_cost,omitempty"`
+	ServiceTier        string  `json:"service_tier,omitempty"`
+	UsedWS             bool    `json:"used_ws,omitempty" gorm:"index"`
+	WSMode             string  `json:"ws_mode,omitempty"`
+	WSRecovery         string  `json:"ws_recovery,omitempty"`
+	CreatedAt          int64   `json:"created_at" gorm:"index"`
+}
+
+type RequestAttempt struct {
+	ID               int64         `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	TraceID          string        `json:"trace_id" gorm:"index"`
+	RelayLogID       int64         `json:"relay_log_id" gorm:"index"`
+	AttemptIndex     int           `json:"attempt_index,omitempty" gorm:"index"`
+	AttemptNum       int           `json:"attempt_num,omitempty"`
+	ChannelID        int           `json:"channel_id,omitempty" gorm:"index"`
+	ChannelKeyID     int           `json:"channel_key_id,omitempty" gorm:"index"`
+	KeyID            int           `json:"key_id,omitempty" gorm:"index"`
+	ChannelName      string        `json:"channel_name,omitempty"`
+	SiteID           int           `json:"site_id,omitempty" gorm:"index"`
+	SiteAccountID    int           `json:"site_account_id,omitempty" gorm:"index"`
+	AccountID        int           `json:"account_id,omitempty" gorm:"index"`
+	BaseURL          string        `json:"base_url,omitempty"`
+	ModelName        string        `json:"model_name,omitempty" gorm:"index"`
+	UpstreamModel    string        `json:"upstream_model,omitempty" gorm:"index"`
+	RequestProtocol  string        `json:"request_protocol,omitempty" gorm:"index"`
+	UpstreamProtocol string        `json:"upstream_protocol,omitempty" gorm:"index"`
+	ResponseProtocol string        `json:"response_protocol,omitempty" gorm:"index"`
+	Status           AttemptStatus `json:"status,omitempty" gorm:"index"`
+	HTTPStatus       int           `json:"http_status,omitempty" gorm:"index"`
+	FailureReason    string        `json:"failure_reason,omitempty" gorm:"index"`
+	Retryable        bool          `json:"retryable,omitempty" gorm:"index"`
+	DurationMS       int           `json:"duration_ms,omitempty"`
+	TTFBMS           int           `json:"ttfb_ms,omitempty"`
+	TotalMS          int           `json:"total_ms,omitempty"`
+	InputTokens      int           `json:"input_tokens,omitempty"`
+	OutputTokens     int           `json:"output_tokens,omitempty"`
+	CacheTokens      int           `json:"cache_tokens,omitempty"`
+	InputCost        float64       `json:"input_cost,omitempty"`
+	OutputCost       float64       `json:"output_cost,omitempty"`
+	EstimatedCost    float64       `json:"estimated_cost,omitempty"`
+	CostIncurred     string        `json:"cost_incurred,omitempty"`
+	CostSource       string        `json:"cost_source,omitempty"`
+	ServiceTier      string        `json:"service_tier,omitempty"`
+	ErrorSummary     string        `json:"error_summary,omitempty"`
+	Sticky           bool          `json:"sticky,omitempty"`
+	CreatedAt        int64         `json:"created_at" gorm:"index"`
+}
+
 type RelayLogListQuery struct {
 	Page          int
 	PageSize      int

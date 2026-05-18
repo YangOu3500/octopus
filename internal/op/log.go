@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net/url"
 	"regexp"
 	"sort"
 	"strconv"
@@ -148,6 +149,11 @@ func RelayLogAddWithResult(ctx context.Context, relayLog model.RelayLog) (model.
 	if relayLog.TraceID == "" {
 		relayLog.TraceID = "trace_" + strconv.FormatInt(relayLog.ID, 10)
 	}
+	if enabled {
+		if err := requestTraceMirrorPersist(ctx, relayLog); err != nil {
+			return relayLog, err
+		}
+	}
 	go notifySubscribers(relayLog)
 
 	relayLogCacheLock.Lock()
@@ -165,6 +171,170 @@ func RelayLogAddWithResult(ctx context.Context, relayLog model.RelayLog) (model.
 	}
 	relayLogCacheLock.Unlock()
 	return relayLog, nil
+}
+
+func requestTraceMirrorPersist(ctx context.Context, relayLog model.RelayLog) error {
+	trace := requestTraceFromRelayLog(relayLog)
+	attempts := requestAttemptsFromRelayLog(relayLog, trace.CreatedAt)
+
+	return db.GetDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&trace).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("relay_log_id = ?", relayLog.ID).Delete(&model.RequestAttempt{}).Error; err != nil {
+			return err
+		}
+		if len(attempts) == 0 {
+			return nil
+		}
+		return tx.Create(&attempts).Error
+	})
+}
+
+func requestTraceFromRelayLog(relayLog model.RelayLog) model.RequestTrace {
+	createdAt := relayLog.Time
+	if createdAt == 0 {
+		createdAt = time.Now().Unix()
+	}
+
+	attemptsCount := relayLog.AttemptsCount
+	if attemptsCount == 0 {
+		attemptsCount = relayLog.TotalAttempts
+	}
+	if attemptsCount == 0 {
+		attemptsCount = len(relayLog.Attempts)
+	}
+
+	totalLatencyMS := relayLog.TotalLatencyMS
+	if totalLatencyMS == 0 {
+		totalLatencyMS = relayLog.UseTime
+	}
+
+	finalChannelID := relayLog.FinalChannelID
+	if finalChannelID == 0 {
+		finalChannelID = relayLog.ChannelId
+	}
+
+	finalUpstreamModel := relayLog.FinalUpstreamModel
+	if finalUpstreamModel == "" {
+		finalUpstreamModel = relayLog.ActualModelName
+	}
+
+	trace := model.RequestTrace{
+		ID:                 relayLog.ID,
+		TraceID:            relayLog.TraceID,
+		RelayLogID:         relayLog.ID,
+		ThreadID:           relayLog.ThreadID,
+		ClientAPIKeyID:     relayLog.ClientAPIKeyID,
+		GroupID:            relayLog.GroupID,
+		ClientModel:        relayLog.RequestModelName,
+		RequestSource:      relayLog.RequestSource,
+		RequestStream:      relayLog.RequestStream,
+		ClientIP:           relayLog.ClientIP,
+		FinalStatus:        relayLogEffectiveStatus(relayLog),
+		FinalChannelID:     finalChannelID,
+		FinalSiteID:        relayLog.FinalSiteID,
+		FinalUpstreamModel: finalUpstreamModel,
+		AttemptsCount:      attemptsCount,
+		TotalLatencyMS:     totalLatencyMS,
+		InputTokens:        relayLog.InputTokens,
+		OutputTokens:       relayLog.OutputTokens,
+		CacheTokens:        relayLogCacheTokenTotal(relayLog),
+		EstimatedCost:      relayLog.EstimatedCost,
+		FinalSuccessCost:   relayLog.FinalSuccessCost,
+		TotalAttemptCost:   relayLog.TotalAttemptCost,
+		FailedAttemptCost:  relayLog.FailedAttemptCost,
+		ServiceTier:        relayLog.ServiceTier,
+		UsedWS:             relayLog.UsedWS,
+		CreatedAt:          createdAt,
+	}
+	if relayLog.WSMode != nil {
+		trace.WSMode = string(*relayLog.WSMode)
+	}
+	if relayLog.WSRecovery != nil {
+		trace.WSRecovery = string(*relayLog.WSRecovery)
+	}
+	return trace
+}
+
+func requestAttemptsFromRelayLog(relayLog model.RelayLog, fallbackCreatedAt int64) []model.RequestAttempt {
+	if len(relayLog.Attempts) == 0 {
+		return nil
+	}
+	attempts := make([]model.RequestAttempt, 0, len(relayLog.Attempts))
+	for i, attempt := range relayLog.Attempts {
+		createdAt := attempt.CreatedAt
+		if createdAt == 0 {
+			createdAt = fallbackCreatedAt
+		}
+		attemptIndex := attempt.AttemptIndex
+		if attemptIndex == 0 {
+			attemptIndex = i + 1
+		}
+		attemptNum := attempt.AttemptNum
+		if attemptNum == 0 {
+			attemptNum = i + 1
+		}
+		durationMS := attempt.DurationMS
+		if durationMS == 0 {
+			durationMS = attempt.Duration
+		}
+		totalMS := attempt.TotalMS
+		if totalMS == 0 {
+			totalMS = durationMS
+		}
+		attempts = append(attempts, model.RequestAttempt{
+			ID:               snowflake.GenerateID(),
+			TraceID:          relayLog.TraceID,
+			RelayLogID:       relayLog.ID,
+			AttemptIndex:     attemptIndex,
+			AttemptNum:       attemptNum,
+			ChannelID:        attempt.ChannelID,
+			ChannelKeyID:     attempt.ChannelKeyID,
+			KeyID:            attempt.KeyID,
+			ChannelName:      attempt.ChannelName,
+			SiteID:           attempt.SiteID,
+			SiteAccountID:    attempt.SiteAccountID,
+			AccountID:        attempt.AccountID,
+			BaseURL:          sanitizeRelayLogURL(attempt.BaseURL),
+			ModelName:        attempt.ModelName,
+			UpstreamModel:    attempt.UpstreamModel,
+			RequestProtocol:  attempt.RequestProtocol,
+			UpstreamProtocol: attempt.UpstreamProtocol,
+			ResponseProtocol: attempt.ResponseProtocol,
+			Status:           attempt.Status,
+			HTTPStatus:       attempt.HTTPStatus,
+			FailureReason:    sanitizeRelayLogText(attempt.FailureReason),
+			Retryable:        attempt.Retryable,
+			DurationMS:       durationMS,
+			TTFBMS:           attempt.TTFBMS,
+			TotalMS:          totalMS,
+			InputTokens:      attempt.InputTokens,
+			OutputTokens:     attempt.OutputTokens,
+			CacheTokens:      attempt.CacheTokens,
+			InputCost:        attempt.InputCost,
+			OutputCost:       attempt.OutputCost,
+			EstimatedCost:    attempt.EstimatedCost,
+			CostIncurred:     attempt.CostIncurred,
+			CostSource:       attempt.CostSource,
+			ServiceTier:      attempt.ServiceTier,
+			ErrorSummary:     sanitizeRelayLogText(attempt.ErrorSummary),
+			Sticky:           attempt.Sticky,
+			CreatedAt:        createdAt,
+		})
+	}
+	return attempts
+}
+
+func relayLogEffectiveStatus(relayLog model.RelayLog) string {
+	status := strings.ToLower(strings.TrimSpace(relayLog.FinalStatus))
+	if status != "" {
+		return status
+	}
+	if strings.TrimSpace(relayLog.Error) != "" {
+		return "failed"
+	}
+	return "success"
 }
 
 func RelayLogSaveDBTask(ctx context.Context) error {
@@ -207,7 +377,15 @@ func relayLogCleanup(ctx context.Context) error {
 	}
 
 	cutoffTime := time.Now().Add(-time.Duration(keepPeriod) * 24 * time.Hour).Unix()
-	return db.GetDB().WithContext(ctx).Where("time < ?", cutoffTime).Delete(&model.RelayLog{}).Error
+	return db.GetDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("created_at < ?", cutoffTime).Delete(&model.RequestAttempt{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("created_at < ?", cutoffTime).Delete(&model.RequestTrace{}).Error; err != nil {
+			return err
+		}
+		return tx.Where("time < ?", cutoffTime).Delete(&model.RelayLog{}).Error
+	})
 }
 
 // RelayLogList 查询日志列表，支持可选的时间范围和渠道ID过滤
@@ -433,6 +611,46 @@ func RelayLogGet(ctx context.Context, id int64) (model.RelayLog, error) {
 
 func RelayLogIsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
+}
+
+func RequestTraceGetByTraceID(ctx context.Context, traceID string) (model.RequestTrace, error) {
+	traceID = strings.TrimSpace(traceID)
+	if traceID == "" {
+		return model.RequestTrace{}, gorm.ErrRecordNotFound
+	}
+
+	query := db.GetDB().WithContext(ctx).Model(&model.RequestTrace{})
+	if id, err := strconv.ParseInt(traceID, 10, 64); err == nil {
+		query = query.Where("trace_id = ? OR relay_log_id = ? OR id = ?", traceID, id, id)
+	} else {
+		query = query.Where("trace_id = ?", traceID)
+	}
+
+	var trace model.RequestTrace
+	if err := query.Order("id DESC").First(&trace).Error; err != nil {
+		return model.RequestTrace{}, err
+	}
+	return trace, nil
+}
+
+func RequestAttemptsByTraceID(ctx context.Context, traceID string) ([]model.RequestAttempt, error) {
+	traceID = strings.TrimSpace(traceID)
+	if traceID == "" {
+		return nil, nil
+	}
+
+	query := db.GetDB().WithContext(ctx).Model(&model.RequestAttempt{})
+	if id, err := strconv.ParseInt(traceID, 10, 64); err == nil {
+		query = query.Where("trace_id = ? OR relay_log_id = ?", traceID, id)
+	} else {
+		query = query.Where("trace_id = ?", traceID)
+	}
+
+	var attempts []model.RequestAttempt
+	if err := query.Order("attempt_index ASC, attempt_num ASC, id ASC").Find(&attempts).Error; err != nil {
+		return nil, err
+	}
+	return attempts, nil
 }
 
 // logMatchesChannels 检查日志是否属于指定的渠道集合
@@ -721,6 +939,21 @@ func sanitizeRelayLogContent(content string) string {
 	return sanitizeRelayLogText(content)
 }
 
+func sanitizeRelayLogURL(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	parsed, err := url.Parse(value)
+	if err == nil && parsed.Scheme != "" && parsed.Host != "" {
+		parsed.User = nil
+		parsed.RawQuery = ""
+		parsed.Fragment = ""
+		return sanitizeRelayLogText(parsed.String())
+	}
+	return sanitizeRelayLogText(value)
+}
+
 func sanitizeRelayLogJSONValue(value any) any {
 	switch typed := value.(type) {
 	case map[string]any:
@@ -887,5 +1120,13 @@ func RelayLogClear(ctx context.Context) error {
 	relayLogCacheLock.Lock()
 	relayLogCache = make([]model.RelayLog, 0, relayLogMaxSize)
 	relayLogCacheLock.Unlock()
-	return db.GetDB().WithContext(ctx).Where("1 = 1").Delete(&model.RelayLog{}).Error
+	return db.GetDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("1 = 1").Delete(&model.RequestAttempt{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("1 = 1").Delete(&model.RequestTrace{}).Error; err != nil {
+			return err
+		}
+		return tx.Where("1 = 1").Delete(&model.RelayLog{}).Error
+	})
 }
