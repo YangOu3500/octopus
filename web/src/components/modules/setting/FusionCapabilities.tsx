@@ -1,23 +1,29 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Activity, ArrowRight, CheckCircle2, CircleDashed, Download, Eye, GitBranch, ListChecks, Network, Settings2, Thermometer, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Activity, ArrowRight, CheckCircle2, CircleDashed, Download, Eye, GitBranch, ListChecks, Network, Search, Settings2, Thermometer, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useNavStore, type NavItem } from '@/components/modules/navbar';
 import { useChannelTabStore, type ChannelTab } from '@/components/modules/channel/tab-store';
 import { cn } from '@/lib/utils';
 
 type CapabilityStatus = 'done' | 'partial' | 'planned';
+type CapabilitySource = 'ccLoad' | 'AxonHub' | 'both' | 'octopus';
 
 type Capability = {
     id: string;
     status: CapabilityStatus;
-    source: 'ccLoad' | 'AxonHub' | 'both' | 'octopus';
+    source: CapabilitySource;
     nav?: NavItem;
     channelTab?: ChannelTab;
     icon: LucideIcon;
 };
+
+type StatusFilter = CapabilityStatus | 'all';
+type SourceFilter = CapabilitySource | 'all';
 
 const capabilities: Capability[] = [
     { id: 'responseValidator', status: 'done', source: 'ccLoad', nav: 'log', icon: CheckCircle2 },
@@ -69,6 +75,9 @@ export function SettingFusionCapabilities() {
     const t = useTranslations('setting');
     const setActiveItem = useNavStore((state) => state.setActiveItem);
     const setChannelTab = useChannelTabStore((state) => state.setActiveTab);
+    const [query, setQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+    const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
 
     const counts = capabilities.reduce(
         (acc, item) => {
@@ -77,6 +86,31 @@ export function SettingFusionCapabilities() {
         },
         { done: 0, partial: 0, planned: 0 } satisfies Record<CapabilityStatus, number>,
     );
+
+    const sourceOptions: SourceFilter[] = ['all', 'both', 'AxonHub', 'ccLoad', 'octopus'];
+    const statusOptions: StatusFilter[] = ['all', 'done', 'partial', 'planned'];
+    const normalizedQuery = query.trim().toLowerCase();
+
+    const filteredCapabilities = useMemo(() => capabilities.filter((item) => {
+        if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+        if (sourceFilter !== 'all' && item.source !== sourceFilter) return false;
+        if (!normalizedQuery) return true;
+
+        const searchText = [
+            item.id,
+            sourceLabel(item.source, t),
+            item.nav ? t(`fusionCapabilities.nav.${item.nav}`) : '',
+            t(`fusionCapabilities.status.${item.status}`),
+            t(`fusionCapabilities.items.${item.id}.name`),
+            t(`fusionCapabilities.items.${item.id}.desc`),
+            t(`fusionCapabilities.items.${item.id}.ui`),
+            t(`fusionCapabilities.items.${item.id}.gap`),
+        ].join(' ').toLowerCase();
+
+        return searchText.includes(normalizedQuery);
+    }), [normalizedQuery, sourceFilter, statusFilter, t]);
+
+    const hasActiveFilters = normalizedQuery.length > 0 || statusFilter !== 'all' || sourceFilter !== 'all';
 
     return (
         <div className="rounded-lg border border-border bg-card p-6">
@@ -99,6 +133,75 @@ export function SettingFusionCapabilities() {
                 </div>
             </div>
 
+            <div className="mb-4 space-y-3 rounded-lg border border-border bg-background/40 p-3">
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(260px,1fr)_auto] xl:items-center">
+                    <div className="relative min-w-0">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            placeholder={t('fusionCapabilities.filters.searchPlaceholder')}
+                            className="h-9 rounded-lg pl-9"
+                        />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span>
+                            {t('fusionCapabilities.filters.summary', {
+                                shown: filteredCapabilities.length,
+                                total: capabilities.length,
+                            })}
+                        </span>
+                        {hasActiveFilters ? (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 rounded-md px-2 text-xs"
+                                onClick={() => {
+                                    setQuery('');
+                                    setStatusFilter('all');
+                                    setSourceFilter('all');
+                                }}
+                            >
+                                {t('fusionCapabilities.filters.clear')}
+                            </Button>
+                        ) : null}
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                    {statusOptions.map((status) => (
+                        <Button
+                            key={status}
+                            type="button"
+                            variant={statusFilter === status ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-7 rounded-md px-2 text-xs"
+                            onClick={() => setStatusFilter(status)}
+                        >
+                            {status === 'all'
+                                ? t('fusionCapabilities.filters.allStatuses')
+                                : `${t(`fusionCapabilities.status.${status}`)} ${counts[status]}`}
+                        </Button>
+                    ))}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                    {sourceOptions.map((source) => (
+                        <Button
+                            key={source}
+                            type="button"
+                            variant={sourceFilter === source ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-7 rounded-md px-2 text-xs"
+                            onClick={() => setSourceFilter(source)}
+                        >
+                            {source === 'all' ? t('fusionCapabilities.filters.allSources') : sourceLabel(source, t)}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
             <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full min-w-[920px] text-left text-xs">
                     <thead className="bg-muted/40 text-muted-foreground">
@@ -111,7 +214,13 @@ export function SettingFusionCapabilities() {
                         </tr>
                     </thead>
                     <tbody>
-                        {capabilities.map((item) => {
+                        {filteredCapabilities.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="px-3 py-8 text-center text-sm text-muted-foreground">
+                                    {t('fusionCapabilities.filters.noResults')}
+                                </td>
+                            </tr>
+                        ) : filteredCapabilities.map((item) => {
                             const Icon = item.icon;
                             return (
                                 <tr key={item.id} className="border-t border-border align-top">

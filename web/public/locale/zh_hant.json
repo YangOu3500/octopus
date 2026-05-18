@@ -512,6 +512,14 @@
                 "partial": "部分接入",
                 "planned": "待補齊"
             },
+            "filters": {
+                "searchPlaceholder": "搜尋能力、UI 入口、缺口或來源",
+                "allStatuses": "全部狀態",
+                "allSources": "全部來源",
+                "summary": "顯示 {shown} / {total}",
+                "clear": "清除篩選",
+                "noResults": "沒有符合目前篩選的能力"
+            },
             "columns": {
                 "capability": "能力",
                 "source": "參考來源",

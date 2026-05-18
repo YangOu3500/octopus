@@ -512,6 +512,14 @@
                 "partial": "部分接入",
                 "planned": "待补齐"
             },
+            "filters": {
+                "searchPlaceholder": "搜索能力、UI 入口、缺口或来源",
+                "allStatuses": "全部状态",
+                "allSources": "全部来源",
+                "summary": "显示 {shown} / {total}",
+                "clear": "清除筛选",
+                "noResults": "没有匹配当前筛选的能力"
+            },
             "columns": {
                 "capability": "能力",
                 "source": "参考来源",

@@ -512,6 +512,14 @@
                 "partial": "Partial",
                 "planned": "Planned"
             },
+            "filters": {
+                "searchPlaceholder": "Search capability, UI entry, gap, or source",
+                "allStatuses": "All statuses",
+                "allSources": "All sources",
+                "summary": "Showing {shown} / {total}",
+                "clear": "Clear filters",
+                "noResults": "No capabilities match the current filters"
+            },
             "columns": {
                 "capability": "Capability",
                 "source": "Reference",
