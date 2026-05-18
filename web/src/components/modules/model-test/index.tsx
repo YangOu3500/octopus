@@ -26,11 +26,13 @@ type TestRow = {
 };
 
 type ModelTestResultFilter = 'all' | 'success' | 'failed' | 'running' | 'idle';
+type ModelTestResultStatus = Exclude<ModelTestResultFilter, 'all'>;
 
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
 const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.4fr) 7rem 9rem 5rem 6rem 6rem 9rem 6rem 7rem minmax(18rem,1.2fr) 8rem';
 const MODEL_TEST_EXPORT_VERSION = 1;
+const MODEL_TEST_RESULT_FILTERS: ModelTestResultFilter[] = ['all', 'success', 'failed', 'running', 'idle'];
 
 function channelProtocol(type: ChannelType | undefined): string {
     switch (type) {
@@ -100,7 +102,7 @@ function formatCost(value?: number) {
     return `$${value.toFixed(6)}`;
 }
 
-function resultStatus(result?: ModelTestResult, running = false) {
+function resultStatus(result?: ModelTestResult, running = false): ModelTestResultStatus {
     if (running) return 'running';
     if (!result) return 'idle';
     if (result.success) return 'success';
@@ -217,7 +219,7 @@ export function ModelTest() {
         }
     }, [modelNames, selectedModelName]);
 
-    const rows = useMemo<TestRow[]>(() => {
+    const filterableRows = useMemo<TestRow[]>(() => {
         const normalizedQuery = query.trim().toLowerCase();
         const allRows: TestRow[] = [];
 
@@ -266,9 +268,27 @@ export function ModelTest() {
                 protocolLabel(row.protocol).toLowerCase().includes(normalizedQuery)
             ))
             : allRows;
-        if (resultFilter === 'all') return searchedRows;
-        return searchedRows.filter((row) => resultStatus(results[row.key], runningKeys.has(row.key)) === resultFilter);
-    }, [channelById, mode, modelChannels, query, resultFilter, results, runningKeys, selectedChannelId, selectedModelName]);
+        return searchedRows;
+    }, [channelById, mode, modelChannels, query, selectedChannelId, selectedModelName]);
+
+    const resultCounts = useMemo<Record<ModelTestResultFilter, number>>(() => {
+        const counts: Record<ModelTestResultFilter, number> = {
+            all: filterableRows.length,
+            success: 0,
+            failed: 0,
+            running: 0,
+            idle: 0,
+        };
+        for (const row of filterableRows) {
+            counts[resultStatus(results[row.key], runningKeys.has(row.key))] += 1;
+        }
+        return counts;
+    }, [filterableRows, results, runningKeys]);
+
+    const rows = useMemo<TestRow[]>(() => {
+        if (resultFilter === 'all') return filterableRows;
+        return filterableRows.filter((row) => resultStatus(results[row.key], runningKeys.has(row.key)) === resultFilter);
+    }, [filterableRows, resultFilter, results, runningKeys]);
 
     useEffect(() => {
         queueMicrotask(() => setSelectedKeys(new Set(rows.filter((row) => row.enabled).map((row) => row.key))));
@@ -368,12 +388,22 @@ export function ModelTest() {
         return { total: values.length, success, failed: values.length - success };
     }, [results]);
 
+    const exportableResults = useMemo(
+        () => rows.map((row) => results[row.key]).filter((result): result is ModelTestResult => Boolean(result)),
+        [results, rows],
+    );
+
     const handleExport = () => {
-        const values = Object.values(results);
+        const values = exportableResults;
         if (values.length === 0) {
             toast.warning(t('export.empty'));
             return;
         }
+        const exportSummary = {
+            total: values.length,
+            success: values.filter((item) => item.success).length,
+            failed: values.filter((item) => !item.success).length,
+        };
         try {
             const exportedAt = exportTimestamp();
             downloadJson(`octopus-model-test-${exportFilenameTimestamp()}.json`, {
@@ -386,10 +416,11 @@ export function ModelTest() {
                     max_tokens: maxTokens,
                     prompt_length: prompt.length,
                     result_filter: resultFilter,
+                    result_status_counts: resultCounts,
                     selected_count: selectedRows.length,
                     visible_count: rows.length,
                 },
-                summary,
+                summary: exportSummary,
                 results: values.map(sanitizeModelTestResultForExport),
             });
             toast.success(t('export.success'), { description: t('export.safe') });
@@ -446,7 +477,7 @@ export function ModelTest() {
                             </Badge>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <Button type="button" variant="outline" size="sm" onClick={handleExport} disabled={Object.keys(results).length === 0}>
+                            <Button type="button" variant="outline" size="sm" onClick={handleExport} disabled={exportableResults.length === 0}>
                                 <Download className="size-4" />
                                 {t('export.button')}
                             </Button>
@@ -585,6 +616,32 @@ export function ModelTest() {
                                 <SelectItem value="idle">{t('filter.idle')}</SelectItem>
                             </SelectContent>
                         </Select>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        {MODEL_TEST_RESULT_FILTERS.map((filter) => (
+                            <button
+                                key={filter}
+                                type="button"
+                                onClick={() => setResultFilter(filter)}
+                                className={cn(
+                                    'inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-xs font-medium transition-colors',
+                                    resultFilter === filter
+                                        ? 'border-primary bg-primary text-primary-foreground'
+                                        : 'border-border bg-background/50 text-muted-foreground hover:bg-muted hover:text-foreground',
+                                )}
+                            >
+                                <span>{t(`filter.${filter}`)}</span>
+                                <span
+                                    className={cn(
+                                        'min-w-6 rounded-md bg-muted px-1.5 py-0.5 text-center font-semibold tabular-nums text-foreground',
+                                        resultFilter === filter && 'bg-primary-foreground/20 text-primary-foreground',
+                                    )}
+                                >
+                                    {resultCounts[filter]}
+                                </span>
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
