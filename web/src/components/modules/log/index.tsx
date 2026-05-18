@@ -335,7 +335,8 @@ export function Log() {
     useEffect(() => {
         if (!autoRefresh || openDetailLogId !== null) return;
         void refetch();
-    }, [autoRefresh, openDetailLogId, refetch]);
+        void refetchActiveRequests();
+    }, [autoRefresh, refreshInterval, openDetailLogId, refetch, refetchActiveRequests]);
 
     const managedChannelMap = useMemo(() => {
         const next = new Map<number, ManagedChannelLookup>();

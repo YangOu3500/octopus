@@ -456,27 +456,26 @@ export function Traces() {
     const tracesQuery = useRequestTraces(params, {
         refetchIntervalMs: autoRefresh ? Number(refreshInterval) : false,
     });
+    const refetchTraces = tracesQuery.refetch;
 
-    useEffect(() => {
+    const resetTraceListPosition = useCallback(() => {
         setPage(1);
-    }, [failureFilter, failoverFilter, httpStatusFilter, modelFilter, protocolFilter, sourceFilter, statusFilter, streamFilter, timeRange, traceFilter]);
+        setSelectedTraceId(null);
+    }, []);
 
     useEffect(() => {
         if (!autoRefresh) return;
-        void tracesQuery.refetch();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [autoRefresh]);
+        void refetchTraces();
+    }, [autoRefresh, refreshInterval, refetchTraces]);
 
     const traces = useMemo(() => tracesQuery.data?.items ?? [], [tracesQuery.data?.items]);
     const total = tracesQuery.data?.total ?? 0;
 
-    useEffect(() => {
-        if (traces.length === 0) {
-            setSelectedTraceId(null);
-            return;
+    const effectiveSelectedTraceId = useMemo(() => {
+        if (selectedTraceId && traces.some((trace) => trace.trace_id === selectedTraceId)) {
+            return selectedTraceId;
         }
-        if (selectedTraceId && traces.some((trace) => trace.trace_id === selectedTraceId)) return;
-        setSelectedTraceId(traces[0].trace_id);
+        return traces[0]?.trace_id ?? null;
     }, [selectedTraceId, traces]);
 
     const summary = useMemo(() => {
@@ -490,6 +489,7 @@ export function Traces() {
     }, [traces]);
 
     const resetFilters = useCallback(() => {
+        resetTraceListPosition();
         setTimeRange('24h');
         setModelFilter('');
         setTraceFilter('');
@@ -500,7 +500,7 @@ export function Traces() {
         setHTTPStatusFilter('');
         setFailureFilter('');
         setProtocolFilter('all');
-    }, []);
+    }, [resetTraceListPosition]);
 
     const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -568,12 +568,27 @@ export function Traces() {
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input value={modelFilter} onChange={(event) => setModelFilter(event.target.value)} placeholder={t('filters.model')} className="pl-8" />
+                        <Input value={modelFilter} onChange={(event) => {
+                            resetTraceListPosition();
+                            setModelFilter(event.target.value);
+                        }} placeholder={t('filters.model')} className="pl-8" />
                     </div>
-                    <Input value={traceFilter} onChange={(event) => setTraceFilter(event.target.value)} placeholder={t('filters.trace')} />
-                    <Input value={httpStatusFilter} onChange={(event) => setHTTPStatusFilter(event.target.value)} placeholder={t('filters.http')} />
-                    <Input value={failureFilter} onChange={(event) => setFailureFilter(event.target.value)} placeholder={t('filters.failure')} />
-                    <Select value={timeRange} onValueChange={setTimeRange}>
+                    <Input value={traceFilter} onChange={(event) => {
+                        resetTraceListPosition();
+                        setTraceFilter(event.target.value);
+                    }} placeholder={t('filters.trace')} />
+                    <Input value={httpStatusFilter} onChange={(event) => {
+                        resetTraceListPosition();
+                        setHTTPStatusFilter(event.target.value);
+                    }} placeholder={t('filters.http')} />
+                    <Input value={failureFilter} onChange={(event) => {
+                        resetTraceListPosition();
+                        setFailureFilter(event.target.value);
+                    }} placeholder={t('filters.failure')} />
+                    <Select value={timeRange} onValueChange={(value) => {
+                        resetTraceListPosition();
+                        setTimeRange(value);
+                    }}>
                         <SelectTrigger className="w-full">
                             <SelectValue />
                         </SelectTrigger>
@@ -585,7 +600,10 @@ export function Traces() {
                             <SelectItem value="all">{t('range.all')}</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <Select value={statusFilter} onValueChange={(value) => {
+                        resetTraceListPosition();
+                        setStatusFilter(value);
+                    }}>
                         <SelectTrigger className="w-full">
                             <SelectValue />
                         </SelectTrigger>
@@ -596,7 +614,10 @@ export function Traces() {
                             <SelectItem value="canceled">{t('status.canceled')}</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                    <Select value={sourceFilter} onValueChange={(value) => {
+                        resetTraceListPosition();
+                        setSourceFilter(value);
+                    }}>
                         <SelectTrigger className="w-full">
                             <SelectValue />
                         </SelectTrigger>
@@ -608,7 +629,10 @@ export function Traces() {
                             <SelectItem value="probe">Probe</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Select value={streamFilter} onValueChange={setStreamFilter}>
+                    <Select value={streamFilter} onValueChange={(value) => {
+                        resetTraceListPosition();
+                        setStreamFilter(value);
+                    }}>
                         <SelectTrigger className="w-full">
                             <SelectValue />
                         </SelectTrigger>
@@ -618,7 +642,10 @@ export function Traces() {
                             <SelectItem value="false">{t('stream.nonStream')}</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Select value={failoverFilter} onValueChange={setFailoverFilter}>
+                    <Select value={failoverFilter} onValueChange={(value) => {
+                        resetTraceListPosition();
+                        setFailoverFilter(value);
+                    }}>
                         <SelectTrigger className="w-full">
                             <SelectValue />
                         </SelectTrigger>
@@ -628,7 +655,10 @@ export function Traces() {
                             <SelectItem value="false">{t('failover.no')}</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Select value={protocolFilter} onValueChange={setProtocolFilter}>
+                    <Select value={protocolFilter} onValueChange={(value) => {
+                        resetTraceListPosition();
+                        setProtocolFilter(value);
+                    }}>
                         <SelectTrigger className="w-full">
                             <SelectValue />
                         </SelectTrigger>
@@ -654,7 +684,10 @@ export function Traces() {
                             variant="outline"
                             size="sm"
                             disabled={page <= 1 || tracesQuery.isFetching}
-                            onClick={() => setPage((current) => Math.max(1, current - 1))}
+                            onClick={() => {
+                                setSelectedTraceId(null);
+                                setPage((current) => Math.max(1, current - 1));
+                            }}
                         >
                             <ArrowLeft className="size-4" />
                             {t('pager.prev')}
@@ -667,7 +700,10 @@ export function Traces() {
                             variant="outline"
                             size="sm"
                             disabled={!tracesQuery.data?.has_more || tracesQuery.isFetching}
-                            onClick={() => setPage((current) => current + 1)}
+                            onClick={() => {
+                                setSelectedTraceId(null);
+                                setPage((current) => current + 1);
+                            }}
                         >
                             {t('pager.next')}
                             <ArrowRight className="size-4" />
@@ -689,12 +725,12 @@ export function Traces() {
                     ) : (
                         <TraceTable
                             items={traces}
-                            selectedTraceId={selectedTraceId}
+                            selectedTraceId={effectiveSelectedTraceId}
                             onSelect={setSelectedTraceId}
                         />
                     )}
                 </div>
-                <TraceDetailPanel traceId={selectedTraceId} />
+                <TraceDetailPanel traceId={effectiveSelectedTraceId} />
             </div>
         </div>
     );
