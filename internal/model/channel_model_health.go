@@ -1,10 +1,11 @@
 package model
 
 type ChannelModelHealthQuery struct {
-	TimeRange string
-	ChannelID int
-	Model     string
-	Source    string
+	TimeRange   string
+	ChannelID   int
+	Model       string
+	Source      string
+	QuotaStatus string
 }
 
 type ChannelModelHealthResult struct {
@@ -13,23 +14,25 @@ type ChannelModelHealthResult struct {
 }
 
 type ChannelModelHealthSummary struct {
-	TimeRange                 string  `json:"time_range"`
-	StartTime                 int64   `json:"start_time"`
-	EndTime                   int64   `json:"end_time"`
-	HealthScoreEnabled        bool    `json:"health_score_enabled"`
-	LoadBalancingStrategy     string  `json:"load_balancing_strategy"`
-	ChannelConcurrencyEnabled bool    `json:"channel_concurrency_enabled"`
-	ChannelConcurrencyMax     int     `json:"channel_concurrency_max"`
-	TotalRows                 int     `json:"total_rows"`
-	TotalRequests             int     `json:"total_requests"`
-	SuccessCount              int     `json:"success_count"`
-	FailureCount              int     `json:"failure_count"`
-	AvgSuccessRate            float64 `json:"avg_success_rate"`
-	AvgHealthScore            float64 `json:"avg_health_score"`
-	CoolingDownCount          int     `json:"cooling_down_count"`
-	ActiveSelections          int     `json:"active_selections"`
-	ChannelConcurrencyActive  int     `json:"channel_concurrency_active"`
-	EstimatedCost             float64 `json:"estimated_cost"`
+	TimeRange                 string         `json:"time_range"`
+	StartTime                 int64          `json:"start_time"`
+	EndTime                   int64          `json:"end_time"`
+	HealthScoreEnabled        bool           `json:"health_score_enabled"`
+	LoadBalancingStrategy     string         `json:"load_balancing_strategy"`
+	ChannelConcurrencyEnabled bool           `json:"channel_concurrency_enabled"`
+	ChannelConcurrencyMax     int            `json:"channel_concurrency_max"`
+	TotalRows                 int            `json:"total_rows"`
+	TotalRequests             int            `json:"total_requests"`
+	SuccessCount              int            `json:"success_count"`
+	FailureCount              int            `json:"failure_count"`
+	AvgSuccessRate            float64        `json:"avg_success_rate"`
+	AvgHealthScore            float64        `json:"avg_health_score"`
+	CoolingDownCount          int            `json:"cooling_down_count"`
+	ActiveSelections          int            `json:"active_selections"`
+	ChannelConcurrencyActive  int            `json:"channel_concurrency_active"`
+	EstimatedCost             float64        `json:"estimated_cost"`
+	CapacityBlockedCount      int            `json:"capacity_blocked_count"`
+	QuotaStatusCounts         map[string]int `json:"quota_status_counts"`
 }
 
 type ChannelModelHealthRow struct {

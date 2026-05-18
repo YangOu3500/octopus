@@ -1406,6 +1406,7 @@
                 "staticGroupMode": "按分组模式调度"
             },
             "quota": {
+                "all": "全部配额",
                 "available": "配额可用",
                 "zeroBalance": "余额不足",
                 "accountDisabled": "账号禁用",
@@ -1433,7 +1434,9 @@
                 "healthScore": "平均健康分",
                 "load": "当前负载",
                 "loadSub": "{cooldown} 个冷却中",
-                "loadSubWithConcurrency": "{cooldown} 个冷却中 · 硬并发 {active}/{limit}"
+                "loadSubWithConcurrency": "{cooldown} 个冷却中 · 硬并发 {active}/{limit}",
+                "capacity": "容量阻断",
+                "capacitySub": "{available} 个可用 · {unknown} 个未知"
             },
             "table": {
                 "channel": "渠道 / 模型",

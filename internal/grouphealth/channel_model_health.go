@@ -61,6 +61,7 @@ func BuildChannelModelHealth(ctx context.Context, query model.ChannelModelHealth
 			TimeRange:             query.TimeRange,
 			HealthScoreEnabled:    balancer.IsHealthSchedulingEnabled(),
 			LoadBalancingStrategy: channelModelHealthStrategy(),
+			QuotaStatusCounts:     map[string]int{},
 		},
 	}
 	concurrencyConfig := balancer.CurrentChannelConcurrencyConfig()
@@ -109,6 +110,11 @@ func BuildChannelModelHealth(ctx context.Context, query model.ChannelModelHealth
 		result.Summary.ActiveSelections += row.ActiveSelections
 		result.Summary.ChannelConcurrencyActive += row.ChannelConcurrencyActive
 		result.Summary.EstimatedCost += row.EstimatedCost
+		quotaStatus := normalizeChannelModelQuotaStatus(row.QuotaStatus)
+		result.Summary.QuotaStatusCounts[quotaStatus]++
+		if channelModelQuotaStatusBlocked(quotaStatus) {
+			result.Summary.CapacityBlockedCount++
+		}
 		if row.CoolingDown {
 			result.Summary.CoolingDownCount++
 		}
@@ -137,6 +143,7 @@ func normalizeChannelModelHealthQuery(query model.ChannelModelHealthQuery) model
 	if query.Source == "all" {
 		query.Source = ""
 	}
+	query.QuotaStatus = normalizeQuotaStatusFilter(query.QuotaStatus)
 	return query
 }
 
@@ -393,7 +400,43 @@ func channelModelRowMatchesQuery(row model.ChannelModelHealthRow, query model.Ch
 	if query.Source != "" && row.RequestCount == 0 {
 		return false
 	}
+	if query.QuotaStatus != "" && normalizeChannelModelQuotaStatus(row.QuotaStatus) != query.QuotaStatus {
+		return false
+	}
 	return true
+}
+
+func normalizeQuotaStatusFilter(status string) string {
+	status = strings.ToLower(strings.TrimSpace(status))
+	if status == "" || status == "all" {
+		return ""
+	}
+	status = normalizeChannelModelQuotaStatus(status)
+	switch status {
+	case "available", "zero_balance", "account_disabled", "quota_error", "auth_error",
+		"rate_limited", "no_key", "site_disabled", "account_missing", "model_disabled", "unknown":
+		return status
+	default:
+		return ""
+	}
+}
+
+func normalizeChannelModelQuotaStatus(status string) string {
+	status = strings.ToLower(strings.TrimSpace(status))
+	if status == "" {
+		return "unknown"
+	}
+	return status
+}
+
+func channelModelQuotaStatusBlocked(status string) bool {
+	switch normalizeChannelModelQuotaStatus(status) {
+	case "zero_balance", "account_disabled", "quota_error", "auth_error", "rate_limited",
+		"no_key", "site_disabled", "account_missing", "model_disabled":
+		return true
+	default:
+		return false
+	}
 }
 
 func sortChannelModelHealthRows(rows []model.ChannelModelHealthRow) {

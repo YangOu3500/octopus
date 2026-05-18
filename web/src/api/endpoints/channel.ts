@@ -145,6 +145,8 @@ export type ChannelModelHealthSummary = {
     active_selections: number;
     channel_concurrency_active: number;
     estimated_cost: number;
+    capacity_blocked_count: number;
+    quota_status_counts: Record<string, number>;
 };
 
 export type ChannelModelHealthResult = {
@@ -157,6 +159,7 @@ export type ChannelModelHealthParams = {
     channelId?: number | null;
     model?: string;
     source?: string;
+    quotaStatus?: string;
     refetchIntervalMs?: number | false;
 };
 
@@ -278,6 +281,8 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             active_selections: typeof summary.active_selections === 'number' ? summary.active_selections : 0,
             channel_concurrency_active: typeof summary.channel_concurrency_active === 'number' ? summary.channel_concurrency_active : 0,
             estimated_cost: typeof summary.estimated_cost === 'number' ? summary.estimated_cost : 0,
+            capacity_blocked_count: typeof summary.capacity_blocked_count === 'number' ? summary.capacity_blocked_count : 0,
+            quota_status_counts: summary.quota_status_counts ?? {},
         },
         rows: (data.rows ?? []).map((row) => ({
             channel_id: typeof row.channel_id === 'number' ? row.channel_id : 0,
@@ -329,15 +334,17 @@ export function useChannelModelHealth(params: ChannelModelHealthParams = {}) {
     const channelId = params.channelId ?? null;
     const model = params.model?.trim() ?? '';
     const source = params.source?.trim() ?? '';
+    const quotaStatus = params.quotaStatus?.trim() ?? '';
     const refetchIntervalMs = params.refetchIntervalMs === undefined ? 30000 : params.refetchIntervalMs;
 
     return useQuery({
-        queryKey: ['channels', 'model-health', timeRange, channelId, model, source],
+        queryKey: ['channels', 'model-health', timeRange, channelId, model, source, quotaStatus],
         queryFn: async () => {
             const search = new URLSearchParams({ time_range: timeRange });
             if (channelId && channelId > 0) search.set('channel_id', String(channelId));
             if (model) search.set('model', model);
             if (source && source !== 'all') search.set('source', source);
+            if (quotaStatus && quotaStatus !== 'all') search.set('quota_status', quotaStatus);
             return apiClient.get<ChannelModelHealthResult>(`/api/v1/channel/model-health?${search.toString()}`);
         },
         select: normalizeChannelModelHealth,

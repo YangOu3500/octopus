@@ -192,6 +192,30 @@ func TestBuildChannelModelHealthShowsKeyCapacityStatus(t *testing.T) {
 	if row.QuotaStatus != "rate_limited" || row.QuotaReason != "http_429" {
 		t.Fatalf("unexpected quota status: %+v", row)
 	}
+	if result.Summary.QuotaStatusCounts["rate_limited"] == 0 ||
+		result.Summary.CapacityBlockedCount != result.Summary.QuotaStatusCounts["rate_limited"] {
+		t.Fatalf("unexpected quota summary: %+v", result.Summary)
+	}
+
+	filtered, err := BuildChannelModelHealth(ctx, model.ChannelModelHealthQuery{TimeRange: "all", QuotaStatus: "rate_limited"})
+	if err != nil {
+		t.Fatalf("BuildChannelModelHealth with quota filter failed: %v", err)
+	}
+	if len(filtered.Rows) == 0 {
+		t.Fatalf("expected rate-limited rows, got none")
+	}
+	for _, row := range filtered.Rows {
+		if row.QuotaStatus != "rate_limited" {
+			t.Fatalf("expected only rate-limited rows, got %+v", filtered.Rows)
+		}
+	}
+	available, err := BuildChannelModelHealth(ctx, model.ChannelModelHealthQuery{TimeRange: "all", QuotaStatus: "available"})
+	if err != nil {
+		t.Fatalf("BuildChannelModelHealth with available filter failed: %v", err)
+	}
+	if len(available.Rows) != 0 {
+		t.Fatalf("expected available filter to exclude rate-limited row, got %+v", available.Rows)
+	}
 }
 
 func findChannelModelHealthRow(rows []model.ChannelModelHealthRow, channelID int, modelName string) *model.ChannelModelHealthRow {

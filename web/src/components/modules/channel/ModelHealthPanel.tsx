@@ -13,6 +13,19 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
 const HEALTH_ROW_GRID_COLUMNS = 'minmax(18rem,1.45fr) minmax(12rem,0.95fr) minmax(11rem,0.9fr) minmax(10rem,0.8fr) minmax(10rem,0.8fr) minmax(12rem,0.95fr) minmax(8rem,0.65fr) minmax(12rem,0.9fr) minmax(11rem,0.85fr) minmax(14rem,1fr)';
+const QUOTA_FILTER_STATUSES = [
+    'available',
+    'rate_limited',
+    'zero_balance',
+    'quota_error',
+    'auth_error',
+    'no_key',
+    'site_disabled',
+    'account_disabled',
+    'account_missing',
+    'model_disabled',
+    'unknown',
+] as const;
 
 function formatNumber(value: number | undefined) {
     if (!value || value <= 0) return '-';
@@ -136,6 +149,7 @@ export function ChannelModelHealthPanel() {
     const [timeRange, setTimeRange] = useState('24h');
     const [channelId, setChannelId] = useState('all');
     const [source, setSource] = useState('all');
+    const [quotaStatus, setQuotaStatus] = useState('all');
     const [modelQuery, setModelQuery] = useState('');
     const [autoRefresh, setAutoRefresh] = useState(true);
     const [refreshInterval, setRefreshInterval] = useState('30000');
@@ -151,6 +165,7 @@ export function ChannelModelHealthPanel() {
         channelId: channelId === 'all' ? null : Number(channelId),
         model: modelQuery,
         source,
+        quotaStatus,
         refetchIntervalMs: autoRefresh ? Number(refreshInterval) : false,
     });
 
@@ -159,6 +174,10 @@ export function ChannelModelHealthPanel() {
     const filteredChannels = (channelsData ?? [])
         .map((item) => item.raw)
         .sort((a, b) => a.name.localeCompare(b.name));
+    const quotaStatusCounts = summary?.quota_status_counts ?? {};
+    const quotaStatusChips = QUOTA_FILTER_STATUSES.filter((status) => (quotaStatusCounts[status] ?? 0) > 0);
+    const quotaAvailableCount = quotaStatusCounts.available ?? 0;
+    const quotaUnknownCount = quotaStatusCounts.unknown ?? 0;
 
     // eslint-disable-next-line react-hooks/incompatible-library
     const rowVirtualizer = useVirtualizer({
@@ -214,6 +233,16 @@ export function ChannelModelHealthPanel() {
                     limit: summary?.channel_concurrency_max ?? 0,
                 })
                 : t('stats.loadSub', { cooldown: summary?.cooling_down_count ?? 0 }),
+        },
+        {
+            id: 'capacity',
+            icon: Wallet,
+            label: t('stats.capacity'),
+            value: (summary?.capacity_blocked_count ?? 0).toLocaleString(),
+            sub: t('stats.capacitySub', {
+                available: quotaAvailableCount,
+                unknown: quotaUnknownCount,
+            }),
         },
     ];
 
@@ -271,6 +300,19 @@ export function ChannelModelHealthPanel() {
                                     <SelectItem value="probe">{t('source.probe')}</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <Select value={quotaStatus} onValueChange={setQuotaStatus}>
+                                <SelectTrigger className="h-9 w-[10rem] rounded-lg">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t('quota.all')}</SelectItem>
+                                    {QUOTA_FILTER_STATUSES.map((status) => (
+                                        <SelectItem key={status} value={status}>
+                                            {quotaLabel(t, status)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             <div className="relative w-full sm:w-56">
                                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
@@ -301,7 +343,7 @@ export function ChannelModelHealthPanel() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
                         {metricCards.map((item) => {
                             const Icon = item.icon;
                             return (
@@ -317,6 +359,32 @@ export function ChannelModelHealthPanel() {
                                 </div>
                             );
                         })}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            type="button"
+                            variant={quotaStatus === 'all' ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-8 rounded-lg"
+                            onClick={() => setQuotaStatus('all')}
+                        >
+                            {t('quota.all')}
+                            <span className="ml-1 tabular-nums">{summary?.total_rows ?? 0}</span>
+                        </Button>
+                        {quotaStatusChips.map((status) => (
+                            <Button
+                                key={status}
+                                type="button"
+                                variant={quotaStatus === status ? 'default' : 'outline'}
+                                size="sm"
+                                className={cn('h-8 rounded-lg', quotaStatus !== status && quotaTone(status))}
+                                onClick={() => setQuotaStatus(status)}
+                            >
+                                {quotaLabel(t, status)}
+                                <span className="ml-1 tabular-nums">{quotaStatusCounts[status]}</span>
+                            </Button>
+                        ))}
                     </div>
                 </div>
             </section>

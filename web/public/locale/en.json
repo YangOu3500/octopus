@@ -1406,6 +1406,7 @@
                 "staticGroupMode": "Group mode routing"
             },
             "quota": {
+                "all": "All quota",
                 "available": "Quota available",
                 "zeroBalance": "Zero balance",
                 "accountDisabled": "Account disabled",
@@ -1433,7 +1434,9 @@
                 "healthScore": "Avg health score",
                 "load": "Current load",
                 "loadSub": "{cooldown} cooling down",
-                "loadSubWithConcurrency": "{cooldown} cooling down · hard concurrency {active}/{limit}"
+                "loadSubWithConcurrency": "{cooldown} cooling down · hard concurrency {active}/{limit}",
+                "capacity": "Capacity blocks",
+                "capacitySub": "{available} available · {unknown} unknown"
             },
             "table": {
                 "channel": "Channel / Model",

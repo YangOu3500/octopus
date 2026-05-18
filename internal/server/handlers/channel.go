@@ -209,10 +209,11 @@ func getChannelModelHealth(c *gin.Context) {
 		channelID = id
 	}
 	result, err := grouphealth.BuildChannelModelHealth(c.Request.Context(), model.ChannelModelHealthQuery{
-		TimeRange: c.DefaultQuery("time_range", "24h"),
-		ChannelID: channelID,
-		Model:     c.Query("model"),
-		Source:    c.Query("source"),
+		TimeRange:   c.DefaultQuery("time_range", "24h"),
+		ChannelID:   channelID,
+		Model:       c.Query("model"),
+		Source:      c.Query("source"),
+		QuotaStatus: c.Query("quota_status"),
 	})
 	if err != nil {
 		resp.Error(c, http.StatusInternalServerError, err.Error())
