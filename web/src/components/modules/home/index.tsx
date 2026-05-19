@@ -32,10 +32,10 @@ function SectionCard({
     value: HomeSectionId;
 }) {
     return (
-        <AccordionItem value={value} className="overflow-hidden rounded-xl border border-border/70 bg-card/90 shadow-sm transition-shadow duration-200 hover:shadow-md">
-            <AccordionTrigger className="items-center px-4 py-3.5 hover:no-underline hover:bg-muted/30">
+        <AccordionItem value={value} className="overflow-hidden rounded-[1.2rem] border border-border/70 bg-card/95 shadow-sm transition-all duration-200 hover:shadow-md data-[state=open]:border-primary/15">
+            <AccordionTrigger className="items-center gap-4 px-4 py-3.5 hover:no-underline hover:bg-muted/20">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary">
                         {icon}
                     </div>
                     <div className="min-w-0 text-left">
@@ -85,50 +85,59 @@ export function Home() {
 
     return (
         <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-4 pb-24 md:pb-4">
-            <DashboardSummaryCards />
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
-                <StatsChart />
-                <div className="space-y-3">
-                    <GatewayOperationsPanel />
-                    <GroupHealthSummaryStrip />
+            <section className="space-y-3">
+                <DashboardSummaryCards />
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)]">
+                    <StatsChart />
+                    <div className="space-y-3">
+                        <GatewayOperationsPanel />
+                        <GroupHealthSummaryStrip />
+                    </div>
                 </div>
+            </section>
+
+            <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                    <div className="text-sm font-semibold text-foreground">{t('workbench.title')}</div>
+                    <div className="text-xs text-muted-foreground">{t('workbench.description')}</div>
+                </div>
+                <Accordion
+                    type="multiple"
+                    value={openSections}
+                    onValueChange={(value) => setOpenSections(value as HomeSectionId[])}
+                    className="space-y-2.5"
+                >
+                    <SectionCard
+                        value="workbench"
+                        icon={<Radar className="size-4" />}
+                        title={t('workbench.title')}
+                        description={t('workbench.description')}
+                        chips={sectionChips.workbench}
+                    >
+                        <ObservabilityPanel />
+                    </SectionCard>
+
+                    <SectionCard
+                        value="analytics"
+                        icon={<BarChart3 className="size-4" />}
+                        title={t('analytics.title')}
+                        description={t('analytics.description')}
+                        chips={sectionChips.analytics}
+                    >
+                        <Rank />
+                    </SectionCard>
+
+                    <SectionCard
+                        value="activity"
+                        icon={<ActivityIcon className="size-4" />}
+                        title={t('activity.title')}
+                        description={t('activity.description')}
+                        chips={sectionChips.activity}
+                    >
+                        <Activity />
+                    </SectionCard>
+                </Accordion>
             </div>
-            <Accordion
-                type="multiple"
-                value={openSections}
-                onValueChange={(value) => setOpenSections(value as HomeSectionId[])}
-                className="space-y-2.5"
-            >
-                <SectionCard
-                    value="workbench"
-                    icon={<Radar className="size-4" />}
-                    title={t('workbench.title')}
-                    description={t('workbench.description')}
-                    chips={sectionChips.workbench}
-                >
-                    <ObservabilityPanel />
-                </SectionCard>
-
-                <SectionCard
-                    value="analytics"
-                    icon={<BarChart3 className="size-4" />}
-                    title={t('analytics.title')}
-                    description={t('analytics.description')}
-                    chips={sectionChips.analytics}
-                >
-                    <Rank />
-                </SectionCard>
-
-                <SectionCard
-                    value="activity"
-                    icon={<ActivityIcon className="size-4" />}
-                    title={t('activity.title')}
-                    description={t('activity.description')}
-                    chips={sectionChips.activity}
-                >
-                    <Activity />
-                </SectionCard>
-            </Accordion>
         </PageWrapper>
     );
 }

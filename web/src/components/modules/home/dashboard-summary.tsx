@@ -54,22 +54,22 @@ function SummaryCard({
     return (
         <article
             className={cn(
-                'flex h-full min-h-[13.5rem] flex-col rounded-2xl border px-4 py-3.5 shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md',
+                'flex h-full min-h-[11.75rem] flex-col rounded-[1.35rem] border px-4 py-3.5 shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md',
                 accent
-                    ? 'border-primary/20 bg-primary/10 text-foreground'
-                    : 'border-border/70 bg-card'
+                    ? 'border-primary/25 bg-primary/10 text-foreground'
+                    : 'border-border/70 bg-card/95'
             )}
         >
             <div className="flex items-start justify-between gap-3">
                 <div className={cn(
-                    'flex size-9 items-center justify-center rounded-lg border',
+                    'flex size-9 items-center justify-center rounded-xl border',
                     accent ? 'border-primary/20 bg-background text-primary' : 'border-border/70 bg-background/70 text-primary'
                 )}>
                     <Icon className="size-4" />
                 </div>
                 {badge ? <div className="shrink-0">{badge}</div> : null}
             </div>
-            <div className="mt-4 text-xs text-muted-foreground">{title}</div>
+            <div className="mt-3 text-xs text-muted-foreground">{title}</div>
             <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
             <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
             {extra ? <div className="mt-auto pt-3">{extra}</div> : null}
@@ -137,9 +137,11 @@ export function DashboardSummaryCards() {
     const successRateValue = Math.max(0, Math.min(100, (observability?.success_rate ?? 0) * 100));
     const weeklyGrowth = growthDelta(dailyWindows.last7Requests, dailyWindows.previous7Requests);
     const growthPositive = weeklyGrowth >= 0;
+    const latencyFormatted = compactTime(observability?.avg_latency_ms);
+    const ttfbFormatted = compactTime(observability?.avg_ttfb_ms);
 
     return (
-        <section className="space-y-3">
+        <section className="space-y-2.5">
             <div className="grid auto-rows-fr grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
                 <SummaryCard
                     icon={BarChart3}
@@ -162,11 +164,11 @@ export function DashboardSummaryCards() {
                     )}
                     extra={(
                         <div className="grid grid-cols-2 gap-2 text-xs tabular-nums">
-                            <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                            <div className="rounded-xl border border-border/60 bg-background/70 px-3 py-2">
                                 <div className="text-muted-foreground">{t('todayRequests')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(todayRequests)}</div>
                             </div>
-                            <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                            <div className="rounded-xl border border-border/60 bg-background/70 px-3 py-2">
                                 <div className="text-muted-foreground">{t('weekTotal')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(dailyWindows.last7Requests)}</div>
                             </div>
@@ -203,15 +205,15 @@ export function DashboardSummaryCards() {
                     badge={<Badge variant="outline" className="rounded-md px-2 text-[11px]">{observabilityT('range24h')}</Badge>}
                     extra={(
                         <div className="grid grid-cols-3 gap-2 text-xs tabular-nums">
-                            <div className="rounded-lg border border-border/60 bg-background/60 px-2.5 py-2">
+                            <div className="rounded-xl border border-border/60 bg-background/70 px-2.5 py-2">
                                 <div className="text-muted-foreground">{observabilityT('input')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(observability?.input_tokens)}</div>
                             </div>
-                            <div className="rounded-lg border border-border/60 bg-background/60 px-2.5 py-2">
+                            <div className="rounded-xl border border-border/60 bg-background/70 px-2.5 py-2">
                                 <div className="text-muted-foreground">{observabilityT('output')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(observability?.output_tokens)}</div>
                             </div>
-                            <div className="rounded-lg border border-border/60 bg-background/60 px-2.5 py-2">
+                            <div className="rounded-xl border border-border/60 bg-background/70 px-2.5 py-2">
                                 <div className="text-muted-foreground">{observabilityT('cache')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(observability?.cache_tokens)}</div>
                             </div>
@@ -227,20 +229,20 @@ export function DashboardSummaryCards() {
                     accent
                     extra={(
                         <div className="grid grid-cols-2 gap-2 text-xs tabular-nums">
-                            <div className="rounded-lg border border-primary/15 bg-background/70 px-3 py-2">
+                            <div className="rounded-xl border border-primary/15 bg-background/80 px-3 py-2">
                                 <div className="text-muted-foreground">{t('monthTotal')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(dailyWindows.last30Requests)}</div>
                             </div>
-                            <div className="rounded-lg border border-primary/15 bg-background/70 px-3 py-2">
+                            <div className="rounded-xl border border-primary/15 bg-background/80 px-3 py-2">
                                 <div className="text-muted-foreground">{observabilityT('range24h')}</div>
-                                <div className="mt-1 font-medium text-foreground">{compactTime(observability?.avg_latency_ms)}</div>
+                                <div className="mt-1 font-medium text-foreground">{latencyFormatted}</div>
                             </div>
                         </div>
                     )}
                 />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
                 <InsightTile
                     icon={AlertTriangle}
                     label={t('failureRequests')}
@@ -258,8 +260,8 @@ export function DashboardSummaryCards() {
                 <InsightTile
                     icon={Clock3}
                     label={t('avgLatency')}
-                    value={compactTime(observability?.avg_latency_ms)}
-                    detail={t('latencySub', { ttfb: compactTime(observability?.avg_ttfb_ms) })}
+                    value={latencyFormatted}
+                    detail={t('latencySub', { ttfb: ttfbFormatted })}
                 />
             </div>
         </section>

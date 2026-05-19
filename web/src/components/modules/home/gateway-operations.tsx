@@ -121,7 +121,7 @@ export function GatewayOperationsPanel() {
 
     return (
         <section>
-            <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <div className="rounded-[1.35rem] border bg-card/95 p-4 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
                 <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2 text-base font-semibold">
@@ -138,30 +138,32 @@ export function GatewayOperationsPanel() {
                     </Badge>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {operationItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                            <article
-                                key={item.id}
-                                className="cursor-default rounded-lg border bg-background/40 p-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/70 hover:shadow-sm"
-                            >
-                                <div className="flex items-start gap-2">
-                                    <div className="flex size-8 items-center justify-center rounded-lg border bg-card text-primary">
-                                        <Icon className="size-3.5" />
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)]">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        {operationItems.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <article
+                                    key={item.id}
+                                    className="cursor-default rounded-xl border bg-background/45 p-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/80 hover:shadow-sm"
+                                >
+                                    <div className="flex items-start gap-2">
+                                        <div className="flex size-8 items-center justify-center rounded-xl border bg-card text-primary">
+                                            <Icon className="size-3.5" />
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="mt-3 text-xs text-muted-foreground">{t(`items.${item.id}.label`)}</div>
-                                <div className="mt-1 text-xl font-semibold tabular-nums tracking-normal">{item.value}</div>
-                                <div className="mt-1 line-clamp-2 text-xs text-muted-foreground" title={item.sub}>{item.sub}</div>
-                            </article>
-                        );
-                    })}
-                </div>
+                                    <div className="mt-3 text-xs text-muted-foreground">{t(`items.${item.id}.label`)}</div>
+                                    <div className="mt-1 text-xl font-semibold tabular-nums tracking-normal">{item.value}</div>
+                                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground" title={item.sub}>{item.sub}</div>
+                                </article>
+                            );
+                        })}
+                    </div>
 
-                <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                    <BreakdownRows title={t('apiKeyBreakdown')} items={data?.top_api_keys ?? []} />
-                    <BreakdownRows title={t('sourceBreakdown')} items={data?.source_breakdown ?? []} />
+                    <div className="grid grid-cols-1 gap-3">
+                        <BreakdownRows title={t('apiKeyBreakdown')} items={data?.top_api_keys ?? []} />
+                        <BreakdownRows title={t('sourceBreakdown')} items={data?.source_breakdown ?? []} />
+                    </div>
                 </div>
             </div>
         </section>
