@@ -90,6 +90,8 @@ func InitDB(dbType, dsn string, debug bool) error {
 		&model.RelayLog{},
 		&model.RequestTrace{},
 		&model.RequestAttempt{},
+		&model.RawDebugSession{},
+		&model.RawDebugAuditEvent{},
 		&migrate.MigrationRecord{},
 	); err != nil {
 		return err
