@@ -65,8 +65,27 @@ type Setting struct {
 	Value string     `json:"value" gorm:"not null"`
 }
 
+const (
+	SettingKeyRawDebugEnabled             SettingKey = "raw_debug.enabled"
+	SettingKeyRawDebugSessionTTLSeconds   SettingKey = "raw_debug.session_ttl_seconds"
+	SettingKeyRawDebugMaxCaptureBytes     SettingKey = "raw_debug.max_capture_bytes"
+	SettingKeyRawDebugRetentionMinutes    SettingKey = "raw_debug.retention_minutes"
+	SettingKeyRawDebugCaptureRequestBody  SettingKey = "raw_debug.capture_request_body"
+	SettingKeyRawDebugCaptureResponseBody SettingKey = "raw_debug.capture_response_body"
+	SettingKeyRawDebugCaptureHeaders      SettingKey = "raw_debug.capture_headers"
+	SettingKeyRawDebugRedactAuthHeaders   SettingKey = "raw_debug.redact_auth_headers"
+)
+
 func DefaultSettings() []Setting {
 	return []Setting{
+		{Key: SettingKeyRawDebugEnabled, Value: "false"},
+		{Key: SettingKeyRawDebugSessionTTLSeconds, Value: "300"},
+		{Key: SettingKeyRawDebugMaxCaptureBytes, Value: "65536"},
+		{Key: SettingKeyRawDebugRetentionMinutes, Value: "30"},
+		{Key: SettingKeyRawDebugCaptureRequestBody, Value: "false"},
+		{Key: SettingKeyRawDebugCaptureResponseBody, Value: "false"},
+		{Key: SettingKeyRawDebugCaptureHeaders, Value: "false"},
+		{Key: SettingKeyRawDebugRedactAuthHeaders, Value: "true"},
 		{Key: SettingKeyProxyURL, Value: ""},
 		{Key: SettingKeyStatsSaveInterval, Value: "10"},          // 默认10分钟保存一次统计信息
 		{Key: SettingKeyCORSAllowOrigins, Value: ""},             // CORS 默认不允许跨域，设置为 "*" 才允许所有来源
@@ -288,6 +307,38 @@ func (s *Setting) Validate() error {
 			if aliasCount > 50 {
 				return fmt.Errorf("association tag entries must include at most 50 aliases")
 			}
+		}
+		return nil
+	case SettingKeyRawDebugEnabled, SettingKeyRawDebugCaptureRequestBody, SettingKeyRawDebugCaptureResponseBody, SettingKeyRawDebugCaptureHeaders, SettingKeyRawDebugRedactAuthHeaders:
+		if s.Value != "true" && s.Value != "false" {
+			return fmt.Errorf("setting value must be true or false")
+		}
+		return nil
+	case SettingKeyRawDebugSessionTTLSeconds:
+		value, err := strconv.Atoi(s.Value)
+		if err != nil {
+			return fmt.Errorf("setting value must be an integer")
+		}
+		if value < 60 || value > 3600 {
+			return fmt.Errorf("setting value must be between 60 and 3600")
+		}
+		return nil
+	case SettingKeyRawDebugMaxCaptureBytes:
+		value, err := strconv.Atoi(s.Value)
+		if err != nil {
+			return fmt.Errorf("setting value must be an integer")
+		}
+		if value < 1024 || value > 1048576 {
+			return fmt.Errorf("setting value must be between 1024 and 1048576")
+		}
+		return nil
+	case SettingKeyRawDebugRetentionMinutes:
+		value, err := strconv.Atoi(s.Value)
+		if err != nil {
+			return fmt.Errorf("setting value must be an integer")
+		}
+		if value < 1 || value > 1440 {
+			return fmt.Errorf("setting value must be between 1 and 1440")
 		}
 		return nil
 	case SettingKeyProxyURL:

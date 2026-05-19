@@ -124,6 +124,69 @@ func TestSettingValidateGroupAutoGenerateAssociationTags(t *testing.T) {
 	}
 }
 
+func TestSettingValidateRawDebugSettings(t *testing.T) {
+	tests := []struct {
+		name    string
+		key     SettingKey
+		value   string
+		wantErr bool
+	}{
+		{name: "enabled false", key: SettingKeyRawDebugEnabled, value: "false"},
+		{name: "enabled invalid", key: SettingKeyRawDebugEnabled, value: "yes", wantErr: true},
+		{name: "capture request false", key: SettingKeyRawDebugCaptureRequestBody, value: "false"},
+		{name: "capture response true", key: SettingKeyRawDebugCaptureResponseBody, value: "true"},
+		{name: "capture headers invalid", key: SettingKeyRawDebugCaptureHeaders, value: "1", wantErr: true},
+		{name: "redact auth headers true", key: SettingKeyRawDebugRedactAuthHeaders, value: "true"},
+		{name: "session ttl min", key: SettingKeyRawDebugSessionTTLSeconds, value: "60"},
+		{name: "session ttl max", key: SettingKeyRawDebugSessionTTLSeconds, value: "3600"},
+		{name: "session ttl too low", key: SettingKeyRawDebugSessionTTLSeconds, value: "59", wantErr: true},
+		{name: "session ttl too high", key: SettingKeyRawDebugSessionTTLSeconds, value: "3601", wantErr: true},
+		{name: "max capture min", key: SettingKeyRawDebugMaxCaptureBytes, value: "1024"},
+		{name: "max capture max", key: SettingKeyRawDebugMaxCaptureBytes, value: "1048576"},
+		{name: "max capture too low", key: SettingKeyRawDebugMaxCaptureBytes, value: "1023", wantErr: true},
+		{name: "max capture too high", key: SettingKeyRawDebugMaxCaptureBytes, value: "1048577", wantErr: true},
+		{name: "retention min", key: SettingKeyRawDebugRetentionMinutes, value: "1"},
+		{name: "retention max", key: SettingKeyRawDebugRetentionMinutes, value: "1440"},
+		{name: "retention too low", key: SettingKeyRawDebugRetentionMinutes, value: "0", wantErr: true},
+		{name: "retention too high", key: SettingKeyRawDebugRetentionMinutes, value: "1441", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := (&Setting{Key: tt.key, Value: tt.value}).Validate()
+			if tt.wantErr && err == nil {
+				t.Fatalf("Validate() error = nil, want error")
+			}
+			if !tt.wantErr && err != nil {
+				t.Fatalf("Validate() error = %v, want nil", err)
+			}
+		})
+	}
+}
+
+func TestDefaultSettingsIncludeRawDebugSafeDefaults(t *testing.T) {
+	values := make(map[SettingKey]string)
+	for _, setting := range DefaultSettings() {
+		values[setting.Key] = setting.Value
+	}
+
+	expected := map[SettingKey]string{
+		SettingKeyRawDebugEnabled:             "false",
+		SettingKeyRawDebugSessionTTLSeconds:   "300",
+		SettingKeyRawDebugMaxCaptureBytes:     "65536",
+		SettingKeyRawDebugRetentionMinutes:    "30",
+		SettingKeyRawDebugCaptureRequestBody:  "false",
+		SettingKeyRawDebugCaptureResponseBody: "false",
+		SettingKeyRawDebugCaptureHeaders:      "false",
+		SettingKeyRawDebugRedactAuthHeaders:   "true",
+	}
+	for key, want := range expected {
+		if got := values[key]; got != want {
+			t.Fatalf("default setting %s = %q, want %q", key, got, want)
+		}
+	}
+}
+
 func mustMarshalAssociationTagsForTest(tags []GroupAutoGenerateAssociationTag) string {
 	data, err := json.Marshal(tags)
 	if err != nil {
