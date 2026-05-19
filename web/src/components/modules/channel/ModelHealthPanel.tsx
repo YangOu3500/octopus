@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Activity, AlertTriangle, Download, Gauge, GitBranch, LoaderCircle, RefreshCw, Search, Server, ShieldCheck, Thermometer, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
-const HEALTH_ROW_GRID_COLUMNS = 'minmax(13rem,1.35fr) minmax(9rem,0.9fr) minmax(10rem,0.95fr) minmax(9rem,0.9fr) minmax(9rem,0.9fr) minmax(14rem,1.1fr)';
+const HEALTH_ROW_GRID_COLUMNS = 'minmax(12rem,1.3fr) minmax(8.5rem,0.88fr) minmax(9rem,0.92fr) minmax(8.5rem,0.88fr) minmax(8.5rem,0.88fr) minmax(12rem,1fr)';
 const QUOTA_FILTER_STATUSES = [
     'available',
     'rate_limited',
@@ -398,6 +398,36 @@ function StrategyPanel({
     );
 }
 
+function ChartWorkbenchCard({
+    title,
+    caption,
+    children,
+    empty,
+}: {
+    title: string;
+    caption?: string;
+    children: ReactNode;
+    empty?: boolean;
+}) {
+    return (
+        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-foreground">{title}</div>
+                    {caption ? <div className="mt-1 text-xs text-muted-foreground">{caption}</div> : null}
+                </div>
+            </div>
+            <div className="mt-3">
+                {empty ? (
+                    <div className="flex h-40 items-center justify-center rounded-lg border border-dashed border-border/70 bg-card/70 text-sm text-muted-foreground">
+                        {children}
+                    </div>
+                ) : children}
+            </div>
+        </div>
+    );
+}
+
 export function ChannelModelHealthPanel() {
     const t = useTranslations('channel.health');
     const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -611,6 +641,11 @@ export function ChannelModelHealthPanel() {
     const strategyLabel = summary?.load_balancing_strategy === 'health_score'
         ? t('strategy.healthScore')
         : t('strategy.staticGroupMode');
+    const avgRowLatency = rows.length ? rows.reduce((sum, row) => sum + row.avg_total_ms, 0) / rows.length : 0;
+    const hasHealthBuckets = healthBucketData.some((item) => item.count > 0);
+    const hasRiskyRows = riskyRowsChartData.length > 0;
+    const hasBlockedReasons = blockedReasonChartData.length > 0;
+    const hasStatusData = statusChartData.some((item) => item.count > 0);
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
@@ -639,7 +674,7 @@ export function ChannelModelHealthPanel() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-[8rem_minmax(12rem,1fr)_8rem_9rem_minmax(14rem,1fr)]">
+                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[8rem_minmax(11rem,1fr)_8rem_9rem_minmax(14rem,1fr)_auto_auto_auto]">
                                 <Select value={timeRange} onValueChange={setTimeRange}>
                                     <SelectTrigger className="h-9 w-full rounded-lg">
                                         <SelectValue />
@@ -698,10 +733,41 @@ export function ChannelModelHealthPanel() {
                                         className="h-9 rounded-lg pl-9"
                                     />
                                 </div>
+                                <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 text-sm text-muted-foreground">
+                                    <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+                                    {t('autoRefresh')}
+                                </label>
+                                <Select value={refreshInterval} onValueChange={setRefreshInterval}>
+                                    <SelectTrigger className="h-9 w-full rounded-lg xl:w-[6.5rem]" disabled={!autoRefresh}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="5000">5s</SelectItem>
+                                        <SelectItem value="10000">10s</SelectItem>
+                                        <SelectItem value="30000">30s</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <div className="flex items-center gap-2">
+                                    <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" onClick={() => refetch()}>
+                                        <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+                                        {t('refresh')}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-9 rounded-lg"
+                                        onClick={exportCurrentRows}
+                                        disabled={rows.length === 0}
+                                    >
+                                        <Download className="size-4" />
+                                        {t('export.button')}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
                             {metricCards.map((item) => {
                                 const Icon = item.icon;
                                 return (
@@ -736,61 +802,81 @@ export function ChannelModelHealthPanel() {
                 </div>
 
                 <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)] 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.55fr)]">
-                    <div className="rounded-xl border border-border/70 bg-background/50 p-3">
-                        <div className="mb-3 text-xs text-muted-foreground">{t('insights.worstHealth')}</div>
-                        <ChartContainer config={healthChartConfig} className="h-52 w-full">
-                            <BarChart data={healthBucketData}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-3)" />
-                            </BarChart>
-                        </ChartContainer>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
-                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.topLoaded')}</div>
-                            <ChartContainer config={riskChartConfig} className="h-52 w-full">
-                                <BarChart data={riskyRowsChartData}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                                    <YAxis tickLine={false} axisLine={false} domain={[0, 100]} />
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="score" radius={[6, 6, 0, 0]} fill="var(--chart-2)" />
-                                </BarChart>
-                            </ChartContainer>
-                        </div>
-
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
-                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.topBlocked')}</div>
-                            <ChartContainer config={statusChartConfig} className="h-52 w-full">
-                                <BarChart data={blockedReasonChartData}>
+                    <ChartWorkbenchCard
+                        title={t('stats.healthScore')}
+                        caption={t('insights.healthView')}
+                        empty={!hasHealthBuckets}
+                    >
+                        {hasHealthBuckets ? (
+                            <ChartContainer config={healthChartConfig} className="h-52 w-full">
+                                <BarChart data={healthBucketData}>
                                     <CartesianGrid vertical={false} />
                                     <XAxis dataKey="label" tickLine={false} axisLine={false} />
                                     <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
                                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-5)" />
+                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-3)" />
                                 </BarChart>
                             </ChartContainer>
-                        </div>
+                        ) : t('empty')}
+                    </ChartWorkbenchCard>
+
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                        <ChartWorkbenchCard
+                            title={t('insights.worstHealth')}
+                            caption={worstHealthRow ? `${worstHealthRow.channel_name || `#${worstHealthRow.channel_id}`} / ${worstHealthRow.model_name}` : undefined}
+                            empty={!hasRiskyRows}
+                        >
+                            {hasRiskyRows ? (
+                                <ChartContainer config={riskChartConfig} className="h-52 w-full">
+                                    <BarChart data={riskyRowsChartData}>
+                                        <CartesianGrid vertical={false} />
+                                        <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                        <YAxis tickLine={false} axisLine={false} domain={[0, 100]} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                        <Bar dataKey="score" radius={[6, 6, 0, 0]} fill="var(--chart-2)" />
+                                    </BarChart>
+                                </ChartContainer>
+                            ) : t('noSamples')}
+                        </ChartWorkbenchCard>
+
+                        <ChartWorkbenchCard
+                            title={t('insights.topBlocked')}
+                            caption={blockedRows.length ? `${blockedRows.length} / ${summary?.total_rows ?? 0}` : undefined}
+                            empty={!hasBlockedReasons}
+                        >
+                            {hasBlockedReasons ? (
+                                <ChartContainer config={statusChartConfig} className="h-52 w-full">
+                                    <BarChart data={blockedReasonChartData}>
+                                        <CartesianGrid vertical={false} />
+                                        <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                        <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                        <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-5)" />
+                                    </BarChart>
+                                </ChartContainer>
+                            ) : t('insights.allHealthy')}
+                        </ChartWorkbenchCard>
                     </div>
                 </div>
 
                 <div className="mt-3 grid gap-3 xl:grid-cols-[0.9fr_1fr_1fr]">
-                    <div className="rounded-xl border border-border/70 bg-background/50 p-3">
-                        <div className="mb-3 text-xs text-muted-foreground">{t('insights.healthView')}</div>
-                        <ChartContainer config={statusChartConfig} className="h-40 w-full">
-                            <BarChart data={statusChartData}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-1)" />
-                            </BarChart>
-                        </ChartContainer>
-                    </div>
+                    <ChartWorkbenchCard
+                        title={t('stats.rows')}
+                        caption={rangeLabel}
+                        empty={!hasStatusData}
+                    >
+                        {hasStatusData ? (
+                            <ChartContainer config={statusChartConfig} className="h-40 w-full">
+                                <BarChart data={statusChartData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-1)" />
+                                </BarChart>
+                            </ChartContainer>
+                        ) : t('empty')}
+                    </ChartWorkbenchCard>
 
                     <div className="rounded-xl border border-border/70 bg-background/50 p-3">
                         <div className="text-xs text-muted-foreground">{t('insights.topBlocked')}</div>
@@ -821,7 +907,7 @@ export function ChannelModelHealthPanel() {
                             </div>
                             <div className="rounded-lg bg-card px-3 py-2">
                                 <div className="text-[11px] text-muted-foreground">{t('insights.avgLatency')}</div>
-                                <div className="mt-1 text-sm font-medium">{formatMS(rows.length ? rows.reduce((sum, row) => sum + row.avg_total_ms, 0) / rows.length : 0)}</div>
+                                <div className="mt-1 text-sm font-medium">{formatMS(avgRowLatency)}</div>
                             </div>
                             <div className="rounded-lg bg-card px-3 py-2">
                                 <div className="text-[11px] text-muted-foreground">{t('insights.estimatedCost')}</div>
@@ -845,7 +931,7 @@ export function ChannelModelHealthPanel() {
                     </div>
                 </div>
 
-                <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                     <div className="flex flex-wrap items-center gap-2">
                         <Button
                             type="button"
@@ -871,38 +957,6 @@ export function ChannelModelHealthPanel() {
                             </Button>
                         ))}
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 text-sm text-muted-foreground">
-                            <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
-                            {t('autoRefresh')}
-                        </label>
-                        <Select value={refreshInterval} onValueChange={setRefreshInterval}>
-                            <SelectTrigger className="h-9 w-[7rem] rounded-lg" disabled={!autoRefresh}>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="5000">5s</SelectItem>
-                                <SelectItem value="10000">10s</SelectItem>
-                                <SelectItem value="30000">30s</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" onClick={() => refetch()}>
-                            <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
-                            {t('refresh')}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-9 rounded-lg"
-                            onClick={exportCurrentRows}
-                            disabled={rows.length === 0}
-                        >
-                            <Download className="size-4" />
-                            {t('export.button')}
-                        </Button>
-                    </div>
                 </div>
             </section>
 
@@ -919,7 +973,7 @@ export function ChannelModelHealthPanel() {
                     </div>
                 ) : (
                     <div ref={scrollRef} className="h-full overflow-auto overscroll-contain">
-                        <div className="min-w-[64rem] text-left text-sm">
+                        <div className="min-w-[60rem] text-left text-sm">
                             <div
                                 className="sticky top-0 z-10 grid border-b border-border bg-muted/90 text-xs text-muted-foreground backdrop-blur"
                                 style={{ gridTemplateColumns: HEALTH_ROW_GRID_COLUMNS }}
