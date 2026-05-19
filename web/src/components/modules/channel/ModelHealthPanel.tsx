@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
-const HEALTH_ROW_GRID_COLUMNS = 'minmax(11rem,1.2fr) minmax(8rem,0.82fr) minmax(8.5rem,0.9fr) minmax(8rem,0.86fr) minmax(8rem,0.82fr) minmax(11rem,1fr)';
+const HEALTH_ROW_GRID_COLUMNS = 'minmax(10rem,1.12fr) minmax(7rem,0.76fr) minmax(7.5rem,0.84fr) minmax(7rem,0.8fr) minmax(7rem,0.78fr) minmax(10rem,0.92fr)';
 const QUOTA_FILTER_STATUSES = [
     'available',
     'rate_limited',
@@ -340,33 +340,33 @@ function StrategyPanel({
     t: ReturnType<typeof useTranslations<'channel.health'>>;
 }) {
     return (
-        <div className="rounded-lg border border-border/70 bg-background/50 p-3">
+        <div className="rounded-lg border border-border/70 bg-background/50 p-2.5">
             <div className="flex items-center gap-2 text-sm font-medium">
                 <GitBranch className="size-4 text-primary" />
                 <span>{title}</span>
             </div>
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                <div className="rounded-md border border-border/70 bg-card px-3 py-2.5">
+            <div className="mt-2.5 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                <div className="rounded-md border border-border/70 bg-card px-2.5 py-2">
                     <div className="text-[11px] text-muted-foreground">{t('stats.healthScore')}</div>
                     <div className="mt-1 text-sm font-medium">{strategy}</div>
                     <div className="mt-1 text-[11px] text-muted-foreground">
                         {healthEnabled ? t('healthEnabled') : t('healthDisabled')}
                     </div>
                 </div>
-                <div className="rounded-md border border-border/70 bg-card px-3 py-2.5">
+                <div className="rounded-md border border-border/70 bg-card px-2.5 py-2">
                     <div className="text-[11px] text-muted-foreground">{t('channelConcurrency')}</div>
                     <div className="mt-1 text-sm font-medium">
                         {queueEnabled ? queueMode : t('queueMode.disabled')}
                     </div>
                     <div className="mt-1 text-[11px] text-muted-foreground">{rangeLabel}</div>
                 </div>
-                <div className="rounded-md border border-border/70 bg-card px-3 py-2.5">
+                <div className="rounded-md border border-border/70 bg-card px-2.5 py-2">
                     <div className="text-[11px] text-muted-foreground">{t('insights.blockedRows')}</div>
                     <div className="mt-1 text-sm font-medium">{blockedRows}</div>
                     <div className="mt-1 text-[11px] text-muted-foreground">{t('insights.coolingRows')}: {coolingRows}</div>
                 </div>
-                <div className="rounded-md border border-border/70 bg-card px-3 py-2.5">
+                <div className="rounded-md border border-border/70 bg-card px-2.5 py-2">
                     <div className="text-[11px] text-muted-foreground">{t('insights.worstHealth')}</div>
                     {worstHealthRow ? (
                         <>
@@ -384,7 +384,7 @@ function StrategyPanel({
             </div>
 
             {mostLoadedRow ? (
-                <div className="mt-3 rounded-md border border-border/70 bg-card px-3 py-2.5">
+                <div className="mt-2.5 rounded-md border border-border/70 bg-card px-2.5 py-2">
                     <div className="text-[11px] text-muted-foreground">{t('insights.topLoaded')}</div>
                     <div className="mt-1 truncate text-sm font-medium" title={mostLoadedRow.channel_name}>
                         {mostLoadedRow.channel_name || `#${mostLoadedRow.channel_id}`} / {mostLoadedRow.model_name}
@@ -410,16 +410,16 @@ function ChartWorkbenchCard({
     empty?: boolean;
 }) {
     return (
-        <div className="rounded-lg border border-border/70 bg-background/50 p-3">
+        <div className="rounded-lg border border-border/70 bg-background/50 p-2.5">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-foreground">{title}</div>
                     {caption ? <div className="mt-1 text-xs text-muted-foreground">{caption}</div> : null}
                 </div>
             </div>
-            <div className="mt-3">
+            <div className="mt-2.5">
                 {empty ? (
-                    <div className="flex h-40 items-center justify-center rounded-md border border-dashed border-border/70 bg-card/70 text-sm text-muted-foreground">
+                    <div className="flex h-36 items-center justify-center rounded-md border border-dashed border-border/70 bg-card/70 text-sm text-muted-foreground">
                         {children}
                     </div>
                 ) : children}
@@ -648,11 +648,11 @@ export function ChannelModelHealthPanel() {
     const hasStatusData = statusChartData.some((item) => item.count > 0);
 
     return (
-        <div className="flex h-full min-h-0 flex-col gap-3">
-            <section className="shrink-0 rounded-lg border border-border bg-card p-4">
-                <div className="grid gap-3 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.85fr)]">
+        <div className="flex h-full min-h-0 flex-col gap-2.5">
+            <section className="shrink-0 rounded-lg border border-border bg-card p-3.5">
+                <div className="grid gap-2.5 lg:grid-cols-[minmax(0,1.48fr)_minmax(280px,0.82fr)]">
                     <div className="flex flex-col gap-3">
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-2.5">
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 text-base font-semibold">
                                     <Thermometer className="size-4 text-primary" />
@@ -674,9 +674,9 @@ export function ChannelModelHealthPanel() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[8rem_minmax(10rem,1fr)_8rem_9rem_minmax(12rem,1fr)_auto_auto_auto]">
+                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[7.2rem_minmax(9rem,1fr)_7.2rem_8rem_minmax(11rem,1fr)_auto_auto_auto]">
                                 <Select value={timeRange} onValueChange={setTimeRange}>
-                                    <SelectTrigger className="h-9 w-full rounded-lg">
+                                    <SelectTrigger className="h-8 w-full rounded-lg">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -688,7 +688,7 @@ export function ChannelModelHealthPanel() {
                                     </SelectContent>
                                 </Select>
                                 <Select value={channelId} onValueChange={setChannelId}>
-                                    <SelectTrigger className="h-9 w-full rounded-lg">
+                                    <SelectTrigger className="h-8 w-full rounded-lg">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -701,7 +701,7 @@ export function ChannelModelHealthPanel() {
                                     </SelectContent>
                                 </Select>
                                 <Select value={source} onValueChange={setSource}>
-                                    <SelectTrigger className="h-9 w-full rounded-lg">
+                                    <SelectTrigger className="h-8 w-full rounded-lg">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -712,7 +712,7 @@ export function ChannelModelHealthPanel() {
                                     </SelectContent>
                                 </Select>
                                 <Select value={quotaStatus} onValueChange={setQuotaStatus}>
-                                    <SelectTrigger className="h-9 w-full rounded-lg">
+                                    <SelectTrigger className="h-8 w-full rounded-lg">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -730,15 +730,15 @@ export function ChannelModelHealthPanel() {
                                         value={modelQuery}
                                         onChange={(event) => setModelQuery(event.target.value)}
                                         placeholder={t('searchModel')}
-                                        className="h-9 rounded-lg pl-9"
+                                        className="h-8 rounded-lg pl-9"
                                     />
                                 </div>
-                                <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 text-sm text-muted-foreground">
+                                <label className="flex h-8 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 text-sm text-muted-foreground">
                                     <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
                                     {t('autoRefresh')}
                                 </label>
                                 <Select value={refreshInterval} onValueChange={setRefreshInterval}>
-                                    <SelectTrigger className="h-9 w-full rounded-lg xl:w-[6.5rem]" disabled={!autoRefresh}>
+                                    <SelectTrigger className="h-8 w-full rounded-lg xl:w-[6rem]" disabled={!autoRefresh}>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -748,7 +748,7 @@ export function ChannelModelHealthPanel() {
                                     </SelectContent>
                                 </Select>
                                 <div className="flex items-center gap-2">
-                                    <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" onClick={() => refetch()}>
+                                    <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg" onClick={() => refetch()}>
                                         <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
                                         {t('refresh')}
                                     </Button>
@@ -756,7 +756,7 @@ export function ChannelModelHealthPanel() {
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        className="h-9 rounded-lg"
+                                        className="h-8 rounded-lg"
                                         onClick={exportCurrentRows}
                                         disabled={rows.length === 0}
                                     >
@@ -767,11 +767,11 @@ export function ChannelModelHealthPanel() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
                             {metricCards.map((item) => {
                                 const Icon = item.icon;
                                 return (
-                                    <div key={item.id} className="rounded-md border border-border bg-background/50 px-3 py-2">
+                                    <div key={item.id} className="rounded-md border border-border bg-background/50 px-2.5 py-2">
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                             <Icon className="size-3.5" />
                                             {item.label}
@@ -801,14 +801,14 @@ export function ChannelModelHealthPanel() {
                     />
                 </div>
 
-                <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)] 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.55fr)]">
+                <div className="mt-2.5 grid gap-2.5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)] 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.55fr)]">
                     <ChartWorkbenchCard
                         title={t('stats.healthScore')}
                         caption={t('insights.healthView')}
                         empty={!hasHealthBuckets}
                     >
                         {hasHealthBuckets ? (
-                            <ChartContainer config={healthChartConfig} className="h-52 w-full">
+                            <ChartContainer config={healthChartConfig} className="h-44 w-full">
                                 <BarChart data={healthBucketData}>
                                     <CartesianGrid vertical={false} />
                                     <XAxis dataKey="label" tickLine={false} axisLine={false} />
@@ -820,14 +820,14 @@ export function ChannelModelHealthPanel() {
                         ) : t('empty')}
                     </ChartWorkbenchCard>
 
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                    <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
                         <ChartWorkbenchCard
                             title={t('insights.worstHealth')}
                             caption={worstHealthRow ? `${worstHealthRow.channel_name || `#${worstHealthRow.channel_id}`} / ${worstHealthRow.model_name}` : undefined}
                             empty={!hasRiskyRows}
                         >
                             {hasRiskyRows ? (
-                                <ChartContainer config={riskChartConfig} className="h-52 w-full">
+                                <ChartContainer config={riskChartConfig} className="h-44 w-full">
                                     <BarChart data={riskyRowsChartData}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis dataKey="label" tickLine={false} axisLine={false} />
@@ -845,7 +845,7 @@ export function ChannelModelHealthPanel() {
                             empty={!hasBlockedReasons}
                         >
                             {hasBlockedReasons ? (
-                                <ChartContainer config={statusChartConfig} className="h-52 w-full">
+                                <ChartContainer config={statusChartConfig} className="h-44 w-full">
                                     <BarChart data={blockedReasonChartData}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis dataKey="label" tickLine={false} axisLine={false} />
@@ -859,14 +859,14 @@ export function ChannelModelHealthPanel() {
                     </div>
                 </div>
 
-                <div className="mt-3 grid gap-3 xl:grid-cols-[0.92fr_1.08fr]">
+                <div className="mt-2.5 grid gap-2.5 xl:grid-cols-[0.92fr_1.08fr]">
                     <ChartWorkbenchCard
                         title={t('stats.rows')}
                         caption={rangeLabel}
                         empty={!hasStatusData}
                     >
                         {hasStatusData ? (
-                            <ChartContainer config={statusChartConfig} className="h-40 w-full">
+                            <ChartContainer config={statusChartConfig} className="h-36 w-full">
                                 <BarChart data={statusChartData}>
                                     <CartesianGrid vertical={false} />
                                     <XAxis dataKey="label" tickLine={false} axisLine={false} />
@@ -878,13 +878,13 @@ export function ChannelModelHealthPanel() {
                         ) : t('empty')}
                     </ChartWorkbenchCard>
 
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-lg border border-border/70 bg-background/50 p-3">
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                        <div className="rounded-lg border border-border/70 bg-background/50 p-2.5">
                             <div className="text-xs text-muted-foreground">{t('insights.topBlocked')}</div>
                             {topBlockedReasons.length ? (
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {topBlockedReasons.map(([reason, count]) => (
-                                        <div key={reason} className="rounded-md bg-card px-3 py-2">
+                                        <div key={reason} className="rounded-md bg-card px-2.5 py-2">
                                             <div className="text-xs font-medium">{reasonLabel(t, reason) || t('quota.unknown')}</div>
                                             <div className="mt-1 text-[11px] text-muted-foreground">{count} / {blockedRows.length}</div>
                                         </div>
@@ -895,28 +895,28 @@ export function ChannelModelHealthPanel() {
                             )}
                         </div>
 
-                        <div className="rounded-lg border border-border/70 bg-background/50 p-3">
+                        <div className="rounded-lg border border-border/70 bg-background/50 p-2.5">
                             <div className="text-xs text-muted-foreground">{t('insights.healthView')}</div>
                             <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                                <div className="rounded-md bg-card px-3 py-2">
+                                <div className="rounded-md bg-card px-2.5 py-2">
                                     <div className="text-[11px] text-muted-foreground">{t('insights.blockedRows')}</div>
                                     <div className="mt-1 text-sm font-medium">{blockedRows.length}</div>
                                 </div>
-                                <div className="rounded-md bg-card px-3 py-2">
+                                <div className="rounded-md bg-card px-2.5 py-2">
                                     <div className="text-[11px] text-muted-foreground">{t('insights.coolingRows')}</div>
                                     <div className="mt-1 text-sm font-medium">{summary?.cooling_down_count ?? 0}</div>
                                 </div>
-                                <div className="rounded-md bg-card px-3 py-2">
+                                <div className="rounded-md bg-card px-2.5 py-2">
                                     <div className="text-[11px] text-muted-foreground">{t('insights.avgLatency')}</div>
                                     <div className="mt-1 text-sm font-medium">{formatMS(avgRowLatency)}</div>
                                 </div>
-                                <div className="rounded-md bg-card px-3 py-2">
+                                <div className="rounded-md bg-card px-2.5 py-2">
                                     <div className="text-[11px] text-muted-foreground">{t('insights.estimatedCost')}</div>
                                     <div className="mt-1 text-sm font-medium">{formatCost(summary?.estimated_cost)}</div>
                                 </div>
                             </div>
                             {worstHealthRow ? (
-                                <div className="mt-3 rounded-md border border-border/70 bg-card px-3 py-2">
+                                <div className="mt-2.5 rounded-md border border-border/70 bg-card px-2.5 py-2">
                                     <div className="text-[11px] text-muted-foreground">{t('insights.worstHealth')}</div>
                                     <div className="mt-1 truncate text-sm font-medium" title={worstHealthRow.channel_name}>
                                         {worstHealthRow.channel_name || `#${worstHealthRow.channel_id}`} / {worstHealthRow.model_name}
@@ -933,13 +933,13 @@ export function ChannelModelHealthPanel() {
                     </div>
                 </div>
 
-                <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                <div className="mt-2.5 flex flex-col gap-2.5 xl:flex-row xl:items-start xl:justify-between">
                     <div className="flex flex-wrap items-center gap-2">
                         <Button
                             type="button"
                             variant={quotaStatus === 'all' ? 'default' : 'outline'}
                             size="sm"
-                            className="h-8 rounded-lg"
+                            className="h-7 rounded-lg"
                             onClick={() => setQuotaStatus('all')}
                         >
                             {t('quota.all')}
@@ -951,7 +951,7 @@ export function ChannelModelHealthPanel() {
                                 type="button"
                                 variant={quotaStatus === status ? 'default' : 'outline'}
                                 size="sm"
-                                className={cn('h-8 rounded-lg', quotaStatus !== status && quotaTone(status))}
+                                className={cn('h-7 rounded-lg', quotaStatus !== status && quotaTone(status))}
                                 onClick={() => setQuotaStatus(status)}
                             >
                                 {quotaLabel(t, status)}
@@ -975,7 +975,7 @@ export function ChannelModelHealthPanel() {
                     </div>
                 ) : (
                     <div ref={scrollRef} className="h-full overflow-auto overscroll-contain">
-                        <div className="min-w-[56rem] text-left text-sm">
+                        <div className="min-w-[52rem] text-left text-sm">
                             <div
                                 className="sticky top-0 z-10 grid border-b border-border bg-muted/90 text-xs text-muted-foreground backdrop-blur"
                                 style={{ gridTemplateColumns: HEALTH_ROW_GRID_COLUMNS }}

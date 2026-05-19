@@ -563,7 +563,7 @@ function TraceAuditPanel({
                 </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <AuditList title={t('statusBreakdown')} items={statusBuckets} total={scopeTotal} />
                 <AuditList title={t('sourceBreakdown')} items={sourceBuckets} total={scopeTotal} />
                 <AuditList title={t('modelBreakdown')} items={modelBuckets} total={scopeTotal} />
@@ -603,7 +603,7 @@ function TraceComparisonPanel({
     const tokenTotal = traces.reduce((sum, trace) => sum + totalTokens(trace), 0);
 
     return (
-        <div className="rounded-lg border bg-card p-3">
+        <div className="rounded-lg border bg-card p-2.5">
             <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="h-7 rounded-md px-2">
                     <GitBranch className="size-3.5" />
@@ -617,30 +617,30 @@ function TraceComparisonPanel({
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs lg:grid-cols-4">
-                <div className="rounded-md border bg-background/40 p-2">
+                <div className="rounded-md border bg-background/40 px-2.5 py-2">
                     <div className="text-muted-foreground">{t('fastest')}</div>
                     <div className="mt-1 truncate font-mono tabular-nums" title={fastest?.trace_id}>
                         {fastest ? `${formatDuration(fastest.total_latency_ms)} / ${fastest.trace_id}` : '-'}
                     </div>
                 </div>
-                <div className="rounded-md border bg-background/40 p-2">
+                <div className="rounded-md border bg-background/40 px-2.5 py-2">
                     <div className="text-muted-foreground">{t('slowest')}</div>
                     <div className="mt-1 truncate font-mono tabular-nums" title={slowest?.trace_id}>
                         {slowest ? `${formatDuration(slowest.total_latency_ms)} / ${slowest.trace_id}` : '-'}
                     </div>
                 </div>
-                <div className="rounded-md border bg-background/40 p-2">
+                <div className="rounded-md border bg-background/40 px-2.5 py-2">
                     <div className="text-muted-foreground">{t('failover')}</div>
                     <div className="mt-1 font-mono tabular-nums">{failoverCount} / {traces.length}</div>
                 </div>
-                <div className="rounded-md border bg-background/40 p-2">
+                <div className="rounded-md border bg-background/40 px-2.5 py-2">
                     <div className="text-muted-foreground">{t('costTokens')}</div>
                     <div className="mt-1 font-mono tabular-nums">{formatCost(costTotal)} / {tokenTotal.toLocaleString()}</div>
                 </div>
             </div>
 
             <div className="mt-3 overflow-auto rounded-md border">
-                <table className="w-full min-w-[920px] text-left text-xs">
+                <table className="w-full min-w-[840px] text-left text-xs">
                     <thead className="bg-muted/70 text-muted-foreground">
                         <tr>
                             <th className="px-3 py-2 font-medium">{t('table.trace')}</th>
@@ -656,24 +656,24 @@ function TraceComparisonPanel({
                     <tbody>
                         {traces.map((trace) => (
                             <tr key={trace.trace_id || trace.id} className="border-t">
-                                <td className="max-w-[220px] px-3 py-2">
+                                <td className="max-w-[200px] px-2.5 py-2">
                                     <div className="truncate font-medium" title={trace.client_model}>{trace.client_model || '-'}</div>
                                     <div className="truncate font-mono text-[11px] text-muted-foreground" title={trace.trace_id}>{trace.trace_id}</div>
                                 </td>
-                                <td className="px-3 py-2">
+                                <td className="px-2.5 py-2">
                                     <Badge variant="outline" className={cn('h-5 rounded-md px-1.5 text-[10px]', statusClass(trace.final_status))}>
                                         {trace.final_status || '-'}
                                     </Badge>
                                 </td>
-                                <td className="max-w-[220px] px-3 py-2">
+                                <td className="max-w-[200px] px-2.5 py-2">
                                     <div className="truncate" title={trace.final_upstream_model || undefined}>{trace.final_upstream_model || '-'}</div>
                                     <div className="text-muted-foreground">{t('routeIds', { channel: trace.final_channel_id || 0, site: trace.final_site_id || 0 })}</div>
                                 </td>
-                                <td className="px-3 py-2 font-mono tabular-nums">{trace.attempts_count || 0}</td>
-                                <td className="px-3 py-2 font-mono tabular-nums">{formatDuration(trace.total_latency_ms)}</td>
-                                <td className="px-3 py-2 font-mono tabular-nums">{totalTokens(trace).toLocaleString()}</td>
-                                <td className="px-3 py-2 font-mono tabular-nums">{formatCost(traceCost(trace))}</td>
-                                <td className="px-3 py-2">
+                                <td className="px-2.5 py-2 font-mono tabular-nums">{trace.attempts_count || 0}</td>
+                                <td className="px-2.5 py-2 font-mono tabular-nums">{formatDuration(trace.total_latency_ms)}</td>
+                                <td className="px-2.5 py-2 font-mono tabular-nums">{totalTokens(trace).toLocaleString()}</td>
+                                <td className="px-2.5 py-2 font-mono tabular-nums">{formatCost(traceCost(trace))}</td>
+                                <td className="px-2.5 py-2">
                                     <div className="flex items-center gap-1">
                                         <Button type="button" variant="ghost" size="sm" className="h-7 rounded-md px-2 text-xs" onClick={() => onFocus(trace.trace_id)}>
                                             {t('focus')}
@@ -704,12 +704,12 @@ function SummaryTile({
     icon: LucideIcon;
 }) {
     return (
-        <div className="rounded-lg border bg-card p-3">
+        <div className="rounded-lg border bg-card px-3 py-2.5">
             <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 text-xs text-muted-foreground">{label}</div>
                 <Icon className="size-4 shrink-0 text-primary" />
             </div>
-            <div className="mt-2 text-2xl font-semibold tabular-nums">{value}</div>
+            <div className="mt-1.5 text-xl font-semibold tabular-nums">{value}</div>
             <div className="mt-1 truncate text-xs text-muted-foreground" title={sub}>{sub}</div>
         </div>
     );
@@ -731,19 +731,19 @@ function TraceTable({
     const t = useTranslations('traces');
 
     return (
-        <div className="min-h-[28rem] overflow-x-auto rounded-lg border bg-card">
-            <table className="w-full min-w-[960px] text-left text-xs">
+        <div className="min-h-[24rem] overflow-x-auto rounded-lg border bg-card">
+            <table className="w-full min-w-[900px] text-left text-xs">
                 <thead className="sticky top-0 z-10 border-b bg-muted/70 text-muted-foreground backdrop-blur">
                     <tr>
-                        <th className="w-[52px] px-3 py-2 font-medium">{t('table.compare')}</th>
-                        <th className="px-3 py-2 font-medium">{t('table.request')}</th>
-                        <th className="px-3 py-2 font-medium">{t('table.status')}</th>
-                        <th className="px-3 py-2 font-medium">{t('table.route')}</th>
-                        <th className="px-3 py-2 font-medium">{t('table.attempts')}</th>
-                        <th className="px-3 py-2 font-medium">{t('table.latency')}</th>
-                        <th className="px-3 py-2 font-medium">{t('table.tokens')}</th>
-                        <th className="px-3 py-2 font-medium">{t('table.cost')}</th>
-                        <th className="px-3 py-2 font-medium">{t('table.time')}</th>
+                        <th className="w-[48px] px-2.5 py-2 font-medium">{t('table.compare')}</th>
+                        <th className="px-2.5 py-2 font-medium">{t('table.request')}</th>
+                        <th className="px-2.5 py-2 font-medium">{t('table.status')}</th>
+                        <th className="px-2.5 py-2 font-medium">{t('table.route')}</th>
+                        <th className="px-2.5 py-2 font-medium">{t('table.attempts')}</th>
+                        <th className="px-2.5 py-2 font-medium">{t('table.latency')}</th>
+                        <th className="px-2.5 py-2 font-medium">{t('table.tokens')}</th>
+                        <th className="px-2.5 py-2 font-medium">{t('table.cost')}</th>
+                        <th className="px-2.5 py-2 font-medium">{t('table.time')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -759,7 +759,7 @@ function TraceTable({
                                 )}
                                 onClick={() => onSelect(trace.trace_id)}
                             >
-                                <td className="px-3 py-3">
+                                <td className="px-2.5 py-2.5">
                                     <input
                                         type="checkbox"
                                         checked={compared}
@@ -769,7 +769,7 @@ function TraceTable({
                                         onClick={(event) => event.stopPropagation()}
                                     />
                                 </td>
-                                <td className="max-w-[260px] px-3 py-3">
+                                <td className="max-w-[230px] px-2.5 py-2.5">
                                     <div className="truncate font-medium" title={trace.client_model}>{trace.client_model || '-'}</div>
                                     <div className="mt-1 flex min-w-0 items-center gap-2">
                                         <span className="truncate font-mono text-[11px] text-muted-foreground" title={trace.trace_id}>
@@ -780,13 +780,13 @@ function TraceTable({
                                         </Badge>
                                     </div>
                                 </td>
-                                <td className="px-3 py-3">
+                                <td className="px-2.5 py-2.5">
                                     <Badge variant="outline" className={cn('h-6 rounded-md px-2 text-[11px]', statusClass(trace.final_status))}>
                                         {trace.final_status || '-'}
                                     </Badge>
                                     <div className="mt-1 text-muted-foreground">{streamLabel(trace.request_stream, t)}</div>
                                 </td>
-                                <td className="max-w-[250px] px-3 py-3">
+                                <td className="max-w-[220px] px-2.5 py-2.5">
                                     <div className="truncate" title={trace.final_upstream_model || undefined}>
                                         {trace.final_upstream_model || '-'}
                                     </div>
@@ -797,22 +797,22 @@ function TraceTable({
                                         })}
                                     </div>
                                 </td>
-                                <td className="px-3 py-3 tabular-nums">
+                                <td className="px-2.5 py-2.5 tabular-nums">
                                     <div className="font-medium">{trace.attempts_count || 0}</div>
                                     <div className="text-muted-foreground">
                                         {(trace.attempts_count || 0) > 1 ? t('failover.yes') : t('failover.no')}
                                     </div>
                                 </td>
-                                <td className="px-3 py-3 tabular-nums">
+                                <td className="px-2.5 py-2.5 tabular-nums">
                                     {formatDuration(trace.total_latency_ms)}
                                 </td>
-                                <td className="px-3 py-3 font-mono tabular-nums">
+                                <td className="px-2.5 py-2.5 font-mono tabular-nums">
                                     {formatTokens(trace)}
                                 </td>
-                                <td className="px-3 py-3 font-mono tabular-nums">
+                                <td className="px-2.5 py-2.5 font-mono tabular-nums">
                                     {formatCost(trace.total_attempt_cost || trace.estimated_cost)}
                                 </td>
-                                <td className="px-3 py-3 tabular-nums">
+                                <td className="px-2.5 py-2.5 tabular-nums">
                                     {formatTime(trace.created_at)}
                                 </td>
                             </tr>
@@ -879,7 +879,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
     const trace = detail.trace;
 
     return (
-        <aside className="flex min-h-[28rem] min-w-0 self-start flex-col gap-3 rounded-lg border bg-card p-3 xl:sticky xl:top-3">
+        <aside className="flex min-h-[24rem] min-w-0 self-start flex-col gap-2.5 rounded-lg border bg-card p-2.5 xl:sticky xl:top-3">
             <div className="flex flex-wrap items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -914,22 +914,22 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs 2xl:grid-cols-4">
-                <div className="rounded-md border bg-background/40 p-2">
+            <div className="grid grid-cols-2 gap-2 text-xs xl:grid-cols-2 2xl:grid-cols-4">
+                <div className="rounded-md border bg-background/40 px-2.5 py-2">
                     <div className="text-muted-foreground">{t('clientModel')}</div>
                     <div className="mt-1 truncate font-medium" title={trace.client_model}>{trace.client_model || '-'}</div>
                 </div>
-                <div className="rounded-md border bg-background/40 p-2">
+                <div className="rounded-md border bg-background/40 px-2.5 py-2">
                     <div className="text-muted-foreground">{t('finalStatus')}</div>
                     <Badge variant="outline" className={cn('mt-1 h-5 rounded-md px-1.5 text-[10px]', statusClass(trace.final_status))}>
                         {trace.final_status || '-'}
                     </Badge>
                 </div>
-                <div className="rounded-md border bg-background/40 p-2">
+                <div className="rounded-md border bg-background/40 px-2.5 py-2">
                     <div className="text-muted-foreground">{t('latency')}</div>
                     <div className="mt-1 font-mono tabular-nums">{formatDuration(trace.total_latency_ms)}</div>
                 </div>
-                <div className="rounded-md border bg-background/40 p-2">
+                <div className="rounded-md border bg-background/40 px-2.5 py-2">
                     <div className="text-muted-foreground">{t('cost')}</div>
                     <div className="mt-1 font-mono tabular-nums">{formatCost(trace.total_attempt_cost || trace.estimated_cost)}</div>
                 </div>
@@ -943,7 +943,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                             {t('noAttempts')}
                         </div>
                     ) : detail.attempts.map((attempt, index) => (
-                        <div key={`${attempt.id}-${index}`} className="rounded-lg border bg-background/40 p-3">
+                        <div key={`${attempt.id}-${index}`} className="rounded-lg border bg-background/40 px-2.5 py-2.5">
                             <div className="flex flex-wrap items-start gap-2">
                                 <Badge variant="outline" className={cn('h-6 rounded-md px-2 text-[11px]', statusClass(attempt.status))}>
                                     {attempt.status || '-'}
@@ -962,7 +962,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                                 </div>
                             </div>
 
-                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs xl:grid-cols-3 2xl:grid-cols-4">
+                            <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs lg:grid-cols-3 2xl:grid-cols-4">
                                 <div>
                                     <div className="text-muted-foreground">{t('http')}</div>
                                     <div className="font-mono">{attempt.http_status || '-'}</div>
@@ -1243,7 +1243,7 @@ export function Traces() {
     }, [hasMore, maxPage, page, params, t, total, traces]);
 
     return (
-        <div className="space-y-3 pb-24 pr-1 md:pb-4">
+        <div className="space-y-2.5 pb-24 pr-1 md:pb-4">
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
                 <SummaryTile
                     label={t('summary.total')}
@@ -1271,8 +1271,8 @@ export function Traces() {
                 />
             </div>
 
-            <div className="rounded-lg border bg-card p-3">
-                <div className="mb-3 flex flex-col gap-2 xl:flex-row xl:items-start xl:justify-between">
+            <div className="rounded-lg border bg-card p-2.5">
+                <div className="mb-2.5 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <Badge variant="outline" className="h-8 rounded-md px-2">
                             {t('title')}
@@ -1283,10 +1283,10 @@ export function Traces() {
                             </Badge>
                         ) : null}
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                         <div className="flex items-center gap-2 rounded-md border px-2 py-1.5">
                             <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
-                            <span className="text-sm text-muted-foreground">{t('autoRefresh')}</span>
+                            <span className="text-xs text-muted-foreground">{t('autoRefresh')}</span>
                         </div>
                         <Select value={refreshInterval} onValueChange={setRefreshInterval}>
                             <SelectTrigger size="sm" className="w-[92px]">
@@ -1432,7 +1432,7 @@ export function Traces() {
                     </Select>
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
                     <Button type="button" variant="ghost" size="sm" onClick={resetFilters}>
                         <X className="size-4" />
                         {t('reset')}
@@ -1488,7 +1488,7 @@ export function Traces() {
                 onFocus={handleFocusTrace}
             />
 
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)] 2xl:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
+            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] 2xl:grid-cols-[minmax(0,1.06fr)_minmax(400px,0.94fr)]">
                 <div className="relative min-h-0">
                     {tracesQuery.isLoading ? (
                         <div className="flex h-full min-h-[320px] items-center justify-center rounded-lg border bg-card">

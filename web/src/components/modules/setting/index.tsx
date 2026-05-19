@@ -49,10 +49,10 @@ function SectionNav({
     onSelect: (section: SettingSectionId) => void;
 }) {
     return (
-        <section className="sticky top-0 z-10 rounded-lg border border-border/70 bg-card/95 p-3 shadow-sm backdrop-blur">
+        <section className="sticky top-3 z-10 rounded-lg border border-border/70 bg-card/95 p-2.5 shadow-sm backdrop-blur">
             <div className="md:hidden">
                 <Select value={activeSection} onValueChange={(value) => onSelect(value as SettingSectionId)}>
-                    <SelectTrigger className="h-10 rounded-md">
+                    <SelectTrigger className="h-9 rounded-md">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -76,7 +76,7 @@ function SectionNav({
                                 type="button"
                                 onClick={() => onSelect(section.id)}
                                 className={cn(
-                                    'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm font-medium transition-all',
+                                    'flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2.5 text-left text-sm font-medium transition-all',
                                     isActive
                                         ? 'border-primary/20 bg-primary/10 text-foreground shadow-sm'
                                         : 'border-border/60 bg-background/60 text-muted-foreground hover:border-primary/20 hover:bg-background hover:text-foreground'
@@ -84,7 +84,7 @@ function SectionNav({
                             >
                                 <span
                                     className={cn(
-                                        'flex size-8 shrink-0 items-center justify-center rounded-md border transition-colors',
+                                        'flex size-7 shrink-0 items-center justify-center rounded-md border transition-colors',
                                         isActive
                                             ? 'border-primary/20 bg-background text-primary'
                                             : 'border-border/60 bg-card text-muted-foreground'
@@ -104,7 +104,7 @@ function SectionNav({
 
 function SectionContent({ section }: { section: SettingSection }) {
     return (
-        <section className="space-y-4 rounded-lg border border-border/70 bg-card/40 p-3 md:p-4">
+        <section className="space-y-3 rounded-lg border border-border/70 bg-card/40 p-2.5 md:p-3.5">
             {section.content}
         </section>
     );
@@ -137,7 +137,7 @@ export function Setting() {
                 content: (
                     <>
                         <SettingSystem />
-                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                             <SettingCircuitBreaker />
                             <SettingLog />
                         </div>
@@ -157,7 +157,7 @@ export function Setting() {
                 content: (
                     <>
                         <SettingSiteAutomation />
-                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
                             <SettingAPIKey />
                             <SettingLLMPrice />
                             <SettingLLMSync />
@@ -183,7 +183,7 @@ export function Setting() {
                 label: sectionT('maintenance'),
                 content: (
                     <>
-                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                             <SettingAppearance />
                             <SettingAccount />
                         </div>
@@ -201,7 +201,7 @@ export function Setting() {
     return (
         <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
             <PageWrapper childLayout={false} className="pb-24 md:pb-4">
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)]">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[208px_minmax(0,1fr)] xl:grid-cols-[224px_minmax(0,1fr)]">
                     <SectionNav
                         sections={sections}
                         activeSection={currentSection.id}
