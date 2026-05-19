@@ -138,6 +138,20 @@
             "activity": {
                 "title": "Activity Heatmap",
                 "description": "Daily request activity"
+            },
+            "workbenchChip": {
+                "requests": "{count} req",
+                "failover": "{count} failover",
+                "latency": "{latency} ms"
+            },
+            "analyticsChip": {
+                "models": "{count} models",
+                "channels": "{count} channels",
+                "keys": "{count} API keys"
+            },
+            "activityChip": {
+                "failures": "{count} recent failures",
+                "sources": "{count} sources"
             }
         },
         "activity": {

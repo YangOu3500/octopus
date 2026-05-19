@@ -138,6 +138,20 @@
             "activity": {
                 "title": "活动热力",
                 "description": "按天查看请求活跃度"
+            },
+            "workbenchChip": {
+                "requests": "{count} 请求",
+                "failover": "{count} 故障转移",
+                "latency": "{latency} ms"
+            },
+            "analyticsChip": {
+                "models": "{count} 个模型",
+                "channels": "{count} 个渠道",
+                "keys": "{count} 个 Key"
+            },
+            "activityChip": {
+                "failures": "{count} 条近期失败",
+                "sources": "{count} 个来源"
             }
         },
         "activity": {

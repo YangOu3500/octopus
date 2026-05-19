@@ -54,7 +54,7 @@ function SummaryCard({
     return (
         <article
             className={cn(
-                'rounded-xl border px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md',
+                'flex h-full min-h-[13.5rem] flex-col rounded-2xl border px-4 py-3.5 shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md',
                 accent
                     ? 'border-primary/20 bg-primary/10 text-foreground'
                     : 'border-border/70 bg-card'
@@ -72,7 +72,7 @@ function SummaryCard({
             <div className="mt-4 text-xs text-muted-foreground">{title}</div>
             <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
             <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
-            {extra ? <div className="mt-3">{extra}</div> : null}
+            {extra ? <div className="mt-auto pt-3">{extra}</div> : null}
         </article>
     );
 }
@@ -140,7 +140,7 @@ export function DashboardSummaryCards() {
 
     return (
         <section className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid auto-rows-fr grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
                 <SummaryCard
                     icon={BarChart3}
                     title={t('totalRequests')}

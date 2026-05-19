@@ -75,7 +75,7 @@ export const useNavStore = create<NavState>()(
         }),
         {
             name: 'nav-storage',
-            version: 3,
+            version: 4,
             storage: createJSONStorage(() => localStorage),
             migrate: (persistedState) => {
                 const state = (persistedState ?? {}) as Partial<NavState>

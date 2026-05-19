@@ -138,6 +138,20 @@
             "activity": {
                 "title": "活動熱力",
                 "description": "按天查看請求活躍度"
+            },
+            "workbenchChip": {
+                "requests": "{count} 請求",
+                "failover": "{count} 故障轉移",
+                "latency": "{latency} ms"
+            },
+            "analyticsChip": {
+                "models": "{count} 個模型",
+                "channels": "{count} 個渠道",
+                "keys": "{count} 個 Key"
+            },
+            "activityChip": {
+                "failures": "{count} 條近期失敗",
+                "sources": "{count} 個來源"
             }
         },
         "activity": {

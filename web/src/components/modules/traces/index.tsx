@@ -731,7 +731,7 @@ function TraceTable({
     const t = useTranslations('traces');
 
     return (
-        <div className="h-full min-h-0 overflow-auto overscroll-contain rounded-lg border bg-card">
+        <div className="min-h-[28rem] overflow-auto overscroll-contain rounded-lg border bg-card">
             <table className="w-full min-w-[1040px] text-left text-xs">
                 <thead className="sticky top-0 z-10 border-b bg-muted/70 text-muted-foreground backdrop-blur">
                     <tr>
@@ -879,7 +879,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
     const trace = detail.trace;
 
     return (
-        <aside className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
+        <aside className="flex min-h-[28rem] min-w-0 flex-col gap-3 rounded-lg border bg-card p-3 xl:sticky xl:top-0">
             <div className="flex flex-wrap items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -935,7 +935,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-auto">
+            <div className="max-h-[38rem] overflow-auto xl:max-h-[calc(100dvh-16rem)]">
                 <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">{t('attemptTimeline')}</div>
                 <div className="space-y-2">
                     {detail.attempts.length === 0 ? (
@@ -1243,7 +1243,7 @@ export function Traces() {
     }, [hasMore, maxPage, page, params, t, total, traces]);
 
     return (
-        <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain pb-24 pr-1 md:pb-4">
+        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain pb-24 pr-1 md:pb-4">
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
                 <SummaryTile
                     label={t('summary.total')}
@@ -1486,8 +1486,8 @@ export function Traces() {
                 onFocus={handleFocusTrace}
             />
 
-            <div className="grid min-h-[32rem] flex-1 grid-cols-1 gap-3 2xl:grid-cols-[minmax(0,1.1fr)_minmax(420px,0.9fr)]">
-                <div className="relative min-h-0 2xl:max-h-[calc(100dvh-20rem)]">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)] 2xl:grid-cols-[minmax(0,1.1fr)_minmax(420px,0.9fr)]">
+                <div className="relative min-h-0">
                     {tracesQuery.isLoading ? (
                         <div className="flex h-full min-h-[320px] items-center justify-center rounded-lg border bg-card">
                             <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -1506,7 +1506,7 @@ export function Traces() {
                         />
                     )}
                 </div>
-                <div className="min-h-0 2xl:max-h-[calc(100dvh-20rem)]">
+                <div className="min-h-0">
                     <TraceDetailPanel traceId={effectiveSelectedTraceId} />
                 </div>
             </div>
