@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 export type NavItem = 'home' | 'site' | 'channel' | 'group' | 'modelTest' | 'model' | 'traces' | 'log' | 'setting'
 
@@ -75,6 +75,18 @@ export const useNavStore = create<NavState>()(
         }),
         {
             name: 'nav-storage',
+            version: 2,
+            storage: createJSONStorage(() => localStorage),
+            migrate: (persistedState) => {
+                const state = (persistedState ?? {}) as Partial<NavState>
+                return {
+                    activeItem: NAV_ORDER.includes(state.activeItem as NavItem) ? state.activeItem : 'home',
+                    prevItem: NAV_ORDER.includes(state.prevItem as NavItem) ? state.prevItem : null,
+                    direction: typeof state.direction === 'number' ? state.direction : 0,
+                    // Reset old persisted collapsed state so upgraded users land on the expanded desktop sidebar.
+                    sidebarExpanded: true,
+                }
+            },
             partialize: (state) => ({
                 activeItem: state.activeItem,
                 prevItem: state.prevItem,

@@ -21,14 +21,24 @@ export const useHomeViewStore = create<HomeViewState>()(
         (set) => ({
             rankSortMode: 'cost',
             chartPeriod: '7',
-            openSections: ['workbench', 'analytics', 'activity'],
+            openSections: ['workbench'],
             setRankSortMode: (value) => set({ rankSortMode: value }),
             setChartPeriod: (value) => set({ chartPeriod: value }),
             setOpenSections: (value) => set({ openSections: value }),
         }),
         {
             name: 'home-view-options-storage',
+            version: 2,
             storage: createJSONStorage(() => localStorage),
+            migrate: (persistedState) => {
+                const state = (persistedState ?? {}) as Partial<HomeViewState>
+                return {
+                    rankSortMode: state.rankSortMode === 'count' || state.rankSortMode === 'tokens' ? state.rankSortMode : 'cost',
+                    chartPeriod: state.chartPeriod === '1' || state.chartPeriod === '30' || state.chartPeriod === 'all' ? state.chartPeriod : '7',
+                    // Default back to the primary workbench only so the home page opens in a denser AxonHub-like state.
+                    openSections: ['workbench'],
+                }
+            },
             partialize: (state) => ({
                 rankSortMode: state.rankSortMode,
                 chartPeriod: state.chartPeriod,

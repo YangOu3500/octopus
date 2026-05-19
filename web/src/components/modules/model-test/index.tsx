@@ -443,6 +443,12 @@ export function ModelTest() {
         const success = values.filter((item) => item.success).length;
         return { total: values.length, success, failed: values.length - success };
     }, [results]);
+    const runtimeStats = useMemo(() => ([
+        { id: 'visible', label: t('stats.visible'), value: rows.length },
+        { id: 'selected', label: t('stats.selected'), value: selectedRows.length },
+        { id: 'running', label: t('stats.running'), value: runStats.running },
+        { id: 'queued', label: t('stats.queued'), value: runStats.queued },
+    ]), [rows.length, runStats.queued, runStats.running, selectedRows.length, t]);
 
     const exportableResults = useMemo(
         () => rows.map((row) => results[row.key]).filter((result): result is ModelTestResult => Boolean(result)),
@@ -650,23 +656,16 @@ export function ModelTest() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:col-span-2 2xl:col-span-1 2xl:grid-cols-2">
-                            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
-                                <div className="text-xs text-muted-foreground">{t('stats.visible')}</div>
-                                <div className="mt-1 text-lg font-semibold tabular-nums">{rows.length}</div>
-                            </div>
-                            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
-                                <div className="text-xs text-muted-foreground">{t('stats.selected')}</div>
-                                <div className="mt-1 text-lg font-semibold tabular-nums">{selectedRows.length}</div>
-                            </div>
-                            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
-                                <div className="text-xs text-muted-foreground">{t('stats.running')}</div>
-                                <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.running}</div>
-                            </div>
-                            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
-                                <div className="text-xs text-muted-foreground">{t('stats.queued')}</div>
-                                <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.queued}</div>
-                            </div>
+                        <div className="flex flex-wrap gap-2 xl:col-span-2 2xl:col-span-1 2xl:flex-col">
+                            {runtimeStats.map((item) => (
+                                <div
+                                    key={item.id}
+                                    className="inline-flex min-w-[8.5rem] items-center justify-between gap-3 rounded-md border border-border/70 bg-background/60 px-3 py-2"
+                                >
+                                    <div className="text-xs text-muted-foreground">{item.label}</div>
+                                    <div className="text-sm font-semibold tabular-nums text-foreground">{item.value}</div>
+                                </div>
+                            ))}
                         </div>
                     </div>
 

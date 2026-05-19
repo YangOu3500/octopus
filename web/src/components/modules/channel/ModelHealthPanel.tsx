@@ -258,7 +258,7 @@ export function ChannelModelHealthPanel() {
     const [quotaStatus, setQuotaStatus] = useState('all');
     const [modelQuery, setModelQuery] = useState('');
     const [autoRefresh, setAutoRefresh] = useState(true);
-    const [refreshInterval, setRefreshInterval] = useState('30000');
+    const [refreshInterval, setRefreshInterval] = useState('5000');
     const { data: channelsData } = useChannelList();
     const {
         data,
