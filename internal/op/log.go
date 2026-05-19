@@ -27,7 +27,7 @@ const relayLogMaxSizeNoDB = 100 // 当不保存到数据库时，允许更大的
 var (
 	relayLogBearerPattern = regexp.MustCompile(`(?i)bearer\s+[A-Za-z0-9._~+/=-]+`)
 	relayLogAPIKeyPattern = regexp.MustCompile(`(?i)\bsk-[A-Za-z0-9._-]{8,}`)
-	relayLogHeaderPattern = regexp.MustCompile(`(?i)(authorization|cookie|set-cookie|x-api-key|x-goog-api-key)\s*[:=]\s*[^\r\n,;]+`)
+	relayLogHeaderPattern = regexp.MustCompile(`(?i)(authorization|cookie|set-cookie|x-api-key|x-goog-api-key|x-octopus-raw-debug-token)\s*[:=]\s*[^\r\n,;]+`)
 )
 
 var relayLogCache = make([]model.RelayLog, 0, relayLogMaxSize)

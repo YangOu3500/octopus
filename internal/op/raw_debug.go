@@ -585,6 +585,10 @@ func marshalRawDebugHeaders(headers map[string][]string, redactAuthHeaders bool)
 		if cleanKey == "" {
 			continue
 		}
+		if isRawDebugControlHeader(cleanKey) {
+			out[cleanKey] = []string{"[REDACTED]"}
+			continue
+		}
 		if redactAuthHeaders && isSensitiveRelayLogKey(cleanKey) {
 			out[cleanKey] = []string{"[REDACTED]"}
 			continue
@@ -600,6 +604,11 @@ func marshalRawDebugHeaders(headers map[string][]string, redactAuthHeaders bool)
 		return ""
 	}
 	return string(data)
+}
+
+func isRawDebugControlHeader(key string) bool {
+	normalized := strings.NewReplacer("-", "", "_", "", ".", "").Replace(strings.ToLower(strings.TrimSpace(key)))
+	return normalized == "xoctopusrawdebugtoken"
 }
 
 func rawDebugFinalHTTPStatus(relayLog model.RelayLog) int {

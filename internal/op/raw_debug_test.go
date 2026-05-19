@@ -340,6 +340,45 @@ func TestRawDebugCaptureRecordListAndExportAreScopedAndSanitized(t *testing.T) {
 	}
 }
 
+func TestRawDebugCaptureAlwaysRedactsDebugControlToken(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+	enableRawDebugForTest(t)
+
+	authz, err := RawDebugSessionCreate(ctx, model.RawDebugSessionCreateRequest{ActorName: "admin"})
+	if err != nil {
+		t.Fatalf("RawDebugSessionCreate failed: %v", err)
+	}
+	authz.Session.RedactAuthHeaders = false
+
+	capture, err := RawDebugCaptureRecord(ctx, model.RawDebugCaptureInput{
+		Session: authz.Session,
+		RelayLog: model.RelayLog{
+			ID:               2001,
+			TraceID:          "trace-control-token",
+			RequestModelName: "gpt-test",
+			RequestSource:    "relay",
+		},
+		RequestHeaders: map[string][]string{
+			"X-Octopus-Raw-Debug-Token": {"debug-control-secret"},
+			"X-Plain":                   {"plain-visible"},
+		},
+		ResponseHeaders: map[string][]string{
+			"x-octopus-raw-debug-token": {"debug-response-secret"},
+		},
+		Success: true,
+	})
+	if err != nil {
+		t.Fatalf("RawDebugCaptureRecord failed: %v", err)
+	}
+	if strings.Contains(capture.RequestHeaders, "debug-control-secret") ||
+		strings.Contains(capture.ResponseHeaders, "debug-response-secret") {
+		t.Fatalf("raw debug control token should always be redacted: %+v", capture)
+	}
+	if !strings.Contains(capture.RequestHeaders, "plain-visible") {
+		t.Fatalf("non-auth header should remain visible when auth redaction is disabled: %+v", capture)
+	}
+}
+
 func enableRawDebugForTest(t *testing.T) {
 	t.Helper()
 	settings := map[model.SettingKey]string{
