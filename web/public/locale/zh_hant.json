@@ -1817,7 +1817,40 @@
                 "blocked": "阻斷",
                 "unknown": "未知",
                 "observed": "觀測",
-                "expires": "到期"
+                "expires": "到期",
+                "reason": "容量原因"
+            },
+            "reasons": {
+                "quotaError": "額度錯誤",
+                "authError": "認證阻斷",
+                "rateLimited": "限流中",
+                "http402": "HTTP 402",
+                "httpAuth": "HTTP 401/403",
+                "siteAccountBalance": "站點帳號餘額",
+                "zeroBalance": "已知零餘額",
+                "siteDisabled": "站點停用",
+                "accountMissing": "帳號缺失",
+                "accountDisabled": "帳號停用",
+                "modelDisabled": "模型停用",
+                "noAvailableKey": "無可用 Key",
+                "healthCooldown": "健康冷卻",
+                "circuitBreaker": "熔斷冷卻",
+                "runtimeCheckFailed": "執行期檢查失敗",
+                "channelDisabled": "渠道停用",
+                "channelMissing": "渠道缺失"
+            },
+            "insights": {
+                "topLoaded": "目前最高負載",
+                "topLoadedSub": "{mode} / {cooldown}",
+                "topBlocked": "主要阻斷原因",
+                "allHealthy": "目前結果裡沒有阻斷或冷卻列",
+                "healthView": "健康視圖",
+                "blockedRows": "阻斷列數",
+                "coolingRows": "冷卻列數",
+                "avgLatency": "平均延遲",
+                "estimatedCost": "預估成本",
+                "worstHealth": "最低健康候選",
+                "worstHealthSub": "健康分 {score} / 成功率 {rate}"
             },
             "status": {
                 "cooldown": "冷卻",

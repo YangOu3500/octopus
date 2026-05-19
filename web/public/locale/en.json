@@ -1817,7 +1817,40 @@
                 "blocked": "Blocked",
                 "unknown": "Unknown",
                 "observed": "Observed",
-                "expires": "Expires"
+                "expires": "Expires",
+                "reason": "Capacity reason"
+            },
+            "reasons": {
+                "quotaError": "Quota error",
+                "authError": "Auth blocked",
+                "rateLimited": "Rate limited",
+                "http402": "HTTP 402",
+                "httpAuth": "HTTP 401/403",
+                "siteAccountBalance": "Site account balance",
+                "zeroBalance": "Known zero balance",
+                "siteDisabled": "Site disabled",
+                "accountMissing": "Account missing",
+                "accountDisabled": "Account disabled",
+                "modelDisabled": "Model disabled",
+                "noAvailableKey": "No available key",
+                "healthCooldown": "Health cooldown",
+                "circuitBreaker": "Circuit breaker",
+                "runtimeCheckFailed": "Runtime check failed",
+                "channelDisabled": "Channel disabled",
+                "channelMissing": "Channel missing"
+            },
+            "insights": {
+                "topLoaded": "Current most loaded",
+                "topLoadedSub": "{mode} / {cooldown}",
+                "topBlocked": "Top blocked reasons",
+                "allHealthy": "No blocked or cooling rows in the current result",
+                "healthView": "Health view",
+                "blockedRows": "Blocked rows",
+                "coolingRows": "Cooling rows",
+                "avgLatency": "Avg latency",
+                "estimatedCost": "Estimated cost",
+                "worstHealth": "Lowest health candidate",
+                "worstHealthSub": "Health {score} / success {rate}"
             },
             "status": {
                 "cooldown": "Cooldown",

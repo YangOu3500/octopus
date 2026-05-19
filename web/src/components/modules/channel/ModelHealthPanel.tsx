@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Activity, AlertTriangle, Download, Gauge, LoaderCircle, RefreshCw, Search, Server, ShieldCheck, Thermometer, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -28,6 +28,10 @@ const QUOTA_FILTER_STATUSES = [
     'unknown',
 ] as const;
 const CHANNEL_MODEL_HEALTH_EXPORT_VERSION = 3;
+
+function codeToWords(value: string | undefined) {
+    return (value || '').trim().replace(/[_-]+/g, ' ');
+}
 
 function formatNumber(value: number | undefined) {
     if (!value || value <= 0) return '-';
@@ -249,6 +253,65 @@ function queueModeLabel(t: ReturnType<typeof useTranslations<'channel.health'>>,
     }
 }
 
+function reasonLabel(t: ReturnType<typeof useTranslations<'channel.health'>>, reason: string | undefined) {
+    const normalized = (reason || '').trim().toLowerCase();
+    if (!normalized) return '';
+
+    switch (normalized) {
+        case 'quota_error':
+            return t('reasons.quotaError');
+        case 'auth_error':
+            return t('reasons.authError');
+        case 'rate_limit':
+        case 'rate_limited':
+        case 'too_many_requests':
+            return t('reasons.rateLimited');
+        case 'http_402':
+            return t('reasons.http402');
+        case 'http_auth':
+            return t('reasons.httpAuth');
+        case 'site_account_balance':
+            return t('reasons.siteAccountBalance');
+        case 'site_account_zero_balance':
+            return t('reasons.zeroBalance');
+        case 'site_disabled':
+        case 'site_missing':
+            return t('reasons.siteDisabled');
+        case 'site_account_missing':
+        case 'account_missing':
+            return t('reasons.accountMissing');
+        case 'site_account_disabled':
+        case 'account_disabled':
+            return t('reasons.accountDisabled');
+        case 'site_model_disabled':
+        case 'model_disabled':
+            return t('reasons.modelDisabled');
+        case 'no_available_key':
+        case 'no_key':
+            return t('reasons.noAvailableKey');
+        case 'health_cooldown':
+            return t('reasons.healthCooldown');
+        case 'circuit_breaker':
+            return t('reasons.circuitBreaker');
+        case 'managed_runtime_check_failed':
+            return t('reasons.runtimeCheckFailed');
+        case 'channel_disabled':
+            return t('reasons.channelDisabled');
+        case 'channel_missing':
+            return t('reasons.channelMissing');
+        default:
+            return codeToWords(reason);
+    }
+}
+
+function rowReason(row: ChannelModelHealthRow) {
+    return row.capacity_reason
+        || row.quota_reason
+        || (row.cooling_down ? row.cooldown_reason : '')
+        || row.last_failure_reason
+        || (row.quota_status && row.quota_status !== 'available' && row.quota_status !== 'unknown' ? row.quota_status : '');
+}
+
 export function ChannelModelHealthPanel() {
     const t = useTranslations('channel.health');
     const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -275,7 +338,7 @@ export function ChannelModelHealthPanel() {
         refetchIntervalMs: autoRefresh ? Number(refreshInterval) : false,
     });
 
-    const rows = data?.rows ?? [];
+    const rows = useMemo(() => data?.rows ?? [], [data?.rows]);
     const summary = data?.summary;
     const filteredChannels = (channelsData ?? [])
         .map((item) => item.raw)
@@ -284,6 +347,34 @@ export function ChannelModelHealthPanel() {
     const quotaStatusChips = QUOTA_FILTER_STATUSES.filter((status) => (quotaStatusCounts[status] ?? 0) > 0);
     const quotaAvailableCount = quotaStatusCounts.available ?? 0;
     const quotaUnknownCount = quotaStatusCounts.unknown ?? 0;
+    const blockedRows = useMemo(
+        () => rows.filter((row) => row.cooling_down || row.capacity_status === 'blocked' || (row.quota_status !== 'available' && row.quota_status !== 'unknown')),
+        [rows],
+    );
+    const topBlockedReasons = useMemo(
+        () => Array.from(
+            blockedRows.reduce((map, row) => {
+                const key = rowReason(row) || 'unknown';
+                map.set(key, (map.get(key) || 0) + 1);
+                return map;
+            }, new Map<string, number>()).entries(),
+        ).sort((left, right) => right[1] - left[1]).slice(0, 3),
+        [blockedRows],
+    );
+    const mostLoadedRow = useMemo(
+        () => [...rows].sort((left, right) => {
+            const leftLoad = (left.active_selections ?? 0) + (left.channel_concurrency_active ?? 0);
+            const rightLoad = (right.active_selections ?? 0) + (right.channel_concurrency_active ?? 0);
+            return rightLoad - leftLoad || right.request_count - left.request_count || left.channel_name.localeCompare(right.channel_name);
+        })[0],
+        [rows],
+    );
+    const worstHealthRow = useMemo(
+        () => [...rows]
+            .filter((row) => row.health_sample_count > 0)
+            .sort((left, right) => left.health_score - right.health_score || right.failure_count - left.failure_count || left.channel_name.localeCompare(right.channel_name))[0],
+        [rows],
+    );
     const exportCurrentRows = () => {
         if (rows.length === 0) {
             toast.warning(t('export.empty'));
@@ -481,6 +572,101 @@ export function ChannelModelHealthPanel() {
                         })}
                     </div>
 
+                    <div className="grid gap-3 xl:grid-cols-[1.15fr_1fr_1fr]">
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                            <div className="text-xs text-muted-foreground">{t('insights.topLoaded')}</div>
+                            {mostLoadedRow ? (
+                                <div className="mt-2 space-y-3">
+                                    <div className="min-w-0">
+                                        <div className="truncate text-sm font-medium" title={mostLoadedRow.channel_name}>
+                                            {mostLoadedRow.channel_name || `#${mostLoadedRow.channel_id}`}
+                                        </div>
+                                        <div className="truncate text-xs text-muted-foreground" title={mostLoadedRow.model_name}>
+                                            {mostLoadedRow.model_name}
+                                        </div>
+                                    </div>
+                                    <div className="grid gap-2 sm:grid-cols-3">
+                                        <div className="rounded-lg bg-card px-3 py-2">
+                                            <div className="text-[11px] text-muted-foreground">{t('activeSelections')}</div>
+                                            <div className="mt-1 text-sm font-medium">{formatNumber(mostLoadedRow.active_selections)}</div>
+                                        </div>
+                                        <div className="rounded-lg bg-card px-3 py-2">
+                                            <div className="text-[11px] text-muted-foreground">{t('channelConcurrency')}</div>
+                                            <div className="mt-1 text-sm font-medium">
+                                                {(mostLoadedRow.channel_concurrency_active ?? 0).toLocaleString()}
+                                                {mostLoadedRow.channel_concurrency_limit ? ` / ${mostLoadedRow.channel_concurrency_limit}` : ''}
+                                            </div>
+                                        </div>
+                                        <div className="rounded-lg bg-card px-3 py-2">
+                                            <div className="text-[11px] text-muted-foreground">{t('requests')}</div>
+                                            <div className="mt-1 text-sm font-medium">{formatNumber(mostLoadedRow.request_count)}</div>
+                                        </div>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {t('insights.topLoadedSub', {
+                                            mode: queueModeLabel(t, mostLoadedRow.channel_concurrency_mode),
+                                            cooldown: mostLoadedRow.cooling_down ? reasonLabel(t, mostLoadedRow.cooldown_reason) || t('cooldown') : t('noCooldown'),
+                                        })}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="mt-2 text-sm text-muted-foreground">{t('empty')}</div>
+                            )}
+                        </div>
+
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                            <div className="text-xs text-muted-foreground">{t('insights.topBlocked')}</div>
+                            {topBlockedReasons.length ? (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {topBlockedReasons.map(([reason, count]) => (
+                                        <div key={reason} className="rounded-lg bg-card px-3 py-2">
+                                            <div className="text-xs font-medium">{reasonLabel(t, reason) || t('quota.unknown')}</div>
+                                            <div className="mt-1 text-[11px] text-muted-foreground">{count} / {blockedRows.length}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="mt-2 text-sm text-muted-foreground">{t('insights.allHealthy')}</div>
+                            )}
+                        </div>
+
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                            <div className="text-xs text-muted-foreground">{t('insights.healthView')}</div>
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                <div className="rounded-lg bg-card px-3 py-2">
+                                    <div className="text-[11px] text-muted-foreground">{t('insights.blockedRows')}</div>
+                                    <div className="mt-1 text-sm font-medium">{blockedRows.length}</div>
+                                </div>
+                                <div className="rounded-lg bg-card px-3 py-2">
+                                    <div className="text-[11px] text-muted-foreground">{t('insights.coolingRows')}</div>
+                                    <div className="mt-1 text-sm font-medium">{summary?.cooling_down_count ?? 0}</div>
+                                </div>
+                                <div className="rounded-lg bg-card px-3 py-2">
+                                    <div className="text-[11px] text-muted-foreground">{t('insights.avgLatency')}</div>
+                                    <div className="mt-1 text-sm font-medium">{formatMS(rows.length ? rows.reduce((sum, row) => sum + row.avg_total_ms, 0) / rows.length : 0)}</div>
+                                </div>
+                                <div className="rounded-lg bg-card px-3 py-2">
+                                    <div className="text-[11px] text-muted-foreground">{t('insights.estimatedCost')}</div>
+                                    <div className="mt-1 text-sm font-medium">{formatCost(summary?.estimated_cost)}</div>
+                                </div>
+                            </div>
+                            {worstHealthRow ? (
+                                <div className="mt-3 rounded-lg border border-border/70 bg-card px-3 py-2">
+                                    <div className="text-[11px] text-muted-foreground">{t('insights.worstHealth')}</div>
+                                    <div className="mt-1 truncate text-sm font-medium" title={worstHealthRow.channel_name}>
+                                        {worstHealthRow.channel_name || `#${worstHealthRow.channel_id}`} / {worstHealthRow.model_name}
+                                    </div>
+                                    <div className="mt-1 text-xs text-muted-foreground">
+                                        {t('insights.worstHealthSub', {
+                                            score: worstHealthRow.health_score.toFixed(1),
+                                            rate: formatPercent(worstHealthRow.health_success_rate, worstHealthRow.health_sample_count > 0),
+                                        })}
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+                    </div>
+
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div className="flex flex-wrap items-center gap-2">
                             <Button
@@ -584,7 +770,16 @@ export function ChannelModelHealthPanel() {
                                                 key={virtualRow.key}
                                                 data-index={virtualRow.index}
                                                 ref={rowVirtualizer.measureElement}
-                                                className="absolute left-0 top-0 grid w-full border-b border-border/60"
+                                                className={cn(
+                                                    'absolute left-0 top-0 grid w-full border-b border-border/60',
+                                                    row.capacity_status === 'blocked'
+                                                        ? 'bg-destructive/[0.03]'
+                                                        : row.cooling_down
+                                                            ? 'bg-amber-500/[0.05]'
+                                                            : row.request_count > 0
+                                                                ? 'bg-emerald-500/[0.03]'
+                                                                : '',
+                                                )}
                                                 style={{
                                                     gridTemplateColumns: HEALTH_ROW_GRID_COLUMNS,
                                                     transform: `translateY(${virtualRow.start}px)`,
@@ -655,7 +850,7 @@ export function ChannelModelHealthPanel() {
                                                     ) : null}
                                                     {row.cooling_down ? (
                                                         <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                                                            {row.cooldown_reason || t('cooldown')} / {formatCooldown(row.cooldown_remaining_ms)}
+                                                            {reasonLabel(t, row.cooldown_reason) || t('cooldown')} / {formatCooldown(row.cooldown_remaining_ms)}
                                                         </div>
                                                     ) : (
                                                         <div className="mt-1 text-xs text-muted-foreground">{t('noCooldown')}</div>
@@ -671,12 +866,17 @@ export function ChannelModelHealthPanel() {
                                                     </div>
                                                     {row.quota_reason ? (
                                                         <div className="mt-0.5 truncate text-xs text-muted-foreground" title={row.quota_reason}>
-                                                            {t('quota.reason')}: {row.quota_reason}
+                                                            {t('quota.reason')}: {reasonLabel(t, row.quota_reason)}
                                                         </div>
                                                     ) : null}
                                                     <div className="mt-0.5 truncate text-xs text-muted-foreground" title={`${row.capacity_source || '-'} / ${row.capacity_scope || '-'}`}>
                                                         {t('capacity.label')}: {capacityLabel(t, row.capacity_status)}
                                                     </div>
+                                                    {row.capacity_reason ? (
+                                                        <div className="truncate text-xs text-muted-foreground" title={row.capacity_reason}>
+                                                            {t('capacity.reason')}: {reasonLabel(t, row.capacity_reason)}
+                                                        </div>
+                                                    ) : null}
                                                     {row.capacity_source || row.capacity_scope ? (
                                                         <div className="truncate text-xs text-muted-foreground" title={`${row.capacity_source || '-'} / ${row.capacity_scope || '-'}`}>
                                                             {row.capacity_source || '-'} / {row.capacity_scope || '-'}
@@ -696,7 +896,7 @@ export function ChannelModelHealthPanel() {
                                                         {row.last_http_status ? `HTTP ${row.last_http_status}` : '-'}
                                                     </div>
                                                     <div className="mt-1 line-clamp-2 text-xs text-destructive" title={row.last_failure_reason || ''}>
-                                                        {row.last_failure_reason || '-'}
+                                                        {reasonLabel(t, row.last_failure_reason) || row.last_failure_reason || '-'}
                                                     </div>
                                                 </div>
                                             </div>

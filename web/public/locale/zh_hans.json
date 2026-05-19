@@ -1817,7 +1817,40 @@
                 "blocked": "阻断",
                 "unknown": "未知",
                 "observed": "观测",
-                "expires": "到期"
+                "expires": "到期",
+                "reason": "容量原因"
+            },
+            "reasons": {
+                "quotaError": "额度错误",
+                "authError": "认证阻断",
+                "rateLimited": "限流中",
+                "http402": "HTTP 402",
+                "httpAuth": "HTTP 401/403",
+                "siteAccountBalance": "站点账号余额",
+                "zeroBalance": "已知零余额",
+                "siteDisabled": "站点禁用",
+                "accountMissing": "账号缺失",
+                "accountDisabled": "账号禁用",
+                "modelDisabled": "模型禁用",
+                "noAvailableKey": "无可用 Key",
+                "healthCooldown": "健康冷却",
+                "circuitBreaker": "熔断冷却",
+                "runtimeCheckFailed": "运行期检查失败",
+                "channelDisabled": "渠道禁用",
+                "channelMissing": "渠道缺失"
+            },
+            "insights": {
+                "topLoaded": "当前最高负载",
+                "topLoadedSub": "{mode} / {cooldown}",
+                "topBlocked": "主要阻断原因",
+                "allHealthy": "当前结果里没有阻断或冷却行",
+                "healthView": "健康视图",
+                "blockedRows": "阻断行数",
+                "coolingRows": "冷却行数",
+                "avgLatency": "平均延迟",
+                "estimatedCost": "预估成本",
+                "worstHealth": "最低健康候选",
+                "worstHealthSub": "健康分 {score} / 成功率 {rate}"
             },
             "status": {
                 "cooldown": "冷却",
