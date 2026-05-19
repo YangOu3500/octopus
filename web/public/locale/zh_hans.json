@@ -1161,8 +1161,34 @@
                 "available": "可用",
                 "blocked": "阻断",
                 "unknown": "未知",
+                "reason": "容量原因",
                 "observed": "观测",
                 "expires": "到期"
+            },
+            "reasons": {
+                "siteAccountBalance": "站点账号余额"
+            },
+            "notes": {
+                "activeSelections": "已有 {count} 个进行中选择正在占用该候选",
+                "skippedCoolingKeys": "选 Key 前跳过了 {count} 个冷却中的 Key",
+                "skippedBlockedKeys": "选 Key 前跳过了 {count} 个已阻断 Key",
+                "channelNotFound": "渠道记录不存在",
+                "channelDisabled": "渠道已禁用",
+                "noAvailableKey": "该候选当前没有可用 Key",
+                "healthCooldownActive": "健康冷却当前仍在生效",
+                "runtimeCheckFailed": "托管运行期检查失败"
+            },
+            "insights": {
+                "topCandidate": "当前首选候选",
+                "topBlocked": "主要阻断原因",
+                "allReady": "当前全部候选都可参与调度",
+                "healthView": "调度健康视图",
+                "readyShare": "可参与占比",
+                "avgHealth": "平均健康分",
+                "avgEffective": "平均有效分",
+                "avgLatency": "平均延迟",
+                "quotaBlocked": "额度阻断",
+                "capacityBlocked": "容量阻断"
             },
             "noSamples": "暂无样本",
             "sampleMeta": "{success}/{total} · {rate}",

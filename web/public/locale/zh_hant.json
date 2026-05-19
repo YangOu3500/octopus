@@ -1161,8 +1161,34 @@
                 "available": "可用",
                 "blocked": "阻斷",
                 "unknown": "未知",
+                "reason": "容量原因",
                 "observed": "觀測",
                 "expires": "到期"
+            },
+            "reasons": {
+                "siteAccountBalance": "站點帳號餘額"
+            },
+            "notes": {
+                "activeSelections": "已有 {count} 個進行中選擇正在占用該候選",
+                "skippedCoolingKeys": "選 Key 前跳過了 {count} 個冷卻中的 Key",
+                "skippedBlockedKeys": "選 Key 前跳過了 {count} 個已阻斷 Key",
+                "channelNotFound": "渠道記錄不存在",
+                "channelDisabled": "渠道已停用",
+                "noAvailableKey": "該候選目前沒有可用 Key",
+                "healthCooldownActive": "健康冷卻目前仍在生效",
+                "runtimeCheckFailed": "託管執行期檢查失敗"
+            },
+            "insights": {
+                "topCandidate": "目前首選候選",
+                "topBlocked": "主要阻斷原因",
+                "allReady": "目前全部候選都可參與調度",
+                "healthView": "調度健康視圖",
+                "readyShare": "可參與占比",
+                "avgHealth": "平均健康分",
+                "avgEffective": "平均有效分",
+                "avgLatency": "平均延遲",
+                "quotaBlocked": "額度阻斷",
+                "capacityBlocked": "容量阻斷"
             },
             "noSamples": "暫無樣本",
             "sampleMeta": "{success}/{total} · {rate}",

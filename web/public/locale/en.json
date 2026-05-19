@@ -1161,8 +1161,34 @@
                 "available": "Available",
                 "blocked": "Blocked",
                 "unknown": "Unknown",
+                "reason": "Capacity reason",
                 "observed": "Observed",
                 "expires": "Expires"
+            },
+            "reasons": {
+                "siteAccountBalance": "Site account balance"
+            },
+            "notes": {
+                "activeSelections": "{count} in-flight selections are already using this candidate",
+                "skippedCoolingKeys": "{count} cooling keys were skipped before selecting a key",
+                "skippedBlockedKeys": "{count} blocked keys were skipped before selecting a key",
+                "channelNotFound": "The channel record is missing",
+                "channelDisabled": "The channel is disabled",
+                "noAvailableKey": "No key can be used for this candidate",
+                "healthCooldownActive": "Health cooldown is currently active",
+                "runtimeCheckFailed": "The managed runtime check failed"
+            },
+            "insights": {
+                "topCandidate": "Current first candidate",
+                "topBlocked": "Top blocked reasons",
+                "allReady": "All candidates are ready",
+                "healthView": "Routing health view",
+                "readyShare": "Ready share",
+                "avgHealth": "Avg health",
+                "avgEffective": "Avg effective",
+                "avgLatency": "Avg latency",
+                "quotaBlocked": "Quota blocked",
+                "capacityBlocked": "Capacity blocked"
             },
             "noSamples": "No samples",
             "sampleMeta": "{success}/{total} / {rate}",
