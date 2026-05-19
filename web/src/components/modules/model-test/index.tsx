@@ -35,7 +35,7 @@ type ActiveRunPlan = {
 
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
-const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(13rem,1.35fr) minmax(9rem,0.85fr) minmax(8.5rem,0.8fr) minmax(10rem,0.95fr) minmax(12rem,1.2fr) 5.5rem';
+const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(11.5rem,1.18fr) minmax(8.25rem,0.82fr) minmax(7.75rem,0.76fr) minmax(8.75rem,0.84fr) minmax(10.25rem,1fr) 5rem';
 const MODEL_TEST_EXPORT_VERSION = 1;
 const MODEL_TEST_RESULT_FILTERS: ModelTestResultFilter[] = ['all', 'success', 'failed', 'running', 'queued', 'idle'];
 
@@ -449,6 +449,12 @@ export function ModelTest() {
         { id: 'running', label: t('stats.running'), value: runStats.running },
         { id: 'queued', label: t('stats.queued'), value: runStats.queued },
     ]), [rows.length, runStats.queued, runStats.running, selectedRows.length, t]);
+    const headlineStats = useMemo(() => ([
+        { id: 'tested', label: t('summary', { total: summary.total, success: summary.success, failed: summary.failed }) },
+        runStats.total > 0
+            ? { id: 'queue', label: t('queueSummary', { running: runStats.running, queued: runStats.queued, total: runStats.total }) }
+            : null,
+    ].filter(Boolean) as Array<{ id: string; label: string }>), [runStats.queued, runStats.running, runStats.total, summary.failed, summary.success, summary.total, t]);
 
     const exportableResults = useMemo(
         () => rows.map((row) => results[row.key]).filter((result): result is ModelTestResult => Boolean(result)),
@@ -510,10 +516,11 @@ export function ModelTest() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="shrink-0 rounded-xl border border-border bg-card p-3.5 shadow-sm">
+            <div className="shrink-0 rounded-lg border border-border bg-card p-3 shadow-sm">
                 <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col gap-2 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="flex min-w-0 flex-col gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                             <button
                                 type="button"
                                 onClick={() => setMode('channel')}
@@ -534,16 +541,16 @@ export function ModelTest() {
                             >
                                 {t('mode.model')}
                             </button>
-                            <Badge variant="outline" className="rounded-md">
-                                {t('summary', { total: summary.total, success: summary.success, failed: summary.failed })}
-                            </Badge>
-                            {runStats.total > 0 ? (
-                                <Badge variant="secondary" className="rounded-md">
-                                    {t('queueSummary', { running: runStats.running, queued: runStats.queued, total: runStats.total })}
-                                </Badge>
-                            ) : null}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {headlineStats.map((item) => (
+                                    <Badge key={item.id} variant="outline" className="max-w-full rounded-md px-2.5 py-1 text-xs font-medium">
+                                        <span className="truncate">{item.label}</span>
+                                    </Badge>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
                             <Button type="button" variant="outline" size="sm" onClick={handleExport} disabled={exportableResults.length === 0}>
                                 <Download className="size-4" />
                                 {t('export.button')}
@@ -567,9 +574,10 @@ export function ModelTest() {
                         </div>
                     </div>
 
-                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.95fr)_minmax(14rem,0.8fr)]">
-                        <div className="rounded-lg border border-border/70 bg-background/50 p-3">
-                            <div className="grid gap-3 lg:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)]">
+                    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.96fr)]">
+                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.08fr)_minmax(15rem,0.92fr)]">
+                            <div className="rounded-lg border border-border/70 bg-background/50 p-3">
+                                <div className="grid gap-3 lg:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]">
                                 {mode === 'channel' ? (
                                     <label className="grid gap-1">
                                         <span className="text-xs font-medium text-muted-foreground">{t('channel')}</span>
@@ -609,54 +617,55 @@ export function ModelTest() {
                                     <Input value={prompt} onChange={(event) => setPrompt(event.target.value)} className="rounded-lg" />
                                 </label>
                             </div>
-                        </div>
+                            </div>
 
-                        <div className="rounded-lg border border-border/70 bg-background/50 p-3">
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <label className="grid gap-1">
-                                    <span className="text-xs font-medium text-muted-foreground">{t('maxTokens')}</span>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        max={256}
-                                        value={maxTokens}
-                                        onChange={(event) => setMaxTokens(Math.max(1, Math.min(256, Number(event.target.value) || 1)))}
-                                        className="rounded-lg"
-                                    />
-                                </label>
+                            <div className="rounded-lg border border-border/70 bg-background/50 p-3">
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <label className="grid gap-1">
+                                        <span className="text-xs font-medium text-muted-foreground">{t('maxTokens')}</span>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={256}
+                                            value={maxTokens}
+                                            onChange={(event) => setMaxTokens(Math.max(1, Math.min(256, Number(event.target.value) || 1)))}
+                                            className="rounded-lg"
+                                        />
+                                    </label>
 
-                                <label className="grid gap-1">
-                                    <span className="text-xs font-medium text-muted-foreground">{t('concurrency')}</span>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        max={MAX_CONCURRENCY}
-                                        value={concurrency}
-                                        onChange={(event) => setConcurrency(Math.max(1, Math.min(MAX_CONCURRENCY, Number(event.target.value) || 1)))}
-                                        className="rounded-lg"
-                                    />
-                                </label>
+                                    <label className="grid gap-1">
+                                        <span className="text-xs font-medium text-muted-foreground">{t('concurrency')}</span>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={MAX_CONCURRENCY}
+                                            value={concurrency}
+                                            onChange={(event) => setConcurrency(Math.max(1, Math.min(MAX_CONCURRENCY, Number(event.target.value) || 1)))}
+                                            className="rounded-lg"
+                                        />
+                                    </label>
 
-                                <label className="grid gap-1">
-                                    <span className="text-xs font-medium text-muted-foreground">{t('protocol')}</span>
-                                    <Select value="auto" disabled>
-                                        <SelectTrigger className="w-full rounded-lg">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="auto">{t('protocolAuto')}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </label>
+                                    <label className="grid gap-1">
+                                        <span className="text-xs font-medium text-muted-foreground">{t('protocol')}</span>
+                                        <Select value="auto" disabled>
+                                            <SelectTrigger className="w-full rounded-lg">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="auto">{t('protocolAuto')}</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </label>
 
-                                <label className="flex h-10 items-center justify-between rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground">
-                                    <span>{t('stream')}</span>
-                                    <Switch checked={stream} onCheckedChange={setStream} />
-                                </label>
+                                    <label className="flex h-10 items-center justify-between rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground">
+                                        <span>{t('stream')}</span>
+                                        <Switch checked={stream} onCheckedChange={setStream} />
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 lg:col-span-2 xl:col-span-1 xl:grid-cols-1">
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
                             {runtimeStats.map((item) => (
                                 <div
                                     key={item.id}
@@ -669,15 +678,42 @@ export function ModelTest() {
                         </div>
                     </div>
 
-                    <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_12rem]">
-                        <div className="relative min-w-0">
-                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                value={query}
-                                onChange={(event) => setQuery(event.target.value)}
-                                placeholder={mode === 'channel' ? t('searchModel') : t('searchChannel')}
-                                className="rounded-lg pl-9"
-                            />
+                    <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_11rem]">
+                        <div className="flex min-w-0 flex-col gap-2">
+                            <div className="relative min-w-0">
+                                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    value={query}
+                                    onChange={(event) => setQuery(event.target.value)}
+                                    placeholder={mode === 'channel' ? t('searchModel') : t('searchChannel')}
+                                    className="rounded-lg pl-9"
+                                />
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {MODEL_TEST_RESULT_FILTERS.map((filter) => (
+                                    <button
+                                        key={filter}
+                                        type="button"
+                                        onClick={() => setResultFilter(filter)}
+                                        className={cn(
+                                            'inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-xs font-medium transition-colors',
+                                            resultFilter === filter
+                                                ? 'border-primary bg-primary text-primary-foreground'
+                                                : 'border-border bg-background/50 text-muted-foreground hover:bg-muted hover:text-foreground',
+                                        )}
+                                    >
+                                        <span>{t(`filter.${filter}`)}</span>
+                                        <span
+                                            className={cn(
+                                                'min-w-6 rounded-md bg-muted px-1.5 py-0.5 text-center font-semibold tabular-nums text-foreground',
+                                                resultFilter === filter && 'bg-primary-foreground/20 text-primary-foreground',
+                                            )}
+                                        >
+                                            {resultCounts[filter]}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                         <Select value={resultFilter} onValueChange={(value) => setResultFilter(value as ModelTestResultFilter)}>
                             <SelectTrigger className="w-full rounded-lg">
@@ -693,38 +729,12 @@ export function ModelTest() {
                             </SelectContent>
                         </Select>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        {MODEL_TEST_RESULT_FILTERS.map((filter) => (
-                            <button
-                                key={filter}
-                                type="button"
-                                onClick={() => setResultFilter(filter)}
-                                className={cn(
-                                    'inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-xs font-medium transition-colors',
-                                    resultFilter === filter
-                                        ? 'border-primary bg-primary text-primary-foreground'
-                                        : 'border-border bg-background/50 text-muted-foreground hover:bg-muted hover:text-foreground',
-                                )}
-                            >
-                                <span>{t(`filter.${filter}`)}</span>
-                                <span
-                                    className={cn(
-                                        'min-w-6 rounded-md bg-muted px-1.5 py-0.5 text-center font-semibold tabular-nums text-foreground',
-                                        resultFilter === filter && 'bg-primary-foreground/20 text-primary-foreground',
-                                    )}
-                                >
-                                    {resultCounts[filter]}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <div className="h-full overflow-auto">
-                    <div className="flex h-full min-w-[50rem] flex-col">
+                    <div className="flex h-full min-w-[46rem] flex-col">
                         <div
                             className="sticky top-0 z-10 grid border-b border-border bg-muted/90 text-left text-xs uppercase text-muted-foreground backdrop-blur"
                             style={{ gridTemplateColumns: MODEL_TEST_GRID_COLUMNS }}
@@ -752,7 +762,7 @@ export function ModelTest() {
                                     items={rows}
                                     layout="list"
                                     columns={{ default: 1 }}
-                                    estimateItemHeight={104}
+                                    estimateItemHeight={96}
                                     gap={0}
                                     overscan={12}
                                     getItemKey={(row) => row.key}
@@ -784,7 +794,7 @@ export function ModelTest() {
                                                     <div className="truncate font-medium text-foreground">
                                                         {mode === 'channel' ? row.modelName : row.channelName}
                                                     </div>
-                                                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                                                    <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
                                                         <span className="truncate" title={mode === 'channel' ? row.channelName : row.modelName}>
                                                             {mode === 'channel' ? row.channelName : row.modelName}
                                                         </span>
@@ -825,7 +835,7 @@ export function ModelTest() {
                                                         </Badge>
                                                     )}
                                                     {result?.failure_reason ? (
-                                                        <div className="mt-1 line-clamp-2 text-xs text-destructive" title={result.failure_reason}>
+                                                        <div className="mt-1 line-clamp-1 text-xs text-destructive" title={result.failure_reason}>
                                                             {result.failure_reason}
                                                         </div>
                                                     ) : null}
@@ -844,7 +854,7 @@ export function ModelTest() {
                                                     <div>{t('table.cost')}: {formatCost(result?.estimated_cost)}</div>
                                                 </div>
                                                 <div className="min-w-0 px-3 py-3">
-                                                    <div className="line-clamp-3 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
+                                                    <div className="line-clamp-2 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
                                                         {runStatus === 'queued' ? t('queued') : isRunning ? t('running') : result?.response_text || result?.error_message || '-'}
                                                     </div>
                                                 </div>
