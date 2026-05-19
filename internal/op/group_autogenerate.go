@@ -21,6 +21,7 @@ type groupAutoGenerateCandidate struct {
 type groupAutoGenerateModelBucket struct {
 	ModelName          string
 	Aliases            []string
+	TagLabels          []string
 	Candidates         []groupAutoGenerateCandidate
 	MatchScore         int
 	MatchStrategies    []string
@@ -36,6 +37,12 @@ type groupAutoGenerateOptions struct {
 	NormalizeCase        bool
 	NormalizeSeparators  bool
 	ManualAliases        map[string]string
+	AssociationTags      map[string]groupAutoGenerateTaggedAssociation
+}
+
+type groupAutoGenerateTaggedAssociation struct {
+	Target string
+	Label  string
 }
 
 func GroupAutoGeneratePreview(req *model.GroupAutoGenerateRequest, ctx context.Context) (*model.GroupAutoGeneratePreview, error) {
@@ -86,6 +93,7 @@ func GroupAutoGenerate(req *model.GroupAutoGenerateRequest, ctx context.Context)
 			item := model.GroupAutoGenerateResultItem{
 				ModelName:       bucket.ModelName,
 				Aliases:         groupAutoGenerateAliasesForDisplay(bucket),
+				TagLabels:       groupAutoGenerateLabelsForDisplay(bucket.TagLabels),
 				CandidateCount:  len(bucket.Candidates),
 				MatchScore:      bucket.MatchScore,
 				MatchStrategies: groupAutoGenerateStrategyKeysForDisplay(bucket.MatchStrategies),
@@ -237,6 +245,11 @@ func groupAutoGenerateOptionsFromRequest(req *model.GroupAutoGenerateRequest) gr
 		manualAliases = req.ManualAliases
 	}
 	options.ManualAliases = groupAutoGenerateManualAliasMap(manualAliases, options)
+	associationTags := saved.AssociationTags
+	if req != nil && req.AssociationTags != nil {
+		associationTags = req.AssociationTags
+	}
+	options.AssociationTags = groupAutoGenerateAssociationTagMap(associationTags, options)
 	return options
 }
 
@@ -453,6 +466,7 @@ func groupAutoGeneratePreviewItem(bucket groupAutoGenerateModelBucket, existing 
 	item := model.GroupAutoGeneratePreviewItem{
 		ModelName:       bucket.ModelName,
 		Aliases:         groupAutoGenerateAliasesForDisplay(bucket),
+		TagLabels:       groupAutoGenerateLabelsForDisplay(bucket.TagLabels),
 		CandidateCount:  len(bucket.Candidates),
 		MatchScore:      bucket.MatchScore,
 		MatchStrategies: groupAutoGenerateStrategyKeysForDisplay(bucket.MatchStrategies),
@@ -560,6 +574,7 @@ type groupAutoGenerateAssociationInfoResult struct {
 	ComparableKey string
 	Score         int
 	Strategies    []string
+	Labels        []string
 }
 
 func groupAutoGenerateAssociationInfo(value string, options groupAutoGenerateOptions) groupAutoGenerateAssociationInfoResult {
@@ -569,11 +584,19 @@ func groupAutoGenerateAssociationInfo(value string, options groupAutoGenerateOpt
 	}
 	name := original
 	score := 100
-	strategies := make([]string, 0, 4)
+	strategies := make([]string, 0, 5)
+	labels := make([]string, 0, 1)
 	if target, ok := groupAutoGenerateResolveManualAlias(name, options); ok {
 		name = target
 		score = 98
 		strategies = append(strategies, "manual_alias")
+	} else if tag, ok := groupAutoGenerateResolveAssociationTag(name, options); ok {
+		name = tag.Target
+		score = 96
+		strategies = append(strategies, "tag_alias")
+		if label := strings.TrimSpace(tag.Label); label != "" {
+			labels = append(labels, label)
+		}
 	}
 	name, namespaceStrategies := groupAutoGenerateStripConfiguredModelNamespace(name, options)
 	for _, strategy := range namespaceStrategies {
@@ -619,6 +642,7 @@ func groupAutoGenerateAssociationInfo(value string, options groupAutoGenerateOpt
 		ComparableKey: comparable,
 		Score:         score,
 		Strategies:    groupAutoGenerateStrategyKeysForDisplay(strategies),
+		Labels:        groupAutoGenerateLabelsForDisplay(labels),
 	}
 }
 
@@ -656,6 +680,7 @@ func groupAutoGenerateApplyAssociationInfo(bucket *groupAutoGenerateModelBucket,
 	bucket.scoreTotal += association.Score
 	bucket.scoreCount++
 	bucket.MatchStrategies = append(bucket.MatchStrategies, association.Strategies...)
+	bucket.TagLabels = append(bucket.TagLabels, association.Labels...)
 }
 
 func groupAutoGenerateAliasesForDisplay(bucket groupAutoGenerateModelBucket) []string {
@@ -685,6 +710,35 @@ func groupAutoGenerateAliasesForDisplay(bucket groupAutoGenerateModelBucket) []s
 		return nil
 	}
 	return aliases
+}
+
+func groupAutoGenerateLabelsForDisplay(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	seen := make(map[string]string, len(values))
+	for _, value := range values {
+		label := strings.TrimSpace(value)
+		if label == "" {
+			continue
+		}
+		key := groupAutoGenerateComparableName(label)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = label
+	}
+	if len(seen) == 0 {
+		return nil
+	}
+	labels := make([]string, 0, len(seen))
+	for _, label := range seen {
+		labels = append(labels, label)
+	}
+	sort.Slice(labels, func(i, j int) bool {
+		return strings.ToLower(labels[i]) < strings.ToLower(labels[j])
+	})
+	return labels
 }
 
 func groupAutoGenerateStripConfiguredModelNamespace(value string, options groupAutoGenerateOptions) (string, []string) {
@@ -782,6 +836,8 @@ func groupAutoGenerateNormalizeModelSeparators(value string) string {
 
 func groupAutoGenerateStrategyPenalty(strategy string) int {
 	switch strategy {
+	case "tag_alias":
+		return 6
 	case "strip_provider_prefix":
 		return 10
 	case "strip_models_namespace":
@@ -802,10 +858,11 @@ func groupAutoGenerateStrategyKeysForDisplay(strategies []string) []string {
 	order := map[string]int{
 		"exact":                  0,
 		"manual_alias":           1,
-		"strip_provider_prefix":  2,
-		"strip_models_namespace": 3,
-		"normalize_case":         4,
-		"normalize_separators":   5,
+		"tag_alias":              2,
+		"strip_provider_prefix":  3,
+		"strip_models_namespace": 4,
+		"normalize_case":         5,
+		"normalize_separators":   6,
 	}
 	seen := make(map[string]struct{}, len(strategies))
 	result := make([]string, 0, len(strategies))
@@ -874,4 +931,47 @@ func groupAutoGenerateResolveManualAlias(value string, options groupAutoGenerate
 	}
 	target, ok := options.ManualAliases[key]
 	return target, ok
+}
+
+func groupAutoGenerateAssociationTagMap(tags []model.GroupAutoGenerateAssociationTag, options groupAutoGenerateOptions) map[string]groupAutoGenerateTaggedAssociation {
+	if len(tags) == 0 {
+		return nil
+	}
+	result := make(map[string]groupAutoGenerateTaggedAssociation)
+	for _, tag := range tags {
+		label := strings.TrimSpace(tag.Label)
+		target := strings.TrimSpace(tag.Target)
+		if label == "" || target == "" {
+			continue
+		}
+		for _, alias := range tag.Aliases {
+			key := groupAutoGenerateManualAliasKey(alias, options)
+			if key == "" {
+				continue
+			}
+			if _, exists := result[key]; exists {
+				continue
+			}
+			result[key] = groupAutoGenerateTaggedAssociation{
+				Target: target,
+				Label:  label,
+			}
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+func groupAutoGenerateResolveAssociationTag(value string, options groupAutoGenerateOptions) (groupAutoGenerateTaggedAssociation, bool) {
+	if len(options.AssociationTags) == 0 {
+		return groupAutoGenerateTaggedAssociation{}, false
+	}
+	key := groupAutoGenerateManualAliasKey(value, options)
+	if key == "" {
+		return groupAutoGenerateTaggedAssociation{}, false
+	}
+	tag, ok := options.AssociationTags[key]
+	return tag, ok
 }

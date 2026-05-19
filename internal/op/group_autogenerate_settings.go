@@ -11,6 +11,7 @@ type groupAutoGenerateSavedSettings struct {
 	AssociationMode    model.GroupAutoGenerateAssociationMode
 	AssociationOptions *model.GroupAutoGenerateAssociationOptions
 	ManualAliases      []model.GroupAutoGenerateManualAlias
+	AssociationTags    []model.GroupAutoGenerateAssociationTag
 }
 
 func groupAutoGenerateLoadSavedSettings() groupAutoGenerateSavedSettings {
@@ -36,6 +37,11 @@ func groupAutoGenerateLoadSavedSettings() groupAutoGenerateSavedSettings {
 			settings.ManualAliases = aliases
 		}
 	}
+	if value, err := SettingGetString(model.SettingKeyGroupAutoGenerateAssociationTags); err == nil && strings.TrimSpace(value) != "" {
+		var tags []model.GroupAutoGenerateAssociationTag
+		if json.Unmarshal([]byte(value), &tags) == nil {
+			settings.AssociationTags = tags
+		}
+	}
 	return settings
 }
-

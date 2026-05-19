@@ -83,6 +83,12 @@ type GroupAutoGenerateManualAlias struct {
 	Target string `json:"target"`
 }
 
+type GroupAutoGenerateAssociationTag struct {
+	Label   string   `json:"label"`
+	Target  string   `json:"target"`
+	Aliases []string `json:"aliases,omitempty"`
+}
+
 type GroupAutoGenerateRequest struct {
 	All                bool                                 `json:"all"`
 	ModelNames         []string                             `json:"model_names,omitempty"`
@@ -90,6 +96,7 @@ type GroupAutoGenerateRequest struct {
 	AssociationMode    GroupAutoGenerateAssociationMode     `json:"association_mode,omitempty"`
 	AssociationOptions *GroupAutoGenerateAssociationOptions `json:"association_options,omitempty"`
 	ManualAliases      []GroupAutoGenerateManualAlias       `json:"manual_aliases,omitempty"`
+	AssociationTags    []GroupAutoGenerateAssociationTag    `json:"association_tags,omitempty"`
 	FirstTokenTimeOut  int                                  `json:"first_token_time_out,omitempty"`
 	SessionKeepTime    int                                  `json:"session_keep_time,omitempty"`
 	RetryEnabled       bool                                 `json:"retry_enabled,omitempty"`
@@ -113,6 +120,7 @@ type GroupAutoGeneratePreviewItem struct {
 	WillAddCount          int      `json:"will_add_count"`
 	MatchScore            int      `json:"match_score,omitempty"`
 	MatchStrategies       []string `json:"match_strategies,omitempty"`
+	TagLabels             []string `json:"tag_labels,omitempty"`
 	SkippedReason         string   `json:"skipped_reason,omitempty"`
 	Aliases               []string `json:"aliases,omitempty"`
 }
@@ -137,6 +145,7 @@ type GroupAutoGenerateResultItem struct {
 	CandidateCount  int      `json:"candidate_count"`
 	MatchScore      int      `json:"match_score,omitempty"`
 	MatchStrategies []string `json:"match_strategies,omitempty"`
+	TagLabels       []string `json:"tag_labels,omitempty"`
 	SkippedReason   string   `json:"skipped_reason,omitempty"`
 	Error           string   `json:"error,omitempty"`
 	Aliases         []string `json:"aliases,omitempty"`

@@ -498,6 +498,96 @@ func TestGroupAutoGenerateAliasAssociationSupportsManualAliasesAndScores(t *test
 	}
 }
 
+func TestGroupAutoGenerateAssociationTagsMergeAliases(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+
+	first := model.Channel{
+		Name:      "tag-alias",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "anthropic/claude-3.5-sonnet",
+		BaseUrls:  []model.BaseUrl{{URL: "https://tag-alias.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-tag-alias"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&first, ctx); err != nil {
+		t.Fatalf("ChannelCreate first failed: %v", err)
+	}
+	second := model.Channel{
+		Name:      "tag-target",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "claude-sonnet",
+		BaseUrls:  []model.BaseUrl{{URL: "https://tag-target.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-tag-target"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&second, ctx); err != nil {
+		t.Fatalf("ChannelCreate second failed: %v", err)
+	}
+
+	tags := []model.GroupAutoGenerateAssociationTag{{
+		Label:   "Claude Sonnet",
+		Target:  "claude-sonnet",
+		Aliases: []string{"anthropic/claude-3.5-sonnet", "claude-3-5-sonnet"},
+	}}
+	preview, err := GroupAutoGeneratePreview(&model.GroupAutoGenerateRequest{
+		All:             true,
+		AssociationTags: tags,
+	}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGeneratePreview failed: %v", err)
+	}
+	if preview.TotalModels != 1 || len(preview.Items) != 1 {
+		t.Fatalf("expected one tag-associated preview bucket, got %+v", preview)
+	}
+	item := preview.Items[0]
+	if item.ModelName != "claude-sonnet" {
+		t.Fatalf("preview model name = %q, want claude-sonnet", item.ModelName)
+	}
+	if item.CandidateCount != 2 || item.WillAddCount != 2 {
+		t.Fatalf("unexpected preview counts: %+v", item)
+	}
+	if !containsStrategy(item.MatchStrategies, "tag_alias") {
+		t.Fatalf("preview strategies = %+v, want tag_alias", item.MatchStrategies)
+	}
+	if len(item.TagLabels) != 1 || item.TagLabels[0] != "Claude Sonnet" {
+		t.Fatalf("preview tag labels = %+v, want Claude Sonnet", item.TagLabels)
+	}
+
+	result, err := GroupAutoGenerate(&model.GroupAutoGenerateRequest{
+		ModelNames:      []string{"claude-sonnet"},
+		AssociationTags: tags,
+	}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGenerate failed: %v", err)
+	}
+	if result.CreatedGroups != 1 || result.AddedItems != 2 || result.SelectedModels != 1 {
+		t.Fatalf("unexpected tag generation result: %+v", result)
+	}
+	if len(result.Items) != 1 || !containsStrategy(result.Items[0].MatchStrategies, "tag_alias") {
+		t.Fatalf("result strategies missing tag alias: %+v", result.Items)
+	}
+	if len(result.Items[0].TagLabels) != 1 || result.Items[0].TagLabels[0] != "Claude Sonnet" {
+		t.Fatalf("result tag labels = %+v, want Claude Sonnet", result.Items[0].TagLabels)
+	}
+
+	group := getGroupByNameForTest(t, "claude-sonnet")
+	if len(group.Items) != 2 {
+		t.Fatalf("expected 2 tag-associated items, got %+v", group.Items)
+	}
+	modelsByChannel := map[int]string{}
+	for _, groupItem := range group.Items {
+		modelsByChannel[groupItem.ChannelID] = groupItem.ModelName
+	}
+	if modelsByChannel[first.ID] != "anthropic/claude-3.5-sonnet" {
+		t.Fatalf("tag alias channel model = %q, want anthropic/claude-3.5-sonnet", modelsByChannel[first.ID])
+	}
+	if modelsByChannel[second.ID] != "claude-sonnet" {
+		t.Fatalf("tag target channel model = %q, want claude-sonnet", modelsByChannel[second.ID])
+	}
+}
+
 func TestGroupAutoGenerateUsesSavedAssociationSettingsByDefault(t *testing.T) {
 	ctx := setupSiteOpTestDB(t)
 
@@ -555,6 +645,54 @@ func TestGroupAutoGenerateUsesSavedAssociationSettingsByDefault(t *testing.T) {
 	}
 }
 
+func TestGroupAutoGenerateUsesSavedAssociationTagsByDefault(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+
+	if err := SettingSetString(model.SettingKeyGroupAutoGenerateAssociationTags, `[{"label":"Claude Sonnet","target":"claude-sonnet","aliases":["anthropic/claude-3.5-sonnet"]}]`); err != nil {
+		t.Fatalf("SettingSetString tags failed: %v", err)
+	}
+
+	first := model.Channel{
+		Name:      "saved-tag-alias",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "anthropic/claude-3.5-sonnet",
+		BaseUrls:  []model.BaseUrl{{URL: "https://saved-tag-alias.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-saved-tag-alias"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&first, ctx); err != nil {
+		t.Fatalf("ChannelCreate first failed: %v", err)
+	}
+	second := model.Channel{
+		Name:      "saved-tag-target",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "claude-sonnet",
+		BaseUrls:  []model.BaseUrl{{URL: "https://saved-tag-target.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-saved-tag-target"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&second, ctx); err != nil {
+		t.Fatalf("ChannelCreate second failed: %v", err)
+	}
+
+	preview, err := GroupAutoGeneratePreview(&model.GroupAutoGenerateRequest{All: true}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGeneratePreview failed: %v", err)
+	}
+	if preview.TotalModels != 1 || len(preview.Items) != 1 {
+		t.Fatalf("expected one saved-tag preview bucket, got %+v", preview)
+	}
+	item := preview.Items[0]
+	if item.ModelName != "claude-sonnet" || !containsStrategy(item.MatchStrategies, "tag_alias") {
+		t.Fatalf("saved tag preview did not merge by tag: %+v", item)
+	}
+	if len(item.TagLabels) != 1 || item.TagLabels[0] != "Claude Sonnet" {
+		t.Fatalf("saved tag labels = %+v, want Claude Sonnet", item.TagLabels)
+	}
+}
+
 func TestGroupAutoGenerateRequestOverridesSavedAssociationSettings(t *testing.T) {
 	ctx := setupSiteOpTestDB(t)
 
@@ -606,6 +744,55 @@ func TestGroupAutoGenerateRequestOverridesSavedAssociationSettings(t *testing.T)
 	}
 	if preview.TotalModels != 2 || len(preview.Items) != 2 {
 		t.Fatalf("expected saved settings to be overridden, got %+v", preview)
+	}
+}
+
+func TestGroupAutoGenerateRequestOverridesSavedAssociationTags(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+
+	if err := SettingSetString(model.SettingKeyGroupAutoGenerateAssociationTags, `[{"label":"Claude Sonnet","target":"claude-sonnet","aliases":["anthropic/claude-3.5-sonnet"]}]`); err != nil {
+		t.Fatalf("SettingSetString tags failed: %v", err)
+	}
+
+	first := model.Channel{
+		Name:      "override-tag-alias",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "anthropic/claude-3.5-sonnet",
+		BaseUrls:  []model.BaseUrl{{URL: "https://override-tag-alias.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-override-tag-alias"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&first, ctx); err != nil {
+		t.Fatalf("ChannelCreate first failed: %v", err)
+	}
+	second := model.Channel{
+		Name:      "override-tag-target",
+		Type:      outbound.OutboundTypeOpenAIChat,
+		Enabled:   true,
+		Model:     "claude-sonnet",
+		BaseUrls:  []model.BaseUrl{{URL: "https://override-tag-target.test"}},
+		Keys:      []model.ChannelKey{{Enabled: true, ChannelKey: "sk-override-tag-target"}},
+		AutoGroup: model.AutoGroupTypeNone,
+	}
+	if err := ChannelCreate(&second, ctx); err != nil {
+		t.Fatalf("ChannelCreate second failed: %v", err)
+	}
+
+	preview, err := GroupAutoGeneratePreview(&model.GroupAutoGenerateRequest{
+		All:             true,
+		AssociationTags: []model.GroupAutoGenerateAssociationTag{},
+	}, ctx)
+	if err != nil {
+		t.Fatalf("GroupAutoGeneratePreview failed: %v", err)
+	}
+	if preview.TotalModels != 2 || len(preview.Items) != 2 {
+		t.Fatalf("expected saved tags to be overridden, got %+v", preview)
+	}
+	for _, item := range preview.Items {
+		if containsStrategy(item.MatchStrategies, "tag_alias") || len(item.TagLabels) != 0 {
+			t.Fatalf("saved tag leaked into request override: %+v", item)
+		}
 	}
 }
 
