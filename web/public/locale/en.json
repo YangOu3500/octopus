@@ -561,6 +561,10 @@
         "info": {
             "title": "Version Info",
             "currentVersion": "Current Version",
+            "frontendBuild": "Frontend Build",
+            "backendBuild": "Backend Build",
+            "frontendBuildTime": "Frontend Build Time",
+            "backendBuildTime": "Backend Build Time",
             "latestVersion": "Latest Version",
             "buildTime": "Build Time",
             "publishedAt": "Published At",

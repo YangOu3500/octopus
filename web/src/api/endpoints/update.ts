@@ -12,6 +12,14 @@ export interface LatestInfo {
     message: string;
 }
 
+export interface BuildInfo {
+    version: string;
+    commit: string;
+    build_time: string;
+    author: string;
+    repo: string;
+}
+
 /**
  * 获取最新发布信息 Hook
  * 
@@ -28,6 +36,21 @@ export function useLatestInfo() {
         queryKey: ['update', 'latest'],
         queryFn: async () => {
             return apiClient.get<LatestInfo>('/api/v1/update');
+        },
+        refetchInterval: 3600000, // 1 小时
+    });
+}
+
+/**
+ * 获取当前运行实例的构建元信息 Hook
+ *
+ * 后端: GET /api/v1/update/build-info -> { version, commit, build_time, author, repo }
+ */
+export function useBuildInfo() {
+    return useQuery({
+        queryKey: ['update', 'build-info'],
+        queryFn: async () => {
+            return apiClient.get<BuildInfo>('/api/v1/update/build-info');
         },
         refetchInterval: 3600000, // 1 小时
     });
@@ -77,4 +100,3 @@ export function useUpdateCore() {
         },
     });
 }
-

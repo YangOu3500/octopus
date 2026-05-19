@@ -2,38 +2,63 @@
 
 import { useTranslations } from 'next-intl';
 import { Info, Tag, Github, AlertTriangle, Download, Loader2 } from 'lucide-react';
-import { APP_VERSION, GITHUB_REPO } from '@/lib/info';
-import { useLatestInfo, useNowVersion, useUpdateCore } from '@/api/endpoints/update';
+import { APP_BUILD_TIME, APP_COMMIT, APP_VERSION, GITHUB_REPO } from '@/lib/info';
+import { useBuildInfo, useLatestInfo, useUpdateCore } from '@/api/endpoints/update';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/common/Toast';
 import { isOctopusCacheName, isFontCacheName, SW_MESSAGE_TYPE } from '@/lib/sw';
 
+function normalizeBuildValue(value?: string) {
+    return value?.trim() || 'unknown';
+}
+
 function isComparableVersion(version: string) {
-    const value = version.trim().toLowerCase();
-    return value !== '' && value !== 'dev' && value !== 'unknown';
+    const value = normalizeBuildValue(version).toLowerCase();
+    return value !== 'dev' && value !== 'unknown';
+}
+
+function isComparableCommit(commit: string) {
+    return normalizeBuildValue(commit).toLowerCase() !== 'unknown';
+}
+
+function shortCommit(commit: string) {
+    const value = normalizeBuildValue(commit);
+    return isComparableCommit(value) ? value.slice(0, 8) : value;
+}
+
+function formatBuildLabel(version: string, commit: string) {
+    const normalizedVersion = normalizeBuildValue(version);
+    const normalizedCommit = normalizeBuildValue(commit);
+
+    if (isComparableCommit(normalizedCommit)) {
+        return `${normalizedVersion} (${shortCommit(normalizedCommit)})`;
+    }
+
+    return normalizedVersion;
 }
 
 export function SettingInfo() {
     const t = useTranslations('setting');
     const latestInfoQuery = useLatestInfo();
-    const nowVersionQuery = useNowVersion();
+    const buildInfoQuery = useBuildInfo();
     const updateCore = useUpdateCore();
 
-    const backendNowVersion = nowVersionQuery.data || '';
+    const backendVersion = buildInfoQuery.data?.version || '';
+    const backendCommit = buildInfoQuery.data?.commit || '';
+    const backendBuildTime = buildInfoQuery.data?.build_time || '';
     const latestVersion = latestInfoQuery.data?.tag_name || '';
+    const frontendBuildLabel = formatBuildLabel(APP_VERSION, APP_COMMIT);
+    const backendBuildLabel = formatBuildLabel(backendVersion, backendCommit);
 
-    // 前端版本与后端当前版本不一致 → 浏览器缓存问题
-    const canCompareBuildVersions = isComparableVersion(backendNowVersion) && isComparableVersion(APP_VERSION);
-    const isCacheMismatch = canCompareBuildVersions && backendNowVersion !== APP_VERSION;
-    // 最新版本与后端当前版本不一致 → 有新版本可更新
-    const hasNewVersion = isComparableVersion(backendNowVersion) && latestVersion && latestVersion !== backendNowVersion;
+    const hasVersionMismatch = isComparableVersion(backendVersion) && isComparableVersion(APP_VERSION) && backendVersion !== APP_VERSION;
+    const hasCommitMismatch = isComparableCommit(backendCommit) && isComparableCommit(APP_COMMIT) && backendCommit !== APP_COMMIT;
+    const isCacheMismatch = hasVersionMismatch || hasCommitMismatch;
+    const hasNewVersion = isComparableVersion(backendVersion) && latestVersion && latestVersion !== backendVersion;
 
     const clearCacheAndReload = async () => {
-        // 通知 Service Worker 清理缓存
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({ type: SW_MESSAGE_TYPE.CLEAR_CACHE });
         }
-        // 同时也从主线程清理（双保险），但保留字体缓存
         if ('caches' in window) {
             const names = await caches.keys();
             await Promise.all(
@@ -42,12 +67,10 @@ export function SettingInfo() {
                     .map((name) => caches.delete(name))
             );
         }
-        // 注销当前 SW，下次加载会重新注册
         if ('serviceWorker' in navigator) {
             const registrations = await navigator.serviceWorker.getRegistrations();
             await Promise.all(registrations.map((reg) => reg.unregister()));
         }
-        // 强制刷新（跳过缓存）
         window.location.reload();
     };
 
@@ -59,7 +82,6 @@ export function SettingInfo() {
         updateCore.mutate(undefined, {
             onSuccess: () => {
                 toast.success(t('info.updateSuccess'));
-                // 更新成功后清理缓存并刷新
                 setTimeout(() => {
                     clearCacheAndReload();
                 }, 1500);
@@ -76,7 +98,7 @@ export function SettingInfo() {
                 <Info className="h-5 w-5" />
                 {t('info.title')}
             </h2>
-            {/* GitHub 仓库 */}
+
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Github className="h-5 w-5 text-muted-foreground" />
@@ -91,24 +113,59 @@ export function SettingInfo() {
                     {GITHUB_REPO.replace('https://github.com/', '')}
                 </a>
             </div>
-            {/* 当前版本 */}
+
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Tag className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('info.currentVersion')}</span>
+                    <span className="text-sm font-medium">{t('info.frontendBuild')}</span>
+                </div>
+                <code className="text-sm font-mono text-muted-foreground">
+                    {frontendBuildLabel}
+                </code>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <Tag className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{t('info.backendBuild')}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    {nowVersionQuery.isLoading ? (
+                    {buildInfoQuery.isLoading ? (
                         <Loader2 className="size-4 animate-spin text-muted-foreground" />
                     ) : (
                         <code className="text-sm font-mono text-muted-foreground">
-                            {backendNowVersion || t('info.unknown')}
+                            {backendBuildLabel}
                         </code>
                     )}
                 </div>
             </div>
 
-            {/* 最新版本 */}
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <Info className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{t('info.frontendBuildTime')}</span>
+                </div>
+                <code className="text-sm font-mono text-muted-foreground">
+                    {normalizeBuildValue(APP_BUILD_TIME)}
+                </code>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <Info className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{t('info.backendBuildTime')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    {buildInfoQuery.isLoading ? (
+                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                    ) : (
+                        <code className="text-sm font-mono text-muted-foreground">
+                            {normalizeBuildValue(backendBuildTime)}
+                        </code>
+                    )}
+                </div>
+            </div>
+
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Download className="h-5 w-5 text-muted-foreground" />
@@ -125,7 +182,6 @@ export function SettingInfo() {
                 </div>
             </div>
 
-            {/* 浏览器缓存问题警告 */}
             {isCacheMismatch && (
                 <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2">
                     <div className="flex items-start gap-3">
@@ -135,7 +191,7 @@ export function SettingInfo() {
                                 {t('info.versionMismatch')}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                                {t('info.versionMismatchHint', { frontend: APP_VERSION, backend: backendNowVersion })}
+                                {t('info.versionMismatchHint', { frontend: frontendBuildLabel, backend: backendBuildLabel })}
                             </p>
                         </div>
                     </div>
@@ -152,7 +208,6 @@ export function SettingInfo() {
                 </div>
             )}
 
-            {/* 有新版本可更新 */}
             {hasNewVersion && (
                 <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl space-y-2">
                     <div className="flex items-start gap-3">
