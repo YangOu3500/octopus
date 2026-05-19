@@ -15,7 +15,6 @@ import {
     useJumpStore,
 } from '@/stores/jump';
 import { useChannelTabStore } from './tab-store';
-import { ChannelModelHealthPanel } from './ModelHealthPanel';
 
 type ChannelPendingJump = PendingJump & { target: ChannelJumpTarget };
 
@@ -178,8 +177,6 @@ export function Channel() {
                                 sortOrder={sortOrder}
                                 layout={layout}
                             />
-                        ) : activeTab === 'health' ? (
-                            <ChannelModelHealthPanel />
                         ) : (
                             <VirtualizedGrid
                                 items={visibleManualChannels}

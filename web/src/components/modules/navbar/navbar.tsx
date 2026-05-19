@@ -4,6 +4,7 @@ import { motion } from 'motion/react'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Logo from '@/components/modules/logo'
+import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { useNavStore, type NavItem } from './nav-store'
 import { ROUTES } from '@/route/config'
@@ -14,7 +15,7 @@ type NavGroupId = 'workbench' | 'resources' | 'system'
 
 const NAV_GROUPS: Array<{ id: NavGroupId; items: NavItem[] }> = [
     { id: 'workbench', items: ['home', 'traces', 'log'] },
-    { id: 'resources', items: ['site', 'channel', 'group', 'modelTest', 'model'] },
+    { id: 'resources', items: ['site', 'channel', 'modelHealth', 'group', 'modelTest', 'model'] },
     { id: 'system', items: ['setting'] },
 ]
 
@@ -77,7 +78,8 @@ function DesktopNavItem({
 function DesktopSidebar() {
     const t = useTranslations('navbar')
     const sidebarExpanded = useNavStore((state) => state.sidebarExpanded)
-    const toggleSidebarExpanded = useNavStore((state) => state.toggleSidebarExpanded)
+    const setSidebarExpanded = useNavStore((state) => state.setSidebarExpanded)
+    const ToggleIcon = sidebarExpanded ? PanelLeftClose : PanelLeftOpen
 
     return (
         <motion.aside
@@ -102,15 +104,21 @@ function DesktopSidebar() {
                         </div>
                     ) : null}
                 </div>
-                <button
-                    type="button"
-                    aria-label={sidebarExpanded ? t('collapse') : t('expand')}
-                    title={sidebarExpanded ? t('collapse') : t('expand')}
-                    onClick={toggleSidebarExpanded}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-transparent text-sidebar-foreground/70 transition-colors hover:border-sidebar-border hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                <div
+                    className={cn(
+                        'shrink-0 rounded-xl border border-sidebar-border/70 bg-background/70 text-sidebar-foreground/70',
+                        sidebarExpanded ? 'flex items-center gap-2 px-2.5 py-2' : 'flex flex-col items-center gap-1.5 px-1.5 py-2'
+                    )}
                 >
-                    {sidebarExpanded ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
-                </button>
+                    <ToggleIcon className="size-4" />
+                    {sidebarExpanded ? <span className="text-[11px] font-medium">{t('navLabels')}</span> : null}
+                    <Switch
+                        checked={sidebarExpanded}
+                        aria-label={sidebarExpanded ? t('collapse') : t('expand')}
+                        title={sidebarExpanded ? t('collapse') : t('expand')}
+                        onCheckedChange={setSidebarExpanded}
+                    />
+                </div>
             </div>
 
             <div className="flex-1 space-y-4 overflow-y-auto pr-0.5">

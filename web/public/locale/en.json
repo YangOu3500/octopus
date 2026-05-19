@@ -46,6 +46,7 @@
     "navbar": {
         "brand": "Octopus",
         "shellHint": "Gateway Workbench",
+        "navLabels": "Show labels",
         "collapse": "Collapse sidebar",
         "expand": "Expand sidebar",
         "groups": {
@@ -56,6 +57,7 @@
         "home": "Home",
         "site": "Site",
         "channel": "Channel",
+        "modelHealth": "Model Health",
         "group": "Model Groups",
         "key": "Key",
         "modelTest": "Model Test",
@@ -626,6 +628,7 @@
                 "home": "Home",
                 "site": "Sites",
                 "channel": "Channels",
+                "modelHealth": "Model Health",
                 "group": "Groups",
                 "modelTest": "Model Test",
                 "model": "Models",

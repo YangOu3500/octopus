@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode, useMemo, useState } from 'react';
+import { ArchiveRestore, Bot, HeartPulse, Settings2, Sparkles, Workflow, type LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PageWrapper } from '@/components/common/PageWrapper';
@@ -30,6 +31,7 @@ type SettingSectionId =
 
 type SettingSection = {
     id: SettingSectionId;
+    icon: LucideIcon;
     label: string;
     content: ReactNode;
 };
@@ -63,21 +65,23 @@ function SectionNav({
                 </Select>
             </div>
 
-            <nav className="hidden md:flex md:flex-col md:gap-1">
+            <nav className="hidden md:flex md:flex-wrap md:gap-2 xl:flex-col xl:gap-1">
                 {sections.map((section) => {
                     const isActive = section.id === activeSection;
+                    const Icon = section.icon;
                     return (
                         <button
                             key={section.id}
                             type="button"
                             onClick={() => onSelect(section.id)}
                             className={cn(
-                                'rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors',
+                                'inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors md:whitespace-nowrap xl:w-full',
                                 isActive
                                     ? 'border border-primary/20 bg-primary/10 text-foreground shadow-sm'
                                     : 'border border-transparent text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground'
                             )}
                         >
+                            <Icon className="size-4 shrink-0" />
                             {section.label}
                         </button>
                     );
@@ -88,14 +92,7 @@ function SectionNav({
 }
 
 function SectionContent({ section }: { section: SettingSection }) {
-    return (
-        <section className="space-y-4">
-            <div className="rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm">
-                <h2 className="text-sm font-semibold text-foreground">{section.label}</h2>
-            </div>
-            <div className="space-y-4">{section.content}</div>
-        </section>
-    );
+    return <section className="space-y-4">{section.content}</section>;
 }
 
 export function Setting() {
@@ -120,6 +117,7 @@ export function Setting() {
         () => [
             {
                 id: 'system',
+                icon: Settings2,
                 label: sectionT('system'),
                 content: (
                     <>
@@ -133,11 +131,13 @@ export function Setting() {
             },
             {
                 id: 'health',
+                icon: HeartPulse,
                 label: sectionT('health'),
                 content: <SettingHealthProbe />,
             },
             {
                 id: 'automation',
+                icon: Bot,
                 label: sectionT('automation'),
                 content: (
                     <>
@@ -152,16 +152,19 @@ export function Setting() {
             },
             {
                 id: 'association',
+                icon: Workflow,
                 label: sectionT('association'),
                 content: <SettingModelAssociation />,
             },
             {
                 id: 'fusion',
+                icon: Sparkles,
                 label: sectionT('fusion'),
                 content: <SettingFusionCapabilities />,
             },
             {
                 id: 'maintenance',
+                icon: ArchiveRestore,
                 label: sectionT('maintenance'),
                 content: (
                     <>
@@ -184,7 +187,7 @@ export function Setting() {
         <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
             <PageWrapper
                 childLayout={false}
-                className="grid grid-cols-1 gap-4 pb-24 md:pb-4 xl:grid-cols-[14.5rem_minmax(0,1fr)]"
+                className="grid grid-cols-1 gap-4 pb-24 md:pb-4 xl:grid-cols-[13rem_minmax(0,1fr)]"
             >
                 <aside className="xl:sticky xl:top-3 xl:self-start">
                     <SectionNav

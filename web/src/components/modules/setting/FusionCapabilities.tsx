@@ -23,7 +23,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useChannelTabStore, type ChannelTab } from '@/components/modules/channel/tab-store';
 import { useNavStore, type NavItem } from '@/components/modules/navbar';
 import { cn } from '@/lib/utils';
 
@@ -35,7 +34,6 @@ type Capability = {
     status: CapabilityStatus;
     source: CapabilitySource;
     nav?: NavItem;
-    channelTab?: ChannelTab;
     icon: LucideIcon;
 };
 
@@ -44,7 +42,7 @@ type SourceFilter = CapabilitySource | 'all';
 
 const capabilityStatuses: CapabilityStatus[] = ['done', 'partial', 'planned'];
 const capabilitySources: CapabilitySource[] = ['both', 'AxonHub', 'ccLoad', 'octopus'];
-const capabilityEntries = ['home', 'log', 'traces', 'channel', 'group', 'modelTest', 'setting'] as const satisfies readonly NavItem[];
+const capabilityEntries = ['home', 'log', 'traces', 'channel', 'modelHealth', 'group', 'modelTest', 'setting'] as const satisfies readonly NavItem[];
 type CapabilityEntry = (typeof capabilityEntries)[number];
 type EntryFilter = CapabilityEntry | 'all';
 
@@ -54,7 +52,7 @@ const capabilities: Capability[] = [
     { id: 'streamGate', status: 'done', source: 'ccLoad', nav: 'setting', icon: ListChecks },
     { id: 'traceAttempts', status: 'done', source: 'both', nav: 'traces', icon: Eye },
     { id: 'healthCooldown', status: 'partial', source: 'both', nav: 'setting', icon: Settings2 },
-    { id: 'channelModelHealth', status: 'done', source: 'both', nav: 'channel', channelTab: 'health', icon: Thermometer },
+    { id: 'channelModelHealth', status: 'done', source: 'both', nav: 'modelHealth', icon: Thermometer },
     { id: 'selectionTracker', status: 'done', source: 'AxonHub', nav: 'group', icon: Activity },
     { id: 'channelConcurrency', status: 'done', source: 'AxonHub', nav: 'setting', icon: Network },
     { id: 'distributedQueue', status: 'partial', source: 'AxonHub', nav: 'setting', icon: Network },
@@ -66,7 +64,7 @@ const capabilities: Capability[] = [
     { id: 'protocolTransform', status: 'partial', source: 'AxonHub', nav: 'log', icon: GitBranch },
     { id: 'liveDebug', status: 'partial', source: 'ccLoad', nav: 'log', icon: TriangleAlert },
     { id: 'safeDiagnosticsExport', status: 'done', source: 'both', nav: 'log', icon: Download },
-    { id: 'quotaStatus', status: 'done', source: 'both', nav: 'channel', channelTab: 'health', icon: CircleDashed },
+    { id: 'quotaStatus', status: 'done', source: 'both', nav: 'modelHealth', icon: CircleDashed },
 ];
 
 const FUSION_CAPABILITY_EXPORT_VERSION = 3;
@@ -124,7 +122,6 @@ function sourceLabel(source: Capability['source'], t: ReturnType<typeof useTrans
 export function SettingFusionCapabilities() {
     const t = useTranslations('setting');
     const setActiveItem = useNavStore((state) => state.setActiveItem);
-    const setChannelTab = useChannelTabStore((state) => state.setActiveTab);
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
@@ -233,7 +230,6 @@ export function SettingFusionCapabilities() {
                 source_label: sourceLabel(item.source, t),
                 entry: item.nav ? item.nav : undefined,
                 entry_label: item.nav ? t(`fusionCapabilities.nav.${item.nav}`) : undefined,
-                channel_tab: item.channelTab,
                 name: t(`fusionCapabilities.items.${item.id}.name`),
                 description: t(`fusionCapabilities.items.${item.id}.desc`),
                 current_ui: t(`fusionCapabilities.items.${item.id}.ui`),
@@ -461,7 +457,6 @@ export function SettingFusionCapabilities() {
                                                                 size="sm"
                                                                 className="h-8 rounded-lg px-2 text-xs"
                                                                 onClick={() => {
-                                                                    if (item.channelTab) setChannelTab(item.channelTab);
                                                                     setActiveItem(item.nav!);
                                                                 }}
                                                             >

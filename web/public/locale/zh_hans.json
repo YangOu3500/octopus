@@ -46,6 +46,7 @@
     "navbar": {
         "brand": "Octopus",
         "shellHint": "网关工作台",
+        "navLabels": "显示说明",
         "collapse": "收起侧栏",
         "expand": "展开侧栏",
         "groups": {
@@ -56,6 +57,7 @@
         "home": "首页",
         "site": "站点",
         "channel": "渠道",
+        "modelHealth": "模型健康",
         "group": "模型分组",
         "key": "密钥",
         "modelTest": "模型测试",
@@ -626,6 +628,7 @@
                 "home": "首页观测",
                 "site": "站点",
                 "channel": "渠道",
+        "modelHealth": "模型健康",
                 "group": "模型分组",
                 "modelTest": "模型测试",
                 "model": "模型",

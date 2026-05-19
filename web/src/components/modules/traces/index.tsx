@@ -731,8 +731,8 @@ function TraceTable({
     const t = useTranslations('traces');
 
     return (
-        <div className="min-h-0 overflow-auto rounded-lg border bg-card">
-            <table className="w-full min-w-[1140px] text-left text-xs">
+        <div className="min-h-0 overflow-auto overscroll-contain rounded-lg border bg-card">
+            <table className="w-full min-w-[1040px] text-left text-xs">
                 <thead className="sticky top-0 z-10 border-b bg-muted/70 text-muted-foreground backdrop-blur">
                     <tr>
                         <th className="w-[52px] px-3 py-2 font-medium">{t('table.compare')}</th>
@@ -879,7 +879,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
     const trace = detail.trace;
 
     return (
-        <aside className="flex min-h-0 flex-col gap-3 rounded-lg border bg-card p-3">
+        <aside className="flex min-h-0 min-w-0 flex-col gap-3 rounded-lg border bg-card p-3">
             <div className="flex flex-wrap items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -1243,7 +1243,7 @@ export function Traces() {
     }, [hasMore, maxPage, page, params, t, total, traces]);
 
     return (
-        <div className="flex h-full min-h-0 flex-col gap-3">
+        <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain pb-24 pr-1 md:pb-4">
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
                 <SummaryTile
                     label={t('summary.total')}
@@ -1486,7 +1486,7 @@ export function Traces() {
                 onFocus={handleFocusTrace}
             />
 
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(420px,0.85fr)]">
+            <div className="grid min-h-[28rem] flex-1 grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)] 2xl:grid-cols-[minmax(0,1.15fr)_minmax(420px,0.85fr)]">
                 <div className="relative min-h-0">
                     {tracesQuery.isLoading ? (
                         <div className="flex h-full min-h-[320px] items-center justify-center rounded-lg border bg-card">

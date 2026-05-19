@@ -1,8 +1,24 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+    Activity,
+    FileWarning,
+    Gauge,
+    Hash,
+    HeartPulse,
+    HelpCircle,
+    MessageSquare,
+    Network,
+    Percent,
+    Send,
+    ShieldAlert,
+    Shuffle,
+    Thermometer,
+    Timer,
+    type LucideIcon,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Activity, FileWarning, Gauge, Hash, HeartPulse, HelpCircle, MessageSquare, Network, Percent, Send, ShieldAlert, Shuffle, Thermometer, Timer, type LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,43 +66,171 @@ const defaultValues: Record<string, string> = {
     [SettingKey.ProbeModelMinInterval]: '12',
     [SettingKey.ProbeMaxConcurrency]: '1',
     [SettingKey.ProbeDailyMaxRequests]: '20',
-    [SettingKey.ProbePrompt]: '只回复 OK',
+    [SettingKey.ProbePrompt]: '鍙洖澶?OK',
     [SettingKey.ProbeMaxTokens]: '8',
     [SettingKey.ProbeTemperature]: '0',
     [SettingKey.ProbeJitterRatio]: '0.25',
     [SettingKey.ProbeStreamEnabled]: 'false',
 };
 
-function SettingRow({
+function FieldHint({ hint }: { hint: string }) {
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        type="button"
+                        className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                        <HelpCircle className="size-3.5" />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent>{hint}</TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+}
+
+function SectionShell({
+    icon: Icon,
+    title,
+    subtitle,
+    action,
+    children,
+}: {
+    icon: LucideIcon;
+    title: string;
+    subtitle: string;
+    action?: ReactNode;
+    children: ReactNode;
+}) {
+    return (
+        <section className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-border/60 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary">
+                        <Icon className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="text-sm font-semibold text-foreground">{title}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">{subtitle}</div>
+                    </div>
+                </div>
+                {action ? <div className="shrink-0">{action}</div> : null}
+            </div>
+            <div className="mt-4 space-y-4">{children}</div>
+        </section>
+    );
+}
+
+function FieldCard({
+    field,
+    value,
+    onChange,
+    onCommit,
+}: {
+    field: FieldConfig;
+    value: string;
+    onChange: (value: string) => void;
+    onCommit: () => void;
+}) {
+    const Icon = field.icon;
+
+    return (
+        <label className="rounded-lg border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/20 hover:bg-background/70">
+            <div className="flex items-start gap-2">
+                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-card text-muted-foreground">
+                    <Icon className="size-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                        <span className="truncate text-sm font-medium text-foreground">{field.label}</span>
+                        <FieldHint hint={field.hint} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{field.hint}</div>
+                </div>
+            </div>
+            <Input
+                type={field.inputMode === 'text' ? 'text' : 'number'}
+                min={field.min}
+                max={field.max}
+                step={field.step}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                onBlur={onCommit}
+                className="mt-3 h-9 rounded-lg"
+            />
+        </label>
+    );
+}
+
+function SwitchCard({
     icon: Icon,
     label,
     hint,
+    checked,
+    onCheckedChange,
+}: {
+    icon: LucideIcon;
+    label: string;
+    hint: string;
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+}) {
+    return (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/40 px-3 py-3 transition-colors hover:border-primary/20 hover:bg-background/70">
+            <div className="flex min-w-0 items-start gap-2">
+                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-card text-muted-foreground">
+                    <Icon className="size-3.5" />
+                </div>
+                <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                        <span className="truncate text-sm font-medium text-foreground">{label}</span>
+                        <FieldHint hint={hint} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{hint}</div>
+                </div>
+            </div>
+            <Switch checked={checked} onCheckedChange={onCheckedChange} />
+        </div>
+    );
+}
+
+function SelectCard({
+    icon: Icon,
+    label,
+    hint,
+    value,
+    onValueChange,
     children,
 }: {
     icon: LucideIcon;
     label: string;
-    hint?: string;
+    hint: string;
+    value: string;
+    onValueChange: (value: string) => void;
     children: ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="flex min-w-0 items-center gap-3">
-                <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 text-sm font-medium">{label}</span>
-                {hint && (
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <HelpCircle className="size-4 shrink-0 cursor-help text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {hint}
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                )}
+        <div className="rounded-lg border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/20 hover:bg-background/70">
+            <div className="flex items-start gap-2">
+                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-card text-muted-foreground">
+                    <Icon className="size-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                        <span className="truncate text-sm font-medium text-foreground">{label}</span>
+                        <FieldHint hint={hint} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{hint}</div>
+                </div>
             </div>
-            {children}
+            <Select value={value} onValueChange={onValueChange}>
+                <SelectTrigger className="mt-3 h-9 rounded-lg">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>{children}</SelectContent>
+            </Select>
         </div>
     );
 }
@@ -295,51 +439,49 @@ export function SettingHealthProbe() {
 
         const nextValues = { ...defaultValues };
         for (const key of Object.keys(defaultValues)) {
-            const setting = settings.find(s => s.key === key);
-            if (setting) {
-                nextValues[key] = setting.value;
-            }
+            const setting = settings.find((item) => item.key === key);
+            if (setting) nextValues[key] = setting.value;
         }
         queueMicrotask(() => setValues(nextValues));
         initialValues.current = nextValues;
 
-        const healthScore = settings.find(s => s.key === SettingKey.HealthScoreEnabled);
-        const nextHealthScoreEnabled = healthScore?.value === 'true';
+        const nextHealthScoreEnabled = settings.find((item) => item.key === SettingKey.HealthScoreEnabled)?.value === 'true';
+        const nextChannelConcurrencyEnabled = settings.find((item) => item.key === SettingKey.ChannelConcurrencyEnabled)?.value === 'true';
+        const nextProbeEnabled = settings.find((item) => item.key === SettingKey.ProbeEnabled)?.value === 'true';
+
         queueMicrotask(() => setHealthScoreEnabled(nextHealthScoreEnabled));
-        initialHealthScoreEnabled.current = nextHealthScoreEnabled;
-
-        const channelConcurrency = settings.find(s => s.key === SettingKey.ChannelConcurrencyEnabled);
-        const nextChannelConcurrencyEnabled = channelConcurrency?.value === 'true';
         queueMicrotask(() => setChannelConcurrencyEnabled(nextChannelConcurrencyEnabled));
-        initialChannelConcurrencyEnabled.current = nextChannelConcurrencyEnabled;
-
-        const probe = settings.find(s => s.key === SettingKey.ProbeEnabled);
-        const nextProbeEnabled = probe?.value === 'true';
         queueMicrotask(() => setProbeEnabled(nextProbeEnabled));
+
+        initialHealthScoreEnabled.current = nextHealthScoreEnabled;
+        initialChannelConcurrencyEnabled.current = nextChannelConcurrencyEnabled;
         initialProbeEnabled.current = nextProbeEnabled;
     }, [settings]);
 
     const handleValueChange = (key: string, value: string) => {
-        setValues(prev => ({ ...prev, [key]: value }));
+        setValues((previous) => ({ ...previous, [key]: value }));
     };
 
     const handleValueSave = (key: string, value: string) => {
         const initialValue = initialValues.current[key] ?? '';
         if (value === initialValue) return;
 
-        setSetting.mutate({ key, value }, {
-            onSuccess: () => {
-                toast.success(t('saved'));
-                initialValues.current = { ...initialValues.current, [key]: value };
+        setSetting.mutate(
+            { key, value },
+            {
+                onSuccess: () => {
+                    toast.success(t('saved'));
+                    initialValues.current = { ...initialValues.current, [key]: value };
+                },
+                onError: () => {
+                    setValues((previous) => ({ ...previous, [key]: initialValue }));
+                },
             },
-            onError: () => {
-                setValues(prev => ({ ...prev, [key]: initialValue }));
-            },
-        });
+        );
     };
 
     const handleSelectSave = (key: string, value: string) => {
-        setValues(prev => ({ ...prev, [key]: value }));
+        setValues((previous) => ({ ...previous, [key]: value }));
         handleValueSave(key, value);
     };
 
@@ -347,16 +489,20 @@ export function SettingHealthProbe() {
         const value = checked ? 'true' : 'false';
         const initialValue = initialValues.current[key] ?? 'false';
         if (value === initialValue) return;
-        setValues(prev => ({ ...prev, [key]: value }));
-        setSetting.mutate({ key, value }, {
-            onSuccess: () => {
-                toast.success(t('saved'));
-                initialValues.current = { ...initialValues.current, [key]: value };
+
+        setValues((previous) => ({ ...previous, [key]: value }));
+        setSetting.mutate(
+            { key, value },
+            {
+                onSuccess: () => {
+                    toast.success(t('saved'));
+                    initialValues.current = { ...initialValues.current, [key]: value };
+                },
+                onError: () => {
+                    setValues((previous) => ({ ...previous, [key]: initialValue }));
+                },
             },
-            onError: () => {
-                setValues(prev => ({ ...prev, [key]: initialValue }));
-            },
-        });
+        );
     };
 
     const handleHealthScoreChange = (checked: boolean) => {
@@ -369,7 +515,7 @@ export function SettingHealthProbe() {
                     initialHealthScoreEnabled.current = checked;
                 },
                 onError: () => setHealthScoreEnabled(initialHealthScoreEnabled.current),
-            }
+            },
         );
     };
 
@@ -383,7 +529,7 @@ export function SettingHealthProbe() {
                     initialChannelConcurrencyEnabled.current = checked;
                 },
                 onError: () => setChannelConcurrencyEnabled(initialChannelConcurrencyEnabled.current),
-            }
+            },
         );
     };
 
@@ -397,32 +543,29 @@ export function SettingHealthProbe() {
                     initialProbeEnabled.current = checked;
                 },
                 onError: () => setProbeEnabled(initialProbeEnabled.current),
-            }
+            },
         );
     };
 
-    const renderField = (field: FieldConfig) => (
-        <SettingRow key={field.key} icon={field.icon} label={field.label} hint={field.hint}>
-            <Input
-                type={field.inputMode === 'text' ? 'text' : 'number'}
-                min={field.min}
-                max={field.max}
-                step={field.step}
-                value={values[field.key] ?? ''}
-                onChange={(e) => handleValueChange(field.key, e.target.value)}
-                onBlur={() => handleValueSave(field.key, values[field.key] ?? '')}
-                className="w-full rounded-xl sm:w-48"
-            />
-        </SettingRow>
+    const renderFieldCard = (field: FieldConfig) => (
+        <FieldCard
+            key={field.key}
+            field={field}
+            value={values[field.key] ?? ''}
+            onChange={(value) => handleValueChange(field.key, value)}
+            onCommit={() => handleValueSave(field.key, values[field.key] ?? '')}
+        />
     );
 
-    const renderSwitchField = (field: SwitchConfig) => (
-        <SettingRow key={field.key} icon={field.icon} label={field.label} hint={field.hint}>
-            <Switch
-                checked={(values[field.key] ?? 'false') === 'true'}
-                onCheckedChange={(checked) => handleSwitchSave(field.key, checked)}
-            />
-        </SettingRow>
+    const renderSwitchCard = (field: SwitchConfig) => (
+        <SwitchCard
+            key={field.key}
+            icon={field.icon}
+            label={field.label}
+            hint={field.hint}
+            checked={(values[field.key] ?? 'false') === 'true'}
+            onCheckedChange={(checked) => handleSwitchSave(field.key, checked)}
+        />
     );
 
     const formatSeconds = (seconds: number) => {
@@ -436,97 +579,76 @@ export function SettingHealthProbe() {
     const scopeLabel = (scope: string) => t(`healthProbe.cooldown.scopes.${scope}`);
     const cooldownSummary = {
         total: cooldownPolicies.length,
-        retryAfter: cooldownPolicies.filter(policy => policy.uses_retry_after).length,
-        modelScoped: cooldownPolicies.filter(policy => policy.model_scoped).length,
+        retryAfter: cooldownPolicies.filter((policy) => policy.uses_retry_after).length,
+        modelScoped: cooldownPolicies.filter((policy) => policy.model_scoped).length,
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
-                <HeartPulse className="h-5 w-5" />
-                {t('healthProbe.title')}
-            </h2>
+        <div className="space-y-4">
+            <SectionShell
+                icon={HeartPulse}
+                title={t('healthProbe.health.title')}
+                subtitle={t('healthProbe.health.subtitle')}
+                action={<Switch checked={healthScoreEnabled} onCheckedChange={handleHealthScoreChange} />}
+            >
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {healthFields.map(renderFieldCard)}
+                </div>
+            </SectionShell>
 
-            <div className="space-y-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <Gauge className="h-5 w-5 shrink-0 text-muted-foreground" />
-                        <div className="min-w-0">
-                            <div className="text-sm font-medium">{t('healthProbe.health.title')}</div>
-                            <div className="text-xs text-muted-foreground">{t('healthProbe.health.subtitle')}</div>
-                        </div>
-                    </div>
-                    <Switch checked={healthScoreEnabled} onCheckedChange={handleHealthScoreChange} />
+            <SectionShell
+                icon={Network}
+                title={t('healthProbe.channelConcurrency.title')}
+                subtitle={t('healthProbe.channelConcurrency.subtitle')}
+                action={<Switch checked={channelConcurrencyEnabled} onCheckedChange={handleChannelConcurrencyChange} />}
+            >
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                    <SelectCard
+                        icon={Network}
+                        label={t('healthProbe.channelConcurrency.mode.label')}
+                        hint={t('healthProbe.channelConcurrency.mode.hint')}
+                        value={values[SettingKey.ChannelConcurrencyMode] ?? 'local'}
+                        onValueChange={(value) => handleSelectSave(SettingKey.ChannelConcurrencyMode, value)}
+                    >
+                        <SelectItem value="local">{t('healthProbe.channelConcurrency.mode.local')}</SelectItem>
+                        <SelectItem value="database">{t('healthProbe.channelConcurrency.mode.database')}</SelectItem>
+                    </SelectCard>
+                    {channelConcurrencyFields.map(renderFieldCard)}
                 </div>
-                <div className="space-y-4">
-                    {healthFields.map(renderField)}
-                </div>
-            </div>
+            </SectionShell>
 
-            <div className="border-t border-border pt-5 space-y-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <Network className="h-5 w-5 shrink-0 text-muted-foreground" />
-                        <div className="min-w-0">
-                            <div className="text-sm font-medium">{t('healthProbe.channelConcurrency.title')}</div>
-                            <div className="text-xs text-muted-foreground">{t('healthProbe.channelConcurrency.subtitle')}</div>
-                        </div>
-                    </div>
-                    <Switch checked={channelConcurrencyEnabled} onCheckedChange={handleChannelConcurrencyChange} />
-                </div>
-                <div className="space-y-4">
-                    <SettingRow icon={Network} label={t('healthProbe.channelConcurrency.mode.label')} hint={t('healthProbe.channelConcurrency.mode.hint')}>
-                        <Select
-                            value={values[SettingKey.ChannelConcurrencyMode] ?? 'local'}
-                            onValueChange={(value) => handleSelectSave(SettingKey.ChannelConcurrencyMode, value)}
-                        >
-                            <SelectTrigger className="w-full rounded-xl sm:w-48">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="local">{t('healthProbe.channelConcurrency.mode.local')}</SelectItem>
-                                <SelectItem value="database">{t('healthProbe.channelConcurrency.mode.database')}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </SettingRow>
-                    {channelConcurrencyFields.map(renderField)}
-                </div>
-            </div>
-
-            <div className="border-t border-border pt-5 space-y-4">
-                <div className="flex min-w-0 items-center gap-3">
-                    <ShieldAlert className="h-5 w-5 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                        <div className="text-sm font-medium">{t('healthProbe.cooldown.title')}</div>
-                        <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.subtitle')}</div>
-                    </div>
-                </div>
+            <SectionShell
+                icon={ShieldAlert}
+                title={t('healthProbe.cooldown.title')}
+                subtitle={t('healthProbe.cooldown.subtitle')}
+            >
                 <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">{t('healthProbe.cooldown.summary.total', { value: cooldownSummary.total })}</Badge>
                     <Badge variant="outline">{t('healthProbe.cooldown.summary.retryAfter', { value: cooldownSummary.retryAfter })}</Badge>
                     <Badge variant="outline">{t('healthProbe.cooldown.summary.modelScoped', { value: cooldownSummary.modelScoped })}</Badge>
                 </div>
-                <div className="rounded-xl border border-border">
-                    <Accordion type="multiple" className="divide-y divide-border">
-                        {cooldownPolicies.map(policy => (
+
+                <div className="rounded-lg border border-border/70 bg-background/30">
+                    <Accordion type="multiple" className="divide-y divide-border/70">
+                        {cooldownPolicies.map((policy) => (
                             <AccordionItem key={policy.reason} value={policy.reason} className="border-none">
-                                <AccordionTrigger className="px-3 py-3 text-left hover:no-underline">
-                                    <div className="flex min-w-0 flex-1 flex-col gap-3 md:flex-row md:items-center">
-                                        <div className="min-w-0 md:flex-1">
+                                <AccordionTrigger className="px-3 py-3 text-left hover:no-underline hover:bg-muted/30">
+                                    <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-center">
+                                        <div className="min-w-0 lg:flex-1">
                                             <div className="font-medium text-card-foreground">{reasonLabel(policy.reason)}</div>
                                             <div className="mt-1 font-mono text-[11px] text-muted-foreground">{policy.reason}</div>
-                                            <div className="mt-2 flex flex-wrap gap-1">
-                                                {policy.scopes.map(scope => (
-                                                    <Badge key={`${policy.reason}-${scope}`} variant="outline">
-                                                        {scopeLabel(scope)}
-                                                    </Badge>
-                                                ))}
-                                            </div>
                                         </div>
-                                        <div className="flex flex-col gap-1 text-xs text-muted-foreground md:min-w-[14rem] md:items-end">
+                                        <div className="flex flex-wrap gap-1">
+                                            {policy.scopes.map((scope) => (
+                                                <Badge key={`${policy.reason}-${scope}`} variant="outline">
+                                                    {scopeLabel(scope)}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                        <div className="grid gap-1 text-xs text-muted-foreground lg:min-w-[13rem] lg:justify-items-end">
                                             <div>{formatSeconds(policy.base_seconds)}</div>
                                             <div>{t('healthProbe.cooldown.max', { value: formatSeconds(policy.max_seconds) })}</div>
-                                            <div className="flex flex-wrap gap-1 md:justify-end">
+                                            <div className="flex flex-wrap gap-1 lg:justify-end">
                                                 {policy.uses_retry_after ? (
                                                     <Badge variant="secondary">{t('healthProbe.cooldown.retryAfter')}</Badge>
                                                 ) : null}
@@ -537,24 +659,24 @@ export function SettingHealthProbe() {
                                         </div>
                                     </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="border-t border-border/70 px-3 pb-3 pt-3">
-                                    <div className="grid gap-3 text-sm md:grid-cols-3">
-                                        <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2">
+                                <AccordionContent className="border-t border-border/60 px-3 pb-3 pt-3">
+                                    <div className="grid gap-3 md:grid-cols-3">
+                                        <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2">
                                             <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.columns.scope')}</div>
                                             <div className="mt-1 font-medium text-foreground">
-                                                {policy.scopes.map(scope => scopeLabel(scope)).join(' / ')}
+                                                {policy.scopes.map((scope) => scopeLabel(scope)).join(' / ')}
                                             </div>
                                         </div>
-                                        <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2">
+                                        <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2">
                                             <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.columns.backoff')}</div>
                                             <div className="mt-1 font-medium text-foreground">
-                                                {policy.uses_retry_after ? t('healthProbe.cooldown.retryAfter') : '—'}
+                                                {policy.uses_retry_after ? t('healthProbe.cooldown.retryAfter') : '-'}
                                             </div>
                                             <div className="mt-1 text-xs text-muted-foreground">
-                                                {policy.exponential_backoff ? t('healthProbe.cooldown.exponential') : '—'}
+                                                {policy.exponential_backoff ? t('healthProbe.cooldown.exponential') : '-'}
                                             </div>
                                         </div>
-                                        <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2">
+                                        <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2">
                                             <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.columns.lifecycle')}</div>
                                             <div className="mt-1 font-medium text-foreground">
                                                 {policy.model_scoped ? t('healthProbe.cooldown.modelScoped') : t('healthProbe.cooldown.notModelScoped')}
@@ -569,39 +691,34 @@ export function SettingHealthProbe() {
                         ))}
                     </Accordion>
                 </div>
+
                 <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.note')}</div>
-            </div>
+            </SectionShell>
 
-            <div className="border-t border-border pt-5 space-y-4">
-                <div className="flex min-w-0 items-center gap-3">
-                    <Timer className="h-5 w-5 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                        <div className="text-sm font-medium">{t('healthProbe.stream.title')}</div>
-                        <div className="text-xs text-muted-foreground">{t('healthProbe.stream.subtitle')}</div>
-                    </div>
+            <SectionShell
+                icon={Timer}
+                title={t('healthProbe.stream.title')}
+                subtitle={t('healthProbe.stream.subtitle')}
+            >
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                    {streamFields.map(renderFieldCard)}
+                    {streamSwitchFields.map(renderSwitchCard)}
                 </div>
-                <div className="space-y-4">
-                    {streamFields.map(renderField)}
-                    {streamSwitchFields.map(renderSwitchField)}
-                </div>
-            </div>
+            </SectionShell>
 
-            <div className="border-t border-border pt-5 space-y-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <Activity className="h-5 w-5 shrink-0 text-muted-foreground" />
-                        <div className="min-w-0">
-                            <div className="text-sm font-medium">{t('healthProbe.probe.title')}</div>
-                            <div className="text-xs text-muted-foreground">{t('healthProbe.probe.subtitle')}</div>
-                        </div>
-                    </div>
-                    <Switch checked={probeEnabled} onCheckedChange={handleProbeChange} />
+            <SectionShell
+                icon={Activity}
+                title={t('healthProbe.probe.title')}
+                subtitle={t('healthProbe.probe.subtitle')}
+                action={<Switch checked={probeEnabled} onCheckedChange={handleProbeChange} />}
+            >
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    {probeFields.map(renderFieldCard)}
                 </div>
-                <div className="space-y-4">
-                    {probeFields.map(renderField)}
-                    {probeSwitchFields.map(renderSwitchField)}
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {probeSwitchFields.map(renderSwitchCard)}
                 </div>
-            </div>
+            </SectionShell>
         </div>
     );
 }

@@ -123,6 +123,25 @@ export function AppContainer() {
                     );
                     break;
                 }
+                case 'modelHealth': {
+                    prefetches.push(
+                        queryClient.prefetchQuery({
+                            queryKey: ['channels', 'list'],
+                            queryFn: async () => apiClient.get('/api/v1/channel/list'),
+                        })
+                    );
+                    prefetches.push(
+                        queryClient.prefetchQuery({
+                            queryKey: ['channels', 'model-health', '24h', null, '', 'all', 'all'],
+                            queryFn: async () => apiClient.get('/api/v1/channel/model-health', {
+                                time_range: '24h',
+                                source: 'all',
+                                quota_status: 'all',
+                            }),
+                        })
+                    );
+                    break;
+                }
                 case 'group': {
                     prefetches.push(
                         queryClient.prefetchQuery({
