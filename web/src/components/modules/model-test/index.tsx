@@ -35,7 +35,7 @@ type ActiveRunPlan = {
 
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
-const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(16rem,1.6fr) minmax(11rem,0.95fr) minmax(10rem,0.9fr) minmax(12rem,1.1fr) minmax(18rem,1.6fr) 7rem';
+const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(14rem,1.45fr) minmax(10rem,0.9fr) minmax(9rem,0.85fr) minmax(11rem,1fr) minmax(14rem,1.35fr) 6rem';
 const MODEL_TEST_EXPORT_VERSION = 1;
 const MODEL_TEST_RESULT_FILTERS: ModelTestResultFilter[] = ['all', 'success', 'failed', 'running', 'queued', 'idle'];
 
@@ -506,8 +506,8 @@ export function ModelTest() {
         <div className="flex h-full min-h-0 flex-col gap-3">
             <div className="shrink-0 rounded-xl border border-border bg-card p-3.5 shadow-sm">
                 <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                        <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
+                        <div className="flex flex-wrap items-center gap-2 2xl:justify-end">
                             <button
                                 type="button"
                                 onClick={() => setMode('channel')}
@@ -561,9 +561,9 @@ export function ModelTest() {
                         </div>
                     </div>
 
-                    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(16rem,0.8fr)]">
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
-                            <div className="grid gap-3 lg:grid-cols-[minmax(12rem,18rem)_minmax(0,1fr)]">
+                    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.95fr)_minmax(15rem,0.8fr)]">
+                        <div className="rounded-lg border border-border/70 bg-background/50 p-3">
+                            <div className="grid gap-3 lg:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)]">
                                 {mode === 'channel' ? (
                                     <label className="grid gap-1">
                                         <span className="text-xs font-medium text-muted-foreground">{t('channel')}</span>
@@ -605,7 +605,7 @@ export function ModelTest() {
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                        <div className="rounded-lg border border-border/70 bg-background/50 p-3">
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <label className="grid gap-1">
                                     <span className="text-xs font-medium text-muted-foreground">{t('maxTokens')}</span>
@@ -650,27 +650,27 @@ export function ModelTest() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:col-span-2 2xl:col-span-1 2xl:grid-cols-2">
+                            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
                                 <div className="text-xs text-muted-foreground">{t('stats.visible')}</div>
                                 <div className="mt-1 text-lg font-semibold tabular-nums">{rows.length}</div>
                             </div>
-                            <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+                            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
                                 <div className="text-xs text-muted-foreground">{t('stats.selected')}</div>
                                 <div className="mt-1 text-lg font-semibold tabular-nums">{selectedRows.length}</div>
                             </div>
-                            <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+                            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
                                 <div className="text-xs text-muted-foreground">{t('stats.running')}</div>
                                 <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.running}</div>
                             </div>
-                            <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+                            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
                                 <div className="text-xs text-muted-foreground">{t('stats.queued')}</div>
                                 <div className="mt-1 text-lg font-semibold tabular-nums">{runStats.queued}</div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_10rem]">
+                    <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_12rem]">
                         <div className="relative min-w-0">
                             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
@@ -725,7 +725,7 @@ export function ModelTest() {
 
             <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                 <div className="h-full overflow-auto">
-                    <div className="flex h-full min-w-[58rem] flex-col">
+                    <div className="flex h-full min-w-[52rem] flex-col">
                         <div
                             className="sticky top-0 z-10 grid border-b border-border bg-muted/90 text-left text-xs uppercase text-muted-foreground backdrop-blur"
                             style={{ gridTemplateColumns: MODEL_TEST_GRID_COLUMNS }}
@@ -753,7 +753,7 @@ export function ModelTest() {
                                     items={rows}
                                     layout="list"
                                     columns={{ default: 1 }}
-                                    estimateItemHeight={110}
+                                    estimateItemHeight={104}
                                     gap={0}
                                     overscan={12}
                                     getItemKey={(row) => row.key}
@@ -845,7 +845,7 @@ export function ModelTest() {
                                                     <div>{t('table.cost')}: {formatCost(result?.estimated_cost)}</div>
                                                 </div>
                                                 <div className="min-w-0 px-3 py-3">
-                                                    <div className="line-clamp-4 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
+                                                    <div className="line-clamp-3 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
                                                         {runStatus === 'queued' ? t('queued') : isRunning ? t('running') : result?.response_text || result?.error_message || '-'}
                                                     </div>
                                                 </div>

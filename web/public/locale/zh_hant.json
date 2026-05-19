@@ -117,7 +117,12 @@
             "failureRequests": "失敗請求",
             "failureSub": "近 24 小時 / 總計 {total}",
             "failoverRequests": "故障轉移",
-            "failoverSub": "占比 {rate}"
+            "failoverSub": "佔比 {rate}",
+            "comparePrevWeek": "近 7 天 / 前 7 天",
+            "weekTotal": "近 7 天",
+            "monthTotal": "近 30 天",
+            "avgLatency": "平均延遲",
+            "latencySub": "TTFB {ttfb}"
         },
         "sections": {
             "workbench": {

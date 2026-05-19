@@ -117,7 +117,12 @@
             "failureRequests": "Failed Requests",
             "failureSub": "24h / total {total}",
             "failoverRequests": "Failover",
-            "failoverSub": "Rate {rate}"
+            "failoverSub": "Rate {rate}",
+            "comparePrevWeek": "Last 7d / previous 7d",
+            "weekTotal": "Last 7d",
+            "monthTotal": "Last 30d",
+            "avgLatency": "Avg latency",
+            "latencySub": "TTFB {ttfb}"
         },
         "sections": {
             "workbench": {
