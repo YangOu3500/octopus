@@ -495,7 +495,13 @@
             "lastUpdate": "上次更新",
             "neverUpdated": "从未更新",
             "updateSuccess": "价格更新成功",
-            "updateFailed": "价格更新失败"
+            "updateFailed": "价格更新失败",
+            "syncOrder": {
+                "upstream": "优先同步上游价格",
+                "official": "其次回退官方价格",
+                "manual": "都没有时手动设置"
+            },
+            "syncHint": "模型页价格按“上游站点价格 -> 官方价格目录 -> 手动价格”的顺序解析。"
         },
         "llmSync": {
             "title": "渠道同步",
@@ -628,7 +634,7 @@
                 "home": "首页观测",
                 "site": "站点",
                 "channel": "渠道",
-        "modelHealth": "模型健康",
+                "modelHealth": "模型健康",
                 "group": "模型分组",
                 "modelTest": "模型测试",
                 "model": "模型",
@@ -1348,6 +1354,19 @@
             "cacheRead": "缓存读取",
             "cacheWrite": "缓存写入",
             "save": "保存"
+        },
+        "source": {
+            "upstream": "上游同步",
+            "official": "官方目录",
+            "manual": "手动价格",
+            "manual_required": "需要手动设置"
+        },
+        "sourceMeta": {
+            "upstream": "已同步 {accounts} 个账号 / {groups} 个分组",
+            "official": "当前使用官方价格目录回退",
+            "officialWithTime": "当前使用官方价格目录回退 · 刷新于 {time}",
+            "manual": "当前使用已保存的手动价格",
+            "manualRequired": "上游和官方都没有价格，请手动设置。"
         }
     },
     "traces": {

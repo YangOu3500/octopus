@@ -121,7 +121,7 @@ export function GatewayOperationsPanel() {
 
     return (
         <section>
-            <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
+            <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
                 <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2 text-base font-semibold">
@@ -144,7 +144,7 @@ export function GatewayOperationsPanel() {
                         return (
                             <article
                                 key={item.id}
-                                className="cursor-default rounded-xl border bg-background/40 p-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/70 hover:shadow-sm"
+                                className="cursor-default rounded-lg border bg-background/40 p-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/70 hover:shadow-sm"
                             >
                                 <div className="flex items-start gap-2">
                                     <div className="flex size-8 items-center justify-center rounded-lg border bg-card text-primary">

@@ -6,12 +6,14 @@ import { Activity, AlertTriangle, Download, Gauge, LoaderCircle, RefreshCw, Sear
 import { useTranslations } from 'next-intl';
 import { useChannelList, useChannelModelHealth, type ChannelModelHealthRow } from '@/api/endpoints/channel';
 import { toast } from '@/components/common/Toast';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const HEALTH_ROW_GRID_COLUMNS = 'minmax(13rem,1.35fr) minmax(9rem,0.9fr) minmax(10rem,0.95fr) minmax(9rem,0.9fr) minmax(9rem,0.9fr) minmax(14rem,1.1fr)';
 const QUOTA_FILTER_STATUSES = [
@@ -468,6 +470,46 @@ export function ChannelModelHealthPanel() {
             }),
         },
     ];
+    const statusChartData = useMemo(() => ([
+        { label: t('status.active'), count: rows.filter((row) => rowStatus(row) === 'active').length },
+        { label: t('status.cooldown'), count: rows.filter((row) => rowStatus(row) === 'cooldown').length },
+        { label: t('status.failed'), count: rows.filter((row) => rowStatus(row) === 'failed').length },
+        { label: t('status.idle'), count: rows.filter((row) => rowStatus(row) === 'idle').length },
+    ]), [rows, t]);
+    const healthBucketData = useMemo(() => {
+        const buckets = [
+            { label: '80-100', count: 0 },
+            { label: '60-79', count: 0 },
+            { label: '40-59', count: 0 },
+            { label: '0-39', count: 0 },
+        ];
+        rows.forEach((row) => {
+            if (row.health_score >= 80) buckets[0].count += 1;
+            else if (row.health_score >= 60) buckets[1].count += 1;
+            else if (row.health_score >= 40) buckets[2].count += 1;
+            else buckets[3].count += 1;
+        });
+        return buckets;
+    }, [rows]);
+    const riskyRowsChartData = useMemo(() => (
+        [...rows]
+            .filter((row) => row.health_sample_count > 0)
+            .sort((left, right) => left.health_score - right.health_score || right.failure_count - left.failure_count)
+            .slice(0, 6)
+            .map((row) => ({
+                label: `${row.channel_name || `#${row.channel_id}`}`.slice(0, 14),
+                score: Number(row.health_score.toFixed(1)),
+            }))
+    ), [rows]);
+    const blockedReasonChartData = useMemo(() => (
+        topBlockedReasons.map(([reason, count]) => ({
+            label: (reasonLabel(t, reason) || t('quota.unknown')).slice(0, 16),
+            count,
+        }))
+    ), [t, topBlockedReasons]);
+    const statusChartConfig = useMemo(() => ({ count: { label: t('stats.rows') } }), [t]);
+    const healthChartConfig = useMemo(() => ({ count: { label: t('stats.healthScore') } }), [t]);
+    const riskChartConfig = useMemo(() => ({ score: { label: t('stats.healthScore') } }), [t]);
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
@@ -570,6 +612,60 @@ export function ChannelModelHealthPanel() {
                                 </div>
                             );
                         })}
+                    </div>
+
+                    <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-4">
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3 2xl:col-span-1">
+                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.healthView')}</div>
+                            <ChartContainer config={statusChartConfig} className="h-48 w-full">
+                                <BarChart data={statusChartData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-1)" />
+                                </BarChart>
+                            </ChartContainer>
+                        </div>
+
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3 2xl:col-span-1">
+                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.worstHealth')}</div>
+                            <ChartContainer config={healthChartConfig} className="h-48 w-full">
+                                <BarChart data={healthBucketData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-3)" />
+                                </BarChart>
+                            </ChartContainer>
+                        </div>
+
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3 2xl:col-span-1">
+                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.topBlocked')}</div>
+                            <ChartContainer config={statusChartConfig} className="h-48 w-full">
+                                <BarChart data={blockedReasonChartData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-5)" />
+                                </BarChart>
+                            </ChartContainer>
+                        </div>
+
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3 2xl:col-span-1">
+                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.topLoaded')}</div>
+                            <ChartContainer config={riskChartConfig} className="h-48 w-full">
+                                <BarChart data={riskyRowsChartData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                    <YAxis tickLine={false} axisLine={false} domain={[0, 100]} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="score" radius={[6, 6, 0, 0]} fill="var(--chart-2)" />
+                                </BarChart>
+                            </ChartContainer>
+                        </div>
                     </div>
 
                     <div className="grid gap-3 xl:grid-cols-[1.15fr_1fr_1fr]">
@@ -800,6 +896,19 @@ export function ChannelModelHealthPanel() {
                                                 <div className="px-3 py-3 tabular-nums">
                                                     <div className={cn('text-base font-semibold', healthTone(row.health_score))}>
                                                         {row.health_score.toFixed(1)}
+                                                    </div>
+                                                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted/80">
+                                                        <div
+                                                            className={cn(
+                                                                'h-full rounded-full',
+                                                                row.health_score >= 80
+                                                                    ? 'bg-emerald-500'
+                                                                    : row.health_score >= 50
+                                                                        ? 'bg-amber-500'
+                                                                        : 'bg-destructive'
+                                                            )}
+                                                            style={{ width: `${Math.max(6, Math.min(100, row.health_score))}%` }}
+                                                        />
                                                     </div>
                                                     <div className="text-xs text-muted-foreground">
                                                         {row.health_sample_count ? t('healthSamples', {

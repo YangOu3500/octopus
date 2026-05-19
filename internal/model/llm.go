@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type LLMPrice struct {
 	Input      float64 `json:"input"`
 	Output     float64 `json:"output"`
@@ -10,6 +12,15 @@ type LLMPrice struct {
 type LLMInfo struct {
 	Name string `json:"name" gorm:"primaryKey;not null"`
 	LLMPrice
+	ResolvedSource       string     `json:"resolved_source,omitempty" gorm:"-"`
+	ManualConfigured     bool       `json:"manual_configured,omitempty" gorm:"-"`
+	UpstreamSiteAccounts int        `json:"upstream_site_accounts,omitempty" gorm:"-"`
+	UpstreamGroups       int        `json:"upstream_groups,omitempty" gorm:"-"`
+	ResolvedUpdatedAt    *time.Time `json:"resolved_updated_at,omitempty" gorm:"-"`
+}
+
+func (info LLMInfo) HasConfiguredPrice() bool {
+	return info.Input > 0 || info.Output > 0 || info.CacheRead > 0 || info.CacheWrite > 0
 }
 
 type LLMChannel struct {

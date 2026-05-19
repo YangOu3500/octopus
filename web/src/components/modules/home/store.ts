@@ -28,7 +28,7 @@ export const useHomeViewStore = create<HomeViewState>()(
         }),
         {
             name: 'home-view-options-storage',
-            version: 2,
+            version: 3,
             storage: createJSONStorage(() => localStorage),
             migrate: (persistedState) => {
                 const state = (persistedState ?? {}) as Partial<HomeViewState>

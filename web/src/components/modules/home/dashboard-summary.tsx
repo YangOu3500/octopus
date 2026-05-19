@@ -1,8 +1,7 @@
 'use client';
 
-import { AlertTriangle, BarChart3, Clock3, Gauge, GitBranch, Layers3, Sparkles, Zap, type LucideIcon } from 'lucide-react';
-import { useMemo } from 'react';
-import type { ReactNode } from 'react';
+import { AlertTriangle, BarChart3, Clock3, Gauge, GitBranch, Layers3, Zap, type LucideIcon } from 'lucide-react';
+import { useMemo, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { useStatsDaily, useStatsObservability, useStatsToday, useStatsTotal } from '@/api/endpoints/stats';
 import { Badge } from '@/components/ui/badge';
@@ -35,96 +34,77 @@ function growthDelta(current: number, previous: number) {
     return ((current - previous) / previous) * 100;
 }
 
-function PrimaryCard({
+function SummaryCard({
     icon: Icon,
     title,
     value,
+    detail,
     badge,
-    footer,
-    children,
-    accent = false,
+    accent,
+    extra,
 }: {
     icon: LucideIcon;
     title: string;
     value: string;
+    detail: string;
     badge?: ReactNode;
-    footer?: ReactNode;
-    children?: ReactNode;
     accent?: boolean;
+    extra?: ReactNode;
 }) {
     return (
         <article
             className={cn(
-                'group relative overflow-hidden rounded-lg border px-5 py-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg',
+                'rounded-xl border px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md',
                 accent
-                    ? 'border-primary/70 bg-primary text-primary-foreground'
-                    : 'border-border/70 bg-card/95 text-card-foreground hover:border-primary/20',
+                    ? 'border-primary/20 bg-primary/10 text-foreground'
+                    : 'border-border/70 bg-card'
             )}
         >
             <div className="flex items-start justify-between gap-3">
-                <div
-                    className={cn(
-                        'flex size-9 items-center justify-center rounded-md border',
-                        accent
-                            ? 'border-primary-foreground/15 bg-primary-foreground/10 text-primary-foreground'
-                            : 'border-primary/15 bg-primary/10 text-primary',
-                    )}
-                >
-                    <Icon className="size-3.5" />
+                <div className={cn(
+                    'flex size-9 items-center justify-center rounded-lg border',
+                    accent ? 'border-primary/20 bg-background text-primary' : 'border-border/70 bg-background/70 text-primary'
+                )}>
+                    <Icon className="size-4" />
                 </div>
                 {badge ? <div className="shrink-0">{badge}</div> : null}
             </div>
-
-            <div className="mt-4 text-sm font-medium opacity-90">{title}</div>
-            <div className="mt-2 text-[2.05rem] font-semibold leading-none tabular-nums tracking-normal sm:text-[2.15rem]">{value}</div>
-
-            {children ? <div className="mt-3">{children}</div> : null}
-            {footer ? (
-                <div
-                    className={cn(
-                        'mt-4 border-t pt-3 text-xs',
-                        accent ? 'border-primary-foreground/12 text-primary-foreground/75' : 'border-border/70 text-muted-foreground',
-                    )}
-                >
-                    {footer}
-                </div>
-            ) : null}
-
-            {!accent ? (
-                <div className="pointer-events-none absolute inset-x-6 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-            ) : (
-                <div className="pointer-events-none absolute right-5 top-5 size-3 rounded-full bg-primary-foreground/15" />
-            )}
+            <div className="mt-4 text-xs text-muted-foreground">{title}</div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
+            {extra ? <div className="mt-3">{extra}</div> : null}
         </article>
     );
 }
 
-function SecondaryCard({
+function InsightTile({
     icon: Icon,
-    title,
+    label,
     value,
-    sub,
+    detail,
     tone = 'default',
 }: {
     icon: LucideIcon;
-    title: string;
+    label: string;
     value: string;
-    sub: string;
+    detail: string;
     tone?: 'default' | 'warning';
 }) {
     return (
         <div
             className={cn(
-                'rounded-lg border bg-card/95 px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md',
-                tone === 'warning' ? 'border-amber-500/25 bg-amber-500/5 hover:border-amber-500/35' : 'border-border/70 hover:border-primary/20',
+                'rounded-xl border px-3 py-2.5 transition-all duration-200 hover:-translate-y-px hover:shadow-sm',
+                tone === 'warning'
+                    ? 'border-amber-500/25 bg-amber-500/5'
+                    : 'border-border/70 bg-background/40'
             )}
         >
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Icon className={cn('size-3.5', tone === 'warning' && 'text-amber-600 dark:text-amber-400')} />
-                <span>{title}</span>
+                <Icon className="size-3.5" />
+                <span>{label}</span>
             </div>
-            <div className="mt-2 text-xl font-semibold tabular-nums">{value}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{sub}</div>
+            <div className="mt-2 text-lg font-semibold tabular-nums">{value}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
         </div>
     );
 }
@@ -158,145 +138,128 @@ export function DashboardSummaryCards() {
     const weeklyGrowth = growthDelta(dailyWindows.last7Requests, dailyWindows.previous7Requests);
     const growthPositive = weeklyGrowth >= 0;
 
-    const growthBadge = (
-        <Badge
-            variant="outline"
-            className={cn(
-                'h-7 rounded-full px-2.5 text-xs font-medium',
-                growthPositive
-                    ? 'border-primary/20 bg-primary/10 text-primary'
-                    : 'border-destructive/20 bg-destructive/10 text-destructive',
-            )}
-        >
-            {growthPositive ? '+' : ''}
-            {weeklyGrowth.toFixed(0)}%
-        </Badge>
-    );
-
     return (
         <section className="space-y-3">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-                <PrimaryCard
+                <SummaryCard
                     icon={BarChart3}
                     title={t('totalRequests')}
                     value={`${total?.request_count.formatted.value ?? '0'}${total?.request_count.formatted.unit ?? ''}`}
-                    badge={growthBadge}
-                    footer={
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span>{t('comparePrevWeek')}</span>
-                            <span className="font-medium text-foreground">{compactCount(dailyWindows.last7Requests)}</span>
-                            <span>/</span>
-                            <span>{compactCount(dailyWindows.previous7Requests)}</span>
+                    detail={t('comparePrevWeek')}
+                    badge={(
+                        <Badge
+                            variant="outline"
+                            className={cn(
+                                'rounded-md px-2 text-[11px]',
+                                growthPositive
+                                    ? 'border-primary/20 bg-primary/10 text-primary'
+                                    : 'border-destructive/20 bg-destructive/10 text-destructive',
+                            )}
+                        >
+                            {growthPositive ? '+' : ''}
+                            {weeklyGrowth.toFixed(0)}%
+                        </Badge>
+                    )}
+                    extra={(
+                        <div className="grid grid-cols-2 gap-2 text-xs tabular-nums">
+                            <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                                <div className="text-muted-foreground">{t('todayRequests')}</div>
+                                <div className="mt-1 font-medium text-foreground">{compactCount(todayRequests)}</div>
+                            </div>
+                            <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                                <div className="text-muted-foreground">{t('weekTotal')}</div>
+                                <div className="mt-1 font-medium text-foreground">{compactCount(dailyWindows.last7Requests)}</div>
+                            </div>
                         </div>
-                    }
-                >
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Sparkles className="size-3.5 text-primary" />
-                        <span>{t('totalSub', { failed: failureCount })}</span>
-                    </div>
-                </PrimaryCard>
+                    )}
+                />
 
-                <PrimaryCard
+                <SummaryCard
                     icon={Gauge}
                     title={t('successRate')}
                     value={percent(observability?.success_rate)}
-                    badge={
-                        <Badge variant="outline" className="h-7 rounded-full border-emerald-500/20 bg-emerald-500/10 px-2.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                            {observabilityT('range24h')}
-                        </Badge>
-                    }
-                    footer={
-                        <div className="flex items-center justify-between gap-3">
-                            <span>{t('successSub', { failed: failureCount })}</span>
-                            <span className="font-medium text-foreground">{observability?.success_requests ?? 0}</span>
+                    detail={t('successSub', { failed: failureCount })}
+                    badge={<Badge variant="outline" className="rounded-md px-2 text-[11px]">{observabilityT('range24h')}</Badge>}
+                    extra={(
+                        <div className="space-y-2">
+                            <Progress value={successRateValue} className="h-2 bg-muted/80" />
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{t('failureRequests')}</span>
+                                <span className="font-medium text-foreground">{compactCount(failureCount)}</span>
+                            </div>
                         </div>
-                    }
-                >
-                    <div className="space-y-2">
-                        <Progress value={successRateValue} className="h-2 bg-muted/80" />
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>{t('failureRequests')}</span>
-                            <span className="font-medium text-foreground">{compactCount(failureCount)}</span>
-                        </div>
-                    </div>
-                </PrimaryCard>
+                    )}
+                />
 
-                <PrimaryCard
+                <SummaryCard
                     icon={Layers3}
                     title={t('tokens')}
                     value={compactCount(tokenTotal)}
-                    badge={
-                        <Badge variant="outline" className="h-7 rounded-full px-2.5 text-xs font-medium">
-                            {observabilityT('range24h')}
-                        </Badge>
-                    }
-                    footer={<span>{t('tokenSub', {
+                    detail={t('tokenSub', {
                         input: compactCount(observability?.input_tokens),
                         output: compactCount(observability?.output_tokens),
                         cache: compactCount(observability?.cache_tokens),
-                    })}</span>}
-                >
-                    <div className="grid grid-cols-3 gap-2 text-xs tabular-nums">
-                        <div className="rounded-md border border-border/60 bg-background/50 px-3 py-2">
-                            <div className="text-muted-foreground">{observabilityT('input')}</div>
-                            <div className="mt-1 text-sm font-semibold text-foreground">{compactCount(observability?.input_tokens)}</div>
+                    })}
+                    badge={<Badge variant="outline" className="rounded-md px-2 text-[11px]">{observabilityT('range24h')}</Badge>}
+                    extra={(
+                        <div className="grid grid-cols-3 gap-2 text-xs tabular-nums">
+                            <div className="rounded-lg border border-border/60 bg-background/60 px-2.5 py-2">
+                                <div className="text-muted-foreground">{observabilityT('input')}</div>
+                                <div className="mt-1 font-medium text-foreground">{compactCount(observability?.input_tokens)}</div>
+                            </div>
+                            <div className="rounded-lg border border-border/60 bg-background/60 px-2.5 py-2">
+                                <div className="text-muted-foreground">{observabilityT('output')}</div>
+                                <div className="mt-1 font-medium text-foreground">{compactCount(observability?.output_tokens)}</div>
+                            </div>
+                            <div className="rounded-lg border border-border/60 bg-background/60 px-2.5 py-2">
+                                <div className="text-muted-foreground">{observabilityT('cache')}</div>
+                                <div className="mt-1 font-medium text-foreground">{compactCount(observability?.cache_tokens)}</div>
+                            </div>
                         </div>
-                        <div className="rounded-md border border-border/60 bg-background/50 px-3 py-2">
-                            <div className="text-muted-foreground">{observabilityT('output')}</div>
-                            <div className="mt-1 text-sm font-semibold text-foreground">{compactCount(observability?.output_tokens)}</div>
-                        </div>
-                        <div className="rounded-md border border-border/60 bg-background/50 px-3 py-2">
-                            <div className="text-muted-foreground">{observabilityT('cache')}</div>
-                            <div className="mt-1 text-sm font-semibold text-foreground">{compactCount(observability?.cache_tokens)}</div>
-                        </div>
-                    </div>
-                </PrimaryCard>
+                    )}
+                />
 
-                <PrimaryCard
+                <SummaryCard
                     icon={Zap}
                     title={t('todayRequests')}
                     value={compactCount(todayRequests)}
+                    detail={t('todaySub', { rpm: (observability?.rpm ?? 0).toFixed(2) })}
                     accent
-                    footer={
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <div className="text-primary-foreground/65">{t('weekTotal')}</div>
-                                <div className="mt-1 font-medium text-primary-foreground">{compactCount(dailyWindows.last7Requests)}</div>
+                    extra={(
+                        <div className="grid grid-cols-2 gap-2 text-xs tabular-nums">
+                            <div className="rounded-lg border border-primary/15 bg-background/70 px-3 py-2">
+                                <div className="text-muted-foreground">{t('monthTotal')}</div>
+                                <div className="mt-1 font-medium text-foreground">{compactCount(dailyWindows.last30Requests)}</div>
                             </div>
-                            <div>
-                                <div className="text-primary-foreground/65">{t('monthTotal')}</div>
-                                <div className="mt-1 font-medium text-primary-foreground">{compactCount(dailyWindows.last30Requests)}</div>
+                            <div className="rounded-lg border border-primary/15 bg-background/70 px-3 py-2">
+                                <div className="text-muted-foreground">{observabilityT('range24h')}</div>
+                                <div className="mt-1 font-medium text-foreground">{compactTime(observability?.avg_latency_ms)}</div>
                             </div>
                         </div>
-                    }
-                >
-                    <div className="flex items-center justify-between gap-3 text-xs text-primary-foreground/75">
-                        <span>{t('todaySub', { rpm: (observability?.rpm ?? 0).toFixed(2) })}</span>
-                        <span className="inline-flex size-2.5 rounded-full bg-primary-foreground/25" />
-                    </div>
-                </PrimaryCard>
+                    )}
+                />
             </div>
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <SecondaryCard
+                <InsightTile
                     icon={AlertTriangle}
-                    title={t('failureRequests')}
+                    label={t('failureRequests')}
                     value={compactCount(failureCount)}
-                    sub={t('failureSub', { total: observability?.total_requests ?? 0 })}
+                    detail={t('failureSub', { total: observability?.total_requests ?? 0 })}
                     tone={failureCount > 0 ? 'warning' : 'default'}
                 />
-                <SecondaryCard
+                <InsightTile
                     icon={GitBranch}
-                    title={t('failoverRequests')}
+                    label={t('failoverRequests')}
                     value={compactCount(failoverCount)}
-                    sub={t('failoverSub', { rate: percent(observability?.failover_rate) })}
+                    detail={t('failoverSub', { rate: percent(observability?.failover_rate) })}
                     tone={failoverCount > 0 ? 'warning' : 'default'}
                 />
-                <SecondaryCard
+                <InsightTile
                     icon={Clock3}
-                    title={t('avgLatency')}
+                    label={t('avgLatency')}
                     value={compactTime(observability?.avg_latency_ms)}
-                    sub={t('latencySub', { ttfb: compactTime(observability?.avg_ttfb_ms) })}
+                    detail={t('latencySub', { ttfb: compactTime(observability?.avg_ttfb_ms) })}
                 />
             </div>
         </section>

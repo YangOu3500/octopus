@@ -172,20 +172,20 @@ export function StatsChart() {
     }, [hero.unit]);
 
     return (
-        <section className="rounded-lg bg-card border-card-border border text-card-foreground shadow-sm">
+        <section className="rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm">
             {/* Header: hero + tabs */}
-            <header className="px-5 pt-5 pb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <header className="flex flex-col gap-4 px-4 pb-3 pt-4 md:flex-row md:items-start md:justify-between">
                 <div>
                     <p className="text-xs text-muted-foreground">{t(`headline.${PERIOD_KEY[period]}`)}</p>
-                    <p className="mt-1 text-4xl md:text-5xl font-semibold tabular-nums tracking-tight">
+                    <p className="mt-1 text-3xl font-semibold tabular-nums md:text-4xl">
                         {hero.value === undefined ? (
                             <span className="text-muted-foreground">—</span>
                         ) : (
                             <>
-                                <span className="text-muted-foreground text-2xl mr-1">$</span>
+                                <span className="mr-1 text-xl text-muted-foreground">$</span>
                                 <AnimatedNumber value={hero.value} />
                                 {heroUnitSuffix && (
-                                    <span className="ml-1 text-xl text-muted-foreground">{heroUnitSuffix}</span>
+                                    <span className="ml-1 text-base text-muted-foreground">{heroUnitSuffix}</span>
                                 )}
                             </>
                         )}
@@ -202,7 +202,7 @@ export function StatsChart() {
             </header>
 
             {/* Metrics row */}
-            <div className="mx-5 flex items-baseline gap-6 border-t border-border/60 py-3 text-sm tabular-nums">
+            <div className="mx-4 flex flex-wrap items-baseline gap-4 border-t border-border/60 py-3 text-sm tabular-nums">
                 <StatItem label={t('metrics.requests')} value={metrics.requests} />
                 <span className="h-4 w-px bg-border/60" />
                 <StatItem label={t('metrics.tokens')} value={metrics.tokens} />
@@ -211,7 +211,7 @@ export function StatsChart() {
             </div>
 
             {/* Area chart — only total_cost */}
-            <ChartContainer config={chartConfig} className="h-40 w-full">
+            <ChartContainer config={chartConfig} className="h-36 w-full">
                 <AreaChart accessibilityLayer data={chartData}>
                     <defs>
                         <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">

@@ -495,7 +495,13 @@
             "lastUpdate": "上次更新",
             "neverUpdated": "從未更新",
             "updateSuccess": "價格更新成功",
-            "updateFailed": "價格更新失敗"
+            "updateFailed": "價格更新失敗",
+            "syncOrder": {
+                "upstream": "優先同步上游價格",
+                "official": "其次回退官方價格",
+                "manual": "都沒有時手動設定"
+            },
+            "syncHint": "模型頁價格按「上游站點價格 -> 官方價格目錄 -> 手動價格」的順序解析。"
         },
         "llmSync": {
             "title": "供應源同步",
@@ -628,7 +634,7 @@
                 "home": "首頁觀測",
                 "site": "站點",
                 "channel": "渠道",
-        "modelHealth": "模型健康",
+                "modelHealth": "模型健康",
                 "group": "模型分組",
                 "modelTest": "模型測試",
                 "model": "模型",
@@ -1348,6 +1354,19 @@
             "cacheRead": "快取讀取",
             "cacheWrite": "快取寫入",
             "save": "儲存"
+        },
+        "source": {
+            "upstream": "上游同步",
+            "official": "官方目錄",
+            "manual": "手動價格",
+            "manual_required": "需要手動設定"
+        },
+        "sourceMeta": {
+            "upstream": "已同步 {accounts} 個帳號 / {groups} 個分組",
+            "official": "目前使用官方價格目錄回退",
+            "officialWithTime": "目前使用官方價格目錄回退 · 刷新於 {time}",
+            "manual": "目前使用已儲存的手動價格",
+            "manualRequired": "上游和官方都沒有價格，請手動設定。"
         }
     },
     "traces": {

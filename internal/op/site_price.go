@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bestruirui/octopus/internal/db"
 	"github.com/bestruirui/octopus/internal/model"
@@ -27,6 +28,77 @@ func sitePriceCacheKey(accountID int, groupKey, modelName string) string {
 // SitePriceGet 查询指定 (账号, 分组, 模型) 的价格。
 func SitePriceGet(accountID int, groupKey, modelName string) (model.LLMPrice, bool) {
 	return sitePriceCache.Get(sitePriceCacheKey(accountID, groupKey, modelName))
+}
+
+type SitePriceAggregate struct {
+	Price        model.LLMPrice
+	SiteAccounts int
+	Groups       int
+	UpdatedAt    time.Time
+}
+
+func SitePriceResolveModel(ctx context.Context, modelName string) (SitePriceAggregate, bool, error) {
+	normalizedModel := strings.ToLower(strings.TrimSpace(modelName))
+	if normalizedModel == "" {
+		return SitePriceAggregate{}, false, nil
+	}
+
+	var prices []model.SitePrice
+	if err := db.GetDB().WithContext(ctx).
+		Where("LOWER(model_name) = ?", normalizedModel).
+		Order("updated_at DESC").
+		Find(&prices).Error; err != nil {
+		return SitePriceAggregate{}, false, err
+	}
+	if len(prices) == 0 {
+		return SitePriceAggregate{}, false, nil
+	}
+
+	filtered := make([]model.SitePrice, 0, len(prices))
+	for _, item := range prices {
+		if item.InputPrice <= 0 && item.OutputPrice <= 0 && item.CacheReadPrice <= 0 && item.CacheWritePrice <= 0 {
+			continue
+		}
+		filtered = append(filtered, item)
+	}
+	if len(filtered) == 0 {
+		return SitePriceAggregate{}, false, nil
+	}
+
+	defaultGroup := make([]model.SitePrice, 0, len(filtered))
+	for _, item := range filtered {
+		if model.NormalizeSiteGroupKey(item.GroupKey) == model.SiteDefaultGroupKey {
+			defaultGroup = append(defaultGroup, item)
+		}
+	}
+	selected := filtered
+	if len(defaultGroup) > 0 {
+		selected = defaultGroup
+	}
+
+	var aggregate SitePriceAggregate
+	accountSet := make(map[int]struct{}, len(selected))
+	groupSet := make(map[string]struct{}, len(selected))
+	for _, item := range selected {
+		aggregate.Price.Input += item.InputPrice
+		aggregate.Price.Output += item.OutputPrice
+		aggregate.Price.CacheRead += item.CacheReadPrice
+		aggregate.Price.CacheWrite += item.CacheWritePrice
+		accountSet[item.SiteAccountID] = struct{}{}
+		groupSet[model.NormalizeSiteGroupKey(item.GroupKey)] = struct{}{}
+		if item.UpdatedAt.After(aggregate.UpdatedAt) {
+			aggregate.UpdatedAt = item.UpdatedAt
+		}
+	}
+
+	divisor := float64(len(selected))
+	aggregate.Price.Input /= divisor
+	aggregate.Price.Output /= divisor
+	aggregate.Price.CacheRead /= divisor
+	aggregate.Price.CacheWrite /= divisor
+	aggregate.SiteAccounts = len(accountSet)
+	aggregate.Groups = len(groupSet)
+	return aggregate, true, nil
 }
 
 func SiteGroupRatioGet(ctx context.Context, accountID int, groupKey string) (float64, bool, error) {

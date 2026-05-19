@@ -11,10 +11,25 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/animate-ui
 import { ModelDeleteOverlay, ModelEditOverlay } from './ItemOverlays';
 import { cn } from '@/lib/utils';
 import { createPortal } from 'react-dom';
+import { Badge } from '@/components/ui/badge';
 
 interface ModelItemProps {
     model: LLMInfo;
     layout?: 'grid' | 'list';
+}
+
+function sourceTone(source: LLMInfo['resolved_source']) {
+    switch (source) {
+        case 'upstream':
+            return 'border-primary/20 bg-primary/10 text-primary';
+        case 'official':
+            return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+        case 'manual':
+            return 'border-border bg-background text-muted-foreground';
+        case 'manual_required':
+        default:
+            return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300';
+    }
 }
 
 export const ModelItem = memo(function ModelItem({ model, layout = 'grid' }: ModelItemProps) {
@@ -40,6 +55,25 @@ export const ModelItem = memo(function ModelItem({ model, layout = 'grid' }: Mod
     const deleteModel = useDeleteModel();
 
     const { Avatar: ModelAvatar, color: brandColor } = useMemo(() => getModelIcon(model.name), [model.name]);
+    const resolvedSource = model.resolved_source ?? (model.manual_configured ? 'manual' : 'manual_required');
+    const sourceDetail = useMemo(() => {
+        switch (resolvedSource) {
+            case 'upstream':
+                return t('sourceMeta.upstream', {
+                    accounts: model.upstream_site_accounts ?? 0,
+                    groups: model.upstream_groups ?? 0,
+                });
+            case 'official':
+                return model.resolved_updated_at
+                    ? t('sourceMeta.officialWithTime', { time: new Date(model.resolved_updated_at).toLocaleString() })
+                    : t('sourceMeta.official');
+            case 'manual':
+                return t('sourceMeta.manual');
+            case 'manual_required':
+            default:
+                return t('sourceMeta.manualRequired');
+        }
+    }, [model.resolved_updated_at, model.upstream_groups, model.upstream_site_accounts, resolvedSource, t]);
 
     const updateOverlayRect = useCallback(() => {
         const card = cardRef.current;
@@ -145,21 +179,34 @@ export const ModelItem = memo(function ModelItem({ model, layout = 'grid' }: Mod
         <article
             ref={cardRef}
             className={cn(
-                'group relative rounded-3xl border border-border bg-card transition-all duration-300 flex items-center gap-3 p-4',
+                'group relative flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 transition-all duration-300',
+                resolvedSource === 'manual_required' && 'border-amber-500/30 bg-amber-500/[0.04]',
                 (isEditOpen || confirmDelete) && 'z-50'
             )}
         >
             <ModelAvatar size={52} />
 
             <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
-                <Tooltip side="top" sideOffset={10} align="start">
-                    <TooltipTrigger className='text-base font-semibold text-card-foreground leading-tight truncate'>
-                        {model.name}
-                    </TooltipTrigger>
-                    <TooltipContent key={model.name}>
-                        {model.name}
-                    </TooltipContent>
-                </Tooltip>
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                    <Tooltip side="top" sideOffset={10} align="start">
+                        <TooltipTrigger className='min-w-0 text-left text-base font-semibold text-card-foreground leading-tight truncate'>
+                            {model.name}
+                        </TooltipTrigger>
+                        <TooltipContent key={model.name}>
+                            {model.name}
+                        </TooltipContent>
+                    </Tooltip>
+                    <Badge variant="outline" className={cn('shrink-0 rounded-md px-2 text-[11px]', sourceTone(resolvedSource))}>
+                        {t(`source.${resolvedSource}`)}
+                    </Badge>
+                </div>
+
+                <p className={cn(
+                    'text-xs',
+                    resolvedSource === 'manual_required' ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground',
+                )}>
+                    {sourceDetail}
+                </p>
 
                 {isListLayout ? (
                     <p className="flex items-center gap-2 overflow-hidden text-sm text-muted-foreground whitespace-nowrap">

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -118,6 +119,14 @@ func listLLM(c *gin.Context) {
 		resp.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	for index := range models {
+		resolved, resolveErr := resolveLLMInfo(c.Request.Context(), models[index])
+		if resolveErr != nil {
+			resp.Error(c, http.StatusInternalServerError, resolveErr.Error())
+			return
+		}
+		models[index] = resolved
+	}
 	resp.Success(c, models)
 }
 
@@ -183,4 +192,38 @@ func updateLLMPrice(c *gin.Context) {
 func getLastUpdateTime(c *gin.Context) {
 	time := price.GetLastUpdateTime()
 	resp.Success(c, time)
+}
+
+func resolveLLMInfo(ctx context.Context, info model.LLMInfo) (model.LLMInfo, error) {
+	info.ManualConfigured = info.HasConfiguredPrice()
+
+	upstream, ok, err := op.SitePriceResolveModel(ctx, info.Name)
+	if err != nil {
+		return model.LLMInfo{}, err
+	}
+	if ok {
+		info.LLMPrice = upstream.Price
+		info.ResolvedSource = "upstream"
+		info.UpstreamSiteAccounts = upstream.SiteAccounts
+		info.UpstreamGroups = upstream.Groups
+		if !upstream.UpdatedAt.IsZero() {
+			updatedAt := upstream.UpdatedAt
+			info.ResolvedUpdatedAt = &updatedAt
+		}
+		return info, nil
+	}
+
+	if official, officialOK := price.GetOfficialLLMPrice(info.Name); officialOK {
+		info.LLMPrice = official
+		info.ResolvedSource = "official"
+		return info, nil
+	}
+
+	if info.ManualConfigured {
+		info.ResolvedSource = "manual"
+		return info, nil
+	}
+
+	info.ResolvedSource = "manual_required"
+	return info, nil
 }

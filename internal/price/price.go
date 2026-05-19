@@ -84,15 +84,21 @@ func GetLastUpdateTime() time.Time {
 	return lastUpdateTime
 }
 
+func GetOfficialLLMPrice(modelName string) (model.LLMPrice, bool) {
+	modelName = strings.ToLower(modelName)
+	llmPriceLock.RLock()
+	defer llmPriceLock.RUnlock()
+	price, ok := llmPrice[modelName]
+	return price, ok
+}
+
 func GetLLMPrice(modelName string) *model.LLMPrice {
 	modelName = strings.ToLower(modelName)
 	price, err := op.LLMGet(modelName)
 	if err == nil {
 		return &price
 	}
-	llmPriceLock.RLock()
-	defer llmPriceLock.RUnlock()
-	price, ok := llmPrice[modelName]
+	price, ok := GetOfficialLLMPrice(modelName)
 	if !ok {
 		return nil
 	}

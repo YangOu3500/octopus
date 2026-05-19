@@ -28,15 +28,15 @@ function SectionCard({
     value: HomeSectionId;
 }) {
     return (
-        <AccordionItem value={value} className="overflow-hidden rounded-xl border border-border/70 bg-card/70 shadow-sm">
-            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
+        <AccordionItem value={value} className="overflow-hidden rounded-lg border border-border/70 bg-card/80 shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <AccordionTrigger className="px-3.5 py-3 hover:no-underline hover:bg-muted/30">
                 <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/10 text-primary">
                         {icon}
                     </div>
                     <div className="min-w-0 text-left">
                         <div className="truncate text-sm font-semibold text-foreground">{title}</div>
-                        <div className="truncate text-xs text-muted-foreground">{description}</div>
+                        <div className="line-clamp-1 text-xs text-muted-foreground">{description}</div>
                     </div>
                 </div>
             </AccordionTrigger>
@@ -53,13 +53,20 @@ export function Home() {
     const setOpenSections = useHomeViewStore((state) => state.setOpenSections);
 
     return (
-        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-3 pb-24 md:pb-4">
+        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-4 pb-24 md:pb-4">
             <DashboardSummaryCards />
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
+                <StatsChart />
+                <div className="space-y-3">
+                    <GatewayOperationsPanel />
+                    <GroupHealthSummaryStrip />
+                </div>
+            </div>
             <Accordion
                 type="multiple"
                 value={openSections}
                 onValueChange={(value) => setOpenSections(value as HomeSectionId[])}
-                className="space-y-3"
+                className="space-y-2.5"
             >
                 <SectionCard
                     value="workbench"
@@ -67,13 +74,7 @@ export function Home() {
                     title={t('workbench.title')}
                     description={t('workbench.description')}
                 >
-                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
-                        <ObservabilityPanel />
-                        <div className="space-y-3">
-                            <GatewayOperationsPanel />
-                            <GroupHealthSummaryStrip />
-                        </div>
-                    </div>
+                    <ObservabilityPanel />
                 </SectionCard>
 
                 <SectionCard
@@ -82,10 +83,7 @@ export function Home() {
                     title={t('analytics.title')}
                     description={t('analytics.description')}
                 >
-                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
-                        <StatsChart />
-                        <Rank />
-                    </div>
+                    <Rank />
                 </SectionCard>
 
                 <SectionCard

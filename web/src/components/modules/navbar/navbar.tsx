@@ -4,20 +4,11 @@ import { motion } from 'motion/react'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Logo from '@/components/modules/logo'
-import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { useNavStore, type NavItem } from './nav-store'
 import { ROUTES } from '@/route/config'
 import { usePreload } from '@/route/use-preload'
 import { ENTRANCE_VARIANTS } from '@/lib/animations/fluid-transitions'
-
-type NavGroupId = 'workbench' | 'resources' | 'system'
-
-const NAV_GROUPS: Array<{ id: NavGroupId; items: NavItem[] }> = [
-    { id: 'workbench', items: ['home', 'traces', 'log'] },
-    { id: 'resources', items: ['site', 'channel', 'modelHealth', 'group', 'modelTest', 'model'] },
-    { id: 'system', items: ['setting'] },
-]
 
 type NavRoute = (typeof ROUTES)[number]
 
@@ -49,8 +40,8 @@ function DesktopNavItem({
             onMouseEnter={() => preload(item)}
             title={expanded ? undefined : t(item)}
             className={cn(
-                'group flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition-all duration-200',
-                expanded ? 'justify-start' : 'justify-center px-2.5',
+                'group grid w-full items-center rounded-2xl border py-2.5 pl-2.5 pr-3 text-left transition-all duration-200',
+                expanded ? 'grid-cols-[2.25rem_minmax(0,1fr)] gap-3' : 'grid-cols-[2.25rem_0fr] gap-0',
                 isActive
                     ? 'border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
                     : 'border-transparent text-sidebar-foreground/75 hover:border-sidebar-border hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
@@ -68,9 +59,14 @@ function DesktopNavItem({
             >
                 <route.icon className="size-4" strokeWidth={2} />
             </span>
-            {expanded ? (
-                <span className="min-w-0 truncate text-sm font-medium">{t(item)}</span>
-            ) : null}
+            <span
+                className={cn(
+                    'min-w-0 overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-200',
+                    expanded ? 'translate-x-0 opacity-100' : 'pointer-events-none -translate-x-1 opacity-0'
+                )}
+            >
+                {t(item)}
+            </span>
         </motion.button>
     )
 }
@@ -78,21 +74,21 @@ function DesktopNavItem({
 function DesktopSidebar() {
     const t = useTranslations('navbar')
     const sidebarExpanded = useNavStore((state) => state.sidebarExpanded)
-    const setSidebarExpanded = useNavStore((state) => state.setSidebarExpanded)
+    const toggleSidebarExpanded = useNavStore((state) => state.toggleSidebarExpanded)
     const ToggleIcon = sidebarExpanded ? PanelLeftClose : PanelLeftOpen
 
     return (
         <motion.aside
             aria-label="Main Navigation"
             className={cn(
-                'hidden md:flex md:sticky md:top-3 md:h-[calc(100dvh-1.5rem)] md:flex-col md:overflow-hidden md:rounded-[1.75rem] md:border md:border-sidebar-border md:bg-sidebar/95 md:p-3 md:text-sidebar-foreground md:shadow-sm',
-                sidebarExpanded ? 'md:w-[14.5rem]' : 'md:w-[4.75rem]'
+                'hidden md:flex md:sticky md:top-3 md:h-[calc(100dvh-1.5rem)] md:flex-col md:overflow-hidden md:rounded-[1.5rem] md:border md:border-sidebar-border md:bg-sidebar/95 md:p-3 md:text-sidebar-foreground md:shadow-sm',
+                sidebarExpanded ? 'md:w-[15rem]' : 'md:w-[5.25rem]'
             )}
             variants={ENTRANCE_VARIANTS.navbar}
             initial="initial"
             animate="animate"
         >
-            <div className={cn('mb-3 flex items-center gap-2', sidebarExpanded ? 'justify-between px-1' : 'flex-col')}>
+            <div className={cn('mb-3 flex gap-2', sidebarExpanded ? 'items-center justify-between' : 'flex-col items-center')}>
                 <div className={cn('flex min-w-0 items-center gap-2', !sidebarExpanded && 'justify-center')}>
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border bg-background/80">
                         <Logo size={24} />
@@ -104,39 +100,21 @@ function DesktopSidebar() {
                         </div>
                     ) : null}
                 </div>
-                <div
-                    className={cn(
-                        'shrink-0 rounded-xl border border-sidebar-border/70 bg-background/70 text-sidebar-foreground/70',
-                        sidebarExpanded ? 'flex items-center gap-2 px-2.5 py-2' : 'flex flex-col items-center gap-1.5 px-1.5 py-2'
-                    )}
+
+                <button
+                    type="button"
+                    onClick={toggleSidebarExpanded}
+                    className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border/70 bg-background/70 text-sidebar-foreground/70 transition-colors hover:border-sidebar-border hover:text-sidebar-foreground"
+                    title={sidebarExpanded ? t('collapse') : t('expand')}
+                    aria-label={sidebarExpanded ? t('collapse') : t('expand')}
                 >
                     <ToggleIcon className="size-4" />
-                    {sidebarExpanded ? <span className="text-[11px] font-medium">{t('navLabels')}</span> : null}
-                    <Switch
-                        checked={sidebarExpanded}
-                        aria-label={sidebarExpanded ? t('collapse') : t('expand')}
-                        title={sidebarExpanded ? t('collapse') : t('expand')}
-                        onCheckedChange={setSidebarExpanded}
-                    />
-                </div>
+                </button>
             </div>
 
-            <div className="flex-1 space-y-4 overflow-y-auto pr-0.5">
-                {NAV_GROUPS.map((group) => (
-                    <div key={group.id} className="space-y-2">
-                        {sidebarExpanded ? (
-                            <div className="px-2 text-[11px] font-medium uppercase tracking-[0.08em] text-sidebar-foreground/45">
-                                {t(`groups.${group.id}`)}
-                            </div>
-                        ) : (
-                            <div className="mx-auto h-px w-8 bg-sidebar-border/80" />
-                        )}
-                        <div className="space-y-1">
-                            {group.items.map((item) => (
-                                <DesktopNavItem key={item} item={item} expanded={sidebarExpanded} />
-                            ))}
-                        </div>
-                    </div>
+            <div className="flex-1 space-y-1 overflow-y-auto pr-0.5">
+                {ROUTES.map((route) => (
+                    <DesktopNavItem key={route.id} item={route.id as NavItem} expanded={sidebarExpanded} />
                 ))}
             </div>
         </motion.aside>
@@ -150,9 +128,7 @@ function MobileDock() {
     return (
         <motion.nav
             aria-label="Main Navigation"
-            className={cn(
-                'fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-[1.5rem] border border-sidebar-border bg-sidebar/95 p-2 text-sidebar-foreground shadow-sm md:hidden'
-            )}
+            className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-[1.5rem] border border-sidebar-border bg-sidebar/95 p-2 text-sidebar-foreground shadow-sm md:hidden"
             variants={ENTRANCE_VARIANTS.navbar}
             initial="initial"
             animate="animate"

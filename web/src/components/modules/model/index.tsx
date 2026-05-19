@@ -42,7 +42,7 @@ export function Model() {
             items={visibleModels}
             layout={layout}
             columns={{ default: 1, md: 2, lg: 3 }}
-            estimateItemHeight={112}
+            estimateItemHeight={140}
             getItemKey={(model) => `model-${model.name}`}
             renderItem={(model) => <ModelItem model={model} layout={layout} />}
         />

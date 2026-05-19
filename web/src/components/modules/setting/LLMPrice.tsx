@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { DollarSign, Clock, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useSettingList, useSetSetting, SettingKey } from '@/api/endpoints/setting';
 import { useUpdateModelPrice, useLastUpdateTime } from '@/api/endpoints/model';
 import { toast } from '@/components/common/Toast';
@@ -59,13 +60,20 @@ export function SettingLLMPrice() {
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
+        <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
                 <DollarSign className="h-5 w-5" />
                 {t('llmPrice.title')}
             </h2>
 
-            {/* 更新间隔 */}
+            <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary">{t('llmPrice.syncOrder.upstream')}</Badge>
+                <Badge variant="outline">{t('llmPrice.syncOrder.official')}</Badge>
+                <Badge variant="outline">{t('llmPrice.syncOrder.manual')}</Badge>
+            </div>
+
+            <p className="text-xs text-muted-foreground">{t('llmPrice.syncHint')}</p>
+
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Clock className="h-5 w-5 text-muted-foreground" />
@@ -81,14 +89,13 @@ export function SettingLLMPrice() {
                 />
             </div>
 
-            {/* 手动更新 */}
             <div className="flex items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
                         <RefreshCw className="h-5 w-5 text-muted-foreground" />
                         <span className="text-sm font-medium">{t('llmPrice.manualUpdate.label')}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground ml-8">
+                    <span className="ml-8 text-xs text-muted-foreground">
                         {t('llmPrice.lastUpdate')}: {formatLastUpdateTime(lastUpdateTime)}
                     </span>
                 </div>

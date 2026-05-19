@@ -731,7 +731,7 @@ function TraceTable({
     const t = useTranslations('traces');
 
     return (
-        <div className="min-h-0 overflow-auto overscroll-contain rounded-lg border bg-card">
+        <div className="h-full min-h-0 overflow-auto overscroll-contain rounded-lg border bg-card">
             <table className="w-full min-w-[1040px] text-left text-xs">
                 <thead className="sticky top-0 z-10 border-b bg-muted/70 text-muted-foreground backdrop-blur">
                     <tr>
@@ -879,7 +879,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
     const trace = detail.trace;
 
     return (
-        <aside className="flex min-h-0 min-w-0 flex-col gap-3 rounded-lg border bg-card p-3">
+        <aside className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
             <div className="flex flex-wrap items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -914,7 +914,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 text-xs 2xl:grid-cols-4">
                 <div className="rounded-md border bg-background/40 p-2">
                     <div className="text-muted-foreground">{t('clientModel')}</div>
                     <div className="mt-1 truncate font-medium" title={trace.client_model}>{trace.client_model || '-'}</div>
@@ -962,7 +962,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                                 </div>
                             </div>
 
-                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs lg:grid-cols-4">
+                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs xl:grid-cols-3 2xl:grid-cols-4">
                                 <div>
                                     <div className="text-muted-foreground">{t('http')}</div>
                                     <div className="font-mono">{attempt.http_status || '-'}</div>
@@ -1322,7 +1322,7 @@ export function Traces() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input value={modelFilter} onChange={(event) => {
@@ -1486,8 +1486,8 @@ export function Traces() {
                 onFocus={handleFocusTrace}
             />
 
-            <div className="grid min-h-[28rem] flex-1 grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)] 2xl:grid-cols-[minmax(0,1.15fr)_minmax(420px,0.85fr)]">
-                <div className="relative min-h-0">
+            <div className="grid min-h-[32rem] flex-1 grid-cols-1 gap-3 2xl:grid-cols-[minmax(0,1.1fr)_minmax(420px,0.9fr)]">
+                <div className="relative min-h-0 2xl:max-h-[calc(100dvh-20rem)]">
                     {tracesQuery.isLoading ? (
                         <div className="flex h-full min-h-[320px] items-center justify-center rounded-lg border bg-card">
                             <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -1506,7 +1506,9 @@ export function Traces() {
                         />
                     )}
                 </div>
-                <TraceDetailPanel traceId={effectiveSelectedTraceId} />
+                <div className="min-h-0 2xl:max-h-[calc(100dvh-20rem)]">
+                    <TraceDetailPanel traceId={effectiveSelectedTraceId} />
+                </div>
             </div>
         </div>
     );

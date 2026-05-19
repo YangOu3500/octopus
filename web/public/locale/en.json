@@ -487,6 +487,12 @@
                 "label": "Auto Update Interval (hours)",
                 "placeholder": "Enter interval in hours"
             },
+            "syncOrder": {
+                "upstream": "Upstream price first",
+                "official": "Fallback to official catalog",
+                "manual": "Manual when no source exists"
+            },
+            "syncHint": "The model page now resolves prices in order: upstream site pricing, then official catalog pricing, and only then manual fallback.",
             "manualUpdate": {
                 "label": "Manual Price Update",
                 "button": "Update Now",
@@ -1338,6 +1344,19 @@
             "outputCache": "Output/Cache",
             "edit": "Edit",
             "delete": "Delete"
+        },
+        "source": {
+            "upstream": "Upstream",
+            "official": "Official",
+            "manual": "Manual",
+            "manual_required": "Manual required"
+        },
+        "sourceMeta": {
+            "upstream": "{accounts} accounts / {groups} groups synced",
+            "official": "Using official catalog fallback",
+            "officialWithTime": "Using official catalog fallback · refreshed {time}",
+            "manual": "Using saved manual pricing",
+            "manualRequired": "No upstream or official pricing found. Set it manually."
         },
         "overlay": {
             "cancel": "Cancel",

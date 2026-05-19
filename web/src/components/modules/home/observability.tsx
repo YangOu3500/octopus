@@ -156,7 +156,7 @@ export function ObservabilityPanel() {
     const failoverRequests = data?.failover_requests ?? 0;
 
     return (
-        <section className="rounded-xl border border-card-border bg-card p-4 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <section className="rounded-lg border border-card-border bg-card p-4 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
             <header className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                     <div className="flex items-center gap-2">

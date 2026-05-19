@@ -17,6 +17,11 @@ export interface LLMPrice {
  */
 export interface LLMInfo extends LLMPrice {
     name: string;
+    resolved_source?: 'upstream' | 'official' | 'manual' | 'manual_required';
+    manual_configured?: boolean;
+    upstream_site_accounts?: number;
+    upstream_groups?: number;
+    resolved_updated_at?: string;
 }
 
 /**
@@ -182,6 +187,7 @@ export function useUpdateModelPrice() {
         },
         onSuccess: () => {
             logger.log('模型价格更新成功');
+            queryClient.invalidateQueries({ queryKey: ['models', 'list'] });
             queryClient.invalidateQueries({ queryKey: ['models', 'last-update-time'] });
         },
         onError: (error) => {
