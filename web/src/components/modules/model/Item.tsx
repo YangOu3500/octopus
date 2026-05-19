@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Pencil, Trash2, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { Pencil, Trash2, ArrowDownToLine, ArrowUpFromLine, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useUpdateModel, useDeleteModel, type LLMInfo } from '@/api/endpoints/model';
@@ -31,6 +31,8 @@ function sourceTone(source: LLMInfo['resolved_source']) {
             return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300';
     }
 }
+
+const SOURCE_FLOW: Array<Exclude<LLMInfo['resolved_source'], 'manual_required'> | 'manual'> = ['upstream', 'official', 'manual'];
 
 export const ModelItem = memo(function ModelItem({ model, layout = 'grid' }: ModelItemProps) {
     const t = useTranslations('model');
@@ -207,6 +209,28 @@ export const ModelItem = memo(function ModelItem({ model, layout = 'grid' }: Mod
                 )}>
                     {sourceDetail}
                 </p>
+
+                <div className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+                    <span className="mr-1">{t('card.sourceFlow')}</span>
+                    {SOURCE_FLOW.map((source, index) => {
+                        const currentSource = resolvedSource === 'manual_required' ? 'manual' : resolvedSource;
+                        const active = currentSource === source;
+                        return (
+                            <div key={source} className="inline-flex items-center gap-1">
+                                <Badge
+                                    variant="outline"
+                                    className={cn(
+                                        'rounded-md px-1.5 py-0 text-[10px]',
+                                        active ? sourceTone(resolvedSource) : 'border-border/70 bg-background text-muted-foreground'
+                                    )}
+                                >
+                                    {t(`source.${source}`)}
+                                </Badge>
+                                {index < SOURCE_FLOW.length - 1 ? <ChevronRight className="size-3 text-muted-foreground/60" /> : null}
+                            </div>
+                        );
+                    })}
+                </div>
 
                 {isListLayout ? (
                     <p className="flex items-center gap-2 overflow-hidden text-sm text-muted-foreground whitespace-nowrap">

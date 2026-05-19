@@ -1356,6 +1356,7 @@
         "card": {
             "inputCache": "輸入/快取",
             "outputCache": "輸出/快取",
+            "sourceFlow": "來源順序",
             "edit": "編輯",
             "delete": "刪除"
         },
