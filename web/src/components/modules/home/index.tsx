@@ -32,10 +32,10 @@ function SectionCard({
     value: HomeSectionId;
 }) {
     return (
-        <AccordionItem value={value} className="overflow-hidden rounded-[1.2rem] border border-border/70 bg-card/95 shadow-sm transition-all duration-200 hover:shadow-md data-[state=open]:border-primary/15">
-            <AccordionTrigger className="items-center gap-4 px-4 py-3.5 hover:no-underline hover:bg-muted/20">
+        <AccordionItem value={value} className="overflow-hidden rounded-lg border border-border/70 bg-card/95 shadow-sm transition-all duration-200 hover:shadow-md data-[state=open]:border-primary/15">
+            <AccordionTrigger className="items-center gap-4 px-4 py-3 hover:no-underline hover:bg-muted/20">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/10 text-primary">
                         {icon}
                     </div>
                     <div className="min-w-0 text-left">
@@ -87,7 +87,7 @@ export function Home() {
         <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-4 pb-24 md:pb-4">
             <section className="space-y-3">
                 <DashboardSummaryCards />
-                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)]">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
                     <StatsChart />
                     <div className="space-y-3">
                         <GatewayOperationsPanel />

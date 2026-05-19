@@ -49,10 +49,10 @@ function SectionNav({
     onSelect: (section: SettingSectionId) => void;
 }) {
     return (
-        <section className="sticky top-0 z-10 rounded-xl border border-border/70 bg-card/95 p-3 shadow-sm backdrop-blur">
+        <section className="sticky top-0 z-10 rounded-lg border border-border/70 bg-card/95 p-3 shadow-sm backdrop-blur">
             <div className="md:hidden">
                 <Select value={activeSection} onValueChange={(value) => onSelect(value as SettingSectionId)}>
-                    <SelectTrigger className="h-10 rounded-lg">
+                    <SelectTrigger className="h-10 rounded-md">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -65,8 +65,8 @@ function SectionNav({
                 </Select>
             </div>
 
-            <nav className="hidden overflow-x-auto md:block">
-                <div className="flex min-w-max gap-2">
+            <nav className="hidden md:block">
+                <div className="space-y-1.5">
                     {sections.map((section) => {
                         const isActive = section.id === activeSection;
                         const Icon = section.icon;
@@ -76,14 +76,23 @@ function SectionNav({
                                 type="button"
                                 onClick={() => onSelect(section.id)}
                                 className={cn(
-                                    'inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors',
+                                    'flex w-full items-center gap-3 rounded-md border px-3 py-2.5 text-left text-sm font-medium transition-all',
                                     isActive
                                         ? 'border-primary/20 bg-primary/10 text-foreground shadow-sm'
                                         : 'border-border/60 bg-background/60 text-muted-foreground hover:border-primary/20 hover:bg-background hover:text-foreground'
                                 )}
                             >
-                                <Icon className="size-4 shrink-0" />
-                                <span className="whitespace-nowrap">{section.label}</span>
+                                <span
+                                    className={cn(
+                                        'flex size-8 shrink-0 items-center justify-center rounded-md border transition-colors',
+                                        isActive
+                                            ? 'border-primary/20 bg-background text-primary'
+                                            : 'border-border/60 bg-card text-muted-foreground'
+                                    )}
+                                >
+                                    <Icon className="size-4 shrink-0" />
+                                </span>
+                                <span className="min-w-0 truncate">{section.label}</span>
                             </button>
                         );
                     })}
@@ -94,7 +103,11 @@ function SectionNav({
 }
 
 function SectionContent({ section }: { section: SettingSection }) {
-    return <section className="space-y-4">{section.content}</section>;
+    return (
+        <section className="space-y-4 rounded-lg border border-border/70 bg-card/40 p-3 md:p-4">
+            {section.content}
+        </section>
+    );
 }
 
 export function Setting() {
@@ -187,13 +200,15 @@ export function Setting() {
 
     return (
         <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
-            <PageWrapper childLayout={false} className="space-y-4 pb-24 md:pb-4">
-                <SectionNav
-                    sections={sections}
-                    activeSection={currentSection.id}
-                    onSelect={handleSelectSection}
-                />
-                <SectionContent section={currentSection} />
+            <PageWrapper childLayout={false} className="pb-24 md:pb-4">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)]">
+                    <SectionNav
+                        sections={sections}
+                        activeSection={currentSection.id}
+                        onSelect={handleSelectSection}
+                    />
+                    <SectionContent section={currentSection} />
+                </div>
             </PageWrapper>
         </div>
     );

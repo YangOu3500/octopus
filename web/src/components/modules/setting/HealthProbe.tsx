@@ -105,10 +105,10 @@ function SectionShell({
     children: ReactNode;
 }) {
     return (
-        <section className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
+        <section className="rounded-lg border border-border/70 bg-card p-4 shadow-sm">
             <div className="flex flex-col gap-3 border-b border-border/60 pb-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/10 text-primary">
                         <Icon className="size-4" />
                     </div>
                     <div className="min-w-0">
@@ -137,9 +137,9 @@ function FieldCard({
     const Icon = field.icon;
 
     return (
-        <label className="rounded-lg border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/20 hover:bg-background/70">
+        <label className="rounded-md border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/20 hover:bg-background/70">
             <div className="flex items-start gap-2">
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-card text-muted-foreground">
+                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-card text-muted-foreground">
                     <Icon className="size-3.5" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -158,7 +158,7 @@ function FieldCard({
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 onBlur={onCommit}
-                className="mt-3 h-9 rounded-lg"
+                className="mt-3 h-9 rounded-md"
             />
         </label>
     );
@@ -178,9 +178,9 @@ function SwitchCard({
     onCheckedChange: (checked: boolean) => void;
 }) {
     return (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/40 px-3 py-3 transition-colors hover:border-primary/20 hover:bg-background/70">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-background/40 px-3 py-3 transition-colors hover:border-primary/20 hover:bg-background/70">
             <div className="flex min-w-0 items-start gap-2">
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-card text-muted-foreground">
+                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-card text-muted-foreground">
                     <Icon className="size-3.5" />
                 </div>
                 <div className="min-w-0">
@@ -212,9 +212,9 @@ function SelectCard({
     children: ReactNode;
 }) {
     return (
-        <div className="rounded-lg border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/20 hover:bg-background/70">
+        <div className="rounded-md border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/20 hover:bg-background/70">
             <div className="flex items-start gap-2">
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-card text-muted-foreground">
+                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-card text-muted-foreground">
                     <Icon className="size-3.5" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -226,7 +226,7 @@ function SelectCard({
                 </div>
             </div>
             <Select value={value} onValueChange={onValueChange}>
-                <SelectTrigger className="mt-3 h-9 rounded-lg">
+                <SelectTrigger className="mt-3 h-9 rounded-md">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>{children}</SelectContent>
@@ -585,7 +585,7 @@ export function SettingHealthProbe() {
 
     return (
         <div className="space-y-4">
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(300px,0.92fr)]">
                 <div className="space-y-4">
                     <SectionShell
                         icon={HeartPulse}
@@ -638,15 +638,15 @@ export function SettingHealthProbe() {
                         subtitle={t('healthProbe.cooldown.subtitle')}
                     >
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                            <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2.5">
+                            <div className="rounded-md border border-border/70 bg-background/40 px-3 py-2.5">
                                 <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.summary.total', { value: cooldownSummary.total })}</div>
                                 <div className="mt-1 text-lg font-semibold tabular-nums">{cooldownSummary.total}</div>
                             </div>
-                            <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2.5">
+                            <div className="rounded-md border border-border/70 bg-background/40 px-3 py-2.5">
                                 <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.summary.retryAfter', { value: cooldownSummary.retryAfter })}</div>
                                 <div className="mt-1 text-lg font-semibold tabular-nums">{cooldownSummary.retryAfter}</div>
                             </div>
-                            <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2.5">
+                            <div className="rounded-md border border-border/70 bg-background/40 px-3 py-2.5">
                                 <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.summary.modelScoped', { value: cooldownSummary.modelScoped })}</div>
                                 <div className="mt-1 text-lg font-semibold tabular-nums">{cooldownSummary.modelScoped}</div>
                             </div>
@@ -654,14 +654,14 @@ export function SettingHealthProbe() {
 
                         <Accordion type="multiple" className="space-y-2">
                             {cooldownPolicies.map((policy) => (
-                                <AccordionItem key={policy.reason} value={policy.reason} className="overflow-hidden rounded-lg border border-border/70 bg-background/30">
-                                    <AccordionTrigger className="items-center px-3 py-3 hover:no-underline hover:bg-background/60">
+                                <AccordionItem key={policy.reason} value={policy.reason} className="overflow-hidden rounded-md border border-border/70 bg-background/30">
+                                    <AccordionTrigger className="items-center px-3 py-2.5 hover:no-underline hover:bg-background/60">
                                         <div className="flex min-w-0 flex-1 items-center gap-3">
                                             <div className="min-w-0">
                                                 <div className="truncate text-sm font-medium text-card-foreground">{reasonLabel(policy.reason)}</div>
                                                 <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{policy.reason}</div>
                                             </div>
-                                            <div className="hidden flex-wrap gap-1 lg:flex">
+                                            <div className="hidden flex-wrap gap-1 xl:flex">
                                                 <Badge variant="secondary">{formatSeconds(policy.base_seconds)}</Badge>
                                                 <Badge variant="outline">{t('healthProbe.cooldown.max', { value: formatSeconds(policy.max_seconds) })}</Badge>
                                                 <Badge variant="outline">{policy.scopes.map((scope) => scopeLabel(scope)).join(' / ')}</Badge>
@@ -690,13 +690,13 @@ export function SettingHealthProbe() {
                                         </div>
 
                                         <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                                            <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2">
+                                            <div className="rounded-md border border-border/70 bg-card/60 px-3 py-2">
                                                 <div>{t('healthProbe.cooldown.columns.scope')}</div>
                                                 <div className="mt-1 font-medium text-foreground">
                                                     {policy.scopes.map((scope) => scopeLabel(scope)).join(' / ')}
                                                 </div>
                                             </div>
-                                            <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2">
+                                            <div className="rounded-md border border-border/70 bg-card/60 px-3 py-2">
                                                 <div>{t('healthProbe.cooldown.columns.lifecycle')}</div>
                                                 <div className="mt-1 font-medium text-foreground">
                                                     {policy.model_scoped ? t('healthProbe.cooldown.modelScoped') : t('healthProbe.cooldown.notModelScoped')}

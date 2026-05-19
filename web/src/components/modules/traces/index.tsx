@@ -731,8 +731,8 @@ function TraceTable({
     const t = useTranslations('traces');
 
     return (
-        <div className="min-h-[28rem] overflow-auto overscroll-contain rounded-lg border bg-card">
-            <table className="w-full min-w-[1040px] text-left text-xs">
+        <div className="min-h-[28rem] overflow-x-auto rounded-lg border bg-card">
+            <table className="w-full min-w-[960px] text-left text-xs">
                 <thead className="sticky top-0 z-10 border-b bg-muted/70 text-muted-foreground backdrop-blur">
                     <tr>
                         <th className="w-[52px] px-3 py-2 font-medium">{t('table.compare')}</th>
@@ -879,7 +879,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
     const trace = detail.trace;
 
     return (
-        <aside className="flex min-h-[28rem] min-w-0 flex-col gap-3 rounded-lg border bg-card p-3 xl:sticky xl:top-0">
+        <aside className="flex min-h-[28rem] min-w-0 self-start flex-col gap-3 rounded-lg border bg-card p-3 xl:sticky xl:top-3">
             <div className="flex flex-wrap items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -935,7 +935,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
                 </div>
             </div>
 
-            <div className="max-h-[38rem] overflow-auto xl:max-h-[calc(100dvh-16rem)]">
+            <div>
                 <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">{t('attemptTimeline')}</div>
                 <div className="space-y-2">
                     {detail.attempts.length === 0 ? (
@@ -1243,8 +1243,8 @@ export function Traces() {
     }, [hasMore, maxPage, page, params, t, total, traces]);
 
     return (
-        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain pb-24 pr-1 md:pb-4">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-3 pb-24 pr-1 md:pb-4">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
                 <SummaryTile
                     label={t('summary.total')}
                     value={formatCount(total)}
@@ -1272,16 +1272,18 @@ export function Traces() {
             </div>
 
             <div className="rounded-lg border bg-card p-3">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="h-8 rounded-md px-2">
-                        {t('title')}
-                    </Badge>
-                    {tracesQuery.error ? (
-                        <Badge variant="outline" className="h-8 border-destructive/30 px-2 text-destructive">
-                            {t('loadFailed')}
+                <div className="mb-3 flex flex-col gap-2 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="h-8 rounded-md px-2">
+                            {t('title')}
                         </Badge>
-                    ) : null}
-                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                        {tracesQuery.error ? (
+                            <Badge variant="outline" className="h-8 border-destructive/30 px-2 text-destructive">
+                                {t('loadFailed')}
+                            </Badge>
+                        ) : null}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 xl:justify-end">
                         <div className="flex items-center gap-2 rounded-md border px-2 py-1.5">
                             <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
                             <span className="text-sm text-muted-foreground">{t('autoRefresh')}</span>
@@ -1322,7 +1324,7 @@ export function Traces() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input value={modelFilter} onChange={(event) => {
@@ -1486,7 +1488,7 @@ export function Traces() {
                 onFocus={handleFocusTrace}
             />
 
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)] 2xl:grid-cols-[minmax(0,1.1fr)_minmax(420px,0.9fr)]">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)] 2xl:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
                 <div className="relative min-h-0">
                     {tracesQuery.isLoading ? (
                         <div className="flex h-full min-h-[320px] items-center justify-center rounded-lg border bg-card">
