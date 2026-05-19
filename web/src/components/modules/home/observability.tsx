@@ -161,7 +161,7 @@ export function ObservabilityPanel() {
                 <div>
                     <div className="flex items-center gap-2">
                         <Gauge className="size-4 text-primary" />
-                        <h3 className="text-base font-semibold">{t('title')}</h3>
+                        <h3 className="text-sm font-semibold">{t('title')}</h3>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{t('description')}</p>
                 </div>
@@ -170,7 +170,7 @@ export function ObservabilityPanel() {
                 </Badge>
             </header>
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
                 <MetricTile
                     label={t('successRate')}
                     value={formatPercent(data?.success_rate)}
@@ -249,7 +249,7 @@ export function ObservabilityPanel() {
                 </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2 2xl:grid-cols-[minmax(0,1.25fr)_repeat(4,minmax(0,1fr))]">
+            <div className="mt-3 grid grid-cols-1 gap-2 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,0.95fr)] 2xl:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(0,0.9fr))]">
                 <RecentFailureList items={data?.recent_failures ?? []} />
                 <BreakdownList title={t('topChannels')} items={data?.top_channels ?? []} />
                 <BreakdownList title={t('topModels')} items={data?.top_models ?? []} />

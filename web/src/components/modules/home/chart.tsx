@@ -172,9 +172,9 @@ export function StatsChart() {
     }, [hero.unit]);
 
     return (
-        <section className="rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm">
+        <section className="rounded-lg border border-border/70 bg-card text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
             {/* Header: hero + tabs */}
-            <header className="flex flex-col gap-4 px-4 pb-3 pt-4 md:flex-row md:items-start md:justify-between">
+            <header className="flex flex-col gap-3 px-4 pb-3 pt-4 md:flex-row md:items-start md:justify-between">
                 <div>
                     <p className="text-xs text-muted-foreground">{t(`headline.${PERIOD_KEY[period]}`)}</p>
                     <p className="mt-1 text-3xl font-semibold tabular-nums md:text-4xl">
@@ -202,7 +202,7 @@ export function StatsChart() {
             </header>
 
             {/* Metrics row */}
-            <div className="mx-4 flex flex-wrap items-baseline gap-4 border-t border-border/60 py-3 text-sm tabular-nums">
+            <div className="mx-4 flex flex-wrap items-baseline gap-4 border-t border-border/60 py-2.5 text-sm tabular-nums">
                 <StatItem label={t('metrics.requests')} value={metrics.requests} />
                 <span className="h-4 w-px bg-border/60" />
                 <StatItem label={t('metrics.tokens')} value={metrics.tokens} />
@@ -211,7 +211,7 @@ export function StatsChart() {
             </div>
 
             {/* Area chart — only total_cost */}
-            <ChartContainer config={chartConfig} className="h-36 w-full">
+            <ChartContainer config={chartConfig} className="h-32 w-full px-1 pb-1">
                 <AreaChart accessibilityLayer data={chartData}>
                     <defs>
                         <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">

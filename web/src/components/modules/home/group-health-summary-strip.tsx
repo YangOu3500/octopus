@@ -33,7 +33,7 @@ export function GroupHealthSummaryStrip() {
                         {t('title')}
                         <span className="text-xs font-normal text-muted-foreground">{t('total', { count: summary.total })}</span>
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                             <LoaderCircle className="size-3.5" />
                             {t('running', { count: summary.running })}

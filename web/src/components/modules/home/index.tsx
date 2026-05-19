@@ -87,7 +87,7 @@ export function Home() {
         <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-4 pb-24 md:pb-4">
             <section className="space-y-3">
                 <DashboardSummaryCards />
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.52fr)_minmax(300px,0.8fr)]">
                     <StatsChart />
                     <div className="space-y-3">
                         <GatewayOperationsPanel />
@@ -96,27 +96,23 @@ export function Home() {
                 </div>
             </section>
 
-            <div className="space-y-2">
-                <div className="flex items-center justify-between px-1">
-                    <div className="text-sm font-semibold text-foreground">{t('workbench.title')}</div>
-                    <div className="text-xs text-muted-foreground">{t('workbench.description')}</div>
-                </div>
-                <Accordion
-                    type="multiple"
-                    value={openSections}
-                    onValueChange={(value) => setOpenSections(value as HomeSectionId[])}
-                    className="space-y-2.5"
+            <Accordion
+                type="multiple"
+                value={openSections}
+                onValueChange={(value) => setOpenSections(value as HomeSectionId[])}
+                className="space-y-2.5"
+            >
+                <SectionCard
+                    value="workbench"
+                    icon={<Radar className="size-4" />}
+                    title={t('workbench.title')}
+                    description={t('workbench.description')}
+                    chips={sectionChips.workbench}
                 >
-                    <SectionCard
-                        value="workbench"
-                        icon={<Radar className="size-4" />}
-                        title={t('workbench.title')}
-                        description={t('workbench.description')}
-                        chips={sectionChips.workbench}
-                    >
-                        <ObservabilityPanel />
-                    </SectionCard>
+                    <ObservabilityPanel />
+                </SectionCard>
 
+                <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-2">
                     <SectionCard
                         value="analytics"
                         icon={<BarChart3 className="size-4" />}
@@ -136,8 +132,8 @@ export function Home() {
                     >
                         <Activity />
                     </SectionCard>
-                </Accordion>
-            </div>
+                </div>
+            </Accordion>
         </PageWrapper>
     );
 }

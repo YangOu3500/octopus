@@ -29,6 +29,7 @@ export function Activity() {
     const { data: statsDailyFormatted, isLoading } = useStatsDaily();
     const scrollRef = useRef<HTMLDivElement>(null);
     const t = useTranslations('home.activity');
+    const sectionT = useTranslations('home.sections.activity');
 
     const [tooltip, setTooltip] = useState<{ day: StatsDailyData; x: number; y: number; visible: boolean } | null>(null);
 
@@ -87,7 +88,13 @@ export function Activity() {
     }, [days, isLoading, checkScroll]);
 
     return (
-        <div className="rounded-lg bg-card border-card-border border text-card-foreground shadow-sm">
+        <div className="rounded-lg bg-card border-card-border border text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+                <div>
+                    <div className="text-sm font-semibold text-foreground">{sectionT('title')}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{sectionT('description')}</div>
+                </div>
+            </div>
             <div
                 ref={scrollRef}
                 onScroll={checkScroll}
