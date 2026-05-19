@@ -100,6 +100,9 @@ func DBExportAll(ctx context.Context, includeLogs, includeStats bool) (*model.DB
 		if err := conn.Find(&d.RelayLogs).Error; err != nil {
 			return nil, fmt.Errorf("export relay_logs: %w", err)
 		}
+		for i := range d.RelayLogs {
+			d.RelayLogs[i] = relayLogForDetail(d.RelayLogs[i])
+		}
 	}
 
 	return d, nil

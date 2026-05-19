@@ -2,8 +2,10 @@ package op
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	dbpkg "github.com/bestruirui/octopus/internal/db"
@@ -269,6 +271,74 @@ func TestDBExportThenImportRoundtrip(t *testing.T) {
 	}
 	if accountCount != 5 {
 		t.Fatalf("expected 5 accounts for imported site, got %d", accountCount)
+	}
+}
+
+func TestDBExportWithLogsRedactsSensitiveRelayLogContent(t *testing.T) {
+	ctx := setupBackupTestDB(t)
+
+	entry := model.RelayLog{
+		ID:               901,
+		Time:             1_700_000_000,
+		TraceID:          "trace-export-redaction",
+		RequestModelName: "gpt-4o",
+		ActualModelName:  "gpt-4o",
+		FinalStatus:      "failed",
+		RequestSource:    "relay",
+		ChannelId:        9,
+		ChannelName:      "redaction",
+		RequestContent:   `{"model":"gpt-4o","authorization":"Bearer secret-token","api_key":"sk-live-secret123456","messages":[{"role":"user","content":"hello"}]}`,
+		ResponseContent:  `{"set-cookie":"session=secret-token","choices":[{"message":{"content":"ok"}}]}`,
+		Error:            "Authorization: Bearer secret-token",
+		Attempts: []model.ChannelAttempt{{
+			AttemptIndex:   1,
+			ChannelID:      9,
+			ChannelName:    "redaction",
+			BaseURL:        "https://user:pass@example.test/v1?api_key=sk-query-secret123456",
+			ModelName:      "gpt-4o",
+			Status:         model.AttemptFailed,
+			HTTPStatus:     401,
+			FailureReason:  "Authorization: Bearer secret-token",
+			QuotaReason:    "api_key=sk-quota-secret123456",
+			CapacityReason: "Cookie: session=secret-token",
+			ErrorSummary:   "x-api-key: sk-summary-secret123456",
+			Msg:            "Bearer secret-token",
+		}},
+	}
+	if err := dbpkg.GetDB().WithContext(ctx).Create(&entry).Error; err != nil {
+		t.Fatalf("create relay log failed: %v", err)
+	}
+
+	dump, err := DBExportAll(ctx, true, false)
+	if err != nil {
+		t.Fatalf("DBExportAll failed: %v", err)
+	}
+	if len(dump.RelayLogs) != 1 {
+		t.Fatalf("expected 1 exported relay log, got %d", len(dump.RelayLogs))
+	}
+
+	encoded, err := json.Marshal(dump)
+	if err != nil {
+		t.Fatalf("marshal dump failed: %v", err)
+	}
+	text := string(encoded)
+	for _, forbidden := range []string{
+		"secret-token",
+		"sk-live-secret123456",
+		"sk-query-secret123456",
+		"sk-quota-secret123456",
+		"sk-summary-secret123456",
+		"user:pass@",
+	} {
+		if strings.Contains(text, forbidden) {
+			t.Fatalf("export leaked forbidden value %q: %s", forbidden, text)
+		}
+	}
+	if !strings.Contains(text, "[REDACTED]") {
+		t.Fatalf("expected redacted marker in exported relay log: %s", text)
+	}
+	if got := dump.RelayLogs[0].Attempts[0].BaseURL; got != "https://example.test/v1" {
+		t.Fatalf("expected sanitized base url, got %q", got)
 	}
 }
 

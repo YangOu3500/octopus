@@ -1227,7 +1227,14 @@ func relayLogForDetail(relayLog model.RelayLog) model.RelayLog {
 	relayLog.ResponseContent = sanitizeRelayLogContent(relayLog.ResponseContent)
 	relayLog.Error = sanitizeRelayLogText(relayLog.Error)
 	for i := range relayLog.Attempts {
+		relayLog.Attempts[i].BaseURL = sanitizeRelayLogURL(relayLog.Attempts[i].BaseURL)
 		relayLog.Attempts[i].FailureReason = sanitizeRelayLogText(relayLog.Attempts[i].FailureReason)
+		relayLog.Attempts[i].QuotaStatus = sanitizeRelayLogText(relayLog.Attempts[i].QuotaStatus)
+		relayLog.Attempts[i].QuotaReason = sanitizeRelayLogText(relayLog.Attempts[i].QuotaReason)
+		relayLog.Attempts[i].CapacityStatus = sanitizeRelayLogText(relayLog.Attempts[i].CapacityStatus)
+		relayLog.Attempts[i].CapacityReason = sanitizeRelayLogText(relayLog.Attempts[i].CapacityReason)
+		relayLog.Attempts[i].CapacityScope = sanitizeRelayLogText(relayLog.Attempts[i].CapacityScope)
+		relayLog.Attempts[i].CapacitySource = sanitizeRelayLogText(relayLog.Attempts[i].CapacitySource)
 		relayLog.Attempts[i].ErrorSummary = sanitizeRelayLogText(relayLog.Attempts[i].ErrorSummary)
 		relayLog.Attempts[i].Msg = sanitizeRelayLogText(relayLog.Attempts[i].Msg)
 	}
