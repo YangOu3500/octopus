@@ -675,7 +675,7 @@ func (ra *relayAttempt) clientRequestHeaders() http.Header {
 }
 
 // handleWSStreamResponse processes events from an upstream WebSocket reader.
-func (ra *relayAttempt) handleWSStreamResponse(ctx context.Context, reader *wsUpstreamReader) error {
+func (ra *relayAttempt) handleWSStreamResponse(ctx context.Context, reader UpstreamReader) error {
 	gateConfig := ra.resolvedStreamGateConfig()
 	// 交接早期心跳给本函数内层 ticker
 	ra.heartbeat.Hand()
@@ -759,6 +759,7 @@ func (ra *relayAttempt) handleWSStreamResponse(ctx context.Context, reader *wsUp
 			}
 
 			// Transform through outbound → internal → inbound pipeline
+			ra.metrics.AppendRawDebugResponsePayload(append(append([]byte(nil), r.data...), '\n'), reader.Headers(), reader.StatusCode())
 			data, err := ra.transformStreamData(ctx, string(r.data))
 			if err != nil || len(data) == 0 {
 				continue

@@ -2714,6 +2714,73 @@ func TestHandleResponsesCompactRawDebugCapture(t *testing.T) {
 	}
 }
 
+func TestHandleWSStreamResponseRawDebugCapturesUpstreamFrames(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/responses", nil)
+
+	internalReq := &transformerModel.InternalLLMRequest{
+		Model:        "gpt-4o",
+		Stream:       boolPtr(true),
+		RawAPIFormat: transformerModel.APIFormatOpenAIResponse,
+	}
+	metrics := NewRelayMetrics(1, "ws-debug-group", []byte(`{"model":"ws-debug-group"}`), internalReq)
+	metrics.EnableRawDebug(model.RawDebugSession{
+		ID:                  99,
+		Status:              model.RawDebugSessionActive,
+		MaxCaptureBytes:     4096,
+		CaptureResponseBody: true,
+		CaptureHeaders:      true,
+		RedactAuthHeaders:   true,
+	}, http.Header{
+		rawDebugTokenHeader: []string{"debug-token"},
+		"Authorization":     []string{"Bearer client-secret"},
+	})
+
+	req := &relayRequest{
+		c:               c,
+		inAdapter:       inbound.Get(inbound.InboundTypeOpenAIResponse),
+		internalRequest: internalReq,
+		metrics:         metrics,
+		apiKeyID:        1,
+		requestModel:    "ws-debug-group",
+	}
+	ra := &relayAttempt{
+		relayRequest: req,
+		outAdapter:   outbound.Get(outbound.OutboundTypeOpenAIResponse),
+		channel:      &model.Channel{Name: "ws-debug-channel", Type: outbound.OutboundTypeOpenAIResponse},
+	}
+	reader := &fakeUpstreamReader{
+		statusCode: http.StatusOK,
+		headers:    http.Header{"Content-Type": []string{"text/event-stream"}, "Set-Cookie": []string{"sid=response-secret"}},
+		events: [][]byte{
+			[]byte(`{"type":"response.created","response":{"id":"resp_ws","model":"gpt-4o","status":"in_progress","output":[]}}`),
+			[]byte(`{"type":"response.output_text.delta","delta":"hello"}`),
+			[]byte(`{"type":"response.completed","response":{"id":"resp_ws","model":"gpt-4o","status":"completed","output":[],"usage":{"input_tokens":1,"output_tokens":1,"total_tokens":2}}}`),
+		},
+	}
+
+	if err := ra.handleWSStreamResponse(context.Background(), reader); err != nil {
+		t.Fatalf("handleWSStreamResponse() error = %v", err)
+	}
+	if !strings.Contains(string(metrics.RawDebugResponseBody), `"response.output_text.delta"`) ||
+		!strings.Contains(string(metrics.RawDebugResponseBody), `"hello"`) {
+		t.Fatalf("expected raw debug response body to include upstream WS frames, got %q", string(metrics.RawDebugResponseBody))
+	}
+	if metrics.RawDebugHTTPStatus != http.StatusOK {
+		t.Fatalf("expected raw debug HTTP status %d, got %d", http.StatusOK, metrics.RawDebugHTTPStatus)
+	}
+	if got := metrics.RawDebugResponseHeaders.Get("Content-Type"); got != "text/event-stream" {
+		t.Fatalf("expected raw debug response headers to be copied, got %q", got)
+	}
+	if strings.Contains(string(metrics.RawDebugResponseBody), "debug-token") ||
+		strings.Contains(string(metrics.RawDebugResponseBody), "client-secret") {
+		t.Fatalf("raw debug response capture leaked request-side control content: %q", string(metrics.RawDebugResponseBody))
+	}
+}
+
 func TestHandleResponsesCompactSkipsIncompatibleChannels(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctx := setupRelayTestDB(t)
@@ -2828,6 +2895,44 @@ func TestImagesRawDebugCaptureSanitizesHeadersAndBodies(t *testing.T) {
 		strings.Contains(detail.ResponseBody, "sk-response-secret123456") {
 		t.Fatalf("images raw debug capture leaked sensitive content: %+v", detail)
 	}
+}
+
+type fakeUpstreamReader struct {
+	events     [][]byte
+	index      int
+	statusCode int
+	headers    http.Header
+}
+
+func (r *fakeUpstreamReader) ReadEvent(context.Context) ([]byte, error) {
+	if r.index >= len(r.events) {
+		return nil, io.EOF
+	}
+	event := append([]byte(nil), r.events[r.index]...)
+	r.index++
+	return event, nil
+}
+
+func (r *fakeUpstreamReader) StatusCode() int {
+	if r.statusCode == 0 {
+		return http.StatusOK
+	}
+	return r.statusCode
+}
+
+func (r *fakeUpstreamReader) Headers() http.Header {
+	if r.headers == nil {
+		return nil
+	}
+	return r.headers.Clone()
+}
+
+func (r *fakeUpstreamReader) Body() io.ReadCloser {
+	return nil
+}
+
+func (r *fakeUpstreamReader) Close() error {
+	return nil
 }
 
 func setupRelayTestDB(t *testing.T) context.Context {
