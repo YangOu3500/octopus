@@ -39,6 +39,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { PageWrapper } from '@/components/common/PageWrapper';
 import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 25;
@@ -1243,7 +1244,7 @@ export function Traces() {
     }, [hasMore, maxPage, page, params, t, total, traces]);
 
     return (
-        <div className="space-y-2.5 pb-24 pr-1 md:pb-4">
+        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-2.5 pb-24 pr-1 md:pb-4" childLayout={false}>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
                 <SummaryTile
                     label={t('summary.total')}
@@ -1512,6 +1513,6 @@ export function Traces() {
                     <TraceDetailPanel traceId={effectiveSelectedTraceId} />
                 </div>
             </div>
-        </div>
+        </PageWrapper>
     );
 }

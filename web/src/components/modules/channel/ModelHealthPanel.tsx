@@ -648,9 +648,9 @@ export function ChannelModelHealthPanel() {
     const hasStatusData = statusChartData.some((item) => item.count > 0);
 
     return (
-        <div className="flex h-full min-h-0 flex-col gap-2.5">
+        <div className="flex min-h-0 flex-col gap-2.5">
             <section className="shrink-0 rounded-lg border border-border bg-card p-3.5">
-                <div className="grid gap-2.5 lg:grid-cols-[minmax(0,1.48fr)_minmax(280px,0.82fr)]">
+                <div className="grid items-start gap-2.5 lg:grid-cols-[minmax(0,1.48fr)_minmax(280px,0.82fr)]">
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-2.5">
                             <div className="min-w-0">
@@ -962,7 +962,7 @@ export function ChannelModelHealthPanel() {
                 </div>
             </section>
 
-            <section className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-card">
+            <section className="min-h-[28rem] overflow-hidden rounded-lg border border-border bg-card md:min-h-[32rem]">
                 {isLoading ? (
                     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                         <LoaderCircle className="mr-2 size-4 animate-spin" />

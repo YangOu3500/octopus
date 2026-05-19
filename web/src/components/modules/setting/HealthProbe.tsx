@@ -593,7 +593,7 @@ export function SettingHealthProbe() {
                         subtitle={t('healthProbe.health.subtitle')}
                         action={<Switch checked={healthScoreEnabled} onCheckedChange={handleHealthScoreChange} />}
                     >
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
                             {healthFields.map(renderFieldCard)}
                         </div>
                     </SectionShell>
@@ -604,7 +604,7 @@ export function SettingHealthProbe() {
                         subtitle={t('healthProbe.channelConcurrency.subtitle')}
                         action={<Switch checked={channelConcurrencyEnabled} onCheckedChange={handleChannelConcurrencyChange} />}
                     >
-                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-4">
                             <SelectCard
                                 icon={Network}
                                 label={t('healthProbe.channelConcurrency.mode.label')}
@@ -624,7 +624,7 @@ export function SettingHealthProbe() {
                         title={t('healthProbe.stream.title')}
                         subtitle={t('healthProbe.stream.subtitle')}
                     >
-                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-4">
                             {streamFields.map(renderFieldCard)}
                             {streamSwitchFields.map(renderSwitchCard)}
                         </div>

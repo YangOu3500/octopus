@@ -145,16 +145,18 @@ export function GatewayOperationsPanel() {
                             return (
                                 <article
                                     key={item.id}
-                                    className="cursor-default rounded-md border border-border/70 bg-background/45 p-2.5 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/80 hover:shadow-sm"
+                                    className="min-h-[84px] cursor-default rounded-md border border-border/70 bg-background/45 p-2.5 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/80 hover:shadow-sm"
                                 >
-                                    <div className="flex items-start gap-2">
-                                        <div className="flex size-7 items-center justify-center rounded-md border bg-card text-primary">
+                                    <div className="flex min-w-0 items-start gap-2.5">
+                                        <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border bg-card text-primary">
                                             <Icon className="size-3.5" />
                                         </div>
+                                        <div className="min-w-0">
+                                            <div className="text-[11px] text-muted-foreground">{t(`items.${item.id}.label`)}</div>
+                                            <div className="mt-1 text-base font-semibold tabular-nums tracking-normal">{item.value}</div>
+                                            <div className="mt-1 line-clamp-2 text-xs text-muted-foreground" title={item.sub}>{item.sub}</div>
+                                        </div>
                                     </div>
-                                    <div className="mt-2 text-[11px] text-muted-foreground">{t(`items.${item.id}.label`)}</div>
-                                    <div className="mt-1 text-lg font-semibold tabular-nums tracking-normal">{item.value}</div>
-                                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground" title={item.sub}>{item.sub}</div>
                                 </article>
                             );
                         })}
