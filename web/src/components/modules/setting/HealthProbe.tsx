@@ -26,6 +26,7 @@ import { useHealthCooldownPolicy, useSettingList, useSetSetting, SettingKey } fr
 import { toast } from '@/components/common/Toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/animate-ui/components/animate/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type RuntimeSettingKey = typeof SettingKey[keyof typeof SettingKey];
 
@@ -584,131 +585,150 @@ export function SettingHealthProbe() {
 
     return (
         <div className="space-y-4">
-            <SectionShell
-                icon={HeartPulse}
-                title={t('healthProbe.health.title')}
-                subtitle={t('healthProbe.health.subtitle')}
-                action={<Switch checked={healthScoreEnabled} onCheckedChange={handleHealthScoreChange} />}
-            >
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {healthFields.map(renderFieldCard)}
-                </div>
-            </SectionShell>
-
-            <SectionShell
-                icon={Network}
-                title={t('healthProbe.channelConcurrency.title')}
-                subtitle={t('healthProbe.channelConcurrency.subtitle')}
-                action={<Switch checked={channelConcurrencyEnabled} onCheckedChange={handleChannelConcurrencyChange} />}
-            >
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
-                    <SelectCard
-                        icon={Network}
-                        label={t('healthProbe.channelConcurrency.mode.label')}
-                        hint={t('healthProbe.channelConcurrency.mode.hint')}
-                        value={values[SettingKey.ChannelConcurrencyMode] ?? 'local'}
-                        onValueChange={(value) => handleSelectSave(SettingKey.ChannelConcurrencyMode, value)}
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+                <div className="space-y-4">
+                    <SectionShell
+                        icon={HeartPulse}
+                        title={t('healthProbe.health.title')}
+                        subtitle={t('healthProbe.health.subtitle')}
+                        action={<Switch checked={healthScoreEnabled} onCheckedChange={handleHealthScoreChange} />}
                     >
-                        <SelectItem value="local">{t('healthProbe.channelConcurrency.mode.local')}</SelectItem>
-                        <SelectItem value="database">{t('healthProbe.channelConcurrency.mode.database')}</SelectItem>
-                    </SelectCard>
-                    {channelConcurrencyFields.map(renderFieldCard)}
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            {healthFields.map(renderFieldCard)}
+                        </div>
+                    </SectionShell>
+
+                    <SectionShell
+                        icon={Network}
+                        title={t('healthProbe.channelConcurrency.title')}
+                        subtitle={t('healthProbe.channelConcurrency.subtitle')}
+                        action={<Switch checked={channelConcurrencyEnabled} onCheckedChange={handleChannelConcurrencyChange} />}
+                    >
+                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                            <SelectCard
+                                icon={Network}
+                                label={t('healthProbe.channelConcurrency.mode.label')}
+                                hint={t('healthProbe.channelConcurrency.mode.hint')}
+                                value={values[SettingKey.ChannelConcurrencyMode] ?? 'local'}
+                                onValueChange={(value) => handleSelectSave(SettingKey.ChannelConcurrencyMode, value)}
+                            >
+                                <SelectItem value="local">{t('healthProbe.channelConcurrency.mode.local')}</SelectItem>
+                                <SelectItem value="database">{t('healthProbe.channelConcurrency.mode.database')}</SelectItem>
+                            </SelectCard>
+                            {channelConcurrencyFields.map(renderFieldCard)}
+                        </div>
+                    </SectionShell>
+
+                    <SectionShell
+                        icon={Timer}
+                        title={t('healthProbe.stream.title')}
+                        subtitle={t('healthProbe.stream.subtitle')}
+                    >
+                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                            {streamFields.map(renderFieldCard)}
+                            {streamSwitchFields.map(renderSwitchCard)}
+                        </div>
+                    </SectionShell>
                 </div>
-            </SectionShell>
 
-            <SectionShell
-                icon={ShieldAlert}
-                title={t('healthProbe.cooldown.title')}
-                subtitle={t('healthProbe.cooldown.subtitle')}
-            >
-                <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">{t('healthProbe.cooldown.summary.total', { value: cooldownSummary.total })}</Badge>
-                    <Badge variant="outline">{t('healthProbe.cooldown.summary.retryAfter', { value: cooldownSummary.retryAfter })}</Badge>
-                    <Badge variant="outline">{t('healthProbe.cooldown.summary.modelScoped', { value: cooldownSummary.modelScoped })}</Badge>
-                </div>
-
-                <div className="grid gap-3 lg:grid-cols-2">
-                    {cooldownPolicies.map((policy) => (
-                        <div key={policy.reason} className="rounded-lg border border-border/70 bg-background/30 p-3">
-                            <div className="flex flex-wrap items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                    <div className="font-medium text-card-foreground">{reasonLabel(policy.reason)}</div>
-                                    <div className="mt-1 font-mono text-[11px] text-muted-foreground">{policy.reason}</div>
-                                </div>
-                                <div className="flex flex-wrap gap-1">
-                                    <Badge variant="secondary">{formatSeconds(policy.base_seconds)}</Badge>
-                                    <Badge variant="outline">{t('healthProbe.cooldown.max', { value: formatSeconds(policy.max_seconds) })}</Badge>
-                                </div>
+                <div className="space-y-4">
+                    <SectionShell
+                        icon={ShieldAlert}
+                        title={t('healthProbe.cooldown.title')}
+                        subtitle={t('healthProbe.cooldown.subtitle')}
+                    >
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2.5">
+                                <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.summary.total', { value: cooldownSummary.total })}</div>
+                                <div className="mt-1 text-lg font-semibold tabular-nums">{cooldownSummary.total}</div>
                             </div>
-
-                            <div className="mt-3 flex flex-wrap gap-1">
-                                {policy.scopes.map((scope) => (
-                                    <Badge key={`${policy.reason}-${scope}`} variant="outline">
-                                        {scopeLabel(scope)}
-                                    </Badge>
-                                ))}
-                                {policy.uses_retry_after ? (
-                                    <Badge variant="secondary">{t('healthProbe.cooldown.retryAfter')}</Badge>
-                                ) : null}
-                                {policy.exponential_backoff ? (
-                                    <Badge variant="outline">{t('healthProbe.cooldown.exponential')}</Badge>
-                                ) : null}
-                                {policy.model_scoped ? (
-                                    <Badge variant="outline">{t('healthProbe.cooldown.modelScoped')}</Badge>
-                                ) : null}
-                                {policy.cleared_on_success ? (
-                                    <Badge variant="outline">{t('healthProbe.cooldown.clearedOnSuccess')}</Badge>
-                                ) : null}
+                            <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2.5">
+                                <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.summary.retryAfter', { value: cooldownSummary.retryAfter })}</div>
+                                <div className="mt-1 text-lg font-semibold tabular-nums">{cooldownSummary.retryAfter}</div>
                             </div>
-
-                            <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                                <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2">
-                                    <div>{t('healthProbe.cooldown.columns.scope')}</div>
-                                    <div className="mt-1 font-medium text-foreground">
-                                        {policy.scopes.map((scope) => scopeLabel(scope)).join(' / ')}
-                                    </div>
-                                </div>
-                                <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2">
-                                    <div>{t('healthProbe.cooldown.columns.lifecycle')}</div>
-                                    <div className="mt-1 font-medium text-foreground">
-                                        {policy.model_scoped ? t('healthProbe.cooldown.modelScoped') : t('healthProbe.cooldown.notModelScoped')}
-                                    </div>
-                                    <div className="mt-1">
-                                        {policy.cleared_on_success ? t('healthProbe.cooldown.clearedOnSuccess') : t('healthProbe.cooldown.notClearedOnSuccess')}
-                                    </div>
-                                </div>
+                            <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2.5">
+                                <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.summary.modelScoped', { value: cooldownSummary.modelScoped })}</div>
+                                <div className="mt-1 text-lg font-semibold tabular-nums">{cooldownSummary.modelScoped}</div>
                             </div>
                         </div>
-                    ))}
-                </div>
 
-                <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.note')}</div>
-            </SectionShell>
+                        <Accordion type="multiple" className="space-y-2">
+                            {cooldownPolicies.map((policy) => (
+                                <AccordionItem key={policy.reason} value={policy.reason} className="overflow-hidden rounded-lg border border-border/70 bg-background/30">
+                                    <AccordionTrigger className="items-center px-3 py-3 hover:no-underline hover:bg-background/60">
+                                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                                            <div className="min-w-0">
+                                                <div className="truncate text-sm font-medium text-card-foreground">{reasonLabel(policy.reason)}</div>
+                                                <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{policy.reason}</div>
+                                            </div>
+                                            <div className="hidden flex-wrap gap-1 lg:flex">
+                                                <Badge variant="secondary">{formatSeconds(policy.base_seconds)}</Badge>
+                                                <Badge variant="outline">{t('healthProbe.cooldown.max', { value: formatSeconds(policy.max_seconds) })}</Badge>
+                                                <Badge variant="outline">{policy.scopes.map((scope) => scopeLabel(scope)).join(' / ')}</Badge>
+                                            </div>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="border-t border-border/60 px-3 pb-3 pt-3">
+                                        <div className="flex flex-wrap gap-1">
+                                            {policy.scopes.map((scope) => (
+                                                <Badge key={`${policy.reason}-${scope}`} variant="outline">
+                                                    {scopeLabel(scope)}
+                                                </Badge>
+                                            ))}
+                                            {policy.uses_retry_after ? (
+                                                <Badge variant="secondary">{t('healthProbe.cooldown.retryAfter')}</Badge>
+                                            ) : null}
+                                            {policy.exponential_backoff ? (
+                                                <Badge variant="outline">{t('healthProbe.cooldown.exponential')}</Badge>
+                                            ) : null}
+                                            {policy.model_scoped ? (
+                                                <Badge variant="outline">{t('healthProbe.cooldown.modelScoped')}</Badge>
+                                            ) : null}
+                                            {policy.cleared_on_success ? (
+                                                <Badge variant="outline">{t('healthProbe.cooldown.clearedOnSuccess')}</Badge>
+                                            ) : null}
+                                        </div>
 
-            <SectionShell
-                icon={Timer}
-                title={t('healthProbe.stream.title')}
-                subtitle={t('healthProbe.stream.subtitle')}
-            >
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
-                    {streamFields.map(renderFieldCard)}
-                    {streamSwitchFields.map(renderSwitchCard)}
-                </div>
-            </SectionShell>
+                                        <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                                            <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2">
+                                                <div>{t('healthProbe.cooldown.columns.scope')}</div>
+                                                <div className="mt-1 font-medium text-foreground">
+                                                    {policy.scopes.map((scope) => scopeLabel(scope)).join(' / ')}
+                                                </div>
+                                            </div>
+                                            <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2">
+                                                <div>{t('healthProbe.cooldown.columns.lifecycle')}</div>
+                                                <div className="mt-1 font-medium text-foreground">
+                                                    {policy.model_scoped ? t('healthProbe.cooldown.modelScoped') : t('healthProbe.cooldown.notModelScoped')}
+                                                </div>
+                                                <div className="mt-1">
+                                                    {policy.cleared_on_success ? t('healthProbe.cooldown.clearedOnSuccess') : t('healthProbe.cooldown.notClearedOnSuccess')}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
 
-            <SectionShell
-                icon={Activity}
-                title={t('healthProbe.probe.title')}
-                subtitle={t('healthProbe.probe.subtitle')}
-                action={<Switch checked={probeEnabled} onCheckedChange={handleProbeChange} />}
-            >
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    {probeFields.map(renderFieldCard)}
+                        <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.note')}</div>
+                    </SectionShell>
+
+                    <SectionShell
+                        icon={Activity}
+                        title={t('healthProbe.probe.title')}
+                        subtitle={t('healthProbe.probe.subtitle')}
+                        action={<Switch checked={probeEnabled} onCheckedChange={handleProbeChange} />}
+                    >
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            {probeFields.map(renderFieldCard)}
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            {probeSwitchFields.map(renderSwitchCard)}
+                        </div>
+                    </SectionShell>
                 </div>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    {probeSwitchFields.map(renderSwitchCard)}
-                </div>
-            </SectionShell>
+            </div>
         </div>
     );
 }
