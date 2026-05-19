@@ -87,6 +87,7 @@ func HandleResponsesCompact(c *gin.Context) {
 
 	metricsReq := &transformerModel.InternalLLMRequest{Model: requestModel, RawRequest: body, RawAPIFormat: transformerModel.APIFormatOpenAIResponse}
 	metrics := NewRelayMetrics(apiKeyID, requestModel, body, metricsReq)
+	enableRawDebugFromHeaders(c.Request.Context(), metrics, c.Request.Header)
 	metrics.SetGroupID(group.ID)
 	metrics.SetClientInfo(c.ClientIP(), "relay")
 	metrics.BeginActiveTracking("routing")
@@ -300,6 +301,7 @@ func forwardResponsesCompact(c *gin.Context, metrics *RelayMetrics, iter *balanc
 		metrics.markActiveAttemptEnd(dbmodel.AttemptFailed, response.StatusCode, readErr.Error(), false, len(iter.Attempts()))
 		return response.StatusCode, 0, fmt.Errorf("failed to read compact response body: %w", readErr)
 	}
+	metrics.SetRawDebugResponsePayload(body, response.Header, response.StatusCode)
 
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		retryAfter := parseRetryAfter(response.Header.Get("Retry-After"))

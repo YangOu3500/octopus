@@ -2640,6 +2640,80 @@ func TestHandleResponsesCompactProxiesSuccessfulResponse(t *testing.T) {
 	}
 }
 
+func TestHandleResponsesCompactRawDebugCapture(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx := setupRelayTestDB(t)
+	auth := enableRawDebugRelayTest(t, ctx)
+
+	var sawRawDebugHeader atomic.Bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.TrimSpace(r.Header.Get(rawDebugTokenHeader)) != "" {
+			sawRawDebugHeader.Store(true)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Set-Cookie", "sid=response-secret")
+		_, _ = w.Write([]byte(`{"id":"resp_cmp_debug","object":"response.compaction","created_at":1764967971,"output":[{"id":"cmp_001","type":"compaction","encrypted_content":"secret"}],"usage":{"input_tokens":3,"output_tokens":2,"total_tokens":5}}`))
+	}))
+	defer server.Close()
+
+	channel := &model.Channel{
+		Name:     "relay-compact-raw-debug",
+		Type:     outbound.OutboundTypeOpenAIResponse,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: server.URL + "/v1"}},
+		Model:    "compact-debug-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "compact-key"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+	group := &model.Group{Name: "relay-compact-raw-debug-group", Mode: model.GroupModeFailover}
+	if err := op.GroupCreate(group, ctx); err != nil {
+		t.Fatalf("GroupCreate failed: %v", err)
+	}
+	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "compact-debug-model", Priority: 1, Weight: 1}, ctx); err != nil {
+		t.Fatalf("GroupItemAdd failed: %v", err)
+	}
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Set("api_key_id", 42)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses/compact", strings.NewReader(`{"model":"relay-compact-raw-debug-group","previous_response_id":"resp_123","api_key":"sk-request-secret123456"}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Request.Header.Set(rawDebugTokenHeader, auth.Token)
+	c.Request.Header.Set("Authorization", "Bearer client-secret")
+
+	HandleResponsesCompact(c)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected compact proxy to succeed, got status %d body %s", recorder.Code, recorder.Body.String())
+	}
+	if sawRawDebugHeader.Load() {
+		t.Fatalf("raw debug token header must not be forwarded upstream")
+	}
+	list, err := op.RawDebugCaptureList(ctx, model.RawDebugCaptureListQuery{Page: 1, PageSize: 10})
+	if err != nil {
+		t.Fatalf("RawDebugCaptureList failed: %v", err)
+	}
+	if len(list.Items) != 1 {
+		t.Fatalf("expected one raw debug capture, got %+v", list)
+	}
+	detail, err := op.RawDebugCaptureGet(ctx, list.Items[0].ID, 7, "tester")
+	if err != nil {
+		t.Fatalf("RawDebugCaptureGet failed: %v", err)
+	}
+	if !strings.Contains(detail.RequestBody, `"previous_response_id":"resp_123"`) ||
+		!strings.Contains(detail.ResponseBody, `"response.compaction"`) {
+		t.Fatalf("expected compact request and response bodies to be captured, got %+v", detail)
+	}
+	if strings.Contains(detail.RequestHeaders, auth.Token) ||
+		strings.Contains(detail.RequestHeaders, "client-secret") ||
+		strings.Contains(detail.ResponseHeaders, "response-secret") ||
+		strings.Contains(detail.RequestBody, "sk-request-secret123456") {
+		t.Fatalf("raw debug capture leaked sensitive content: %+v", detail)
+	}
+}
+
 func TestHandleResponsesCompactSkipsIncompatibleChannels(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctx := setupRelayTestDB(t)
@@ -2712,6 +2786,50 @@ func TestHandleResponsesCompactSkipsIncompatibleChannels(t *testing.T) {
 	}
 }
 
+func TestImagesRawDebugCaptureSanitizesHeadersAndBodies(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx := setupRelayTestDB(t)
+	auth := enableRawDebugRelayTest(t, ctx)
+
+	metrics := newImagesRelayMetrics(5, "image-group")
+	metrics.GroupID = 6
+	metrics.RequestSource = "images"
+	metrics.ClientIP = "127.0.0.1"
+	metrics.EnableRawDebug(auth.Session, http.Header{
+		rawDebugTokenHeader: []string{auth.Token},
+		"Authorization":     []string{"Bearer request-secret"},
+	})
+	metrics.RawDebugRequestBody = []byte(`{"model":"image-group","api_key":"sk-image-secret123456"}`)
+	metrics.SetRawDebugResponsePayload(
+		[]byte(`{"data":[{"b64_json":"abc"}],"secret":"sk-response-secret123456"}`),
+		http.Header{"Set-Cookie": []string{"sid=response-secret"}},
+		http.StatusOK,
+	)
+	metrics.saveLog(ctx, nil, time.Millisecond, nil, 9, "image-channel")
+
+	list, err := op.RawDebugCaptureList(ctx, model.RawDebugCaptureListQuery{Page: 1, PageSize: 10})
+	if err != nil {
+		t.Fatalf("RawDebugCaptureList failed: %v", err)
+	}
+	if len(list.Items) != 1 {
+		t.Fatalf("expected one images raw debug capture, got %+v", list)
+	}
+	detail, err := op.RawDebugCaptureGet(ctx, list.Items[0].ID, 7, "tester")
+	if err != nil {
+		t.Fatalf("RawDebugCaptureGet failed: %v", err)
+	}
+	if detail.RequestSource != "images" || detail.HTTPStatus != http.StatusOK {
+		t.Fatalf("unexpected images capture metadata: %+v", detail)
+	}
+	if strings.Contains(detail.RequestHeaders, auth.Token) ||
+		strings.Contains(detail.RequestHeaders, "request-secret") ||
+		strings.Contains(detail.ResponseHeaders, "response-secret") ||
+		strings.Contains(detail.RequestBody, "sk-image-secret123456") ||
+		strings.Contains(detail.ResponseBody, "sk-response-secret123456") {
+		t.Fatalf("images raw debug capture leaked sensitive content: %+v", detail)
+	}
+}
+
 func setupRelayTestDB(t *testing.T) context.Context {
 	t.Helper()
 
@@ -2737,4 +2855,25 @@ func setupRelayTestDB(t *testing.T) context.Context {
 	})
 
 	return context.Background()
+}
+
+func enableRawDebugRelayTest(t *testing.T, ctx context.Context) model.RawDebugSessionAuthorization {
+	t.Helper()
+	settings := map[model.SettingKey]string{
+		model.SettingKeyRawDebugEnabled:             "true",
+		model.SettingKeyRawDebugCaptureRequestBody:  "true",
+		model.SettingKeyRawDebugCaptureResponseBody: "true",
+		model.SettingKeyRawDebugCaptureHeaders:      "true",
+		model.SettingKeyRawDebugRedactAuthHeaders:   "true",
+	}
+	for key, value := range settings {
+		if err := op.SettingSetString(key, value); err != nil {
+			t.Fatalf("SettingSetString %s failed: %v", key, err)
+		}
+	}
+	auth, err := op.RawDebugSessionCreate(ctx, model.RawDebugSessionCreateRequest{ActorName: "tester"})
+	if err != nil {
+		t.Fatalf("RawDebugSessionCreate failed: %v", err)
+	}
+	return auth
 }

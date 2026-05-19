@@ -1304,7 +1304,7 @@ func sanitizeRelayLogJSONValue(value any) any {
 func isSensitiveRelayLogKey(key string) bool {
 	normalized := strings.NewReplacer("-", "", "_", "", ".", "").Replace(strings.ToLower(strings.TrimSpace(key)))
 	switch normalized {
-	case "authorization", "cookie", "setcookie", "xapikey", "xgoogapikey", "apikey", "accesstoken", "refreshtoken", "session", "jwt":
+	case "authorization", "cookie", "setcookie", "xapikey", "xgoogapikey", "apikey", "accesstoken", "refreshtoken", "session", "jwt", "xoctopusrawdebugtoken":
 		return true
 	default:
 		return false

@@ -122,7 +122,13 @@ func ImagesHandler(endpoint string, c *gin.Context) {
 	metrics := newImagesRelayMetrics(apiKeyID, requestModel)
 	metrics.ClientIP = c.ClientIP()
 	metrics.RequestSource = "images"
+	metrics.GroupID = group.ID
+	metrics.RequestStream = stream
 	metrics.RequestContent = buildImagesRequestContentForLog(isMultipart, bc, jsonPayload)
+	if session, ok := rawDebugSessionFromHeaders(ctx, c.Request.Header); ok {
+		metrics.EnableRawDebug(session, c.Request.Header)
+		metrics.SetRawDebugRequestBodyFromCache(bc)
+	}
 	metrics.BeginActiveTracking()
 
 	// === 早期心跳 ===
@@ -305,8 +311,10 @@ type imagesUsage struct {
 
 type imagesRelayMetrics struct {
 	APIKeyID      int
+	GroupID       int
 	RequestModel  string
 	ActualModel   string
+	RequestStream bool
 	RequestSource string
 	ClientIP      string
 	StartTime     time.Time
@@ -316,6 +324,15 @@ type imagesRelayMetrics struct {
 
 	RequestContent  string
 	ResponseContent string
+
+	RawDebugSession           *model.RawDebugSession
+	RawDebugRequestHeaders    http.Header
+	RawDebugResponseHeaders   http.Header
+	RawDebugRequestBody       []byte
+	RawDebugRequestTruncated  bool
+	RawDebugResponseBody      []byte
+	RawDebugResponseTruncated bool
+	RawDebugHTTPStatus        int
 
 	activeRequestID string
 }
@@ -347,6 +364,76 @@ func (m *imagesRelayMetrics) SetUsageFromImages(actualModel string, u imagesUsag
 
 	m.Stats.InputCost = float64(u.InputTokens) * modelPrice.Input * 1e-6
 	m.Stats.OutputCost = float64(u.OutputTokens) * modelPrice.Output * 1e-6
+}
+
+func (m *imagesRelayMetrics) EnableRawDebug(session model.RawDebugSession, requestHeaders http.Header) {
+	if session.ID == 0 || session.Status != model.RawDebugSessionActive {
+		return
+	}
+	m.RawDebugSession = &session
+	if requestHeaders != nil {
+		m.RawDebugRequestHeaders = requestHeaders.Clone()
+	}
+}
+
+func (m *imagesRelayMetrics) SetRawDebugRequestBodyFromCache(bc *bodycache.BodyCache) {
+	if m == nil || m.RawDebugSession == nil || bc == nil {
+		return
+	}
+	reader, err := bc.NewReader()
+	if err != nil {
+		log.Warnf("failed to read images raw debug request body: %v", err)
+		return
+	}
+	defer reader.Close()
+	body, truncated, err := readRawDebugLimited(reader, m.RawDebugSession.MaxCaptureBytes)
+	if err != nil {
+		log.Warnf("failed to read images raw debug request body: %v", err)
+		return
+	}
+	m.RawDebugRequestBody = body
+	m.RawDebugRequestTruncated = truncated
+}
+
+func (m *imagesRelayMetrics) SetRawDebugResponsePayload(payload []byte, headers http.Header, status int) {
+	if m == nil || m.RawDebugSession == nil {
+		return
+	}
+	m.RawDebugHTTPStatus = status
+	if headers != nil {
+		m.RawDebugResponseHeaders = headers.Clone()
+	}
+	maxBytes := m.RawDebugSession.MaxCaptureBytes
+	if maxBytes <= 0 {
+		maxBytes = model.RawDebugDefaultMaxCaptureBytes
+	}
+	m.RawDebugResponseBody = append(m.RawDebugResponseBody[:0], limitRawDebugBytes(payload, maxBytes)...)
+	m.RawDebugResponseTruncated = len(payload) > maxBytes
+}
+
+func (m *imagesRelayMetrics) AppendRawDebugResponsePayload(payload []byte, headers http.Header, status int) {
+	if m == nil || m.RawDebugSession == nil || len(payload) == 0 {
+		return
+	}
+	m.RawDebugHTTPStatus = status
+	if headers != nil && m.RawDebugResponseHeaders == nil {
+		m.RawDebugResponseHeaders = headers.Clone()
+	}
+	maxBytes := m.RawDebugSession.MaxCaptureBytes
+	if maxBytes <= 0 {
+		maxBytes = model.RawDebugDefaultMaxCaptureBytes
+	}
+	remaining := maxBytes - len(m.RawDebugResponseBody)
+	if remaining <= 0 {
+		m.RawDebugResponseTruncated = true
+		return
+	}
+	if len(payload) > remaining {
+		m.RawDebugResponseBody = append(m.RawDebugResponseBody, payload[:remaining]...)
+		m.RawDebugResponseTruncated = true
+		return
+	}
+	m.RawDebugResponseBody = append(m.RawDebugResponseBody, payload...)
 }
 
 func (m *imagesRelayMetrics) Save(ctx context.Context, success bool, err error, attempts []model.ChannelAttempt) {
@@ -392,7 +479,10 @@ func (m *imagesRelayMetrics) saveLog(ctx context.Context, err error, duration ti
 
 	relayLog := model.RelayLog{
 		Time:             m.StartTime.Unix(),
+		ClientAPIKeyID:   m.APIKeyID,
+		GroupID:          m.GroupID,
 		RequestModelName: m.RequestModel,
+		RequestStream:    m.RequestStream,
 		RequestSource:    m.RequestSource,
 		ClientIP:         m.ClientIP,
 		ChannelName:      channelName,
@@ -401,6 +491,10 @@ func (m *imagesRelayMetrics) saveLog(ctx context.Context, err error, duration ti
 		UseTime:          int(duration.Milliseconds()),
 		Attempts:         attempts,
 		TotalAttempts:    len(attempts),
+		FinalStatus:      traceFinalStatus(err == nil, err),
+		FinalChannelID:   channelID,
+		AttemptsCount:    len(attempts),
+		TotalLatencyMS:   int(duration.Milliseconds()),
 		RequestContent:   m.RequestContent,
 		ResponseContent:  m.ResponseContent,
 	}
@@ -425,8 +519,37 @@ func (m *imagesRelayMetrics) saveLog(ctx context.Context, err error, duration ti
 		relayLog.Error = err.Error()
 	}
 
-	if logErr := op.RelayLogAdd(ctx, relayLog); logErr != nil {
+	savedLog, logErr := op.RelayLogAddWithResult(ctx, relayLog)
+	if logErr != nil {
 		log.Warnf("failed to save relay log: %v", logErr)
+		return
+	}
+	m.saveRawDebugCapture(ctx, savedLog, err == nil, err)
+}
+
+func (m *imagesRelayMetrics) saveRawDebugCapture(ctx context.Context, relayLog model.RelayLog, success bool, err error) {
+	if m.RawDebugSession == nil {
+		return
+	}
+	errorSummary := ""
+	if err != nil {
+		errorSummary = err.Error()
+	}
+	_, captureErr := op.RawDebugCaptureRecord(ctx, model.RawDebugCaptureInput{
+		Session:               *m.RawDebugSession,
+		RelayLog:              relayLog,
+		RequestHeaders:        headerToMap(m.RawDebugRequestHeaders),
+		ResponseHeaders:       headerToMap(m.RawDebugResponseHeaders),
+		RequestBody:           m.RawDebugRequestBody,
+		RequestBodyTruncated:  m.RawDebugRequestTruncated,
+		ResponseBody:          m.RawDebugResponseBody,
+		ResponseBodyTruncated: m.RawDebugResponseTruncated,
+		HTTPStatus:            m.RawDebugHTTPStatus,
+		Success:               success,
+		ErrorSummary:          errorSummary,
+	})
+	if captureErr != nil {
+		log.Warnf("failed to save images raw debug capture: %v", captureErr)
 	}
 }
 
@@ -663,6 +786,7 @@ func imagesAttempt(
 	if stream {
 		if respUp.StatusCode < 200 || respUp.StatusCode >= 300 {
 			b, _ := io.ReadAll(io.LimitReader(respUp.Body, imagesUpstreamErrorBodyLimit))
+			metrics.SetRawDebugResponsePayload(b, respUp.Header, respUp.StatusCode)
 			return respUp.StatusCode, false, nil, upstreamCT, fmt.Errorf("upstream error: %d: %s", respUp.StatusCode, string(b))
 		}
 		u, w, err := proxySSE(ctx, c, respUp, firstTokenTimeOutSec, metrics, hb)
@@ -672,10 +796,11 @@ func imagesAttempt(
 	// 非流式：2xx 透传，否则读取限长错误体用于错误信息与重试判定
 	if respUp.StatusCode < 200 || respUp.StatusCode >= 300 {
 		b, _ := io.ReadAll(io.LimitReader(respUp.Body, imagesUpstreamErrorBodyLimit))
+		metrics.SetRawDebugResponsePayload(b, respUp.Header, respUp.StatusCode)
 		return respUp.StatusCode, false, nil, upstreamCT, fmt.Errorf("upstream error: %d: %s", respUp.StatusCode, string(b))
 	}
 
-	u, w, err := proxyNonStream(c, respUp)
+	u, w, err := proxyNonStream(c, respUp, metrics)
 	return respUp.StatusCode, w, u, upstreamCT, err
 }
 
@@ -751,7 +876,7 @@ func copyMultipartReplaceModel(src io.Reader, boundary string, dst *multipart.Wr
 }
 
 // proxyNonStream 将上游非流式响应原样透传到下游，同时尽量提取 usage（避免解析巨大 b64_json）。
-func proxyNonStream(c *gin.Context, respUp *http.Response) (*imagesUsage, bool, error) {
+func proxyNonStream(c *gin.Context, respUp *http.Response, metrics *imagesRelayMetrics) (*imagesUsage, bool, error) {
 	ct := respUp.Header.Get("Content-Type")
 	if ct == "" {
 		ct = "application/json"
@@ -767,6 +892,7 @@ func proxyNonStream(c *gin.Context, respUp *http.Response) (*imagesUsage, bool, 
 		if n > 0 {
 			chunk := buf[:n]
 			scanner.Feed(chunk)
+			metrics.AppendRawDebugResponsePayload(chunk, respUp.Header, respUp.StatusCode)
 			if _, werr := c.Writer.Write(chunk); werr != nil {
 				return scanner.Usage(), true, werr
 			}
@@ -786,6 +912,7 @@ func proxyNonStream(c *gin.Context, respUp *http.Response) (*imagesUsage, bool, 
 func proxySSE(ctx context.Context, c *gin.Context, respUp *http.Response, firstTokenTimeOutSec int, metrics *imagesRelayMetrics, hb *earlyHeartbeat) (*imagesUsage, bool, error) {
 	if ct := respUp.Header.Get("Content-Type"); ct != "" && !strings.Contains(strings.ToLower(ct), "text/event-stream") {
 		b, _ := io.ReadAll(io.LimitReader(respUp.Body, imagesUpstreamErrorBodyLimit))
+		metrics.SetRawDebugResponsePayload(b, respUp.Header, respUp.StatusCode)
 		return nil, false, fmt.Errorf("upstream returned non-SSE content-type %q for stream request: %s", ct, string(b))
 	}
 
@@ -873,6 +1000,7 @@ func proxySSE(ctx context.Context, c *gin.Context, respUp *http.Response, firstT
 			}
 
 			line := r.line
+			metrics.AppendRawDebugResponsePayload(line, respUp.Header, respUp.StatusCode)
 			trimmed := bytes.TrimRight(line, "\r\n")
 			if len(trimmed) == 0 {
 				// 空行：事件边界

@@ -101,13 +101,7 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 
 	// 初始化 Metrics
 	metrics := NewRelayMetrics(apiKeyID, requestModel, rawBody, internalRequest)
-	if token := strings.TrimSpace(c.GetHeader("X-Octopus-Raw-Debug-Token")); token != "" {
-		if session, ok, verifyErr := op.RawDebugSessionVerify(c.Request.Context(), token); verifyErr != nil {
-			log.Warnf("raw debug session verification failed: %v", verifyErr)
-		} else if ok {
-			metrics.EnableRawDebug(session, c.Request.Header)
-		}
-	}
+	enableRawDebugFromHeaders(c.Request.Context(), metrics, c.Request.Header)
 	metrics.SetGroupID(group.ID)
 	metrics.SetClientInfo(c.ClientIP(), "relay")
 	metrics.BeginActiveTracking("routing")

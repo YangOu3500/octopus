@@ -98,7 +98,7 @@ func HandleWSResponse(c *gin.Context) {
 			continue
 		}
 
-		conversationState = processWSResponseCreate(ctx, conn, data, apiKeyID, supportedModels, downstreamSessionID, conversationState)
+		conversationState = processWSResponseCreate(ctx, conn, data, apiKeyID, supportedModels, downstreamSessionID, conversationState, c.Request.Header)
 	}
 }
 
@@ -110,6 +110,7 @@ func processWSResponseCreate(
 	supportedModels string,
 	downstreamSessionID string,
 	conversationState *wsConversationState,
+	requestHeaders http.Header,
 ) *wsConversationState {
 	var reqBody map[string]json.RawMessage
 	if err := json.Unmarshal(data, &reqBody); err != nil {
@@ -215,7 +216,7 @@ func processWSResponseCreate(
 	}
 
 	requestModel = executionRequest.Model
-	req, group, err := newWSRelayRequest(ctx, conn, inAdapter, apiKeyID, requestModel, cloneInternalRequest(executionRequest), originalRequest, preferredSticky, bodyBytes)
+	req, group, err := newWSRelayRequest(ctx, conn, inAdapter, apiKeyID, requestModel, cloneInternalRequest(executionRequest), originalRequest, preferredSticky, bodyBytes, requestHeaders)
 	if err != nil {
 		status := 404
 		code := "model_not_found"
@@ -249,7 +250,7 @@ func processWSResponseCreate(
 			apiKeyID, requestModel, failedPreviousResponseID, result.ResetConversation)
 		balancer.DeleteSticky(apiKeyID, requestModel)
 		replayedRequest := conversationState.BuildReplayRequest(originalRequest)
-		replayReq, replayGroup, replayErr := newWSRelayRequest(ctx, conn, inAdapter, apiKeyID, requestModel, replayedRequest, originalRequest, preferredSticky, bodyBytes)
+		replayReq, replayGroup, replayErr := newWSRelayRequest(ctx, conn, inAdapter, apiKeyID, requestModel, replayedRequest, originalRequest, preferredSticky, bodyBytes, requestHeaders)
 		if replayErr == nil {
 			replayReq.metrics.SetWSMode(dbmodel.RelayLogWSModeReplay)
 			replayReq.metrics.SetWSRecovery(dbmodel.RelayLogWSRecoveryReplay)
@@ -415,6 +416,7 @@ func newWSRelayRequest(
 	metricsRequest *transformerModel.InternalLLMRequest,
 	preferredSticky *balancer.SessionEntry,
 	rawBody []byte,
+	requestHeaders http.Header,
 ) (*relayRequest, *dbmodel.Group, error) {
 	group, err := op.GroupGetEnabledMap(requestModel, ctx)
 	if err != nil {
@@ -427,6 +429,7 @@ func newWSRelayRequest(
 	}
 
 	metrics := NewRelayMetrics(apiKeyID, requestModel, rawBody, metricsRequest)
+	enableRawDebugFromHeaders(ctx, metrics, requestHeaders)
 	metrics.SetGroupID(group.ID)
 	metrics.SetClientInfo("", "websocket")
 	metrics.BeginActiveTracking("routing")

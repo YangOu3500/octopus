@@ -3,6 +3,7 @@ package relay
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -383,6 +384,23 @@ func limitRawDebugBytes(payload []byte, maxBytes int) []byte {
 		return payload
 	}
 	return payload[:maxBytes]
+}
+
+func readRawDebugLimited(reader io.Reader, maxBytes int) ([]byte, bool, error) {
+	if reader == nil {
+		return nil, false, nil
+	}
+	if maxBytes <= 0 {
+		maxBytes = model.RawDebugDefaultMaxCaptureBytes
+	}
+	body, err := io.ReadAll(io.LimitReader(reader, int64(maxBytes)+1))
+	if err != nil {
+		return nil, false, err
+	}
+	if len(body) > maxBytes {
+		return body[:maxBytes], true, nil
+	}
+	return body, false, nil
 }
 
 func intPtr(value int) *int {
