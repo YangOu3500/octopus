@@ -5,7 +5,9 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -223,6 +225,121 @@ func RawDebugAuditList(ctx context.Context, query model.RawDebugAuditListQuery) 
 	}, nil
 }
 
+func RawDebugCaptureRecord(ctx context.Context, input model.RawDebugCaptureInput) (model.RawDebugCapture, error) {
+	session := input.Session
+	if session.ID == 0 || session.Status != model.RawDebugSessionActive {
+		return model.RawDebugCapture{}, nil
+	}
+	if !RawDebugConfigFromSettings().Enabled {
+		return model.RawDebugCapture{}, nil
+	}
+	if session.ExpiresAt <= time.Now().Unix() {
+		_ = db.GetDB().WithContext(ctx).Model(&model.RawDebugSession{}).Where("id = ? AND status = ?", session.ID, model.RawDebugSessionActive).Update("status", model.RawDebugSessionExpired).Error
+		return model.RawDebugCapture{}, nil
+	}
+	if err := rawDebugCaptureCleanup(ctx); err != nil {
+		return model.RawDebugCapture{}, err
+	}
+
+	relayLog := input.RelayLog
+	httpStatus := input.HTTPStatus
+	if httpStatus == 0 {
+		httpStatus = rawDebugFinalHTTPStatus(relayLog)
+	}
+	now := time.Now().Unix()
+	capture := model.RawDebugCapture{
+		ID:               snowflake.GenerateID(),
+		SessionID:        session.ID,
+		TraceID:          relayLog.TraceID,
+		RelayLogID:       relayLog.ID,
+		APIKeyID:         relayLog.ClientAPIKeyID,
+		GroupID:          relayLog.GroupID,
+		ChannelID:        relayLog.ChannelId,
+		ChannelName:      sanitizeRawDebugText(relayLog.ChannelName),
+		RequestModelName: sanitizeRawDebugText(relayLog.RequestModelName),
+		ActualModelName:  sanitizeRawDebugText(relayLog.ActualModelName),
+		RequestStream:    relayLog.RequestStream,
+		RequestSource:    sanitizeRawDebugText(relayLog.RequestSource),
+		ClientIP:         sanitizeRawDebugText(relayLog.ClientIP),
+		HTTPStatus:       httpStatus,
+		Success:          input.Success,
+		ErrorSummary:     sanitizeRawDebugText(input.ErrorSummary),
+		CreatedAt:        now,
+	}
+	if capture.ErrorSummary == "" {
+		capture.ErrorSummary = sanitizeRawDebugText(relayLog.Error)
+	}
+	if session.CaptureHeaders {
+		capture.RequestHeaders = marshalRawDebugHeaders(input.RequestHeaders, session.RedactAuthHeaders)
+		capture.ResponseHeaders = marshalRawDebugHeaders(input.ResponseHeaders, session.RedactAuthHeaders)
+	}
+	if session.CaptureRequestBody {
+		capture.RequestBody, capture.RequestBodyTruncated = sanitizeRawDebugBytes(input.RequestBody, session.MaxCaptureBytes)
+		capture.RequestBodyTruncated = capture.RequestBodyTruncated || input.RequestBodyTruncated
+	}
+	if session.CaptureResponseBody {
+		capture.ResponseBody, capture.ResponseBodyTruncated = sanitizeRawDebugBytes(input.ResponseBody, session.MaxCaptureBytes)
+		capture.ResponseBodyTruncated = capture.ResponseBodyTruncated || input.ResponseBodyTruncated
+	}
+
+	if err := db.GetDB().WithContext(ctx).Create(&capture).Error; err != nil {
+		return model.RawDebugCapture{}, err
+	}
+	_ = RawDebugAuditRecord(ctx, model.RawDebugAuditEvent{
+		SessionID:           session.ID,
+		ActorUserID:         session.ActorUserID,
+		ActorName:           session.ActorName,
+		Action:              model.RawDebugAuditActionCapture,
+		TargetType:          "capture",
+		TargetID:            strconv.FormatInt(capture.ID, 10),
+		Scope:               session.Scope,
+		Success:             true,
+		CaptureRequestBody:  session.CaptureRequestBody,
+		CaptureResponseBody: session.CaptureResponseBody,
+		CaptureHeaders:      session.CaptureHeaders,
+		RedactAuthHeaders:   session.RedactAuthHeaders,
+	})
+	return capture, nil
+}
+
+func RawDebugCaptureList(ctx context.Context, query model.RawDebugCaptureListQuery) (model.RawDebugCaptureListResult, error) {
+	query = normalizeRawDebugCaptureListQuery(query)
+	dbQuery := applyRawDebugCaptureFilters(db.GetDB().WithContext(ctx).Model(&model.RawDebugCapture{}), query)
+	var total int64
+	if err := dbQuery.Count(&total).Error; err != nil {
+		return model.RawDebugCaptureListResult{}, err
+	}
+
+	offset := (query.Page - 1) * query.PageSize
+	var items []model.RawDebugCapture
+	if err := dbQuery.
+		Order(rawDebugCreatedAtOrderClause(query.SortOrder)).
+		Offset(offset).
+		Limit(query.PageSize).
+		Find(&items).Error; err != nil {
+		return model.RawDebugCaptureListResult{}, err
+	}
+	for i := range items {
+		items[i] = rawDebugCaptureForList(items[i])
+	}
+
+	return model.RawDebugCaptureListResult{
+		Items:    items,
+		Total:    total,
+		Page:     query.Page,
+		PageSize: query.PageSize,
+		HasMore:  int64(offset+len(items)) < total,
+	}, nil
+}
+
+func RawDebugCaptureGet(ctx context.Context, id int64, actorUserID int, actorName string) (model.RawDebugCapture, error) {
+	return rawDebugCaptureGetWithAudit(ctx, id, actorUserID, actorName, model.RawDebugAuditActionAccess)
+}
+
+func RawDebugCaptureExport(ctx context.Context, id int64, actorUserID int, actorName string) (model.RawDebugCapture, error) {
+	return rawDebugCaptureGetWithAudit(ctx, id, actorUserID, actorName, model.RawDebugAuditActionExport)
+}
+
 func RawDebugAuditRecord(ctx context.Context, event model.RawDebugAuditEvent) error {
 	if event.ID == 0 {
 		event.ID = snowflake.GenerateID()
@@ -236,6 +353,27 @@ func RawDebugAuditRecord(ctx context.Context, event model.RawDebugAuditEvent) er
 	event.Scope = sanitizeRawDebugText(event.Scope)
 	event.ErrorSummary = sanitizeRawDebugText(event.ErrorSummary)
 	return db.GetDB().WithContext(ctx).Create(&event).Error
+}
+
+func rawDebugCaptureGetWithAudit(ctx context.Context, id int64, actorUserID int, actorName string, action model.RawDebugAuditAction) (model.RawDebugCapture, error) {
+	if id <= 0 {
+		return model.RawDebugCapture{}, gorm.ErrRecordNotFound
+	}
+	var capture model.RawDebugCapture
+	if err := db.GetDB().WithContext(ctx).Where("id = ?", id).First(&capture).Error; err != nil {
+		return model.RawDebugCapture{}, err
+	}
+	_ = RawDebugAuditRecord(ctx, model.RawDebugAuditEvent{
+		SessionID:   capture.SessionID,
+		ActorUserID: actorUserID,
+		ActorName:   sanitizeRawDebugText(actorName),
+		Action:      action,
+		TargetType:  "capture",
+		TargetID:    strconv.FormatInt(capture.ID, 10),
+		Scope:       capture.TraceID,
+		Success:     true,
+	})
+	return capture, nil
 }
 
 func rawDebugSessionRevoke(ctx context.Context, session model.RawDebugSession, actorUserID int, actorName string) (bool, error) {
@@ -305,6 +443,22 @@ func normalizeRawDebugAuditListQuery(query model.RawDebugAuditListQuery) model.R
 	return query
 }
 
+func normalizeRawDebugCaptureListQuery(query model.RawDebugCaptureListQuery) model.RawDebugCaptureListQuery {
+	if query.Page < 1 {
+		query.Page = 1
+	}
+	if query.PageSize < 1 || query.PageSize > 100 {
+		query.PageSize = 20
+	}
+	query.TraceID = strings.TrimSpace(query.TraceID)
+	query.Model = strings.TrimSpace(query.Model)
+	query.SortOrder = strings.ToLower(strings.TrimSpace(query.SortOrder))
+	if query.SortOrder != "asc" {
+		query.SortOrder = "desc"
+	}
+	return query
+}
+
 func applyRawDebugSessionFilters(query *gorm.DB, filter model.RawDebugSessionListQuery) *gorm.DB {
 	if filter.Status != "" {
 		query = query.Where("status = ?", filter.Status)
@@ -352,6 +506,32 @@ func applyRawDebugAuditFilters(query *gorm.DB, filter model.RawDebugAuditListQue
 	return query
 }
 
+func applyRawDebugCaptureFilters(query *gorm.DB, filter model.RawDebugCaptureListQuery) *gorm.DB {
+	if filter.SessionID > 0 {
+		query = query.Where("session_id = ?", filter.SessionID)
+	}
+	if filter.TraceID != "" {
+		query = query.Where("trace_id LIKE ?", rawDebugLike(filter.TraceID))
+	}
+	if filter.RelayLogID > 0 {
+		query = query.Where("relay_log_id = ?", filter.RelayLogID)
+	}
+	if filter.Model != "" {
+		like := rawDebugLike(filter.Model)
+		query = query.Where("request_model_name LIKE ? OR actual_model_name LIKE ?", like, like)
+	}
+	if filter.Success != nil {
+		query = query.Where("success = ?", *filter.Success)
+	}
+	if filter.StartTime != nil {
+		query = query.Where("created_at >= ?", *filter.StartTime)
+	}
+	if filter.EndTime != nil {
+		query = query.Where("created_at <= ?", *filter.EndTime)
+	}
+	return query
+}
+
 func rawDebugCreatedAtOrderClause(sortOrder string) string {
 	if strings.EqualFold(sortOrder, "asc") {
 		return "created_at ASC, id ASC"
@@ -361,6 +541,74 @@ func rawDebugCreatedAtOrderClause(sortOrder string) string {
 
 func rawDebugLike(value string) string {
 	return "%" + strings.TrimSpace(value) + "%"
+}
+
+func rawDebugCaptureForList(capture model.RawDebugCapture) model.RawDebugCapture {
+	capture.RequestHeaders = ""
+	capture.ResponseHeaders = ""
+	capture.RequestBody = ""
+	capture.ResponseBody = ""
+	return capture
+}
+
+func rawDebugCaptureCleanup(ctx context.Context) error {
+	cfg := RawDebugConfigFromSettings()
+	if cfg.RetentionMinutes <= 0 {
+		return nil
+	}
+	cutoff := time.Now().Add(-time.Duration(cfg.RetentionMinutes) * time.Minute).Unix()
+	return db.GetDB().WithContext(ctx).Where("created_at < ?", cutoff).Delete(&model.RawDebugCapture{}).Error
+}
+
+func sanitizeRawDebugBytes(data []byte, maxBytes int) (string, bool) {
+	if len(data) == 0 {
+		return "", false
+	}
+	if maxBytes <= 0 {
+		maxBytes = model.RawDebugDefaultMaxCaptureBytes
+	}
+	truncated := false
+	if len(data) > maxBytes {
+		data = data[:maxBytes]
+		truncated = true
+	}
+	return sanitizeRelayLogContent(string(data)), truncated
+}
+
+func marshalRawDebugHeaders(headers map[string][]string, redactAuthHeaders bool) string {
+	if len(headers) == 0 {
+		return ""
+	}
+	out := make(map[string][]string, len(headers))
+	for key, values := range headers {
+		cleanKey := strings.TrimSpace(key)
+		if cleanKey == "" {
+			continue
+		}
+		if redactAuthHeaders && isSensitiveRelayLogKey(cleanKey) {
+			out[cleanKey] = []string{"[REDACTED]"}
+			continue
+		}
+		cleanValues := make([]string, 0, len(values))
+		for _, value := range values {
+			cleanValues = append(cleanValues, sanitizeRawDebugText(value))
+		}
+		out[cleanKey] = cleanValues
+	}
+	data, err := json.Marshal(out)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
+func rawDebugFinalHTTPStatus(relayLog model.RelayLog) int {
+	for i := len(relayLog.Attempts) - 1; i >= 0; i-- {
+		if relayLog.Attempts[i].HTTPStatus > 0 {
+			return relayLog.Attempts[i].HTTPStatus
+		}
+	}
+	return 0
 }
 
 func newRawDebugToken() (string, string, error) {

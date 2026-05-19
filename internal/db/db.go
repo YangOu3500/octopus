@@ -92,6 +92,7 @@ func InitDB(dbType, dsn string, debug bool) error {
 		&model.RequestAttempt{},
 		&model.RawDebugSession{},
 		&model.RawDebugAuditEvent{},
+		&model.RawDebugCapture{},
 		&migrate.MigrationRecord{},
 	); err != nil {
 		return err

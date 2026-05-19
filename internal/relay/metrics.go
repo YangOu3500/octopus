@@ -3,6 +3,7 @@ package relay
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"strings"
 	"time"
 
@@ -46,6 +47,13 @@ type RelayMetrics struct {
 	CacheReadTokens      *int
 	CacheWriteTokens     *int
 
+	RawDebugSession           *model.RawDebugSession
+	RawDebugRequestHeaders    http.Header
+	RawDebugResponseHeaders   http.Header
+	RawDebugResponseBody      []byte
+	RawDebugResponseTruncated bool
+	RawDebugHTTPStatus        int
+
 	activeRequestID string
 }
 
@@ -72,6 +80,57 @@ func (m *RelayMetrics) SetTransportRequestPayload(payload []byte, modelName stri
 	}
 	count := tokenizer.CountTokens(string(payload), modelName)
 	m.TransportInputTokens = intPtr(count)
+}
+
+func (m *RelayMetrics) EnableRawDebug(session model.RawDebugSession, requestHeaders http.Header) {
+	if session.ID == 0 || session.Status != model.RawDebugSessionActive {
+		return
+	}
+	m.RawDebugSession = &session
+	if requestHeaders != nil {
+		m.RawDebugRequestHeaders = requestHeaders.Clone()
+	}
+}
+
+func (m *RelayMetrics) SetRawDebugResponsePayload(payload []byte, headers http.Header, status int) {
+	if m == nil || m.RawDebugSession == nil {
+		return
+	}
+	m.RawDebugHTTPStatus = status
+	if headers != nil {
+		m.RawDebugResponseHeaders = headers.Clone()
+	}
+	maxBytes := m.RawDebugSession.MaxCaptureBytes
+	if maxBytes <= 0 {
+		maxBytes = model.RawDebugDefaultMaxCaptureBytes
+	}
+	m.RawDebugResponseBody = append(m.RawDebugResponseBody[:0], limitRawDebugBytes(payload, maxBytes)...)
+	m.RawDebugResponseTruncated = len(payload) > maxBytes
+}
+
+func (m *RelayMetrics) AppendRawDebugResponsePayload(payload []byte, headers http.Header, status int) {
+	if m == nil || m.RawDebugSession == nil || len(payload) == 0 {
+		return
+	}
+	m.RawDebugHTTPStatus = status
+	if headers != nil && m.RawDebugResponseHeaders == nil {
+		m.RawDebugResponseHeaders = headers.Clone()
+	}
+	maxBytes := m.RawDebugSession.MaxCaptureBytes
+	if maxBytes <= 0 {
+		maxBytes = model.RawDebugDefaultMaxCaptureBytes
+	}
+	remaining := maxBytes - len(m.RawDebugResponseBody)
+	if remaining <= 0 {
+		m.RawDebugResponseTruncated = true
+		return
+	}
+	if len(payload) > remaining {
+		m.RawDebugResponseBody = append(m.RawDebugResponseBody, payload[:remaining]...)
+		m.RawDebugResponseTruncated = true
+		return
+	}
+	m.RawDebugResponseBody = append(m.RawDebugResponseBody, payload...)
 }
 
 func (m *RelayMetrics) SetWSMode(mode model.RelayLogWSMode) {
@@ -275,9 +334,55 @@ func (m *RelayMetrics) saveLog(ctx context.Context, success bool, err error, dur
 		relayLog.Error = sanitizeTraceText(err.Error(), "")
 	}
 
-	if logErr := op.RelayLogAdd(ctx, relayLog); logErr != nil {
+	savedLog, logErr := op.RelayLogAddWithResult(ctx, relayLog)
+	if logErr != nil {
 		log.Warnf("failed to save relay log: %v", logErr)
+		return
 	}
+	m.saveRawDebugCapture(ctx, savedLog, success, err)
+}
+
+func (m *RelayMetrics) saveRawDebugCapture(ctx context.Context, relayLog model.RelayLog, success bool, err error) {
+	if m.RawDebugSession == nil {
+		return
+	}
+	errorSummary := ""
+	if err != nil {
+		errorSummary = err.Error()
+	}
+	_, captureErr := op.RawDebugCaptureRecord(ctx, model.RawDebugCaptureInput{
+		Session:               *m.RawDebugSession,
+		RelayLog:              relayLog,
+		RequestHeaders:        headerToMap(m.RawDebugRequestHeaders),
+		ResponseHeaders:       headerToMap(m.RawDebugResponseHeaders),
+		RequestBody:           m.RawRequest,
+		ResponseBody:          m.RawDebugResponseBody,
+		ResponseBodyTruncated: m.RawDebugResponseTruncated,
+		HTTPStatus:            m.RawDebugHTTPStatus,
+		Success:               success,
+		ErrorSummary:          errorSummary,
+	})
+	if captureErr != nil {
+		log.Warnf("failed to save raw debug capture: %v", captureErr)
+	}
+}
+
+func headerToMap(headers http.Header) map[string][]string {
+	if len(headers) == 0 {
+		return nil
+	}
+	out := make(map[string][]string, len(headers))
+	for key, values := range headers {
+		out[key] = append([]string(nil), values...)
+	}
+	return out
+}
+
+func limitRawDebugBytes(payload []byte, maxBytes int) []byte {
+	if len(payload) <= maxBytes {
+		return payload
+	}
+	return payload[:maxBytes]
 }
 
 func intPtr(value int) *int {

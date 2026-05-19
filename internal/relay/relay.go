@@ -101,6 +101,13 @@ func Handler(inboundType inbound.InboundType, c *gin.Context) {
 
 	// 初始化 Metrics
 	metrics := NewRelayMetrics(apiKeyID, requestModel, rawBody, internalRequest)
+	if token := strings.TrimSpace(c.GetHeader("X-Octopus-Raw-Debug-Token")); token != "" {
+		if session, ok, verifyErr := op.RawDebugSessionVerify(c.Request.Context(), token); verifyErr != nil {
+			log.Warnf("raw debug session verification failed: %v", verifyErr)
+		} else if ok {
+			metrics.EnableRawDebug(session, c.Request.Header)
+		}
+	}
 	metrics.SetGroupID(group.ID)
 	metrics.SetClientInfo(c.ClientIP(), "relay")
 	metrics.BeginActiveTracking("routing")
@@ -831,6 +838,7 @@ func (ra *relayAttempt) forwardViaHTTP(ctx context.Context) (int, error) {
 		if err != nil {
 			return response.StatusCode, fmt.Errorf("failed to read response body: %w", err)
 		}
+		ra.metrics.SetRawDebugResponsePayload(body, response.Header, response.StatusCode)
 		statusCode := normalizeUpstreamStatusCode(response.StatusCode, string(body))
 		log.Warnf("upstream error from channel %s: status=%d, body=%s", ra.channel.Name, response.StatusCode, string(body))
 		return statusCode, fmt.Errorf("upstream error: %d: %s", response.StatusCode, string(body))
@@ -1051,6 +1059,7 @@ func (ra *relayAttempt) handleStreamResponse(ctx context.Context, response *http
 				}
 				return streamValidationDecodeError(r.err)
 			}
+			ra.metrics.AppendRawDebugResponsePayload([]byte("data: "+r.data+"\n\n"), response.Header, response.StatusCode)
 
 			if firstToken {
 				chunk, err := ra.decodeStreamGateChunk(ctx, r.data)
@@ -1284,6 +1293,7 @@ func (ra *relayAttempt) handleResponse(ctx context.Context, response *http.Respo
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
+	ra.metrics.SetRawDebugResponsePayload(body, response.Header, response.StatusCode)
 	if err := validateNonStreamBody(ra.channel.Type, response, body); err != nil {
 		log.Warnf("response validator rejected non-stream response from channel %s: %v", ra.channel.Name, err)
 		return err
@@ -1406,6 +1416,7 @@ func (ra *relayAttempt) forwardViaHTTPPassthroughOpenAIResponses(ctx context.Con
 		if readErr != nil {
 			return response.StatusCode, fmt.Errorf("failed to read response body: %w", readErr)
 		}
+		ra.metrics.SetRawDebugResponsePayload(body, response.Header, response.StatusCode)
 		statusCode := normalizeUpstreamStatusCode(response.StatusCode, string(body))
 		log.Warnf("upstream error from channel %s: status=%d, body=%s", ra.channel.Name, response.StatusCode, string(body))
 		return statusCode, fmt.Errorf("upstream error: %d: %s", response.StatusCode, string(body))
@@ -1501,12 +1512,14 @@ func (ra *relayAttempt) handleStreamResponsePassthroughOpenAIResponses(ctx conte
 			}
 		case r, ok := <-results:
 			if !ok {
+				ra.metrics.SetRawDebugResponsePayload(rawStream.Bytes(), response.Header, response.StatusCode)
 				ra.collectOpenAIResponsesPassthroughMetrics(ctx, rawStream.Bytes())
 				log.Infof("stream end")
 				return nil
 			}
 			if r.err != nil {
 				if r.err == io.EOF {
+					ra.metrics.SetRawDebugResponsePayload(rawStream.Bytes(), response.Header, response.StatusCode)
 					ra.collectOpenAIResponsesPassthroughMetrics(ctx, rawStream.Bytes())
 					log.Infof("stream end")
 					return nil
@@ -1563,6 +1576,7 @@ func (ra *relayAttempt) handleResponsePassthroughOpenAIResponses(ctx context.Con
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
+	ra.metrics.SetRawDebugResponsePayload(body, response.Header, response.StatusCode)
 	if err := validateNonStreamBody(ra.channel.Type, response, body); err != nil {
 		log.Warnf("response validator rejected openai responses body from channel %s: %v", ra.channel.Name, err)
 		return err
@@ -1630,6 +1644,7 @@ func (ra *relayAttempt) forwardViaHTTPPassthroughAnthropic(ctx context.Context) 
 		if readErr != nil {
 			return response.StatusCode, fmt.Errorf("failed to read response body: %w", readErr)
 		}
+		ra.metrics.SetRawDebugResponsePayload(body, response.Header, response.StatusCode)
 		statusCode := normalizeUpstreamStatusCode(response.StatusCode, string(body))
 		log.Warnf("upstream error from channel %s: status=%d, body=%s", ra.channel.Name, response.StatusCode, string(body))
 		return statusCode, fmt.Errorf("upstream error: %d: %s", response.StatusCode, string(body))
@@ -1767,6 +1782,7 @@ func (ra *relayAttempt) handleStreamResponsePassthroughAnthropic(ctx context.Con
 			}
 			log.Infof("client disconnected, stopping stream: written=%t raw_bytes=%d first_token_seen=%t elapsed=%s", ra.streamPayloadWritten.Load(), rawStream.Len(), true, time.Since(ra.metrics.StartTime))
 			if rawStream.Len() > 0 {
+				ra.metrics.SetRawDebugResponsePayload(rawStream.Bytes(), response.Header, response.StatusCode)
 				ra.collectAnthropicPassthroughMetrics(context.Background(), rawStream.Bytes())
 				ra.collectResponse()
 			}
@@ -1777,6 +1793,7 @@ func (ra *relayAttempt) handleStreamResponsePassthroughAnthropic(ctx context.Con
 			}
 		case r, ok := <-results:
 			if !ok {
+				ra.metrics.SetRawDebugResponsePayload(rawStream.Bytes(), response.Header, response.StatusCode)
 				ra.collectAnthropicPassthroughMetrics(ctx, rawStream.Bytes())
 				ra.collectResponse()
 				log.Infof("stream end")
@@ -1784,6 +1801,7 @@ func (ra *relayAttempt) handleStreamResponsePassthroughAnthropic(ctx context.Con
 			}
 			if r.err != nil {
 				if r.err == io.EOF {
+					ra.metrics.SetRawDebugResponsePayload(rawStream.Bytes(), response.Header, response.StatusCode)
 					ra.collectAnthropicPassthroughMetrics(ctx, rawStream.Bytes())
 					ra.collectResponse()
 					log.Infof("stream end")
@@ -1843,6 +1861,7 @@ func (ra *relayAttempt) handleResponsePassthroughAnthropic(ctx context.Context, 
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
+	ra.metrics.SetRawDebugResponsePayload(body, response.Header, response.StatusCode)
 	if err := validateNonStreamBody(ra.channel.Type, response, body); err != nil {
 		log.Warnf("response validator rejected anthropic body from channel %s: %v", ra.channel.Name, err)
 		return err

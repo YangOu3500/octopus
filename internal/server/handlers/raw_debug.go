@@ -47,6 +47,18 @@ func init() {
 		AddRoute(
 			router.NewRoute("/audit", http.MethodGet).
 				Handle(listRawDebugAudit),
+		).
+		AddRoute(
+			router.NewRoute("/captures", http.MethodGet).
+				Handle(listRawDebugCaptures),
+		).
+		AddRoute(
+			router.NewRoute("/captures/:id", http.MethodGet).
+				Handle(getRawDebugCapture),
+		).
+		AddRoute(
+			router.NewRoute("/captures/:id/export", http.MethodGet).
+				Handle(exportRawDebugCapture),
 		)
 }
 
@@ -156,9 +168,83 @@ func listRawDebugAudit(c *gin.Context) {
 	resp.Success(c, result)
 }
 
+func listRawDebugCaptures(c *gin.Context) {
+	query := model.RawDebugCaptureListQuery{
+		Page:       parseRawDebugInt(c.DefaultQuery("page", "1")),
+		PageSize:   parseRawDebugInt(c.DefaultQuery("page_size", "20")),
+		SessionID:  int64(parseRawDebugInt(c.Query("session_id"))),
+		TraceID:    c.Query("trace_id"),
+		RelayLogID: int64(parseRawDebugInt(c.Query("relay_log_id"))),
+		Model:      c.Query("model"),
+		SortOrder:  c.Query("sort_order"),
+	}
+	if success := parseOptionalRawDebugBool(c.Query("success")); success != nil {
+		query.Success = success
+	}
+	if start := parseOptionalRawDebugInt(c.Query("start_time")); start != nil {
+		query.StartTime = start
+	}
+	if end := parseOptionalRawDebugInt(c.Query("end_time")); end != nil {
+		query.EndTime = end
+	}
+
+	result, err := op.RawDebugCaptureList(c.Request.Context(), query)
+	if err != nil {
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, result)
+}
+
+func getRawDebugCapture(c *gin.Context) {
+	id, ok := parseRawDebugIDParam(c)
+	if !ok {
+		return
+	}
+	user := op.UserGet()
+	capture, err := op.RawDebugCaptureGet(c.Request.Context(), id, int(user.ID), user.Username)
+	if err != nil {
+		if op.RelayLogIsNotFound(err) {
+			resp.Error(c, http.StatusNotFound, "raw debug capture not found")
+			return
+		}
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Success(c, capture)
+}
+
+func exportRawDebugCapture(c *gin.Context) {
+	id, ok := parseRawDebugIDParam(c)
+	if !ok {
+		return
+	}
+	user := op.UserGet()
+	capture, err := op.RawDebugCaptureExport(c.Request.Context(), id, int(user.ID), user.Username)
+	if err != nil {
+		if op.RelayLogIsNotFound(err) {
+			resp.Error(c, http.StatusNotFound, "raw debug capture not found")
+			return
+		}
+		resp.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.Header("Content-Disposition", "attachment; filename=\"octopus-raw-debug-"+strconv.FormatInt(id, 10)+".json\"")
+	resp.Success(c, capture)
+}
+
 func parseRawDebugInt(raw string) int {
 	value, _ := strconv.Atoi(strings.TrimSpace(raw))
 	return value
+}
+
+func parseRawDebugIDParam(c *gin.Context) (int64, bool) {
+	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
+	if err != nil || id <= 0 {
+		resp.Error(c, http.StatusBadRequest, "invalid raw debug capture id")
+		return 0, false
+	}
+	return id, true
 }
 
 func parseOptionalRawDebugInt(raw string) *int {
