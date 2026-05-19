@@ -65,3 +65,44 @@ type RawDebugSessionAuthorization struct {
 	Session RawDebugSession `json:"session"`
 	Token   string          `json:"token"`
 }
+
+type RawDebugSessionListQuery struct {
+	Page      int
+	PageSize  int
+	Status    string
+	Scope     string
+	ActorName string
+	StartTime *int
+	EndTime   *int
+	SortOrder string
+}
+
+type RawDebugSessionListResult struct {
+	Items    []RawDebugSession `json:"items"`
+	Total    int64             `json:"total"`
+	Page     int               `json:"page"`
+	PageSize int               `json:"page_size"`
+	HasMore  bool              `json:"has_more"`
+}
+
+type RawDebugAuditListQuery struct {
+	Page       int
+	PageSize   int
+	SessionID  int64
+	Action     string
+	TargetType string
+	Scope      string
+	ActorName  string
+	Success    *bool
+	StartTime  *int
+	EndTime    *int
+	SortOrder  string
+}
+
+type RawDebugAuditListResult struct {
+	Items    []RawDebugAuditEvent `json:"items"`
+	Total    int64                `json:"total"`
+	Page     int                  `json:"page"`
+	PageSize int                  `json:"page_size"`
+	HasMore  bool                 `json:"has_more"`
+}

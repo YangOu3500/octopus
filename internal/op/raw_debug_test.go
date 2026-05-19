@@ -177,6 +177,65 @@ func TestRawDebugAuditRecordSanitizesMetadata(t *testing.T) {
 	}
 }
 
+func TestRawDebugSessionAndAuditListExposeOnlyMetadata(t *testing.T) {
+	ctx := setupSiteOpTestDB(t)
+	enableRawDebugForTest(t)
+
+	authz, err := RawDebugSessionCreate(ctx, model.RawDebugSessionCreateRequest{
+		ActorUserID: 3,
+		ActorName:   "admin",
+		Scope:       "trace:abc Authorization: Bearer secret-token",
+		Reason:      "inspect sk-list-secret123456",
+	})
+	if err != nil {
+		t.Fatalf("RawDebugSessionCreate failed: %v", err)
+	}
+
+	revoked, err := RawDebugSessionRevokeByID(ctx, authz.Session.ID, 3, "admin")
+	if err != nil {
+		t.Fatalf("RawDebugSessionRevokeByID failed: %v", err)
+	}
+	if !revoked {
+		t.Fatalf("expected session to be revoked by id")
+	}
+
+	sessions, err := RawDebugSessionList(ctx, model.RawDebugSessionListQuery{
+		Page:     1,
+		PageSize: 10,
+		Status:   string(model.RawDebugSessionRevoked),
+		Scope:    "trace",
+	})
+	if err != nil {
+		t.Fatalf("RawDebugSessionList failed: %v", err)
+	}
+	if sessions.Total != 1 || len(sessions.Items) != 1 {
+		t.Fatalf("unexpected session list result: %+v", sessions)
+	}
+	if sessions.Items[0].TokenHash != "" {
+		t.Fatalf("session list exposed token hash: %+v", sessions.Items[0])
+	}
+	if strings.Contains(sessions.Items[0].Scope, "secret-token") || strings.Contains(sessions.Items[0].Reason, "sk-list-secret123456") {
+		t.Fatalf("session list leaked sensitive metadata: %+v", sessions.Items[0])
+	}
+
+	audit, err := RawDebugAuditList(ctx, model.RawDebugAuditListQuery{
+		Page:      1,
+		PageSize:  10,
+		SessionID: authz.Session.ID,
+	})
+	if err != nil {
+		t.Fatalf("RawDebugAuditList failed: %v", err)
+	}
+	if audit.Total != 2 || len(audit.Items) != 2 {
+		t.Fatalf("expected create and revoke audit events, got %+v", audit)
+	}
+	for _, event := range audit.Items {
+		if strings.Contains(event.Scope, "secret-token") || strings.Contains(event.ErrorSummary, "sk-list-secret123456") {
+			t.Fatalf("audit list leaked sensitive metadata: %+v", event)
+		}
+	}
+}
+
 func enableRawDebugForTest(t *testing.T) {
 	t.Helper()
 	settings := map[model.SettingKey]string{
