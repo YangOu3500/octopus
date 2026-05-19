@@ -35,7 +35,7 @@ type ActiveRunPlan = {
 
 const DEFAULT_PROMPT = '只回复 OK';
 const MAX_CONCURRENCY = 8;
-const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(14rem,1.45fr) minmax(10rem,0.9fr) minmax(9rem,0.85fr) minmax(11rem,1fr) minmax(14rem,1.35fr) 6rem';
+const MODEL_TEST_GRID_COLUMNS = '2.5rem minmax(13rem,1.35fr) minmax(9rem,0.85fr) minmax(8.5rem,0.8fr) minmax(10rem,0.95fr) minmax(12rem,1.2fr) 5.5rem';
 const MODEL_TEST_EXPORT_VERSION = 1;
 const MODEL_TEST_RESULT_FILTERS: ModelTestResultFilter[] = ['all', 'success', 'failed', 'running', 'queued', 'idle'];
 
@@ -512,8 +512,8 @@ export function ModelTest() {
         <div className="flex h-full min-h-0 flex-col gap-3">
             <div className="shrink-0 rounded-xl border border-border bg-card p-3.5 shadow-sm">
                 <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
-                        <div className="flex flex-wrap items-center gap-2 2xl:justify-end">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex flex-wrap items-center gap-2">
                             <button
                                 type="button"
                                 onClick={() => setMode('channel')}
@@ -567,7 +567,7 @@ export function ModelTest() {
                         </div>
                     </div>
 
-                    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.95fr)_minmax(15rem,0.8fr)]">
+                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.95fr)_minmax(14rem,0.8fr)]">
                         <div className="rounded-lg border border-border/70 bg-background/50 p-3">
                             <div className="grid gap-3 lg:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)]">
                                 {mode === 'channel' ? (
@@ -656,11 +656,11 @@ export function ModelTest() {
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2 xl:col-span-2 2xl:col-span-1 2xl:flex-col">
+                        <div className="grid grid-cols-2 gap-2 lg:col-span-2 xl:col-span-1 xl:grid-cols-1">
                             {runtimeStats.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="inline-flex min-w-[8.5rem] items-center justify-between gap-3 rounded-md border border-border/70 bg-background/60 px-3 py-2"
+                                    className="inline-flex min-w-0 items-center justify-between gap-3 rounded-md border border-border/70 bg-background/60 px-3 py-2"
                                 >
                                     <div className="text-xs text-muted-foreground">{item.label}</div>
                                     <div className="text-sm font-semibold tabular-nums text-foreground">{item.value}</div>
@@ -669,7 +669,7 @@ export function ModelTest() {
                         </div>
                     </div>
 
-                    <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_12rem]">
+                    <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_12rem]">
                         <div className="relative min-w-0">
                             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
@@ -724,7 +724,7 @@ export function ModelTest() {
 
             <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                 <div className="h-full overflow-auto">
-                    <div className="flex h-full min-w-[52rem] flex-col">
+                    <div className="flex h-full min-w-[50rem] flex-col">
                         <div
                             className="sticky top-0 z-10 grid border-b border-border bg-muted/90 text-left text-xs uppercase text-muted-foreground backdrop-blur"
                             style={{ gridTemplateColumns: MODEL_TEST_GRID_COLUMNS }}

@@ -175,7 +175,7 @@ export function DashboardSummaryCards() {
 
     return (
         <section className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
                 <PrimaryCard
                     icon={BarChart3}
                     title={t('totalRequests')}

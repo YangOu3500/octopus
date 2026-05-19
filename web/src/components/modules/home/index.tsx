@@ -67,7 +67,7 @@ export function Home() {
                     title={t('workbench.title')}
                     description={t('workbench.description')}
                 >
-                    <div className="grid grid-cols-1 gap-3 2xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
                         <ObservabilityPanel />
                         <div className="space-y-3">
                             <GatewayOperationsPanel />
@@ -82,7 +82,7 @@ export function Home() {
                     title={t('analytics.title')}
                     description={t('analytics.description')}
                 >
-                    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)]">
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
                         <StatsChart />
                         <Rank />
                     </div>

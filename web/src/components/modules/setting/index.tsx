@@ -50,7 +50,7 @@ function SectionNav({
 }) {
     return (
         <div className="space-y-3 rounded-xl border border-border/70 bg-card p-3 shadow-sm">
-            <div className="md:hidden">
+            <div className="lg:hidden">
                 <Select value={activeSection} onValueChange={(value) => onSelect(value as SettingSectionId)}>
                     <SelectTrigger className="h-10 rounded-lg">
                         <SelectValue />
@@ -65,7 +65,7 @@ function SectionNav({
                 </Select>
             </div>
 
-            <nav className="hidden md:flex md:flex-wrap md:gap-2 xl:flex-col xl:gap-1">
+            <nav className="hidden lg:flex lg:flex-col lg:gap-1">
                 {sections.map((section) => {
                     const isActive = section.id === activeSection;
                     const Icon = section.icon;
@@ -122,7 +122,7 @@ export function Setting() {
                 content: (
                     <>
                         <SettingSystem />
-                        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                             <SettingCircuitBreaker />
                             <SettingLog />
                         </div>
@@ -142,7 +142,7 @@ export function Setting() {
                 content: (
                     <>
                         <SettingSiteAutomation />
-                        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
                             <SettingAPIKey />
                             <SettingLLMPrice />
                             <SettingLLMSync />
@@ -168,7 +168,7 @@ export function Setting() {
                 label: sectionT('maintenance'),
                 content: (
                     <>
-                        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                             <SettingAppearance />
                             <SettingAccount />
                         </div>
@@ -187,9 +187,9 @@ export function Setting() {
         <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
             <PageWrapper
                 childLayout={false}
-                className="grid grid-cols-1 gap-4 pb-24 md:pb-4 xl:grid-cols-[13rem_minmax(0,1fr)]"
+                className="grid grid-cols-1 gap-4 pb-24 md:pb-4 lg:grid-cols-[12.5rem_minmax(0,1fr)]"
             >
-                <aside className="xl:sticky xl:top-3 xl:self-start">
+                <aside className="lg:sticky lg:top-3 lg:self-start">
                     <SectionNav
                         sections={sections}
                         activeSection={currentSection.id}
