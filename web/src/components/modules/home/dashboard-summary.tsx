@@ -54,7 +54,7 @@ function SummaryCard({
     return (
         <article
             className={cn(
-                'flex h-full min-h-[10.5rem] flex-col rounded-lg border px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md',
+                'flex h-full min-h-[9.25rem] flex-col rounded-lg border px-3.5 py-3 shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md',
                 accent
                     ? 'border-primary/25 bg-primary/10 text-foreground'
                     : 'border-border/70 bg-card/95'
@@ -62,17 +62,17 @@ function SummaryCard({
         >
             <div className="flex items-start justify-between gap-3">
                 <div className={cn(
-                    'flex size-9 items-center justify-center rounded-md border',
+                    'flex size-8 items-center justify-center rounded-md border',
                     accent ? 'border-primary/20 bg-background text-primary' : 'border-border/70 bg-background/70 text-primary'
                 )}>
-                    <Icon className="size-4" />
+                    <Icon className="size-3.5" />
                 </div>
                 {badge ? <div className="shrink-0">{badge}</div> : null}
             </div>
-            <div className="mt-3 text-xs text-muted-foreground">{title}</div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
-            {extra ? <div className="mt-auto pt-3">{extra}</div> : null}
+            <div className="mt-2.5 text-xs text-muted-foreground">{title}</div>
+            <div className="mt-1 text-[1.9rem] font-semibold leading-none tabular-nums">{value}</div>
+            <div className="mt-1 line-clamp-1 text-xs text-muted-foreground">{detail}</div>
+            {extra ? <div className="mt-auto pt-2.5">{extra}</div> : null}
         </article>
     );
 }
@@ -93,7 +93,7 @@ function InsightTile({
     return (
         <div
             className={cn(
-                'rounded-md border px-3 py-2.5 transition-all duration-200 hover:-translate-y-px hover:shadow-sm',
+                'rounded-md border px-3 py-2 transition-all duration-200 hover:-translate-y-px hover:shadow-sm',
                 tone === 'warning'
                     ? 'border-amber-500/25 bg-amber-500/5'
                     : 'border-border/70 bg-background/40'
@@ -103,7 +103,7 @@ function InsightTile({
                 <Icon className="size-3.5" />
                 <span>{label}</span>
             </div>
-            <div className="mt-2 text-lg font-semibold tabular-nums">{value}</div>
+            <div className="mt-1.5 text-lg font-semibold tabular-nums">{value}</div>
             <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
         </div>
     );
@@ -141,8 +141,8 @@ export function DashboardSummaryCards() {
     const ttfbFormatted = compactTime(observability?.avg_ttfb_ms);
 
     return (
-        <section className="space-y-2.5">
-            <div className="grid auto-rows-fr grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <section className="space-y-2">
+            <div className="grid auto-rows-fr grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard
                     icon={BarChart3}
                     title={t('totalRequests')}
@@ -164,11 +164,11 @@ export function DashboardSummaryCards() {
                     )}
                     extra={(
                         <div className="grid grid-cols-2 gap-2 text-xs tabular-nums">
-                            <div className="rounded-md border border-border/60 bg-background/70 px-3 py-2">
+                            <div className="rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5">
                                 <div className="text-muted-foreground">{t('todayRequests')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(todayRequests)}</div>
                             </div>
-                            <div className="rounded-md border border-border/60 bg-background/70 px-3 py-2">
+                            <div className="rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5">
                                 <div className="text-muted-foreground">{t('weekTotal')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(dailyWindows.last7Requests)}</div>
                             </div>
@@ -183,7 +183,7 @@ export function DashboardSummaryCards() {
                     detail={t('successSub', { failed: failureCount })}
                     badge={<Badge variant="outline" className="rounded-md px-2 text-[11px]">{observabilityT('range24h')}</Badge>}
                     extra={(
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <Progress value={successRateValue} className="h-2 bg-muted/80" />
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                                 <span>{t('failureRequests')}</span>
@@ -204,16 +204,16 @@ export function DashboardSummaryCards() {
                     })}
                     badge={<Badge variant="outline" className="rounded-md px-2 text-[11px]">{observabilityT('range24h')}</Badge>}
                     extra={(
-                        <div className="grid grid-cols-3 gap-2 text-xs tabular-nums">
-                            <div className="rounded-md border border-border/60 bg-background/70 px-2.5 py-2">
+                        <div className="grid grid-cols-3 gap-1.5 text-xs tabular-nums">
+                            <div className="rounded-md border border-border/60 bg-background/70 px-2 py-1.5">
                                 <div className="text-muted-foreground">{observabilityT('input')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(observability?.input_tokens)}</div>
                             </div>
-                            <div className="rounded-md border border-border/60 bg-background/70 px-2.5 py-2">
+                            <div className="rounded-md border border-border/60 bg-background/70 px-2 py-1.5">
                                 <div className="text-muted-foreground">{observabilityT('output')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(observability?.output_tokens)}</div>
                             </div>
-                            <div className="rounded-md border border-border/60 bg-background/70 px-2.5 py-2">
+                            <div className="rounded-md border border-border/60 bg-background/70 px-2 py-1.5">
                                 <div className="text-muted-foreground">{observabilityT('cache')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(observability?.cache_tokens)}</div>
                             </div>
@@ -229,11 +229,11 @@ export function DashboardSummaryCards() {
                     accent
                     extra={(
                         <div className="grid grid-cols-2 gap-2 text-xs tabular-nums">
-                            <div className="rounded-md border border-primary/15 bg-background/80 px-3 py-2">
+                            <div className="rounded-md border border-primary/15 bg-background/80 px-2.5 py-1.5">
                                 <div className="text-muted-foreground">{t('monthTotal')}</div>
                                 <div className="mt-1 font-medium text-foreground">{compactCount(dailyWindows.last30Requests)}</div>
                             </div>
-                            <div className="rounded-md border border-primary/15 bg-background/80 px-3 py-2">
+                            <div className="rounded-md border border-primary/15 bg-background/80 px-2.5 py-1.5">
                                 <div className="text-muted-foreground">{observabilityT('range24h')}</div>
                                 <div className="mt-1 font-medium text-foreground">{latencyFormatted}</div>
                             </div>
@@ -242,7 +242,7 @@ export function DashboardSummaryCards() {
                 />
             </div>
 
-            <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <InsightTile
                     icon={AlertTriangle}
                     label={t('failureRequests')}

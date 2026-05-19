@@ -33,9 +33,9 @@ function SectionCard({
 }) {
     return (
         <AccordionItem value={value} className="overflow-hidden rounded-lg border border-border/70 bg-card/95 shadow-sm transition-all duration-200 hover:shadow-md data-[state=open]:border-primary/15">
-            <AccordionTrigger className="items-center gap-4 px-4 py-3 hover:no-underline hover:bg-muted/20">
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/10 text-primary">
+            <AccordionTrigger className="items-center gap-3 px-3.5 py-2.5 hover:no-underline hover:bg-muted/20">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/10 text-primary">
                         {icon}
                     </div>
                     <div className="min-w-0 text-left">
@@ -44,7 +44,7 @@ function SectionCard({
                     </div>
                 </div>
                 {chips.length > 0 ? (
-                    <div className="hidden items-center gap-1.5 lg:flex">
+                    <div className="hidden flex-wrap items-center justify-end gap-1.5 md:flex">
                         {chips.map((chip) => (
                             <Badge key={chip} variant="outline" className="h-6 rounded-md px-2 text-[11px] font-normal text-muted-foreground">
                                 {chip}
@@ -53,7 +53,7 @@ function SectionCard({
                     </div>
                 ) : null}
             </AccordionTrigger>
-            <AccordionContent className="border-t border-border/60 px-4 pb-4 pt-4">
+            <AccordionContent className="border-t border-border/60 px-3.5 pb-3.5 pt-3.5">
                 {children}
             </AccordionContent>
         </AccordionItem>
@@ -84,12 +84,12 @@ export function Home() {
     }), [observability, t]);
 
     return (
-        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-4 pb-24 md:pb-4">
-            <section className="space-y-3">
+        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-3 pb-24 md:pb-4">
+            <section className="space-y-2.5">
                 <DashboardSummaryCards />
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.52fr)_minmax(300px,0.8fr)]">
+                <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)]">
                     <StatsChart />
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                         <GatewayOperationsPanel />
                         <GroupHealthSummaryStrip />
                     </div>
@@ -100,7 +100,7 @@ export function Home() {
                 type="multiple"
                 value={openSections}
                 onValueChange={(value) => setOpenSections(value as HomeSectionId[])}
-                className="space-y-2.5"
+                className="space-y-2"
             >
                 <SectionCard
                     value="workbench"
@@ -112,7 +112,7 @@ export function Home() {
                     <ObservabilityPanel />
                 </SectionCard>
 
-                <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
                     <SectionCard
                         value="analytics"
                         icon={<BarChart3 className="size-4" />}

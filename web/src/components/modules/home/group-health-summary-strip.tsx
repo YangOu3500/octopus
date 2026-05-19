@@ -25,8 +25,8 @@ export function GroupHealthSummaryStrip() {
     if (!enabled) return null;
 
     return (
-        <section className="rounded-lg bg-card border-card-border border text-card-foreground shadow-sm px-4 py-3 transition-shadow duration-200 hover:shadow-md">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <section className="rounded-lg border border-card-border bg-card px-3.5 py-3 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-semibold">
                         <Activity className="size-4 text-primary" />
@@ -58,7 +58,7 @@ export function GroupHealthSummaryStrip() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-8 rounded-md md:self-center"
+                    className="h-7 rounded-md px-2.5 text-xs md:self-center"
                     onClick={() => runAllGroupHealth.mutate()}
                     disabled={runAllGroupHealth.isPending}
                 >

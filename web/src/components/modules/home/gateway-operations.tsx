@@ -48,9 +48,9 @@ function BreakdownRows({ title, items }: { title: string; items: StatsObservabil
     const t = useTranslations('home.operations');
 
     return (
-        <div className="min-w-0">
-            <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">{title}</div>
-            <div className="divide-y divide-border rounded-md border">
+        <div className="min-w-0 rounded-lg border border-border/70 bg-background/35 p-3">
+            <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{title}</div>
+            <div className="divide-y divide-border/70 rounded-md border border-border/60 bg-background/70">
                 {items.length === 0 ? (
                     <div className="px-3 py-3 text-sm text-muted-foreground">{t('empty')}</div>
                 ) : items.slice(0, 4).map((item) => (
@@ -121,16 +121,16 @@ export function GatewayOperationsPanel() {
 
     return (
         <section>
-            <div className="rounded-lg border bg-card/95 p-4 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <div className="rounded-lg border border-border/70 bg-card/95 p-3.5 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
                 <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
-                        <div className="flex items-center gap-2 text-base font-semibold">
+                        <div className="flex items-center gap-2 text-sm font-semibold">
                             <Radar className="size-4 text-primary" />
                             {t('title')}
                         </div>
-                        <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{t('description')}</p>
                     </div>
-                    <Badge variant="outline" className="w-fit rounded-md">
+                    <Badge variant="outline" className="h-6 w-fit rounded-md px-2 text-[11px]">
                         {t('window', {
                             stream: data?.stream_requests ?? 0,
                             modelTest: data?.model_test_requests ?? 0,
@@ -138,29 +138,29 @@ export function GatewayOperationsPanel() {
                     </Badge>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(240px,0.8fr)]">
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="space-y-2.5">
+                    <div className="grid grid-cols-2 gap-2">
                         {operationItems.map((item) => {
                             const Icon = item.icon;
                             return (
                                 <article
                                     key={item.id}
-                                    className="cursor-default rounded-md border bg-background/45 p-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/80 hover:shadow-sm"
+                                    className="cursor-default rounded-md border border-border/70 bg-background/45 p-2.5 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/80 hover:shadow-sm"
                                 >
                                     <div className="flex items-start gap-2">
-                                        <div className="flex size-8 items-center justify-center rounded-md border bg-card text-primary">
+                                        <div className="flex size-7 items-center justify-center rounded-md border bg-card text-primary">
                                             <Icon className="size-3.5" />
                                         </div>
                                     </div>
-                                    <div className="mt-3 text-xs text-muted-foreground">{t(`items.${item.id}.label`)}</div>
-                                    <div className="mt-1 text-xl font-semibold tabular-nums tracking-normal">{item.value}</div>
+                                    <div className="mt-2 text-[11px] text-muted-foreground">{t(`items.${item.id}.label`)}</div>
+                                    <div className="mt-1 text-lg font-semibold tabular-nums tracking-normal">{item.value}</div>
                                     <div className="mt-1 line-clamp-2 text-xs text-muted-foreground" title={item.sub}>{item.sub}</div>
                                 </article>
                             );
                         })}
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-2.5 2xl:grid-cols-2">
                         <BreakdownRows title={t('apiKeyBreakdown')} items={data?.top_api_keys ?? []} />
                         <BreakdownRows title={t('sourceBreakdown')} items={data?.source_breakdown ?? []} />
                     </div>
