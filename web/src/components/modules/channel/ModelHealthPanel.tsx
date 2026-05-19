@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Activity, AlertTriangle, Download, Gauge, LoaderCircle, RefreshCw, Search, Server, ShieldCheck, Thermometer, Wallet } from 'lucide-react';
+import { Activity, AlertTriangle, Download, Gauge, GitBranch, LoaderCircle, RefreshCw, Search, Server, ShieldCheck, Thermometer, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useChannelList, useChannelModelHealth, type ChannelModelHealthRow } from '@/api/endpoints/channel';
 import { toast } from '@/components/common/Toast';
@@ -314,6 +314,90 @@ function rowReason(row: ChannelModelHealthRow) {
         || (row.quota_status && row.quota_status !== 'available' && row.quota_status !== 'unknown' ? row.quota_status : '');
 }
 
+function StrategyPanel({
+    title,
+    strategy,
+    healthEnabled,
+    queueMode,
+    queueEnabled,
+    rangeLabel,
+    blockedRows,
+    coolingRows,
+    worstHealthRow,
+    mostLoadedRow,
+    t,
+}: {
+    title: string;
+    strategy: string;
+    healthEnabled: boolean;
+    queueMode: string;
+    queueEnabled: boolean;
+    rangeLabel: string;
+    blockedRows: number;
+    coolingRows: number;
+    worstHealthRow?: ChannelModelHealthRow;
+    mostLoadedRow?: ChannelModelHealthRow;
+    t: ReturnType<typeof useTranslations<'channel.health'>>;
+}) {
+    return (
+        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+                <GitBranch className="size-4 text-primary" />
+                <span>{title}</span>
+            </div>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                <div className="rounded-lg border border-border/70 bg-card px-3 py-2.5">
+                    <div className="text-[11px] text-muted-foreground">{t('stats.healthScore')}</div>
+                    <div className="mt-1 text-sm font-medium">{strategy}</div>
+                    <div className="mt-1 text-[11px] text-muted-foreground">
+                        {healthEnabled ? t('healthEnabled') : t('healthDisabled')}
+                    </div>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-card px-3 py-2.5">
+                    <div className="text-[11px] text-muted-foreground">{t('channelConcurrency')}</div>
+                    <div className="mt-1 text-sm font-medium">
+                        {queueEnabled ? queueMode : t('queueMode.disabled')}
+                    </div>
+                    <div className="mt-1 text-[11px] text-muted-foreground">{rangeLabel}</div>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-card px-3 py-2.5">
+                    <div className="text-[11px] text-muted-foreground">{t('insights.blockedRows')}</div>
+                    <div className="mt-1 text-sm font-medium">{blockedRows}</div>
+                    <div className="mt-1 text-[11px] text-muted-foreground">{t('insights.coolingRows')}: {coolingRows}</div>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-card px-3 py-2.5">
+                    <div className="text-[11px] text-muted-foreground">{t('insights.worstHealth')}</div>
+                    {worstHealthRow ? (
+                        <>
+                            <div className="mt-1 truncate text-sm font-medium" title={worstHealthRow.channel_name}>
+                                {worstHealthRow.channel_name || `#${worstHealthRow.channel_id}`}
+                            </div>
+                            <div className="mt-1 text-[11px] text-muted-foreground">
+                                {worstHealthRow.model_name} / {worstHealthRow.health_score.toFixed(1)}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="mt-1 text-sm text-muted-foreground">{t('empty')}</div>
+                    )}
+                </div>
+            </div>
+
+            {mostLoadedRow ? (
+                <div className="mt-3 rounded-lg border border-border/70 bg-card px-3 py-2.5">
+                    <div className="text-[11px] text-muted-foreground">{t('insights.topLoaded')}</div>
+                    <div className="mt-1 truncate text-sm font-medium" title={mostLoadedRow.channel_name}>
+                        {mostLoadedRow.channel_name || `#${mostLoadedRow.channel_id}`} / {mostLoadedRow.model_name}
+                    </div>
+                    <div className="mt-1 text-[11px] text-muted-foreground">
+                        {t('activeSelections')}: {formatNumber(mostLoadedRow.active_selections)} / {t('requests')}: {formatNumber(mostLoadedRow.request_count)}
+                    </div>
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
 export function ChannelModelHealthPanel() {
     const t = useTranslations('channel.health');
     const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -510,153 +594,165 @@ export function ChannelModelHealthPanel() {
     const statusChartConfig = useMemo(() => ({ count: { label: t('stats.rows') } }), [t]);
     const healthChartConfig = useMemo(() => ({ count: { label: t('stats.healthScore') } }), [t]);
     const riskChartConfig = useMemo(() => ({ score: { label: t('stats.healthScore') } }), [t]);
+    const rangeLabel = useMemo(() => {
+        switch (timeRange) {
+            case '1h':
+                return t('range.1h');
+            case '7d':
+                return t('range.7d');
+            case '30d':
+                return t('range.30d');
+            case 'all':
+                return t('range.all');
+            default:
+                return t('range.24h');
+        }
+    }, [t, timeRange]);
+    const strategyLabel = summary?.load_balancing_strategy === 'health_score'
+        ? t('strategy.healthScore')
+        : t('strategy.staticGroupMode');
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
             <section className="shrink-0 rounded-xl border border-border bg-card p-4">
-                <div className="flex flex-col gap-3">
+                <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
                     <div className="flex flex-col gap-3">
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2 text-base font-semibold">
-                                <Thermometer className="size-4 text-primary" />
-                                {t('title')}
-                            </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                <Badge variant="outline" className="rounded-md">
-                                    {summary?.health_score_enabled ? t('healthEnabled') : t('healthDisabled')}
-                                </Badge>
-                                <Badge variant="outline" className="rounded-md">
-                                    {summary?.channel_concurrency_enabled
-                                        ? t('queueMode.enabled', { mode: queueModeLabel(t, summary.channel_concurrency_mode) })
-                                        : t('queueMode.disabled')}
-                                </Badge>
-                                <span>{sourceLabel(t, source)}</span>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-[8rem_minmax(12rem,1fr)_8rem_9rem_minmax(14rem,1fr)]">
-                            <Select value={timeRange} onValueChange={setTimeRange}>
-                                <SelectTrigger className="h-9 w-full rounded-lg">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="1h">{t('range.1h')}</SelectItem>
-                                    <SelectItem value="24h">{t('range.24h')}</SelectItem>
-                                    <SelectItem value="7d">{t('range.7d')}</SelectItem>
-                                    <SelectItem value="30d">{t('range.30d')}</SelectItem>
-                                    <SelectItem value="all">{t('range.all')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={channelId} onValueChange={setChannelId}>
-                                <SelectTrigger className="h-9 w-full rounded-lg">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">{t('channelAll')}</SelectItem>
-                                    {filteredChannels.map((channel) => (
-                                        <SelectItem key={channel.id} value={String(channel.id)}>
-                                            {channel.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={source} onValueChange={setSource}>
-                                <SelectTrigger className="h-9 w-full rounded-lg">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">{t('source.all')}</SelectItem>
-                                    <SelectItem value="relay">{t('source.relay')}</SelectItem>
-                                    <SelectItem value="model_test">{t('source.modelTest')}</SelectItem>
-                                    <SelectItem value="probe">{t('source.probe')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={quotaStatus} onValueChange={setQuotaStatus}>
-                                <SelectTrigger className="h-9 w-full rounded-lg">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">{t('quota.all')}</SelectItem>
-                                    {QUOTA_FILTER_STATUSES.map((status) => (
-                                        <SelectItem key={status} value={status}>
-                                            {quotaLabel(t, status)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <div className="relative min-w-0">
-                                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    value={modelQuery}
-                                    onChange={(event) => setModelQuery(event.target.value)}
-                                    placeholder={t('searchModel')}
-                                    className="h-9 rounded-lg pl-9"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                        {metricCards.map((item) => {
-                            const Icon = item.icon;
-                            return (
-                                <div key={item.id} className="rounded-lg border border-border bg-background/50 px-3 py-2">
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Icon className="size-3.5" />
-                                        {item.label}
-                                    </div>
-                                    <div className="mt-1 text-xl font-semibold tabular-nums">{item.value}</div>
-                                    <div className="mt-0.5 truncate text-xs text-muted-foreground" title={item.sub}>
-                                        {item.sub}
-                                    </div>
+                        <div className="flex flex-col gap-3">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2 text-base font-semibold">
+                                    <Thermometer className="size-4 text-primary" />
+                                    {t('title')}
                                 </div>
-                            );
-                        })}
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                    <Badge variant="outline" className="rounded-md">
+                                        {summary?.health_score_enabled ? t('healthEnabled') : t('healthDisabled')}
+                                    </Badge>
+                                    <Badge variant="outline" className="rounded-md">
+                                        {summary?.channel_concurrency_enabled
+                                            ? t('queueMode.enabled', { mode: queueModeLabel(t, summary.channel_concurrency_mode) })
+                                            : t('queueMode.disabled')}
+                                    </Badge>
+                                    <Badge variant="outline" className="rounded-md">
+                                        {strategyLabel}
+                                    </Badge>
+                                    <span>{sourceLabel(t, source)}</span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-[8rem_minmax(12rem,1fr)_8rem_9rem_minmax(14rem,1fr)]">
+                                <Select value={timeRange} onValueChange={setTimeRange}>
+                                    <SelectTrigger className="h-9 w-full rounded-lg">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="1h">{t('range.1h')}</SelectItem>
+                                        <SelectItem value="24h">{t('range.24h')}</SelectItem>
+                                        <SelectItem value="7d">{t('range.7d')}</SelectItem>
+                                        <SelectItem value="30d">{t('range.30d')}</SelectItem>
+                                        <SelectItem value="all">{t('range.all')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Select value={channelId} onValueChange={setChannelId}>
+                                    <SelectTrigger className="h-9 w-full rounded-lg">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('channelAll')}</SelectItem>
+                                        {filteredChannels.map((channel) => (
+                                            <SelectItem key={channel.id} value={String(channel.id)}>
+                                                {channel.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={source} onValueChange={setSource}>
+                                    <SelectTrigger className="h-9 w-full rounded-lg">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('source.all')}</SelectItem>
+                                        <SelectItem value="relay">{t('source.relay')}</SelectItem>
+                                        <SelectItem value="model_test">{t('source.modelTest')}</SelectItem>
+                                        <SelectItem value="probe">{t('source.probe')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Select value={quotaStatus} onValueChange={setQuotaStatus}>
+                                    <SelectTrigger className="h-9 w-full rounded-lg">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">{t('quota.all')}</SelectItem>
+                                        {QUOTA_FILTER_STATUSES.map((status) => (
+                                            <SelectItem key={status} value={status}>
+                                                {quotaLabel(t, status)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <div className="relative min-w-0">
+                                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        value={modelQuery}
+                                        onChange={(event) => setModelQuery(event.target.value)}
+                                        placeholder={t('searchModel')}
+                                        className="h-9 rounded-lg pl-9"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                            {metricCards.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <div key={item.id} className="rounded-lg border border-border bg-background/50 px-3 py-2">
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <Icon className="size-3.5" />
+                                            {item.label}
+                                        </div>
+                                        <div className="mt-1 text-xl font-semibold tabular-nums">{item.value}</div>
+                                        <div className="mt-0.5 truncate text-xs text-muted-foreground" title={item.sub}>
+                                            {item.sub}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-4">
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3 2xl:col-span-1">
-                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.healthView')}</div>
-                            <ChartContainer config={statusChartConfig} className="h-48 w-full">
-                                <BarChart data={statusChartData}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-1)" />
-                                </BarChart>
-                            </ChartContainer>
-                        </div>
+                    <StrategyPanel
+                        title={t('insights.healthView')}
+                        strategy={strategyLabel}
+                        healthEnabled={summary?.health_score_enabled === true}
+                        queueMode={queueModeLabel(t, summary?.channel_concurrency_mode)}
+                        queueEnabled={summary?.channel_concurrency_enabled === true}
+                        rangeLabel={rangeLabel}
+                        blockedRows={blockedRows.length}
+                        coolingRows={summary?.cooling_down_count ?? 0}
+                        worstHealthRow={worstHealthRow}
+                        mostLoadedRow={mostLoadedRow}
+                        t={t}
+                    />
+                </div>
 
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3 2xl:col-span-1">
-                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.worstHealth')}</div>
-                            <ChartContainer config={healthChartConfig} className="h-48 w-full">
-                                <BarChart data={healthBucketData}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-3)" />
-                                </BarChart>
-                            </ChartContainer>
-                        </div>
+                <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)] 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.55fr)]">
+                    <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                        <div className="mb-3 text-xs text-muted-foreground">{t('insights.worstHealth')}</div>
+                        <ChartContainer config={healthChartConfig} className="h-52 w-full">
+                            <BarChart data={healthBucketData}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-3)" />
+                            </BarChart>
+                        </ChartContainer>
+                    </div>
 
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3 2xl:col-span-1">
-                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.topBlocked')}</div>
-                            <ChartContainer config={statusChartConfig} className="h-48 w-full">
-                                <BarChart data={blockedReasonChartData}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-5)" />
-                                </BarChart>
-                            </ChartContainer>
-                        </div>
-
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3 2xl:col-span-1">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
                             <div className="mb-3 text-xs text-muted-foreground">{t('insights.topLoaded')}</div>
-                            <ChartContainer config={riskChartConfig} className="h-48 w-full">
+                            <ChartContainer config={riskChartConfig} className="h-52 w-full">
                                 <BarChart data={riskyRowsChartData}>
                                     <CartesianGrid vertical={false} />
                                     <XAxis dataKey="label" tickLine={false} axisLine={false} />
@@ -666,161 +762,146 @@ export function ChannelModelHealthPanel() {
                                 </BarChart>
                             </ChartContainer>
                         </div>
+
+                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                            <div className="mb-3 text-xs text-muted-foreground">{t('insights.topBlocked')}</div>
+                            <ChartContainer config={statusChartConfig} className="h-52 w-full">
+                                <BarChart data={blockedReasonChartData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-5)" />
+                                </BarChart>
+                            </ChartContainer>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-3 grid gap-3 xl:grid-cols-[0.9fr_1fr_1fr]">
+                    <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                        <div className="mb-3 text-xs text-muted-foreground">{t('insights.healthView')}</div>
+                        <ChartContainer config={statusChartConfig} className="h-40 w-full">
+                            <BarChart data={statusChartData}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                <Bar dataKey="count" radius={[6, 6, 0, 0]} fill="var(--chart-1)" />
+                            </BarChart>
+                        </ChartContainer>
                     </div>
 
-                    <div className="grid gap-3 xl:grid-cols-[1.15fr_1fr_1fr]">
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
-                            <div className="text-xs text-muted-foreground">{t('insights.topLoaded')}</div>
-                            {mostLoadedRow ? (
-                                <div className="mt-2 space-y-3">
-                                    <div className="min-w-0">
-                                        <div className="truncate text-sm font-medium" title={mostLoadedRow.channel_name}>
-                                            {mostLoadedRow.channel_name || `#${mostLoadedRow.channel_id}`}
-                                        </div>
-                                        <div className="truncate text-xs text-muted-foreground" title={mostLoadedRow.model_name}>
-                                            {mostLoadedRow.model_name}
-                                        </div>
+                    <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                        <div className="text-xs text-muted-foreground">{t('insights.topBlocked')}</div>
+                        {topBlockedReasons.length ? (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {topBlockedReasons.map(([reason, count]) => (
+                                    <div key={reason} className="rounded-lg bg-card px-3 py-2">
+                                        <div className="text-xs font-medium">{reasonLabel(t, reason) || t('quota.unknown')}</div>
+                                        <div className="mt-1 text-[11px] text-muted-foreground">{count} / {blockedRows.length}</div>
                                     </div>
-                                    <div className="grid gap-2 sm:grid-cols-3">
-                                        <div className="rounded-lg bg-card px-3 py-2">
-                                            <div className="text-[11px] text-muted-foreground">{t('activeSelections')}</div>
-                                            <div className="mt-1 text-sm font-medium">{formatNumber(mostLoadedRow.active_selections)}</div>
-                                        </div>
-                                        <div className="rounded-lg bg-card px-3 py-2">
-                                            <div className="text-[11px] text-muted-foreground">{t('channelConcurrency')}</div>
-                                            <div className="mt-1 text-sm font-medium">
-                                                {(mostLoadedRow.channel_concurrency_active ?? 0).toLocaleString()}
-                                                {mostLoadedRow.channel_concurrency_limit ? ` / ${mostLoadedRow.channel_concurrency_limit}` : ''}
-                                            </div>
-                                        </div>
-                                        <div className="rounded-lg bg-card px-3 py-2">
-                                            <div className="text-[11px] text-muted-foreground">{t('requests')}</div>
-                                            <div className="mt-1 text-sm font-medium">{formatNumber(mostLoadedRow.request_count)}</div>
-                                        </div>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                        {t('insights.topLoadedSub', {
-                                            mode: queueModeLabel(t, mostLoadedRow.channel_concurrency_mode),
-                                            cooldown: mostLoadedRow.cooling_down ? reasonLabel(t, mostLoadedRow.cooldown_reason) || t('cooldown') : t('noCooldown'),
-                                        })}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="mt-2 text-sm text-muted-foreground">{t('empty')}</div>
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="mt-2 text-sm text-muted-foreground">{t('insights.allHealthy')}</div>
+                        )}
+                    </div>
 
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
-                            <div className="text-xs text-muted-foreground">{t('insights.topBlocked')}</div>
-                            {topBlockedReasons.length ? (
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                    {topBlockedReasons.map(([reason, count]) => (
-                                        <div key={reason} className="rounded-lg bg-card px-3 py-2">
-                                            <div className="text-xs font-medium">{reasonLabel(t, reason) || t('quota.unknown')}</div>
-                                            <div className="mt-1 text-[11px] text-muted-foreground">{count} / {blockedRows.length}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="mt-2 text-sm text-muted-foreground">{t('insights.allHealthy')}</div>
-                            )}
+                    <div className="rounded-xl border border-border/70 bg-background/50 p-3">
+                        <div className="text-xs text-muted-foreground">{t('insights.healthView')}</div>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                            <div className="rounded-lg bg-card px-3 py-2">
+                                <div className="text-[11px] text-muted-foreground">{t('insights.blockedRows')}</div>
+                                <div className="mt-1 text-sm font-medium">{blockedRows.length}</div>
+                            </div>
+                            <div className="rounded-lg bg-card px-3 py-2">
+                                <div className="text-[11px] text-muted-foreground">{t('insights.coolingRows')}</div>
+                                <div className="mt-1 text-sm font-medium">{summary?.cooling_down_count ?? 0}</div>
+                            </div>
+                            <div className="rounded-lg bg-card px-3 py-2">
+                                <div className="text-[11px] text-muted-foreground">{t('insights.avgLatency')}</div>
+                                <div className="mt-1 text-sm font-medium">{formatMS(rows.length ? rows.reduce((sum, row) => sum + row.avg_total_ms, 0) / rows.length : 0)}</div>
+                            </div>
+                            <div className="rounded-lg bg-card px-3 py-2">
+                                <div className="text-[11px] text-muted-foreground">{t('insights.estimatedCost')}</div>
+                                <div className="mt-1 text-sm font-medium">{formatCost(summary?.estimated_cost)}</div>
+                            </div>
                         </div>
-
-                        <div className="rounded-xl border border-border/70 bg-background/50 p-3">
-                            <div className="text-xs text-muted-foreground">{t('insights.healthView')}</div>
-                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                                <div className="rounded-lg bg-card px-3 py-2">
-                                    <div className="text-[11px] text-muted-foreground">{t('insights.blockedRows')}</div>
-                                    <div className="mt-1 text-sm font-medium">{blockedRows.length}</div>
+                        {worstHealthRow ? (
+                            <div className="mt-3 rounded-lg border border-border/70 bg-card px-3 py-2">
+                                <div className="text-[11px] text-muted-foreground">{t('insights.worstHealth')}</div>
+                                <div className="mt-1 truncate text-sm font-medium" title={worstHealthRow.channel_name}>
+                                    {worstHealthRow.channel_name || `#${worstHealthRow.channel_id}`} / {worstHealthRow.model_name}
                                 </div>
-                                <div className="rounded-lg bg-card px-3 py-2">
-                                    <div className="text-[11px] text-muted-foreground">{t('insights.coolingRows')}</div>
-                                    <div className="mt-1 text-sm font-medium">{summary?.cooling_down_count ?? 0}</div>
-                                </div>
-                                <div className="rounded-lg bg-card px-3 py-2">
-                                    <div className="text-[11px] text-muted-foreground">{t('insights.avgLatency')}</div>
-                                    <div className="mt-1 text-sm font-medium">{formatMS(rows.length ? rows.reduce((sum, row) => sum + row.avg_total_ms, 0) / rows.length : 0)}</div>
-                                </div>
-                                <div className="rounded-lg bg-card px-3 py-2">
-                                    <div className="text-[11px] text-muted-foreground">{t('insights.estimatedCost')}</div>
-                                    <div className="mt-1 text-sm font-medium">{formatCost(summary?.estimated_cost)}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                    {t('insights.worstHealthSub', {
+                                        score: worstHealthRow.health_score.toFixed(1),
+                                        rate: formatPercent(worstHealthRow.health_success_rate, worstHealthRow.health_sample_count > 0),
+                                    })}
                                 </div>
                             </div>
-                            {worstHealthRow ? (
-                                <div className="mt-3 rounded-lg border border-border/70 bg-card px-3 py-2">
-                                    <div className="text-[11px] text-muted-foreground">{t('insights.worstHealth')}</div>
-                                    <div className="mt-1 truncate text-sm font-medium" title={worstHealthRow.channel_name}>
-                                        {worstHealthRow.channel_name || `#${worstHealthRow.channel_id}`} / {worstHealthRow.model_name}
-                                    </div>
-                                    <div className="mt-1 text-xs text-muted-foreground">
-                                        {t('insights.worstHealthSub', {
-                                            score: worstHealthRow.health_score.toFixed(1),
-                                            rate: formatPercent(worstHealthRow.health_success_rate, worstHealthRow.health_sample_count > 0),
-                                        })}
-                                    </div>
-                                </div>
-                            ) : null}
-                        </div>
+                        ) : null}
+                    </div>
+                </div>
+
+                <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            type="button"
+                            variant={quotaStatus === 'all' ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-8 rounded-lg"
+                            onClick={() => setQuotaStatus('all')}
+                        >
+                            {t('quota.all')}
+                            <span className="ml-1 tabular-nums">{summary?.total_rows ?? 0}</span>
+                        </Button>
+                        {quotaStatusChips.map((status) => (
+                            <Button
+                                key={status}
+                                type="button"
+                                variant={quotaStatus === status ? 'default' : 'outline'}
+                                size="sm"
+                                className={cn('h-8 rounded-lg', quotaStatus !== status && quotaTone(status))}
+                                onClick={() => setQuotaStatus(status)}
+                            >
+                                {quotaLabel(t, status)}
+                                <span className="ml-1 tabular-nums">{quotaStatusCounts[status]}</span>
+                            </Button>
+                        ))}
                     </div>
 
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Button
-                                type="button"
-                                variant={quotaStatus === 'all' ? 'default' : 'outline'}
-                                size="sm"
-                                className="h-8 rounded-lg"
-                                onClick={() => setQuotaStatus('all')}
-                            >
-                                {t('quota.all')}
-                                <span className="ml-1 tabular-nums">{summary?.total_rows ?? 0}</span>
-                            </Button>
-                            {quotaStatusChips.map((status) => (
-                                <Button
-                                    key={status}
-                                    type="button"
-                                    variant={quotaStatus === status ? 'default' : 'outline'}
-                                    size="sm"
-                                    className={cn('h-8 rounded-lg', quotaStatus !== status && quotaTone(status))}
-                                    onClick={() => setQuotaStatus(status)}
-                                >
-                                    {quotaLabel(t, status)}
-                                    <span className="ml-1 tabular-nums">{quotaStatusCounts[status]}</span>
-                                </Button>
-                            ))}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 text-sm text-muted-foreground">
-                                <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
-                                {t('autoRefresh')}
-                            </label>
-                            <Select value={refreshInterval} onValueChange={setRefreshInterval}>
-                                <SelectTrigger className="h-9 w-[7rem] rounded-lg" disabled={!autoRefresh}>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="5000">5s</SelectItem>
-                                    <SelectItem value="10000">10s</SelectItem>
-                                    <SelectItem value="30000">30s</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" onClick={() => refetch()}>
-                                <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
-                                {t('refresh')}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-9 rounded-lg"
-                                onClick={exportCurrentRows}
-                                disabled={rows.length === 0}
-                            >
-                                <Download className="size-4" />
-                                {t('export.button')}
-                            </Button>
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 text-sm text-muted-foreground">
+                            <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+                            {t('autoRefresh')}
+                        </label>
+                        <Select value={refreshInterval} onValueChange={setRefreshInterval}>
+                            <SelectTrigger className="h-9 w-[7rem] rounded-lg" disabled={!autoRefresh}>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="5000">5s</SelectItem>
+                                <SelectItem value="10000">10s</SelectItem>
+                                <SelectItem value="30000">30s</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" onClick={() => refetch()}>
+                            <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+                            {t('refresh')}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 rounded-lg"
+                            onClick={exportCurrentRows}
+                            disabled={rows.length === 0}
+                        >
+                            <Download className="size-4" />
+                            {t('export.button')}
+                        </Button>
                     </div>
                 </div>
             </section>
