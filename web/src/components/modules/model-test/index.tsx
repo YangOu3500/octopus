@@ -854,8 +854,17 @@ export function ModelTest() {
                                                     <div>{t('table.cost')}: {formatCost(result?.estimated_cost)}</div>
                                                 </div>
                                                 <div className="min-w-0 px-3 py-3">
-                                                    <div className="line-clamp-2 text-sm text-foreground/90" title={result?.response_text || result?.error_message || ''}>
-                                                        {runStatus === 'queued' ? t('queued') : isRunning ? t('running') : result?.response_text || result?.error_message || '-'}
+                                                    <div 
+                                                        className={cn(
+                                                            "line-clamp-3 font-mono text-[11px] rounded-lg p-2 border border-border/10 tracking-wide break-all h-[4.5rem] overflow-y-auto leading-normal",
+                                                            status === 'success' ? 'bg-black/60 text-emerald-400 border-emerald-500/20' : 
+                                                            status === 'failed' ? 'bg-black/60 text-red-400 border-red-500/20' : 
+                                                            isRunning ? 'bg-black/50 text-amber-300 border-amber-500/20 animate-pulse' : 
+                                                            'bg-black/30 text-muted-foreground border-border/5'
+                                                        )}
+                                                        title={result?.response_text || result?.error_message || ''}
+                                                    >
+                                                        {runStatus === 'queued' ? `[SYSTEM]: ${t('queued')}...` : isRunning ? `[STREAMS]: ${t('running')}...` : result?.response_text || result?.error_message || '[CONSOLE]: IDLE'}
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-wrap items-start gap-1 px-3 py-3">
