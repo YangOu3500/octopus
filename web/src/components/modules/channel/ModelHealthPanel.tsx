@@ -650,7 +650,7 @@ export function ChannelModelHealthPanel() {
     return (
         <div className="flex min-h-0 flex-col gap-2.5">
             <section className="shrink-0 rounded-lg border border-border bg-card p-3.5">
-                <div className="grid items-start gap-2.5 lg:grid-cols-[minmax(0,1.48fr)_minmax(280px,0.82fr)]">
+                <div className="grid items-start gap-2.5 xl:grid-cols-[minmax(0,1.48fr)_320px]">
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-2.5">
                             <div className="min-w-0">

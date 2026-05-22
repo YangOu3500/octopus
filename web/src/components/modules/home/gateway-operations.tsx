@@ -139,7 +139,7 @@ export function GatewayOperationsPanel() {
                 </div>
 
                 <div className="space-y-2.5">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         {operationItems.map((item) => {
                             const Icon = item.icon;
                             return (
