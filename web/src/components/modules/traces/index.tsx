@@ -937,29 +937,34 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
             </div>
 
             <div>
-                <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">{t('attemptTimeline')}</div>
-                <div className="space-y-2">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('attemptTimeline')}</div>
+                <div className="relative pl-4 border-l border-border/30 space-y-3">
                     {detail.attempts.length === 0 ? (
                         <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
                             {t('noAttempts')}
                         </div>
                     ) : detail.attempts.map((attempt, index) => (
-                        <div key={`${attempt.id}-${index}`} className="rounded-lg border bg-background/40 px-2.5 py-2.5">
-                            <div className="flex flex-wrap items-start gap-2">
-                                <Badge variant="outline" className={cn('h-6 rounded-md px-2 text-[11px]', statusClass(attempt.status))}>
+                        <div key={`${attempt.id}-${index}`} className="relative rounded-xl border border-border/30 bg-background/35 px-3 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:border-primary/20 hover:bg-background/60 transition-all duration-300">
+                            {/* Branch indicator */}
+                            <span className="absolute -left-[21px] top-4 size-2.5 rounded-full border border-border/40 bg-card flex items-center justify-center">
+                                <span className={cn("size-1.5 rounded-full", attempt.status === 'success' ? 'bg-emerald-500' : 'bg-destructive')} />
+                            </span>
+
+                            <div className="flex flex-wrap items-start gap-2.5">
+                                <Badge variant="outline" className={cn('h-5 rounded-md px-1.5 text-[10px] font-bold uppercase tracking-wider', statusClass(attempt.status))}>
                                     {attempt.status || '-'}
                                 </Badge>
                                 <div className="min-w-0 flex-1">
-                                    <div className="truncate text-sm font-medium" title={attempt.channel_name || undefined}>
+                                    <div className="truncate text-sm font-semibold text-foreground" title={attempt.channel_name || undefined}>
                                         {attempt.channel_name || t('channelFallback', { id: attempt.channel_id || 0 })}
                                     </div>
-                                    <div className="mt-0.5 truncate text-xs text-muted-foreground" title={attempt.upstream_model || attempt.model_name || undefined}>
+                                    <div className="mt-0.5 truncate text-[11px] font-semibold text-muted-foreground/80" title={attempt.upstream_model || attempt.model_name || undefined}>
                                         {attempt.model_name || '-'} {'->'} {attempt.upstream_model || '-'}
                                     </div>
                                 </div>
-                                <div className="text-right text-xs font-mono tabular-nums">
-                                    <div>{formatDuration(attempt.total_ms || attempt.duration_ms)}</div>
-                                    <div className="text-muted-foreground">TTFB {formatDuration(attempt.ttfb_ms)}</div>
+                                <div className="text-right text-[11px] font-mono tabular-nums text-muted-foreground">
+                                    <div className="font-semibold text-foreground">{formatDuration(attempt.total_ms || attempt.duration_ms)}</div>
+                                    <div className="mt-0.5 text-[10px]">TTFB {formatDuration(attempt.ttfb_ms)}</div>
                                 </div>
                             </div>
 
