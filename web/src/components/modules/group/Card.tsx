@@ -73,7 +73,7 @@ function EditDialogContent({ group, displayMembers, isSubmitting, onSubmit }: Ed
     );
 }
 
-export function GroupCard({ group }: { group: Group }) {
+export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode?: 'list' | 'card' }) {
     const t = useTranslations('group');
     const updateGroup = useUpdateGroup();
     const deleteGroup = useDeleteGroup();
@@ -138,7 +138,6 @@ export function GroupCard({ group }: { group: Group }) {
     const onSuccess = useCallback(() => toast.success(t('toast.updated')), [t]);
     const onError = useCallback((error: Error) => toast.error(t('toast.updateFailed'), { description: error.message }), [t]);
 
-    // Avoid UI flicker: drag-reorder also uses the same mutation, so only "mode switch" should lock mode buttons.
     const isUpdatingMode = (() => {
         if (!updateGroup.isPending) return false;
         const v = updateGroup.variables;
@@ -286,8 +285,59 @@ export function GroupCard({ group }: { group: Group }) {
         });
     }, [group.first_token_time_out, group.session_keep_time, group.retry_enabled, group.max_retries, group.id, group.items, group.match_regex, group.mode, group.name, onSuccess, onError, updateGroup]);
 
+    if (viewMode === 'card') {
+        return (
+            <article className="flex flex-col justify-between rounded-2xl border border-border bg-card text-card-foreground p-3.5 custom-shadow h-[12.5rem] hover:border-primary/20 hover:bg-card/90 transition-all duration-300">
+                <header className="flex items-start justify-between relative overflow-visible">
+                    <div className="relative flex-1 mr-2 min-w-0">
+                        <Tooltip side="top" sideOffset={10} align="center">
+                            <TooltipTrigger asChild>
+                                <h3 className="text-sm font-bold truncate text-foreground">{group.name}</h3>
+                            </TooltipTrigger>
+                            <TooltipContent key={group.name}>{group.name}</TooltipContent>
+                        </Tooltip>
+                        <div className="mt-1 flex items-center gap-1.5">
+                            <Badge variant="secondary" className="rounded-md h-5 px-1.5 text-[10px] font-bold uppercase tracking-wider">
+                                {t(`mode.${MODE_LABELS[group.mode]}`)}
+                            </Badge>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                        <MorphingDialog>
+                            <MorphingDialogTrigger className="p-1.5 rounded-lg transition-colors hover:bg-muted text-muted-foreground hover:text-foreground">
+                                <Pencil className="size-3.5" />
+                            </MorphingDialogTrigger>
+
+                            <MorphingDialogContainer>
+                                <MorphingDialogContent className="relative w-screen max-w-full md:max-w-4xl bg-card text-card-foreground px-6 py-4 rounded-3xl h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+                                    <EditDialogContent
+                                        group={group}
+                                        displayMembers={effectiveDisplayMembers}
+                                        isSubmitting={updateGroup.isPending}
+                                        onSubmit={handleSubmitEdit}
+                                    />
+                                </MorphingDialogContent>
+                            </MorphingDialogContainer>
+                        </MorphingDialog>
+                    </div>
+                </header>
+
+                <div className="my-2 border-t border-border/20 pt-2 flex flex-col gap-1.5">
+                    <GroupRoutingBadge groupId={group.id} />
+                    <GroupHealthBadge groupId={group.id} />
+                </div>
+
+                <footer className="flex items-center justify-between text-[10px] text-muted-foreground/80 font-semibold border-t border-border/20 pt-2">
+                    <span>{t('runtime.retry')}: {group.retry_enabled ? `${group.max_retries ?? 3}x` : t('runtime.off')}</span>
+                    <span>{t('stats.visible')}: {effectiveDisplayMembers.length} models</span>
+                </footer>
+            </article>
+        );
+    }
+
     return (
-        <article className="flex flex-col rounded-3xl border border-border bg-card text-card-foreground p-4 custom-shadow">
+        <article className="flex flex-col rounded-3xl border border-border bg-card text-card-foreground p-4 custom-shadow max-w-[720px] mx-auto w-full">
             <header className="flex items-start justify-between mb-3 relative overflow-visible rounded-xl -mx-1 px-1 -my-1 py-1">
                 <div className="relative flex-1 mr-2 min-w-0 group/title">
                     <Tooltip side="top" sideOffset={10} align="center">
