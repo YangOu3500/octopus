@@ -226,12 +226,21 @@ export function StatsChart() {
                             </feMerge>
                         </filter>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--border) / 0.15)" />
-                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--border) / 0.25)" />
+                    <XAxis 
+                        dataKey="date" 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickMargin={8} 
+                        stroke="oklch(var(--foreground) / 0.55)"
+                        className="text-[10px] font-semibold tracking-wider font-mono"
+                    />
                     <YAxis
                         tickLine={false}
                         axisLine={false}
                         tickMargin={8}
+                        stroke="oklch(var(--foreground) / 0.55)"
+                        className="text-[10px] font-semibold tracking-wider font-mono"
                         tickFormatter={(value) => {
                             const formatted = formatMoney(value);
                             return `${formatted.formatted.value}${formatted.formatted.unit}`;

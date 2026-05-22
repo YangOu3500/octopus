@@ -84,22 +84,22 @@ function DesktopSidebar() {
         <motion.aside
             aria-label="Main Navigation"
             className={cn(
-                'hidden md:flex md:sticky md:top-3 md:h-[calc(100dvh-1.5rem)] md:flex-col md:overflow-hidden md:rounded-2xl md:border md:border-sidebar-border/40 md:bg-sidebar/35 md:p-3 md:text-sidebar-foreground md:shadow-[0_8px_32px_rgba(0,0,0,0.15)] md:backdrop-blur-xl',
+                'hidden md:flex md:sticky md:top-3 md:h-[calc(100dvh-1.5rem)] md:flex-col md:overflow-hidden md:rounded-2xl md:border md:border-sidebar-border/40 md:bg-sidebar/35 md:p-3 md:text-sidebar-foreground md:shadow-[0_8px_32px_rgba(0,0,0,0.15)] md:backdrop-blur-xl transition-[width] duration-300',
                 sidebarExpanded ? 'md:w-[15rem]' : 'md:w-[5.25rem]'
             )}
             variants={ENTRANCE_VARIANTS.navbar}
             initial="initial"
             animate="animate"
         >
-            <div className={cn('mb-3 flex gap-2', sidebarExpanded ? 'items-center justify-between' : 'flex-col items-center')}>
-                <div className={cn('flex min-w-0 items-center gap-2', !sidebarExpanded && 'justify-center')}>
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border bg-background/80">
-                        <Logo size={24} />
+            <div className={cn('mb-4 flex', sidebarExpanded ? 'items-center justify-between gap-2' : 'flex-col items-center gap-3')}>
+                <div className={cn('flex min-w-0 items-center gap-2.5', !sidebarExpanded && 'flex-col justify-center')}>
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-sidebar-border/40 bg-background/20 backdrop-blur-md">
+                        <Logo size={20} />
                     </div>
                     {sidebarExpanded ? (
                         <div className="min-w-0">
-                            <div className="truncate text-sm font-semibold text-sidebar-foreground">{t('brand')}</div>
-                            <div className="truncate text-xs text-sidebar-foreground/55">{t('shellHint')}</div>
+                            <div className="truncate text-xs font-bold tracking-wider uppercase text-sidebar-foreground">{t('brand')}</div>
+                            <div className="truncate text-[10px] font-semibold text-sidebar-foreground/50">{t('shellHint')}</div>
                         </div>
                     ) : null}
                 </div>
@@ -107,11 +107,11 @@ function DesktopSidebar() {
                 <button
                     type="button"
                     onClick={toggleSidebarExpanded}
-                    className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border/70 bg-background/70 text-sidebar-foreground/70 transition-colors hover:border-sidebar-border hover:text-sidebar-foreground"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-sidebar-border/50 bg-background/30 text-sidebar-foreground/75 transition-all duration-200 hover:border-primary/30 hover:bg-background/80 hover:text-foreground"
                     title={sidebarExpanded ? t('collapse') : t('expand')}
                     aria-label={sidebarExpanded ? t('collapse') : t('expand')}
                 >
-                    <ToggleIcon className="size-4" />
+                    <ToggleIcon className="size-3.5" />
                 </button>
             </div>
 
