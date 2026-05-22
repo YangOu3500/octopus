@@ -73,55 +73,58 @@ function MemberItem({
             ref={dnd.innerRef}
             // eslint-disable-next-line react-hooks/refs
             {...dnd.draggableProps}
-            className={cn('rounded-lg grid transition-[grid-template-rows] duration-200', isRemoving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]')}
+            className={cn('rounded-xl grid transition-[grid-template-rows] duration-300', isRemoving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]')}
             // eslint-disable-next-line react-hooks/refs
             style={{
                 /* eslint-disable-next-line react-hooks/refs */
                 ...(dnd.draggableProps?.style ?? {}),
                 /* eslint-disable-next-line react-hooks/refs */
-                ...(dnd.isDragging ? { zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' } : null),
+                ...(dnd.isDragging ? { zIndex: 50, boxShadow: '0 8px 32px rgba(104, 103, 255, 0.25)' } : null),
             }}
         >
             <div className={cn(
-                'flex items-center gap-2 rounded-lg bg-background border border-border/50 px-2.5 py-2 select-none transition-opacity duration-200 relative overflow-hidden',
+                'flex items-center gap-3 rounded-xl bg-background/50 border border-border/30 px-3 py-2.5 select-none transition-all duration-300 relative overflow-hidden',
                 isRemoving && 'opacity-0',
-                isDisabled && 'opacity-60 grayscale'
+                isDisabled && 'opacity-60 grayscale',
+                dnd.isDragging ? 'border-secondary/60 bg-gradient-to-r from-background to-secondary/5' : 'hover:border-border/60 hover:bg-background/80'
             )}>
                 <span className={cn(
-                    'size-5 rounded-md text-xs font-bold grid place-items-center shrink-0',
-                    isDisabled ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'
+                    'size-5 rounded-lg text-[10px] font-bold grid place-items-center shrink-0 border transition-all duration-300',
+                    isDisabled 
+                        ? 'bg-muted text-muted-foreground border-border/40' 
+                        : 'bg-primary/10 text-primary border-primary/20 shadow-[0_0_8px_rgba(var(--primary),0.08)]'
                 )}>
                     {index + 1}
                 </span>
 
                 <div
                     className={cn(
-                        'p-0.5 rounded touch-none transition-colors',
+                        'p-1 rounded-lg touch-none transition-colors duration-200',
                         isDisabled
                             ? 'cursor-grab active:cursor-grabbing hover:bg-muted/60'
-                            : 'cursor-grab active:cursor-grabbing hover:bg-muted'
+                            : 'cursor-grab active:cursor-grabbing hover:bg-muted text-muted-foreground/60 hover:text-foreground'
                     )}
                     // eslint-disable-next-line react-hooks/refs
                     {...dnd.dragHandleProps}
                 >
-                    <GripVertical className="size-3.5 text-muted-foreground" />
+                    <GripVertical className="size-3.5" />
                 </div>
 
-                <span className={cn(isDisabled && 'opacity-70')}>
+                <span className={cn(isDisabled && 'opacity-70', 'transition-transform duration-300 group-hover:scale-105')}>
                     <ModelAvatar size={18} />
                 </span>
 
-                <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex flex-col min-w-0 flex-1 gap-0.5">
                     <Tooltip side="top" sideOffset={10} align="start">
                         <TooltipTrigger className={cn(
-                            'text-sm font-medium truncate leading-tight',
+                            'text-sm font-semibold truncate leading-none text-left tracking-wide text-foreground',
                             isDisabled && 'text-muted-foreground'
                         )}>
                             {member.name}
                         </TooltipTrigger>
                         <TooltipContent key={member.name}>{member.name}</TooltipContent>
                     </Tooltip>
-                    <span className="text-[10px] text-muted-foreground truncate leading-tight">{sourceLabel}</span>
+                    <span className="text-[10px] text-muted-foreground/80 truncate leading-none font-medium">{sourceLabel}</span>
                 </div>
 
                 {showWeight && (
@@ -131,7 +134,7 @@ function MemberItem({
                         value={member.weight ?? 1}
                         onChange={(e) => onWeightChange?.(member.id, Math.max(1, parseInt(e.target.value) || 1))}
                         className={cn(
-                            'w-12 h-6 text-xs text-center rounded border border-border bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary',
+                            'w-12 h-6 text-xs text-center font-semibold rounded-md border border-border/50 bg-background/60 focus:outline-none focus:ring-1 focus:ring-secondary transition-all duration-300',
                             isDisabled && 'text-muted-foreground'
                         )}
                     />
@@ -142,7 +145,7 @@ function MemberItem({
                         layoutId={`delete-btn-member-${layoutScope ?? 'default'}-${member.id}`}
                         type="button"
                         onClick={() => showConfirmDelete ? setConfirmDelete(true) : onRemove(member.id)}
-                        className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground/75 hover:text-destructive transition-colors duration-200"
                         initial={false}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.15 }}
