@@ -40,28 +40,31 @@ function DesktopNavItem({
             onMouseEnter={() => preload(item)}
             title={expanded ? undefined : t(item)}
             className={cn(
-                'group grid w-full items-center rounded-2xl border py-2.5 pl-2.5 pr-3 text-left transition-all duration-200',
+                'group grid w-full items-center rounded-xl border py-2 pl-2 pr-3 text-left transition-all duration-300 relative overflow-hidden',
                 expanded ? 'grid-cols-[2.25rem_minmax(0,1fr)] gap-3' : 'grid-cols-[2.25rem_0fr] gap-0',
                 isActive
-                    ? 'border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
-                    : 'border-transparent text-sidebar-foreground/75 hover:border-sidebar-border hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
+                    ? 'border-primary/20 bg-gradient-to-r from-primary/15 to-secondary/5 text-primary shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_12px_rgba(var(--primary),0.08)]'
+                    : 'border-transparent text-sidebar-foreground/70 hover:border-sidebar-border/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
             )}
-            whileHover={{ y: -1 }}
+            whileHover={{ y: -0.5 }}
             whileTap={{ scale: 0.98 }}
         >
+            {isActive && (
+                <span className="absolute left-0 top-1/4 bottom-1/4 w-0.5 rounded-r bg-primary shadow-[0_0_8px_oklch(var(--primary))]" />
+            )}
             <span
                 className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                    'flex size-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-300',
                     isActive
-                        ? 'border-sidebar-primary-foreground/15 bg-sidebar-primary-foreground/10'
-                        : 'border-sidebar-border/70 bg-background/70 group-hover:border-sidebar-border'
+                        ? 'border-primary/30 bg-primary/10 text-primary shadow-[0_0_8px_oklch(var(--primary)/0.25)]'
+                        : 'border-sidebar-border/40 bg-background/40 group-hover:border-sidebar-border group-hover:bg-background/80'
                 )}
             >
-                <route.icon className="size-4" strokeWidth={2} />
+                <route.icon className="size-3.5" strokeWidth={2} />
             </span>
             <span
                 className={cn(
-                    'min-w-0 overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-200',
+                    'min-w-0 overflow-hidden whitespace-nowrap text-xs font-semibold tracking-wide transition-all duration-200',
                     expanded ? 'translate-x-0 opacity-100' : 'pointer-events-none -translate-x-1 opacity-0'
                 )}
             >
@@ -81,7 +84,7 @@ function DesktopSidebar() {
         <motion.aside
             aria-label="Main Navigation"
             className={cn(
-                'hidden md:flex md:sticky md:top-3 md:h-[calc(100dvh-1.5rem)] md:flex-col md:overflow-hidden md:rounded-[1.5rem] md:border md:border-sidebar-border md:bg-sidebar/95 md:p-3 md:text-sidebar-foreground md:shadow-sm',
+                'hidden md:flex md:sticky md:top-3 md:h-[calc(100dvh-1.5rem)] md:flex-col md:overflow-hidden md:rounded-2xl md:border md:border-sidebar-border/40 md:bg-sidebar/35 md:p-3 md:text-sidebar-foreground md:shadow-[0_8px_32px_rgba(0,0,0,0.15)] md:backdrop-blur-xl',
                 sidebarExpanded ? 'md:w-[15rem]' : 'md:w-[5.25rem]'
             )}
             variants={ENTRANCE_VARIANTS.navbar}

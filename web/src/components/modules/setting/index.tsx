@@ -201,7 +201,7 @@ export function Setting() {
     return (
         <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
             <PageWrapper childLayout={false} className="pb-24 md:pb-4">
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[208px_minmax(0,1fr)] xl:grid-cols-[224px_minmax(0,1fr)]">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[176px_minmax(0,1fr)] xl:grid-cols-[192px_minmax(0,1fr)]">
                     <SectionNav
                         sections={sections}
                         activeSection={currentSection.id}

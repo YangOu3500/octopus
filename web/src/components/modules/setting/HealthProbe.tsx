@@ -637,7 +637,7 @@ export function SettingHealthProbe() {
                         title={t('healthProbe.cooldown.title')}
                         subtitle={t('healthProbe.cooldown.subtitle')}
                     >
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
                             <div className="rounded-md border border-border/70 bg-background/40 px-3 py-2.5">
                                 <div className="text-xs text-muted-foreground">{t('healthProbe.cooldown.summary.total', { value: cooldownSummary.total })}</div>
                                 <div className="mt-1 text-lg font-semibold tabular-nums">{cooldownSummary.total}</div>
