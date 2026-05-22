@@ -514,75 +514,84 @@ export function ModelTest() {
         });
     };
 
+    const [showAdvanced, setShowAdvanced] = useState(false);
+
     return (
-        <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="shrink-0 rounded-lg border border-border bg-card p-3 shadow-sm">
-                <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-2 xl:flex-row xl:items-start xl:justify-between">
-                        <div className="flex min-w-0 flex-col gap-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setMode('channel')}
-                                className={cn(
-                                    'h-9 rounded-lg border px-3 text-sm font-medium transition-colors',
-                                    mode === 'channel' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted/20 hover:bg-muted'
-                                )}
-                            >
-                                {t('mode.channel')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setMode('model')}
-                                className={cn(
-                                    'h-9 rounded-lg border px-3 text-sm font-medium transition-colors',
-                                    mode === 'model' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted/20 hover:bg-muted'
-                                )}
-                            >
-                                {t('mode.model')}
-                            </button>
+        <div className="flex h-full min-h-0 flex-col gap-2">
+            <div className="shrink-0 rounded-lg border border-border bg-card p-2.5 shadow-sm">
+                <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-between">
+                        <div className="flex min-w-0 flex-col gap-1.5">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setMode('channel')}
+                                    className={cn(
+                                        'h-8 rounded-lg border px-3 text-xs font-semibold transition-colors',
+                                        mode === 'channel' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted/20 hover:bg-muted'
+                                    )}
+                                >
+                                    {t('mode.channel')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setMode('model')}
+                                    className={cn(
+                                        'h-8 rounded-lg border px-3 text-xs font-semibold transition-colors',
+                                        mode === 'model' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted/20 hover:bg-muted'
+                                    )}
+                                >
+                                    {t('mode.model')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAdvanced(!showAdvanced)}
+                                    className="h-8 rounded-lg border border-border bg-muted/30 px-3 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
+                                >
+                                    {showAdvanced ? t('clearVisible') : t('periods.allTime')} Settings
+                                </button>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                                 {headlineStats.map((item) => (
-                                    <Badge key={item.id} variant="outline" className="max-w-full rounded-md px-2.5 py-1 text-xs font-medium">
+                                    <Badge key={item.id} variant="outline" className="max-w-full rounded-md px-2 py-0.5 text-[10px] font-semibold">
                                         <span className="truncate">{item.label}</span>
                                     </Badge>
                                 ))}
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-                            <Button type="button" variant="outline" size="sm" onClick={handleExport} disabled={exportableResults.length === 0}>
-                                <Download className="size-4" />
+                        <div className="flex flex-wrap items-center gap-1.5 xl:justify-end">
+                            <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={handleExport} disabled={exportableResults.length === 0}>
+                                <Download className="size-3.5" />
                                 {t('export.button')}
                             </Button>
-                            <Button type="button" variant="outline" size="sm" onClick={handleClearVisible} disabled={visibleResultKeys.length === 0}>
-                                <Trash2 className="size-4" />
+                            <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={handleClearVisible} disabled={visibleResultKeys.length === 0}>
+                                <Trash2 className="size-3.5" />
                                 {t('clearVisible')}
                             </Button>
-                            <Button type="button" variant="outline" size="sm" onClick={handleClear} disabled={Object.keys(results).length === 0}>
-                                <RotateCcw className="size-4" />
+                            <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={handleClear} disabled={Object.keys(results).length === 0}>
+                                <RotateCcw className="size-3.5" />
                                 {t('clear')}
                             </Button>
-                            <Button type="button" variant="outline" size="sm" onClick={handleRetryFailed} disabled={runModelTest.isPending || failedRows.length === 0}>
-                                <XCircle className="size-4" />
+                            <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={handleRetryFailed} disabled={runModelTest.isPending || failedRows.length === 0}>
+                                <XCircle className="size-3.5" />
                                 {t('retryFailed', { count: failedRows.length })}
                             </Button>
-                            <Button type="button" size="sm" onClick={handleRun} disabled={runModelTest.isPending || selectedRows.length === 0}>
-                                <Play className="size-4" />
+                            <Button type="button" size="sm" className="h-8 text-xs font-semibold" onClick={handleRun} disabled={runModelTest.isPending || selectedRows.length === 0}>
+                                <Play className="size-3.5" />
                                 {runModelTest.isPending ? t('running') : t('runSelected', { count: selectedRows.length })}
                             </Button>
                         </div>
                     </div>
 
-                    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.96fr)]">
-                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.08fr)_minmax(15rem,0.92fr)]">
-                            <div className="rounded-lg border border-border/70 bg-background/50 p-3">
-                                <div className="grid gap-3 lg:grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)]">
+                    <div className="grid gap-2 xl:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)]">
+                        <div className="grid gap-2 lg:grid-cols-[minmax(0,1.08fr)_minmax(15rem,0.92fr)]">
+                            <div className="rounded-lg border border-border/40 bg-background/50 p-2">
+                                <div className="grid gap-2 lg:grid-cols-[minmax(8rem,11rem)_minmax(0,1fr)]">
                                 {mode === 'channel' ? (
-                                    <label className="grid gap-1">
-                                        <span className="text-xs font-medium text-muted-foreground">{t('channel')}</span>
+                                    <label className="grid gap-0.5">
+                                        <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">{t('channel')}</span>
                                         <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-                                            <SelectTrigger className="w-full rounded-lg">
+                                            <SelectTrigger className="w-full h-8 rounded-lg">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -595,10 +604,10 @@ export function ModelTest() {
                                         </Select>
                                     </label>
                                 ) : (
-                                    <label className="grid gap-1">
-                                        <span className="text-xs font-medium text-muted-foreground">{t('model')}</span>
+                                    <label className="grid gap-0.5">
+                                        <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">{t('model')}</span>
                                         <Select value={selectedModelName} onValueChange={setSelectedModelName}>
-                                            <SelectTrigger className="w-full rounded-lg">
+                                            <SelectTrigger className="w-full h-8 rounded-lg">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -612,43 +621,44 @@ export function ModelTest() {
                                     </label>
                                 )}
 
-                                <label className="grid gap-1">
-                                    <span className="text-xs font-medium text-muted-foreground">{t('prompt')}</span>
-                                    <Input value={prompt} onChange={(event) => setPrompt(event.target.value)} className="rounded-lg" />
+                                <label className="grid gap-0.5">
+                                    <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">{t('prompt')}</span>
+                                    <Input value={prompt} onChange={(event) => setPrompt(event.target.value)} className="rounded-lg h-8 text-xs" />
                                 </label>
                             </div>
-                            </div>
+                        </div>
 
-                            <div className="rounded-lg border border-border/70 bg-background/50 p-3">
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <label className="grid gap-1">
-                                        <span className="text-xs font-medium text-muted-foreground">{t('maxTokens')}</span>
+                        {showAdvanced ? (
+                            <div className="rounded-lg border border-border/40 bg-background/50 p-2 transition-all duration-300">
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                    <label className="grid gap-0.5">
+                                        <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">{t('maxTokens')}</span>
                                         <Input
                                             type="number"
                                             min={1}
                                             max={256}
                                             value={maxTokens}
                                             onChange={(event) => setMaxTokens(Math.max(1, Math.min(256, Number(event.target.value) || 1)))}
-                                            className="rounded-lg"
+                                            className="rounded-lg h-8 text-xs"
                                         />
                                     </label>
 
-                                    <label className="grid gap-1">
-                                        <span className="text-xs font-medium text-muted-foreground">{t('concurrency')}</span>
+                                    <label className="grid gap-0.5">
+                                        <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">{t('concurrency')}</span>
                                         <Input
                                             type="number"
                                             min={1}
                                             max={MAX_CONCURRENCY}
                                             value={concurrency}
                                             onChange={(event) => setConcurrency(Math.max(1, Math.min(MAX_CONCURRENCY, Number(event.target.value) || 1)))}
-                                            className="rounded-lg"
+                                            className="rounded-lg h-8 text-xs"
                                         />
                                     </label>
 
-                                    <label className="grid gap-1">
-                                        <span className="text-xs font-medium text-muted-foreground">{t('protocol')}</span>
+                                    <label className="grid gap-0.5">
+                                        <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">{t('protocol')}</span>
                                         <Select value="auto" disabled>
-                                            <SelectTrigger className="w-full rounded-lg">
+                                            <SelectTrigger className="w-full h-8 rounded-lg" disabled>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -657,46 +667,52 @@ export function ModelTest() {
                                         </Select>
                                     </label>
 
-                                    <label className="flex h-10 items-center justify-between rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground">
+                                    <label className="flex h-8 items-center justify-between rounded-lg border border-border bg-card px-2.5 text-xs text-muted-foreground">
                                         <span>{t('stream')}</span>
-                                        <Switch checked={stream} onCheckedChange={setStream} />
+                                        <Switch checked={stream} onCheckedChange={setStream} className="scale-75 origin-right" />
                                     </label>
                                 </div>
                             </div>
+                        ) : (
+                            <div className="flex items-center justify-between rounded-lg border border-border/40 bg-background/30 px-3 py-2 text-xs text-muted-foreground">
+                                <span>Stream Mode: {stream ? 'ON' : 'OFF'} ({maxTokens} tokens)</span>
+                                <Switch checked={stream} onCheckedChange={setStream} className="scale-75 origin-right" />
+                            </div>
+                        )}
                         </div>
 
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
+                        <div className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-2">
                             {runtimeStats.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="inline-flex min-w-0 items-center justify-between gap-3 rounded-md border border-border/70 bg-background/60 px-3 py-2"
+                                    className="inline-flex min-w-0 items-center justify-between gap-2 rounded-md border border-border/40 bg-background/40 px-2.5 py-1.5"
                                 >
-                                    <div className="text-xs text-muted-foreground">{item.label}</div>
-                                    <div className="text-sm font-semibold tabular-nums text-foreground">{item.value}</div>
+                                    <div className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">{item.label}</div>
+                                    <div className="text-xs font-semibold tabular-nums text-foreground">{item.value}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_11rem]">
-                        <div className="flex min-w-0 flex-col gap-2">
+                    <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_11rem] items-center">
+                        <div className="flex min-w-0 flex-col gap-1.5">
                             <div className="relative min-w-0">
-                                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     value={query}
                                     onChange={(event) => setQuery(event.target.value)}
                                     placeholder={mode === 'channel' ? t('searchModel') : t('searchChannel')}
-                                    className="rounded-lg pl-9"
+                                    className="rounded-lg pl-9 h-8 text-xs"
                                 />
                             </div>
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                                 {MODEL_TEST_RESULT_FILTERS.map((filter) => (
                                     <button
                                         key={filter}
                                         type="button"
                                         onClick={() => setResultFilter(filter)}
                                         className={cn(
-                                            'inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-xs font-medium transition-colors',
+                                            'inline-flex h-7 items-center gap-1.5 rounded-lg border px-2 text-[10px] font-bold tracking-wider uppercase transition-colors',
                                             resultFilter === filter
                                                 ? 'border-primary bg-primary text-primary-foreground'
                                                 : 'border-border bg-background/50 text-muted-foreground hover:bg-muted hover:text-foreground',
