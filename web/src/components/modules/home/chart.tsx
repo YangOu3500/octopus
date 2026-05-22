@@ -172,69 +172,79 @@ export function StatsChart() {
     }, [hero.unit]);
 
     return (
-        <section className="rounded-lg border border-border/70 bg-card text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <section className="rounded-xl border border-border/40 bg-card backdrop-blur-md text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12)] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(var(--primary),0.08)] hover:-translate-y-[1px]">
             {/* Header: hero + tabs */}
-            <header className="flex flex-col gap-3 px-4 pb-3 pt-4 md:flex-row md:items-start md:justify-between">
+            <header className="flex flex-col gap-3 px-5 pb-3 pt-5 md:flex-row md:items-start md:justify-between">
                 <div>
-                    <p className="text-xs text-muted-foreground">{t(`headline.${PERIOD_KEY[period]}`)}</p>
-                    <p className="mt-1 text-3xl font-semibold tabular-nums md:text-4xl">
+                    <p className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">{t(`headline.${PERIOD_KEY[period]}`)}</p>
+                    <p className="mt-1.5 text-3xl font-bold tracking-tight tabular-nums md:text-4xl text-foreground">
                         {hero.value === undefined ? (
                             <span className="text-muted-foreground">—</span>
                         ) : (
                             <>
-                                <span className="mr-1 text-xl text-muted-foreground">$</span>
+                                <span className="mr-1.5 text-lg font-semibold text-primary/70">$</span>
                                 <AnimatedNumber value={hero.value} />
                                 {heroUnitSuffix && (
-                                    <span className="ml-1 text-base text-muted-foreground">{heroUnitSuffix}</span>
+                                    <span className="ml-1 text-base font-semibold text-muted-foreground">{heroUnitSuffix}</span>
                                 )}
                             </>
                         )}
                     </p>
                 </div>
                 <Tabs value={period} onValueChange={(v) => setChartPeriod(v as ChartPeriod)}>
-                    <TabsList>
-                        <TabsTrigger value="1">{t('periods.today')}</TabsTrigger>
-                        <TabsTrigger value="7">{t('periods.last7Days')}</TabsTrigger>
-                        <TabsTrigger value="30">{t('periods.last30Days')}</TabsTrigger>
-                        <TabsTrigger value="all">{t('periods.allTime')}</TabsTrigger>
+                    <TabsList className="bg-muted/50 border border-border/30">
+                        <TabsTrigger value="1" className="text-xs font-medium">{t('periods.today')}</TabsTrigger>
+                        <TabsTrigger value="7" className="text-xs font-medium">{t('periods.last7Days')}</TabsTrigger>
+                        <TabsTrigger value="30" className="text-xs font-medium">{t('periods.last30Days')}</TabsTrigger>
+                        <TabsTrigger value="all" className="text-xs font-medium">{t('periods.allTime')}</TabsTrigger>
                     </TabsList>
                 </Tabs>
             </header>
 
             {/* Metrics row */}
-            <div className="mx-4 flex flex-wrap items-baseline gap-4 border-t border-border/60 py-2.5 text-sm tabular-nums">
+            <div className="mx-5 flex flex-wrap items-baseline gap-5 border-t border-border/30 py-3.5 text-xs font-semibold uppercase tracking-wider tabular-nums text-muted-foreground">
                 <StatItem label={t('metrics.requests')} value={metrics.requests} />
-                <span className="h-4 w-px bg-border/60" />
+                <span className="h-3.5 w-px bg-border/20" />
                 <StatItem label={t('metrics.tokens')} value={metrics.tokens} />
-                <span className="h-4 w-px bg-border/60" />
+                <span className="h-3.5 w-px bg-border/20" />
                 <StatItem label={t('metrics.waitTime')} value={metrics.waitTime} />
             </div>
 
             {/* Area chart — only total_cost */}
-            <ChartContainer config={chartConfig} className="h-32 w-full px-1 pb-1">
+            <ChartContainer config={chartConfig} className="h-36 w-full px-2 pb-2">
                 <AreaChart accessibilityLayer data={chartData}>
                     <defs>
                         <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.35} />
-                            <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0.05} />
+                            <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.25} />
+                            <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0} />
                         </linearGradient>
+                        <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+                            <feGaussianBlur stdDeviation="4" result="blur" />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--border) / 0.15)" />
+                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                     <YAxis
                         tickLine={false}
                         axisLine={false}
+                        tickMargin={8}
                         tickFormatter={(value) => {
                             const formatted = formatMoney(value);
                             return `${formatted.formatted.value}${formatted.formatted.unit}`;
                         }}
                     />
-                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
+                    <ChartTooltip cursor={{ stroke: 'oklch(var(--border) / 0.3)', strokeWidth: 1 }} content={<ChartTooltipContent indicator="line" />} />
                     <Area
                         type="monotone"
                         dataKey="total_cost"
-                        stroke="var(--chart-1)"
+                        stroke="var(--primary)"
+                        strokeWidth={2}
                         fill="url(#fillCost)"
+                        filter="url(#glow)"
                     />
                 </AreaChart>
             </ChartContainer>
