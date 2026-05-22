@@ -898,6 +898,7 @@ export function Log() {
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [refreshInterval, setRefreshInterval] = useState('10000');
     const [openDetailLogId, setOpenDetailLogId] = useState<number | null>(null);
+    const [showMoreFilters, setShowMoreFilters] = useState(false);
     const pendingLogTarget = useNavStore((state) => state.pendingLogTarget);
     const clearLogTarget = useNavStore((state) => state.clearLogTarget);
     const { data: channelsData } = useChannelList();
@@ -1167,41 +1168,14 @@ export function Log() {
                         onRefresh={() => void refetchActiveRequests()}
                     />
 
-                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 items-center">
                         <div className="relative">
                             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input value={modelFilter} onChange={(event) => setModelFilter(event.target.value)} placeholder="模型 / 上游模型" className="pl-8" />
+                            <Input value={modelFilter} onChange={(event) => setModelFilter(event.target.value)} placeholder="模型 / 上游模型" className="pl-8 h-8 rounded-lg text-xs" />
                         </div>
-                        <Input value={traceFilter} onChange={(event) => setTraceFilter(event.target.value)} placeholder="Trace ID / Request ID" />
-                        <Input value={apiKeyFilter} onChange={(event) => setApiKeyFilter(event.target.value)} placeholder="API Key 名称或 ID" />
-                        <Input value={failureFilter} onChange={(event) => setFailureFilter(event.target.value)} placeholder="失败原因" />
-                        <Select value={timeRange} onValueChange={setTimeRange}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">全部时间</SelectItem>
-                                <SelectItem value="1h">近 1 小时</SelectItem>
-                                <SelectItem value="24h">近 24 小时</SelectItem>
-                                <SelectItem value="7d">近 7 天</SelectItem>
-                                <SelectItem value="30d">近 30 天</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select value={channelFilter} onValueChange={setChannelFilter}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">全部渠道</SelectItem>
-                                {(channelsData ?? []).map((channel) => (
-                                    <SelectItem key={channel.raw.id} value={String(channel.raw.id)}>
-                                        {channel.raw.name} #{channel.raw.id}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Input value={traceFilter} onChange={(event) => setTraceFilter(event.target.value)} placeholder="Trace ID / Request ID" className="h-8 rounded-lg text-xs" />
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger className="w-full h-8 rounded-lg text-xs">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -1211,87 +1185,128 @@ export function Log() {
                                 <SelectItem value="canceled">已取消</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Input value={httpStatusFilter} onChange={(event) => setHTTPStatusFilter(event.target.value)} placeholder="HTTP，如 200 / 429 / 5xx" />
-                        <Select value={protocolFilter} onValueChange={setProtocolFilter}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">全部协议</SelectItem>
-                                <SelectItem value="openai_chat">OpenAI Chat</SelectItem>
-                                <SelectItem value="openai_responses">OpenAI Responses</SelectItem>
-                                <SelectItem value="anthropic">Anthropic</SelectItem>
-                                <SelectItem value="gemini">Gemini</SelectItem>
-                                <SelectItem value="ws">WebSocket</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">全部来源</SelectItem>
-                                <SelectItem value="relay">Relay</SelectItem>
-                                <SelectItem value="model_test">Model Test</SelectItem>
-                                <SelectItem value="images">Images</SelectItem>
-                                <SelectItem value="probe">Probe</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select value={streamFilter} onValueChange={setStreamFilter}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">全部模式</SelectItem>
-                                <SelectItem value="true">流式</SelectItem>
-                                <SelectItem value="false">非流式</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select value={failoverFilter} onValueChange={setFailoverFilter}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">全部链路</SelectItem>
-                                <SelectItem value="true">发生故障转移</SelectItem>
-                                <SelectItem value="false">未故障转移</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select value={cacheFilter} onValueChange={setCacheFilter}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">全部缓存</SelectItem>
-                                <SelectItem value="true">命中缓存</SelectItem>
-                                <SelectItem value="false">未命中缓存</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <div className="grid grid-cols-2 gap-2">
-                            <Select value={sortBy} onValueChange={setSortBy}>
-                                <SelectTrigger className="w-full">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="time">按时间</SelectItem>
-                                    <SelectItem value="duration">按耗时</SelectItem>
-                                    <SelectItem value="ttfb">按 TTFB</SelectItem>
-                                    <SelectItem value="cost">按成本</SelectItem>
-                                    <SelectItem value="tokens">按 Token</SelectItem>
-                                    <SelectItem value="attempts">按尝试数</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={sortOrder} onValueChange={setSortOrder}>
-                                <SelectTrigger className="w-full">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="desc">降序</SelectItem>
-                                    <SelectItem value="asc">升序</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs font-semibold w-full"
+                            onClick={() => setShowMoreFilters(!showMoreFilters)}
+                        >
+                            {showMoreFilters ? '收起高级筛选' : '展开高级筛选'}
+                        </Button>
                     </div>
+
+                    {showMoreFilters && (
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4 border-t border-border/20 pt-2 transition-all duration-300">
+                            <Input value={apiKeyFilter} onChange={(event) => setApiKeyFilter(event.target.value)} placeholder="API Key 名称或 ID" className="h-8 rounded-lg text-xs" />
+                            <Input value={failureFilter} onChange={(event) => setFailureFilter(event.target.value)} placeholder="失败原因" className="h-8 rounded-lg text-xs" />
+                            <Select value={timeRange} onValueChange={setTimeRange}>
+                                <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">全部时间</SelectItem>
+                                    <SelectItem value="1h">近 1 小时</SelectItem>
+                                    <SelectItem value="24h">近 24 小时</SelectItem>
+                                    <SelectItem value="7d">近 7 天</SelectItem>
+                                    <SelectItem value="30d">近 30 天</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={channelFilter} onValueChange={setChannelFilter}>
+                                <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">全部渠道</SelectItem>
+                                    {(channelsData ?? []).map((channel) => (
+                                        <SelectItem key={channel.raw.id} value={String(channel.raw.id)}>
+                                            {channel.raw.name} #{channel.raw.id}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Input value={httpStatusFilter} onChange={(event) => setHTTPStatusFilter(event.target.value)} placeholder="HTTP，如 200 / 429 / 5xx" className="h-8 rounded-lg text-xs" />
+                            <Select value={protocolFilter} onValueChange={setProtocolFilter}>
+                                <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">全部协议</SelectItem>
+                                    <SelectItem value="openai_chat">OpenAI Chat</SelectItem>
+                                    <SelectItem value="openai_responses">OpenAI Responses</SelectItem>
+                                    <SelectItem value="anthropic">Anthropic</SelectItem>
+                                    <SelectItem value="gemini">Gemini</SelectItem>
+                                    <SelectItem value="ws">WebSocket</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                                <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">全部来源</SelectItem>
+                                    <SelectItem value="relay">Relay</SelectItem>
+                                    <SelectItem value="model_test">Model Test</SelectItem>
+                                    <SelectItem value="images">Images</SelectItem>
+                                    <SelectItem value="probe">Probe</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={streamFilter} onValueChange={setStreamFilter}>
+                                <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">全部模式</SelectItem>
+                                    <SelectItem value="true">流式</SelectItem>
+                                    <SelectItem value="false">非流式</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={failoverFilter} onValueChange={setFailoverFilter}>
+                                <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">全部链路</SelectItem>
+                                    <SelectItem value="true">发生故障转移</SelectItem>
+                                    <SelectItem value="false">未故障转移</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={cacheFilter} onValueChange={setCacheFilter}>
+                                <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">全部缓存</SelectItem>
+                                    <SelectItem value="true">命中缓存</SelectItem>
+                                    <SelectItem value="false">未命中缓存</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Select value={sortBy} onValueChange={setSortBy}>
+                                    <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="time">按时间</SelectItem>
+                                        <SelectItem value="duration">按耗时</SelectItem>
+                                        <SelectItem value="ttfb">按 TTFB</SelectItem>
+                                        <SelectItem value="cost">按成本</SelectItem>
+                                        <SelectItem value="tokens">按 Token</SelectItem>
+                                        <SelectItem value="attempts">按尝试数</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Select value={sortOrder} onValueChange={setSortOrder}>
+                                    <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="desc">降序</SelectItem>
+                                        <SelectItem value="asc">升序</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    )}
                     <div className="flex justify-end">
                         <Button variant="ghost" size="sm" onClick={resetFilters}>
                             <X className="size-4" />
