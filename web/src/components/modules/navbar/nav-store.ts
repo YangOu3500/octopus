@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 
 export type NavItem = 'home' | 'site' | 'channel' | 'modelHealth' | 'group' | 'modelTest' | 'model' | 'traces' | 'log' | 'setting'
 
-const NAV_ORDER: NavItem[] = ['home', 'site', 'channel', 'modelHealth', 'group', 'modelTest', 'model', 'traces', 'log', 'setting']
+const NAV_ORDER: NavItem[] = ['home', 'site', 'channel', 'modelHealth', 'modelTest', 'group', 'model', 'traces', 'log', 'setting']
 
 export type LogNavigationTarget = {
     logId?: number

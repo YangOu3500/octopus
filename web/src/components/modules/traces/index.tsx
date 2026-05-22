@@ -880,7 +880,7 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
     const trace = detail.trace;
 
     return (
-        <aside className="flex min-h-[24rem] min-w-0 self-start flex-col gap-2.5 rounded-lg border bg-card p-2.5 xl:sticky xl:top-3">
+        <aside className="flex max-h-[calc(100dvh-3rem)] min-w-0 self-start flex-col gap-2.5 rounded-lg border bg-card p-2.5 overflow-y-auto xl:sticky xl:top-3 shadow-sm">
             <div className="flex flex-wrap items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -1244,7 +1244,7 @@ export function Traces() {
     }, [hasMore, maxPage, page, params, t, total, traces]);
 
     return (
-        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-2.5 pb-24 pr-1 md:pb-4" childLayout={false}>
+        <PageWrapper className="min-h-full space-y-2.5 pb-24 pr-1 md:pb-4" childLayout={false}>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
                 <SummaryTile
                     label={t('summary.total')}
