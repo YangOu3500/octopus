@@ -648,11 +648,11 @@ export function ChannelModelHealthPanel() {
     const hasStatusData = statusChartData.some((item) => item.count > 0);
 
     return (
-        <div className="flex min-h-0 flex-col gap-2.5">
+        <div className="flex min-h-0 flex-col gap-3.5 w-full relative">
             <section className="shrink-0 rounded-lg border border-border bg-card p-3.5">
-                <div className="grid items-start gap-2.5 xl:grid-cols-[minmax(0,1.48fr)_320px]">
-                    <div className="flex flex-col gap-3">
-                        <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-3.5">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex flex-col gap-2.5 flex-1 min-w-0">
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 text-base font-semibold">
                                     <Thermometer className="size-4 text-primary" />
@@ -767,41 +767,41 @@ export function ChannelModelHealthPanel() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-                            {metricCards.map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                    <div key={item.id} className="rounded-md border border-border bg-background/50 px-2.5 py-2">
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Icon className="size-3.5" />
-                                            {item.label}
-                                        </div>
-                                        <div className="mt-1 text-xl font-semibold tabular-nums">{item.value}</div>
-                                        <div className="mt-0.5 truncate text-xs text-muted-foreground" title={item.sub}>
-                                            {item.sub}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        <StrategyPanel
+                            title={t('insights.healthView')}
+                            strategy={strategyLabel}
+                            healthEnabled={summary?.health_score_enabled === true}
+                            queueMode={queueModeLabel(t, summary?.channel_concurrency_mode)}
+                            queueEnabled={summary?.channel_concurrency_enabled === true}
+                            rangeLabel={rangeLabel}
+                            blockedRows={blockedRows.length}
+                            coolingRows={summary?.cooling_down_count ?? 0}
+                            worstHealthRow={worstHealthRow}
+                            mostLoadedRow={mostLoadedRow}
+                            t={t}
+                        />
                     </div>
 
-                    <StrategyPanel
-                        title={t('insights.healthView')}
-                        strategy={strategyLabel}
-                        healthEnabled={summary?.health_score_enabled === true}
-                        queueMode={queueModeLabel(t, summary?.channel_concurrency_mode)}
-                        queueEnabled={summary?.channel_concurrency_enabled === true}
-                        rangeLabel={rangeLabel}
-                        blockedRows={blockedRows.length}
-                        coolingRows={summary?.cooling_down_count ?? 0}
-                        worstHealthRow={worstHealthRow}
-                        mostLoadedRow={mostLoadedRow}
-                        t={t}
-                    />
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+                        {metricCards.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <div key={item.id} className="rounded-md border border-border bg-background/50 px-2.5 py-2">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <Icon className="size-3.5" />
+                                        {item.label}
+                                    </div>
+                                    <div className="mt-1 text-xl font-semibold tabular-nums">{item.value}</div>
+                                    <div className="mt-0.5 truncate text-xs text-muted-foreground" title={item.sub}>
+                                        {item.sub}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                <div className="mt-2.5 grid gap-2.5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)] 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.55fr)]">
+                <div className="mt-3.5 grid gap-3.5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)] 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.55fr)]">
                     <ChartWorkbenchCard
                         title={t('stats.healthScore')}
                         caption={t('insights.healthView')}
