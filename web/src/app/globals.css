@@ -213,19 +213,55 @@ html.dark,
 
   /* Claymorphism Component Base Classes */
   .clay-card {
-    @apply bg-card rounded-2xl shadow-clay-card transition-all duration-400 ease-out border-none;
+    background-color: #FDF1E7;
+    border-radius: 32px;
+    box-shadow: 
+      14px 14px 28px #E6D0C0,
+      -14px -14px 28px #FFFFFF,
+      inset 2px 2px 4px rgba(255, 255, 255, 0.8),
+      inset -2px -2px 4px rgba(230, 208, 192, 0.4);
+    border: none;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   .clay-card:hover {
-    @apply shadow-clay-hover -translate-y-1;
+    box-shadow: 
+      18px 18px 36px #E6D0C0,
+      -18px -18px 36px #FFFFFF,
+      inset 3px 3px 6px rgba(255, 255, 255, 0.9),
+      inset -3px -3px 6px rgba(230, 208, 192, 0.5);
+    transform: translateY(-4px);
   }
 
   .clay-btn {
-    @apply bg-primary text-primary-foreground font-bold rounded-xl shadow-clay-btn transition-all duration-300 ease-out border-none active:shadow-clay-active active:translate-y-0.5;
+    background-color: #FF7B9C;
+    color: white;
+    border-radius: 20px;
+    font-weight: 800;
+    box-shadow: 
+      8px 8px 16px rgba(255, 123, 156, 0.3),
+      -6px -6px 12px #FFFFFF,
+      inset 2px 2px 4px rgba(255, 255, 255, 0.6),
+      inset -2px -2px 4px rgba(200, 80, 100, 0.3);
+    transition: all 0.2s ease-out;
+    border: none;
+  }
+  
+  .clay-btn:active {
+    box-shadow: 
+      inset 6px 6px 12px rgba(200, 80, 100, 0.5),
+      inset -6px -6px 12px rgba(255, 255, 255, 0.4);
+    transform: translateY(2px);
   }
   
   .clay-pressed {
-    @apply bg-muted/50 rounded-2xl shadow-clay-pressed transition-all duration-300 border-none;
+    background-color: rgba(230, 208, 192, 0.35);
+    border-radius: 24px;
+    box-shadow: 
+      inset 8px 8px 16px #E6D0C0,
+      inset -8px -8px 16px #FFFFFF;
+    border: none;
+    transition: all 0.3s ease-out;
   }
 }
 
