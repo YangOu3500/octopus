@@ -54,25 +54,23 @@ function SummaryCard({
     return (
         <article
             className={cn(
-                'flex h-full min-h-[9.25rem] flex-col rounded-lg border px-3.5 py-3 shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md',
-                accent
-                    ? 'border-primary/25 bg-primary/10 text-foreground'
-                    : 'border-border/70 bg-card/95'
+                'clay-card flex h-full min-h-[10.5rem] flex-col px-5 py-4',
+                accent && 'bg-primary/5'
             )}
         >
             <div className="flex items-start justify-between gap-3">
                 <div className={cn(
-                    'flex size-8 items-center justify-center rounded-md border',
-                    accent ? 'border-primary/20 bg-background text-primary' : 'border-border/70 bg-background/70 text-primary'
+                    'flex size-10 items-center justify-center rounded-2xl shadow-inner',
+                    accent ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary'
                 )}>
-                    <Icon className="size-3.5" />
+                    <Icon className="size-5" />
                 </div>
                 {badge ? <div className="shrink-0">{badge}</div> : null}
             </div>
-            <div className="mt-2.5 text-xs text-muted-foreground">{title}</div>
-            <div className="mt-1 text-[1.9rem] font-semibold leading-none tabular-nums">{value}</div>
-            <div className="mt-1 line-clamp-1 text-xs text-muted-foreground">{detail}</div>
-            {extra ? <div className="mt-auto pt-2.5">{extra}</div> : null}
+            <div className="mt-3 text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">{title}</div>
+            <div className="mt-1 text-3xl font-bold leading-none tabular-nums text-foreground/90 tracking-tight">{value}</div>
+            <div className="mt-1.5 line-clamp-1 text-[13px] text-muted-foreground/80 font-medium">{detail}</div>
+            {extra ? <div className="mt-auto pt-3">{extra}</div> : null}
         </article>
     );
 }
@@ -93,18 +91,25 @@ function InsightTile({
     return (
         <div
             className={cn(
-                'rounded-md border px-3 py-2 transition-all duration-200 hover:-translate-y-px hover:shadow-sm',
-                tone === 'warning'
-                    ? 'border-amber-500/25 bg-amber-500/5'
-                    : 'border-border/70 bg-background/40'
+                'clay-card flex items-center gap-4 px-5 py-4',
+                tone === 'warning' ? 'bg-amber-500/5' : ''
             )}
         >
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Icon className="size-3.5" />
-                <span>{label}</span>
+            <div className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-2xl shadow-inner',
+                tone === 'warning' ? 'bg-amber-500/10 text-amber-600' : 'bg-muted/50 text-muted-foreground'
+            )}>
+                <Icon className="size-5" />
             </div>
-            <div className="mt-1.5 text-lg font-semibold tabular-nums">{value}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold tabular-nums text-foreground/90">{value}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[13px] font-semibold text-muted-foreground">{label}</span>
+                    <span className="text-xs text-muted-foreground/70 truncate">&middot; {detail}</span>
+                </div>
+            </div>
         </div>
     );
 }
@@ -163,14 +168,14 @@ export function DashboardSummaryCards() {
                         </Badge>
                     )}
                     extra={(
-                        <div className="grid grid-cols-2 gap-2 text-xs tabular-nums">
-                            <div className="rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5">
-                                <div className="text-muted-foreground">{t('todayRequests')}</div>
-                                <div className="mt-1 font-medium text-foreground">{compactCount(todayRequests)}</div>
+                        <div className="grid grid-cols-2 gap-3 text-xs tabular-nums">
+                            <div className="rounded-xl bg-muted/40 px-3 py-2">
+                                <div className="text-muted-foreground font-medium">{t('todayRequests')}</div>
+                                <div className="mt-1 font-bold text-foreground/90">{compactCount(todayRequests)}</div>
                             </div>
-                            <div className="rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5">
-                                <div className="text-muted-foreground">{t('weekTotal')}</div>
-                                <div className="mt-1 font-medium text-foreground">{compactCount(dailyWindows.last7Requests)}</div>
+                            <div className="rounded-xl bg-muted/40 px-3 py-2">
+                                <div className="text-muted-foreground font-medium">{t('weekTotal')}</div>
+                                <div className="mt-1 font-bold text-foreground/90">{compactCount(dailyWindows.last7Requests)}</div>
                             </div>
                         </div>
                     )}
@@ -204,18 +209,18 @@ export function DashboardSummaryCards() {
                     })}
                     badge={<Badge variant="outline" className="rounded-md px-2 text-[11px]">{observabilityT('range24h')}</Badge>}
                     extra={(
-                        <div className="grid grid-cols-3 gap-1.5 text-xs tabular-nums">
-                            <div className="rounded-md border border-border/60 bg-background/70 px-2 py-1.5">
-                                <div className="text-muted-foreground">{observabilityT('input')}</div>
-                                <div className="mt-1 font-medium text-foreground">{compactCount(observability?.input_tokens)}</div>
+                        <div className="grid grid-cols-3 gap-2.5 text-[11px] tabular-nums">
+                            <div className="rounded-xl bg-muted/40 px-2.5 py-2">
+                                <div className="text-muted-foreground font-medium">{observabilityT('input')}</div>
+                                <div className="mt-1 font-bold text-foreground/90">{compactCount(observability?.input_tokens)}</div>
                             </div>
-                            <div className="rounded-md border border-border/60 bg-background/70 px-2 py-1.5">
-                                <div className="text-muted-foreground">{observabilityT('output')}</div>
-                                <div className="mt-1 font-medium text-foreground">{compactCount(observability?.output_tokens)}</div>
+                            <div className="rounded-xl bg-muted/40 px-2.5 py-2">
+                                <div className="text-muted-foreground font-medium">{observabilityT('output')}</div>
+                                <div className="mt-1 font-bold text-foreground/90">{compactCount(observability?.output_tokens)}</div>
                             </div>
-                            <div className="rounded-md border border-border/60 bg-background/70 px-2 py-1.5">
-                                <div className="text-muted-foreground">{observabilityT('cache')}</div>
-                                <div className="mt-1 font-medium text-foreground">{compactCount(observability?.cache_tokens)}</div>
+                            <div className="rounded-xl bg-muted/40 px-2.5 py-2">
+                                <div className="text-muted-foreground font-medium">{observabilityT('cache')}</div>
+                                <div className="mt-1 font-bold text-foreground/90">{compactCount(observability?.cache_tokens)}</div>
                             </div>
                         </div>
                     )}
@@ -228,14 +233,14 @@ export function DashboardSummaryCards() {
                     detail={t('todaySub', { rpm: (observability?.rpm ?? 0).toFixed(2) })}
                     accent
                     extra={(
-                        <div className="grid grid-cols-2 gap-2 text-xs tabular-nums">
-                            <div className="rounded-md border border-primary/15 bg-background/80 px-2.5 py-1.5">
-                                <div className="text-muted-foreground">{t('monthTotal')}</div>
-                                <div className="mt-1 font-medium text-foreground">{compactCount(dailyWindows.last30Requests)}</div>
+                        <div className="grid grid-cols-2 gap-3 text-xs tabular-nums">
+                            <div className="rounded-xl bg-primary/10 text-primary px-3 py-2">
+                                <div className="font-medium opacity-80">{t('monthTotal')}</div>
+                                <div className="mt-1 font-bold">{compactCount(dailyWindows.last30Requests)}</div>
                             </div>
-                            <div className="rounded-md border border-primary/15 bg-background/80 px-2.5 py-1.5">
-                                <div className="text-muted-foreground">{observabilityT('range24h')}</div>
-                                <div className="mt-1 font-medium text-foreground">{latencyFormatted}</div>
+                            <div className="rounded-xl bg-primary/10 text-primary px-3 py-2">
+                                <div className="font-medium opacity-80">{observabilityT('range24h')}</div>
+                                <div className="mt-1 font-bold">{latencyFormatted}</div>
                             </div>
                         </div>
                     )}

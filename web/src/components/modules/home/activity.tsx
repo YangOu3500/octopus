@@ -88,13 +88,7 @@ export function Activity() {
     }, [days, isLoading, checkScroll]);
 
     return (
-        <div className="rounded-lg bg-card border-card-border border text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
-            <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
-                <div>
-                    <div className="text-sm font-semibold text-foreground">{sectionT('title')}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{sectionT('description')}</div>
-                </div>
-            </div>
+        <div className="flex flex-col h-full -mx-2">
             <div
                 ref={scrollRef}
                 onScroll={checkScroll}

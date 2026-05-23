@@ -48,16 +48,16 @@ function BreakdownRows({ title, items }: { title: string; items: StatsObservabil
     const t = useTranslations('home.operations');
 
     return (
-        <div className="min-w-0 rounded-lg border border-border/70 bg-background/35 p-3">
-            <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{title}</div>
-            <div className="divide-y divide-border/70 rounded-md border border-border/60 bg-background/70">
+        <div className="min-w-0 rounded-2xl bg-muted/30 p-4">
+            <div className="mb-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{title}</div>
+            <div className="space-y-2">
                 {items.length === 0 ? (
                     <div className="px-3 py-3 text-sm text-muted-foreground">{t('empty')}</div>
                 ) : items.slice(0, 4).map((item) => (
-                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-3 px-3 py-2">
+                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-3 px-3 py-2.5 rounded-xl bg-card shadow-sm">
                         <div className="min-w-0">
-                            <div className="truncate text-sm font-medium" title={item.name}>{item.name || '-'}</div>
-                            <div className="mt-0.5 text-xs text-muted-foreground">
+                            <div className="truncate text-[13px] font-bold text-foreground/90" title={item.name}>{item.name || '-'}</div>
+                            <div className="mt-1 text-[11px] font-medium text-muted-foreground/80">
                                 {t('breakdownMeta', {
                                     requests: item.requests,
                                     failures: item.failures,
@@ -65,9 +65,9 @@ function BreakdownRows({ title, items }: { title: string; items: StatsObservabil
                                 })}
                             </div>
                         </div>
-                        <div className="text-right text-xs text-muted-foreground tabular-nums">
-                            <div>{compactTime(item.avg_latency_ms)}</div>
-                            <div>{compactMoney(item.cost)}</div>
+                        <div className="text-right text-[11px] font-medium text-muted-foreground tabular-nums flex flex-col justify-center">
+                            <div className="text-foreground/80">{compactTime(item.avg_latency_ms)}</div>
+                            <div className="mt-0.5">{compactMoney(item.cost)}</div>
                         </div>
                     </div>
                 ))}
@@ -121,16 +121,18 @@ export function GatewayOperationsPanel() {
 
     return (
         <section>
-            <div className="rounded-lg border border-border/70 bg-card/95 p-3.5 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
-                <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+            <div className="clay-card p-5">
+                <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
-                        <div className="flex items-center gap-2 text-sm font-semibold">
-                            <Radar className="size-4 text-primary" />
+                        <div className="flex items-center gap-2.5 text-base font-bold tracking-tight">
+                            <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-inner">
+                                <Radar className="size-4" />
+                            </div>
                             {t('title')}
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{t('description')}</p>
+                        <p className="mt-1.5 text-[13px] text-muted-foreground/80">{t('description')}</p>
                     </div>
-                    <Badge variant="outline" className="h-6 w-fit rounded-md px-2 text-[11px]">
+                    <Badge variant="outline" className="h-6 w-fit rounded-md px-2 text-[11px] font-medium bg-muted/40 border-border/50">
                         {t('window', {
                             stream: data?.stream_requests ?? 0,
                             modelTest: data?.model_test_requests ?? 0,
@@ -138,23 +140,23 @@ export function GatewayOperationsPanel() {
                     </Badge>
                 </div>
 
-                <div className="space-y-2.5">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {operationItems.map((item) => {
                             const Icon = item.icon;
                             return (
                                 <article
                                     key={item.id}
-                                    className="min-h-[84px] cursor-default rounded-md border border-border/70 bg-background/45 p-2.5 text-left transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/80 hover:shadow-sm"
+                                    className="min-h-[84px] cursor-default rounded-2xl bg-muted/30 p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted/50 hover:shadow-sm"
                                 >
-                                    <div className="flex min-w-0 items-start gap-2.5">
-                                        <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border bg-card text-primary">
-                                            <Icon className="size-3.5" />
+                                    <div className="flex min-w-0 items-start gap-3">
+                                        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-card shadow-sm text-primary">
+                                            <Icon className="size-4" />
                                         </div>
                                         <div className="min-w-0">
-                                            <div className="text-[11px] text-muted-foreground">{t(`items.${item.id}.label`)}</div>
-                                            <div className="mt-1 text-base font-semibold tabular-nums tracking-normal">{item.value}</div>
-                                            <div className="mt-1 line-clamp-2 text-xs text-muted-foreground" title={item.sub}>{item.sub}</div>
+                                            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t(`items.${item.id}.label`)}</div>
+                                            <div className="mt-1 text-lg font-bold tabular-nums tracking-tight text-foreground/90">{item.value}</div>
+                                            <div className="mt-1 line-clamp-2 text-[11px] font-medium text-muted-foreground/70" title={item.sub}>{item.sub}</div>
                                         </div>
                                     </div>
                                 </article>

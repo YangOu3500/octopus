@@ -172,7 +172,7 @@ export function StatsChart() {
     }, [hero.unit]);
 
     return (
-        <section className="rounded-xl border border-border/40 bg-card backdrop-blur-md text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12)] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(var(--primary),0.08)] hover:-translate-y-[1px]">
+        <section className="clay-card">
             {/* Header: hero + tabs */}
             <header className="flex flex-col gap-3 px-5 pb-3 pt-5 md:flex-row md:items-start md:justify-between">
                 <div>

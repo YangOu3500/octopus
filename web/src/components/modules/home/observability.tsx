@@ -53,14 +53,14 @@ function MetricTile({
 }) {
     return (
         <div className={cn(
-            'rounded-md border bg-background/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/70',
-            tone === 'success' && 'border-primary/30 bg-primary/5',
-            tone === 'warning' && 'border-amber-500/25 bg-amber-500/5',
-            tone === 'danger' && 'border-destructive/25 bg-destructive/5',
+            'rounded-xl bg-muted/40 px-4 py-3 transition-all duration-200 hover:-translate-y-px hover:bg-muted/60',
+            tone === 'success' && 'bg-primary/5',
+            tone === 'warning' && 'bg-amber-500/5',
+            tone === 'danger' && 'bg-destructive/5',
         )}>
-            <div className="text-xs text-muted-foreground">{label}</div>
-            <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{sub}</div>
+            <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</div>
+            <div className="mt-1 text-2xl font-bold tabular-nums text-foreground/90">{value}</div>
+            <div className="mt-1 text-[11px] font-medium text-muted-foreground/80">{sub}</div>
         </div>
     );
 }
@@ -69,19 +69,19 @@ function BreakdownList({ title, items }: { title: string; items: StatsObservabil
     const t = useTranslations('home.observability');
 
     return (
-        <div className="rounded-md border bg-background/40 p-3">
-            <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+        <div className="rounded-2xl bg-muted/30 p-4">
+            <div className="mb-3 flex items-center gap-2.5 text-[13px] font-bold text-foreground/80">
                 <Server className="size-4 text-muted-foreground" />
                 <span>{title}</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
                 {items.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{t('noData')}</div>
                 ) : items.map((item) => (
-                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-2 rounded-md px-2 py-1.5 transition-all duration-200 hover:-translate-y-px hover:bg-muted/60">
+                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-3 rounded-xl bg-card px-3 py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-px">
                         <div className="min-w-0">
-                            <div className="truncate text-sm font-medium" title={item.name}>{item.name || '—'}</div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="truncate text-[13px] font-bold text-foreground/90" title={item.name}>{item.name || '—'}</div>
+                            <div className="mt-0.5 text-[11px] font-medium text-muted-foreground/80">
                                 {t('breakdownMeta', {
                                     requests: item.requests,
                                     failures: item.failures,
@@ -89,9 +89,9 @@ function BreakdownList({ title, items }: { title: string; items: StatsObservabil
                                 })}
                             </div>
                         </div>
-                        <div className="text-right text-xs text-muted-foreground tabular-nums">
-                            <div>{formatMetricTime(item.avg_latency_ms)}</div>
-                            <div>{formatMetricMoney(item.cost)}</div>
+                        <div className="flex flex-col justify-center text-right text-[11px] font-medium tabular-nums text-muted-foreground">
+                            <div className="text-foreground/80">{formatMetricTime(item.avg_latency_ms)}</div>
+                            <div className="mt-0.5">{formatMetricMoney(item.cost)}</div>
                         </div>
                     </div>
                 ))}
@@ -104,33 +104,33 @@ function RecentFailureList({ items }: { items: StatsObservabilityFailure[] }) {
     const t = useTranslations('home.observability');
 
     return (
-        <div className="rounded-md border bg-background/40 p-3">
-            <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+        <div className="rounded-2xl bg-muted/30 p-4">
+            <div className="mb-3 flex items-center gap-2.5 text-[13px] font-bold text-foreground/80">
                 <AlertTriangle className="size-4 text-destructive" />
                 <span>{t('recentFailures')}</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
                 {items.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{t('noFailures')}</div>
                 ) : items.map((item) => (
-                    <div key={`${item.id}-${item.channel_id}-${item.failure_reason}`} className="rounded-md border border-border/50 px-2 py-1.5 transition-all duration-200 hover:-translate-y-px hover:border-destructive/25 hover:bg-muted/40">
+                    <div key={`${item.id}-${item.channel_id}-${item.failure_reason}`} className="rounded-xl bg-card shadow-sm px-3 py-2.5 transition-all duration-200 hover:-translate-y-px">
                         <div className="flex min-w-0 items-center gap-2">
-                            <Badge variant="outline" className="h-5 shrink-0 px-1.5 text-[10px]">
+                            <Badge variant="outline" className="h-5 shrink-0 px-1.5 text-[10px] bg-muted/50 border-border/50">
                                 {item.http_status || '—'}
                             </Badge>
-                            <span className="truncate text-sm font-medium" title={item.request_model}>
+                            <span className="truncate text-[13px] font-bold text-foreground/90" title={item.request_model}>
                                 {item.request_model || '—'}
                             </span>
-                            <span className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
+                            <span className="ml-auto shrink-0 text-[11px] font-medium text-muted-foreground tabular-nums">
                                 {formatMetricTime(item.duration_ms)}
                             </span>
                         </div>
-                        <div className="mt-1 truncate text-xs text-muted-foreground" title={item.failure_reason || undefined}>
+                        <div className="mt-1 truncate text-[11px] font-medium text-muted-foreground/80" title={item.failure_reason || undefined}>
                             {item.channel_name || `#${item.channel_id || 0}`} · {item.failure_reason || t('unknown')}
                         </div>
-                        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground">
+                        <div className="mt-1 flex min-w-0 items-center gap-2 text-[10px] font-semibold tracking-wider uppercase text-muted-foreground/60">
                             <span className="shrink-0">{formatFailureTime(item.time)}</span>
-                            <span className="truncate font-mono">{item.trace_id || `#${item.id}`}</span>
+                            <span className="truncate">{item.trace_id || `#${item.id}`}</span>
                         </div>
                     </div>
                 ))}
@@ -156,16 +156,12 @@ export function ObservabilityPanel() {
     const failoverRequests = data?.failover_requests ?? 0;
 
     return (
-        <section className="rounded-lg border border-card-border bg-card p-4 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
-            <header className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <Gauge className="size-4 text-primary" />
-                        <h3 className="text-sm font-semibold">{t('title')}</h3>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{t('description')}</p>
+        <div className="flex flex-col h-full">
+            <header className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="hidden md:block">
+                    <p className="text-[13px] font-medium text-muted-foreground/80">{t('description')}</p>
                 </div>
-                <Badge variant={error ? 'outline' : 'secondary'} className={cn('w-fit', error && 'border-destructive/30 text-destructive')}>
+                <Badge variant={error ? 'outline' : 'secondary'} className={cn('w-fit h-6 px-3 rounded-md font-medium bg-muted/40 text-[11px]', error && 'border-destructive/30 text-destructive')}>
                     {error ? t('loadFailed') : isLoading ? t('loading') : t('range24h')}
                 </Badge>
             </header>
@@ -249,13 +245,13 @@ export function ObservabilityPanel() {
                 </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-2 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,0.95fr)] 2xl:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(0,0.9fr))]">
+            <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,0.95fr)] 2xl:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(0,0.9fr))]">
                 <RecentFailureList items={data?.recent_failures ?? []} />
                 <BreakdownList title={t('topChannels')} items={data?.top_channels ?? []} />
                 <BreakdownList title={t('topModels')} items={data?.top_models ?? []} />
                 <BreakdownList title={t('topApiKeys')} items={data?.top_api_keys ?? []} />
                 <BreakdownList title={t('sourceBreakdown')} items={data?.source_breakdown ?? []} />
             </div>
-        </section>
+        </div>
     );
 }

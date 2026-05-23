@@ -10,11 +10,9 @@ import { GatewayOperationsPanel } from './gateway-operations';
 import { GroupHealthSummaryStrip } from './group-health-summary-strip';
 import { ObservabilityPanel } from './observability';
 import { Rank } from './rank';
-import { type HomeSectionId, useHomeViewStore } from './store';
 import { useStatsObservability } from '@/api/endpoints/stats';
 import { PageWrapper } from '@/components/common/PageWrapper';
 import { Badge } from '@/components/ui/badge';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 function SectionCard({
     title,
@@ -22,48 +20,44 @@ function SectionCard({
     icon,
     chips = [],
     children,
-    value,
 }: {
     title: string;
     description: string;
     icon: ReactNode;
     chips?: string[];
     children: ReactNode;
-    value: HomeSectionId;
 }) {
     return (
-        <AccordionItem value={value} className="overflow-hidden rounded-lg border border-border/70 bg-card/95 shadow-sm transition-all duration-200 hover:shadow-md data-[state=open]:border-primary/15">
-            <AccordionTrigger className="items-center gap-3 px-3.5 py-2.5 hover:no-underline hover:bg-muted/20">
-                <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/10 text-primary">
+        <section className="clay-card flex flex-col overflow-hidden">
+            <header className="flex items-center gap-3 px-5 py-4 border-b border-border/40 bg-card/40">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-primary shadow-inner">
                         {icon}
                     </div>
                     <div className="min-w-0 text-left">
-                        <div className="truncate text-sm font-semibold text-foreground">{title}</div>
-                        <div className="line-clamp-1 text-xs text-muted-foreground">{description}</div>
+                        <h2 className="truncate text-base font-bold text-foreground/90 tracking-tight">{title}</h2>
+                        <p className="line-clamp-1 text-[13px] text-muted-foreground/80">{description}</p>
                     </div>
                 </div>
                 {chips.length > 0 ? (
                     <div className="hidden flex-wrap items-center justify-end gap-1.5 md:flex">
                         {chips.map((chip) => (
-                            <Badge key={chip} variant="outline" className="h-6 rounded-md px-2 text-[11px] font-normal text-muted-foreground">
+                            <Badge key={chip} variant="outline" className="h-6 rounded-md px-2 text-[11px] font-medium text-muted-foreground bg-muted/30 border-border/50">
                                 {chip}
                             </Badge>
                         ))}
                     </div>
                 ) : null}
-            </AccordionTrigger>
-            <AccordionContent className="border-t border-border/60 px-3.5 pb-3.5 pt-3.5">
+            </header>
+            <div className="p-4 flex-1">
                 {children}
-            </AccordionContent>
-        </AccordionItem>
+            </div>
+        </section>
     );
 }
 
 export function Home() {
     const t = useTranslations('home.sections');
-    const openSections = useHomeViewStore((state) => state.openSections);
-    const setOpenSections = useHomeViewStore((state) => state.setOpenSections);
     const { data: observability } = useStatsObservability('24h');
 
     const sectionChips = useMemo(() => ({
@@ -84,27 +78,21 @@ export function Home() {
     }), [observability, t]);
 
     return (
-        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-3 pb-24 md:pb-4">
-            <section className="space-y-2.5">
+        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-4 pb-24 md:pb-6 px-2">
+            <section className="space-y-3">
                 <DashboardSummaryCards />
-                <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)] items-start">
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)] items-start">
                     <StatsChart />
-                    <div className="space-y-2.5 w-full">
+                    <div className="space-y-3 w-full">
                         <GatewayOperationsPanel />
                         <GroupHealthSummaryStrip />
                     </div>
                 </div>
             </section>
 
-            <Accordion
-                type="multiple"
-                value={openSections}
-                onValueChange={(value) => setOpenSections(value as HomeSectionId[])}
-                className="space-y-2"
-            >
+            <div className="space-y-3">
                 <SectionCard
-                    value="workbench"
-                    icon={<Radar className="size-4" />}
+                    icon={<Radar className="size-4.5" />}
                     title={t('workbench.title')}
                     description={t('workbench.description')}
                     chips={sectionChips.workbench}
@@ -112,10 +100,9 @@ export function Home() {
                     <ObservabilityPanel />
                 </SectionCard>
 
-                <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                     <SectionCard
-                        value="analytics"
-                        icon={<BarChart3 className="size-4" />}
+                        icon={<BarChart3 className="size-4.5" />}
                         title={t('analytics.title')}
                         description={t('analytics.description')}
                         chips={sectionChips.analytics}
@@ -124,8 +111,7 @@ export function Home() {
                     </SectionCard>
 
                     <SectionCard
-                        value="activity"
-                        icon={<ActivityIcon className="size-4" />}
+                        icon={<ActivityIcon className="size-4.5" />}
                         title={t('activity.title')}
                         description={t('activity.description')}
                         chips={sectionChips.activity}
@@ -133,7 +119,7 @@ export function Home() {
                         <Activity />
                     </SectionCard>
                 </div>
-            </Accordion>
+            </div>
         </PageWrapper>
     );
 }

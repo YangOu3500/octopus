@@ -116,20 +116,19 @@ export function Rank() {
     };
 
     return (
-        <div className="rounded-lg border border-border/70 bg-card p-4 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <div className="flex flex-col h-full">
             <Tabs value={rankSortMode} onValueChange={(value) => setRankSortMode(value as RankSortMode)}>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h3 className="text-base font-semibold">{t('title')}</h3>
-                        <p className="mt-1 text-xs text-muted-foreground">{t('successRate')}</p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                    <div className="hidden sm:block">
+                        <p className="text-[13px] font-medium text-muted-foreground/80">{t('successRate')}</p>
                     </div>
-                    <TabsList>
-                        <TabsTrigger value="cost">{t('sortByCost')}</TabsTrigger>
-                        <TabsTrigger value="count">{t('sortByCount')}</TabsTrigger>
-                        <TabsTrigger value="tokens">{t('sortByTokens')}</TabsTrigger>
+                    <TabsList className="bg-muted/40 border border-border/40 p-1">
+                        <TabsTrigger value="cost" className="rounded-md px-3 py-1.5 text-xs font-semibold">{t('sortByCost')}</TabsTrigger>
+                        <TabsTrigger value="count" className="rounded-md px-3 py-1.5 text-xs font-semibold">{t('sortByCount')}</TabsTrigger>
+                        <TabsTrigger value="tokens" className="rounded-md px-3 py-1.5 text-xs font-semibold">{t('sortByTokens')}</TabsTrigger>
                     </TabsList>
                 </div>
-                <TabsContents className="mt-3">
+                <TabsContents>
                     <TabsContent value="cost">
                         {renderList(rankedByCost, 'cost')}
                     </TabsContent>

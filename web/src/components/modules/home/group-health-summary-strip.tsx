@@ -25,29 +25,31 @@ export function GroupHealthSummaryStrip() {
     if (!enabled) return null;
 
     return (
-        <section className="rounded-lg border border-card-border bg-card px-3.5 py-3 text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
-            <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+        <section className="clay-card px-5 py-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                        <Activity className="size-4 text-primary" />
+                    <div className="flex items-center gap-2.5 text-base font-bold tracking-tight">
+                        <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-inner">
+                            <Activity className="size-4" />
+                        </div>
                         {t('title')}
-                        <span className="text-xs font-normal text-muted-foreground">{t('total', { count: summary.total })}</span>
+                        <span className="text-[13px] font-medium text-muted-foreground/80">{t('total', { count: summary.total })}</span>
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                            <LoaderCircle className="size-3.5" />
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] font-medium text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                            <LoaderCircle className="size-4" />
                             {t('running', { count: summary.running })}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                            <CheckCircle2 className="size-3.5" />
+                        <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="size-4" />
                             {t('success', { count: summary.success })}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                            <Activity className="size-3.5" />
+                        <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                            <Activity className="size-4" />
                             {t('partial', { count: summary.partial })}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-destructive">
-                            <XCircle className="size-3.5" />
+                        <span className="inline-flex items-center gap-1.5 text-destructive">
+                            <XCircle className="size-4" />
                             {t('failed', { count: summary.failed })}
                         </span>
                         {summary.idle ? <span>{t('idle', { count: summary.idle })}</span> : null}
@@ -58,11 +60,11 @@ export function GroupHealthSummaryStrip() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-7 rounded-md px-2.5 text-xs md:self-center"
+                    className="h-9 rounded-xl px-4 text-[13px] font-bold bg-muted/30 border-border/50 hover:bg-muted/50 transition-colors md:self-center"
                     onClick={() => runAllGroupHealth.mutate()}
                     disabled={runAllGroupHealth.isPending}
                 >
-                    {runAllGroupHealth.isPending ? <LoaderCircle className="size-4 animate-spin" /> : <Play className="size-4" />}
+                    {runAllGroupHealth.isPending ? <LoaderCircle className="size-4.5 animate-spin" /> : <Play className="size-4.5" />}
                     {t('runAll')}
                 </Button>
             </div>
