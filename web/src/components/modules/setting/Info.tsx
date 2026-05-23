@@ -93,104 +93,106 @@ export function SettingInfo() {
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
-                <Info className="h-5 w-5" />
-                {t('info.title')}
-            </h2>
-
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Github className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('info.github')}</span>
-                </div>
-                <a
-                    href={GITHUB_REPO}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline"
-                >
-                    {GITHUB_REPO.replace('https://github.com/', '')}
-                </a>
+        <div className="space-y-1">
+            <div className="flex items-center gap-2 px-1 pb-2">
+                <Info className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground/80">{t('info.title')}</h3>
             </div>
 
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Tag className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('info.frontendBuild')}</span>
+            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Github className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('info.github')}</span>
+                    </div>
+                    <a
+                        href={GITHUB_REPO}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline"
+                    >
+                        {GITHUB_REPO.replace('https://github.com/', '')}
+                    </a>
                 </div>
-                <code className="text-sm font-mono text-muted-foreground">
-                    {frontendBuildLabel}
-                </code>
-            </div>
 
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Tag className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('info.backendBuild')}</span>
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('info.frontendBuild')}</span>
+                    </div>
+                    <code className="text-[13px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">
+                        {frontendBuildLabel}
+                    </code>
                 </div>
-                <div className="flex items-center gap-2">
-                    {buildInfoQuery.isLoading ? (
-                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                    ) : (
-                        <code className="text-sm font-mono text-muted-foreground">
-                            {backendBuildLabel}
-                        </code>
-                    )}
-                </div>
-            </div>
 
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Info className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('info.frontendBuildTime')}</span>
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('info.backendBuild')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {buildInfoQuery.isLoading ? (
+                            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                        ) : (
+                            <code className="text-[13px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">
+                                {backendBuildLabel}
+                            </code>
+                        )}
+                    </div>
                 </div>
-                <code className="text-sm font-mono text-muted-foreground">
-                    {normalizeBuildValue(APP_BUILD_TIME)}
-                </code>
-            </div>
 
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Info className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('info.backendBuildTime')}</span>
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Info className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('info.frontendBuildTime')}</span>
+                    </div>
+                    <code className="text-[13px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">
+                        {normalizeBuildValue(APP_BUILD_TIME)}
+                    </code>
                 </div>
-                <div className="flex items-center gap-2">
-                    {buildInfoQuery.isLoading ? (
-                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                    ) : (
-                        <code className="text-sm font-mono text-muted-foreground">
-                            {normalizeBuildValue(backendBuildTime)}
-                        </code>
-                    )}
-                </div>
-            </div>
 
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Download className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('info.latestVersion')}</span>
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Info className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('info.backendBuildTime')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {buildInfoQuery.isLoading ? (
+                            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                        ) : (
+                            <code className="text-[13px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">
+                                {normalizeBuildValue(backendBuildTime)}
+                            </code>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    {latestInfoQuery.isLoading ? (
-                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                    ) : (
-                        <code className="text-sm font-mono text-muted-foreground">
-                            {latestVersion || t('info.unknown')}
-                        </code>
-                    )}
+
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('info.latestVersion')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {latestInfoQuery.isLoading ? (
+                            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                        ) : (
+                            <code className="text-[13px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">
+                                {latestVersion || t('info.unknown')}
+                            </code>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {isCacheMismatch && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2">
+                <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-2xl space-y-3 mt-4">
                     <div className="flex items-start gap-3">
-                        <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                         <div className="flex-1 space-y-1">
                             <p className="text-sm text-destructive font-medium">
                                 {t('info.versionMismatch')}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-destructive/80 leading-relaxed">
                                 {t('info.versionMismatchHint', { frontend: frontendBuildLabel, backend: backendBuildLabel })}
                             </p>
                         </div>
@@ -200,7 +202,7 @@ export function SettingInfo() {
                             variant="destructive"
                             size="sm"
                             onClick={handleForceRefresh}
-                            className="rounded-xl"
+                            className="rounded-xl bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 shadow-none transition-colors"
                         >
                             {t('info.forceRefresh')}
                         </Button>
@@ -209,14 +211,14 @@ export function SettingInfo() {
             )}
 
             {hasNewVersion && (
-                <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl space-y-2">
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-2xl space-y-3 mt-4">
                     <div className="flex items-start gap-3">
-                        <Download className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                        <Download className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         <div className="flex-1 space-y-1">
                             <p className="text-sm text-primary font-medium">
                                 {t('info.newVersionAvailable')}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-primary/80 leading-relaxed">
                                 {t('info.newVersionAvailableHint')}
                             </p>
                         </div>
@@ -227,7 +229,7 @@ export function SettingInfo() {
                             size="sm"
                             onClick={handleUpdate}
                             disabled={updateCore.isPending}
-                            className="rounded-xl"
+                            className="rounded-xl shadow-none"
                         >
                             {updateCore.isPending ? t('info.updating') : t('info.updateNow')}
                         </Button>

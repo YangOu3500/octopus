@@ -242,25 +242,25 @@ export function SettingFusionCapabilities() {
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-2">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between px-1">
                 <div className="min-w-0">
-                    <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
-                        <Eye className="h-5 w-5" />
+                    <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                        <Eye className="h-4 w-4 text-primary" />
                         {t('fusionCapabilities.title')}
                     </h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {(['done', 'partial', 'planned'] as CapabilityStatus[]).map((status) => (
-                        <Badge key={status} variant="outline" className={cn('rounded-md', statusClass(status))}>
+                        <Badge key={status} variant="outline" className={cn('rounded-md bg-background/50', statusClass(status))}>
                             {t(`fusionCapabilities.status.${status}`)} {counts[status]}
                         </Badge>
                     ))}
                 </div>
             </div>
 
-            <Accordion type="single" collapsible className="mt-4">
-                <AccordionItem value="details" className="overflow-hidden rounded-lg border border-border bg-background/40 px-4">
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="details" className="overflow-hidden rounded-2xl border border-border/40 bg-background/30 px-4">
                     <AccordionTrigger className="py-3 hover:no-underline">
                         <div className="flex min-w-0 flex-1 flex-col gap-1 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                             <div className="min-w-0">

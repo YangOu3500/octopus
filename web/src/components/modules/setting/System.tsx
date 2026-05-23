@@ -181,205 +181,213 @@ export function SettingSystem() {
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
-                <Monitor className="h-5 w-5" />
-                {t('system')}
-            </h2>
-
-            {/* 代理地址 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Globe className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('proxyUrl.label')}</span>
-                </div>
-                <Input
-                    value={proxyUrl}
-                    onChange={(e) => setProxyUrl(e.target.value)}
-                    onBlur={() => handleSave('proxy_url', proxyUrl, initialProxyUrl.current)}
-                    placeholder={t('proxyUrl.placeholder')}
-                    className="w-48 rounded-xl"
-                />
+        <div className="space-y-1">
+            <div className="flex items-center gap-2 px-1 pb-2">
+                <Monitor className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground/80">{t('system')}</h3>
             </div>
+            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
+                {/* 代理地址 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('proxyUrl.label')}</span>
+                    </div>
+                    <Input
+                        value={proxyUrl}
+                        onChange={(e) => setProxyUrl(e.target.value)}
+                        onBlur={() => handleSave('proxy_url', proxyUrl, initialProxyUrl.current)}
+                        placeholder="http://127.0.0.1:7890"
+                        className="w-64 rounded-xl bg-background/50"
+                    />
+                </div>
 
-            {/* 统计保存周期 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('statsSaveInterval.label')}</span>
+                {/* 统计保存周期 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('statsSaveInterval.label')}</span>
+                    </div>
+                    <Input
+                        type="number"
+                        value={statsSaveInterval}
+                        onChange={(e) => setStatsSaveInterval(e.target.value)}
+                        onBlur={() => handleSave('stats_save_interval', statsSaveInterval, initialStatsSaveInterval.current)}
+                        placeholder="秒 (例如 60)"
+                        className="w-64 rounded-xl bg-background/50"
+                    />
                 </div>
-                <Input
-                    type="number"
-                    value={statsSaveInterval}
-                    onChange={(e) => setStatsSaveInterval(e.target.value)}
-                    onBlur={() => handleSave('stats_save_interval', statsSaveInterval, initialStatsSaveInterval.current)}
-                    placeholder={t('statsSaveInterval.placeholder')}
-                    className="w-48 rounded-xl"
-                />
-            </div>
 
-            {/* CORS 跨域白名单 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('corsAllowOrigins.label')}</span>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <HelpCircle className="size-4 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {t('corsAllowOrigins.hint')}
-                                <br />
-                                {t('corsAllowOrigins.example')}
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                {/* CORS 跨域白名单 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Shield className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('corsAllowOrigins.label')}</span>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <HelpCircle className="size-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[280px]">
+                                    <p className="text-sm text-foreground/90 leading-relaxed">
+                                        {t('corsAllowOrigins.hint')}
+                                        <br />
+                                        <span className="text-muted-foreground mt-1 block">{t('corsAllowOrigins.example')}</span>
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <button
+                                type="button"
+                                className="w-64 min-h-9 rounded-xl border border-input bg-background/50 px-3 py-2 text-left text-sm transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring hover:bg-background/80"
+                                title={corsAllowOriginsDisplay}
+                            >
+                                <span className={`block overflow-hidden text-ellipsis whitespace-nowrap ${corsAllowOriginsList.length === 0 ? 'text-muted-foreground' : ''}`}>
+                                    {corsAllowOriginsDisplay}
+                                </span>
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[320px] space-y-2 rounded-2xl p-3 bg-popover/95 backdrop-blur-xl border-border/50 shadow-xl">
+                            <Input
+                                value={corsInputValue}
+                                onChange={(e) => setCorsInputValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleAddCorsOrigin();
+                                    }
+                                }}
+                                placeholder="https://example.com"
+                                className="h-9 rounded-xl"
+                                autoFocus
+                            />
+                            <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
+                                {corsAllowOriginsList.length > 0 && (
+                                    corsAllowOriginsList.map((origin) => (
+                                        <div key={origin} className="flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 px-2.5 py-1.5">
+                                            <span className="break-all text-xs leading-5 text-foreground/90">{origin}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveCorsOrigin(origin)}
+                                                className="text-muted-foreground transition-colors hover:text-destructive shrink-0"
+                                                aria-label={`remove ${origin}`}
+                                            >
+                                                <X className="size-3.5" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </div>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <button
-                            type="button"
-                            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-48 min-h-9 rounded-xl border bg-transparent px-3 py-2 text-left text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px]"
-                            title={corsAllowOriginsDisplay}
-                        >
-                            <span className={`block overflow-hidden text-ellipsis whitespace-nowrap ${corsAllowOriginsList.length === 0 ? 'text-muted-foreground' : ''}`}>
-                                {corsAllowOriginsDisplay}
-                            </span>
-                        </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-72 space-y-2 rounded-3xl p-3 bg-card">
-                        <Input
-                            value={corsInputValue}
-                            onChange={(e) => setCorsInputValue(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleAddCorsOrigin();
-                                }
-                            }}
-                            placeholder={t('corsAllowOrigins.example')}
-                            className="h-9 rounded-xl"
-                            autoFocus
-                        />
-                        <div className="max-h-48 space-y-1 overflow-y-auto">
-                            {corsAllowOriginsList.length > 0 && (
-                                corsAllowOriginsList.map((origin) => (
-                                    <div key={origin} className="flex items-center justify-between gap-2 rounded-xl border border-border/60 px-2 py-1">
-                                        <span className="break-all text-xs leading-5">{origin}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveCorsOrigin(origin)}
-                                            className="text-muted-foreground transition-colors hover:text-destructive"
-                                            aria-label={`remove ${origin}`}
-                                        >
-                                            <X className="size-4" />
-                                        </button>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            </div>
 
-            {/* SSE 流式心跳 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Activity className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('sseHeartbeat.label')}</span>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <HelpCircle className="size-4 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {t('sseHeartbeat.description')}
-                                <br />
-                                {t('sseHeartbeat.compatibility')}
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                {/* SSE 流式心跳 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('sseHeartbeat.label')}</span>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <HelpCircle className="size-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[280px]">
+                                    <p className="text-sm text-foreground/90 leading-relaxed">
+                                        {t('sseHeartbeat.description')}
+                                        <br />
+                                        <span className="text-muted-foreground mt-1 block">{t('sseHeartbeat.compatibility')}</span>
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <Input
+                        type="number"
+                        min="0"
+                        value={sseHeartbeatInterval}
+                        onChange={(e) => setSseHeartbeatInterval(e.target.value)}
+                        onBlur={() => handleSave(SettingKey.SSEHeartbeatInterval, sseHeartbeatInterval, initialSseHeartbeatInterval.current)}
+                        placeholder="秒 (推荐 15)"
+                        className="w-64 rounded-xl bg-background/50"
+                    />
                 </div>
-                <Input
-                    type="number"
-                    min="0"
-                    value={sseHeartbeatInterval}
-                    onChange={(e) => setSseHeartbeatInterval(e.target.value)}
-                    onBlur={() => handleSave(SettingKey.SSEHeartbeatInterval, sseHeartbeatInterval, initialSseHeartbeatInterval.current)}
-                    placeholder={t('sseHeartbeat.placeholder')}
-                    className="w-48 rounded-xl"
-                />
-            </div>
 
-            {/* SSE 流建立前延迟心跳 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Activity className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('ssePreStreamHeartbeat.label')}</span>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <HelpCircle className="size-4 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {t('ssePreStreamHeartbeat.description')}
-                                <br />
-                                {t('ssePreStreamHeartbeat.risk')}
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                {/* SSE 流建立前延迟心跳 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('ssePreStreamHeartbeat.label')}</span>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <HelpCircle className="size-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[280px]">
+                                    <p className="text-sm text-foreground/90 leading-relaxed">
+                                        {t('ssePreStreamHeartbeat.description')}
+                                        <br />
+                                        <span className="text-muted-foreground mt-1 block">{t('ssePreStreamHeartbeat.risk')}</span>
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <Input
+                        type="number"
+                        min="0"
+                        value={ssePreStreamHeartbeatDelay}
+                        onChange={(e) => setSsePreStreamHeartbeatDelay(e.target.value)}
+                        onBlur={() => handleSave(SettingKey.SSEPreStreamHeartbeatDelay, ssePreStreamHeartbeatDelay, initialSsePreStreamHeartbeatDelay.current)}
+                        placeholder="秒 (例如 2)"
+                        className="w-64 rounded-xl bg-background/50"
+                    />
                 </div>
-                <Input
-                    type="number"
-                    min="0"
-                    value={ssePreStreamHeartbeatDelay}
-                    onChange={(e) => setSsePreStreamHeartbeatDelay(e.target.value)}
-                    onBlur={() => handleSave(SettingKey.SSEPreStreamHeartbeatDelay, ssePreStreamHeartbeatDelay, initialSsePreStreamHeartbeatDelay.current)}
-                    placeholder={t('ssePreStreamHeartbeat.placeholder')}
-                    className="w-48 rounded-xl"
-                />
-            </div>
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <HeartPulse className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('groupHealth.label')}</span>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <HelpCircle className="size-4 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {t('groupHealth.description')}
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </div>
-                <Switch
-                    checked={groupHealthEnabled}
-                    onCheckedChange={handleGroupHealthChange}
-                />
-            </div>
 
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Link className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('wsUpgrade.label')}</span>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <HelpCircle className="size-4 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {t('wsUpgrade.description')}
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <HeartPulse className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('groupHealth.label')}</span>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <HelpCircle className="size-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {t('groupHealth.description')}
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <Switch
+                        checked={groupHealthEnabled}
+                        onCheckedChange={handleGroupHealthChange}
+                    />
                 </div>
-                <Switch
-                    checked={wsUpgradeEnabled}
-                    onCheckedChange={handleWsUpgradeChange}
-                />
+
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Link className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('wsUpgrade.label')}</span>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <HelpCircle className="size-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {t('wsUpgrade.description')}
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <Switch
+                        checked={wsUpgradeEnabled}
+                        onCheckedChange={handleWsUpgradeChange}
+                    />
+                </div>
             </div>
         </div>
     );

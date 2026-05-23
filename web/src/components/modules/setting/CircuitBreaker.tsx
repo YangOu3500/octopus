@@ -59,68 +59,74 @@ export function SettingCircuitBreaker() {
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                {t('circuitBreaker.title')}
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <HelpCircle className="size-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            {t('circuitBreaker.hint')}
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </h2>
-
-            {/* 熔断触发阈值 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Hash className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('circuitBreaker.threshold.label')}</span>
+        <div className="space-y-1">
+            <div className="flex items-center gap-2 px-1 pb-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-semibold text-foreground/80">{t('circuitBreaker.title')}</h3>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <HelpCircle className="size-4 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[280px]">
+                                <p className="text-sm text-foreground/90 leading-relaxed">
+                                    {t('circuitBreaker.hint')}
+                                </p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
-                <Input
-                    type="number"
-                    value={threshold}
-                    onChange={(e) => setThreshold(e.target.value)}
-                    onBlur={() => handleSave(SettingKey.CircuitBreakerThreshold, threshold, initialThreshold.current)}
-                    placeholder={t('circuitBreaker.threshold.placeholder')}
-                    className="w-48 rounded-xl"
-                />
             </div>
 
-            {/* 基础冷却时间 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Timer className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('circuitBreaker.cooldown.label')}</span>
+            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
+                {/* 熔断触发阈值 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Hash className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('circuitBreaker.threshold.label')}</span>
+                    </div>
+                    <Input
+                        type="number"
+                        value={threshold}
+                        onChange={(e) => setThreshold(e.target.value)}
+                        onBlur={() => handleSave(SettingKey.CircuitBreakerThreshold, threshold, initialThreshold.current)}
+                        placeholder="连续失败次数 (例如 10)"
+                        className="w-64 rounded-xl bg-background/50"
+                    />
                 </div>
-                <Input
-                    type="number"
-                    value={cooldown}
-                    onChange={(e) => setCooldown(e.target.value)}
-                    onBlur={() => handleSave(SettingKey.CircuitBreakerCooldown, cooldown, initialCooldown.current)}
-                    placeholder={t('circuitBreaker.cooldown.placeholder')}
-                    className="w-48 rounded-xl"
-                />
-            </div>
 
-            {/* 最大冷却时间 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <TimerOff className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('circuitBreaker.maxCooldown.label')}</span>
+                {/* 基础冷却时间 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Timer className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('circuitBreaker.cooldown.label')}</span>
+                    </div>
+                    <Input
+                        type="number"
+                        value={cooldown}
+                        onChange={(e) => setCooldown(e.target.value)}
+                        onBlur={() => handleSave(SettingKey.CircuitBreakerCooldown, cooldown, initialCooldown.current)}
+                        placeholder="秒 (例如 30)"
+                        className="w-64 rounded-xl bg-background/50"
+                    />
                 </div>
-                <Input
-                    type="number"
-                    value={maxCooldown}
-                    onChange={(e) => setMaxCooldown(e.target.value)}
-                    onBlur={() => handleSave(SettingKey.CircuitBreakerMaxCooldown, maxCooldown, initialMaxCooldown.current)}
-                    placeholder={t('circuitBreaker.maxCooldown.placeholder')}
-                    className="w-48 rounded-xl"
-                />
+
+                {/* 最大冷却时间 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <TimerOff className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('circuitBreaker.maxCooldown.label')}</span>
+                    </div>
+                    <Input
+                        type="number"
+                        value={maxCooldown}
+                        onChange={(e) => setMaxCooldown(e.target.value)}
+                        onBlur={() => handleSave(SettingKey.CircuitBreakerMaxCooldown, maxCooldown, initialMaxCooldown.current)}
+                        placeholder="秒 (例如 3600)"
+                        className="w-64 rounded-xl bg-background/50"
+                    />
+                </div>
             </div>
         </div>
     );

@@ -81,56 +81,63 @@ export function SettingLog() {
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
-                <ScrollText className="h-5 w-5" />
-                {t('log.title')}
-            </h2>
-
-            {/* 是否启用历史日志 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <ScrollText className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('log.enabled.label')}</span>
+        <div className="space-y-1">
+            <div className="flex items-center gap-2 px-1 pb-2">
+                <ScrollText className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground/80">{t('log.title')}</h3>
+            </div>
+            
+            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
+                {/* 是否启用历史日志 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <ScrollText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('log.enabled.label')}</span>
+                    </div>
+                    <Switch
+                        checked={enabled}
+                        onCheckedChange={handleEnabledChange}
+                    />
                 </div>
-                <Switch
-                    checked={enabled}
-                    onCheckedChange={handleEnabledChange}
-                />
+
+                {/* 历史日志保存范围 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('log.keepPeriod.label')}</span>
+                    </div>
+                    <Input
+                        type="number"
+                        value={keepPeriod}
+                        onChange={(e) => setKeepPeriod(e.target.value)}
+                        onBlur={handleKeepPeriodSave}
+                        placeholder="天数 (例如 7)"
+                        className="w-64 rounded-xl bg-background/50"
+                        disabled={!enabled}
+                    />
+                </div>
             </div>
 
-            {/* 历史日志保存范围 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('log.keepPeriod.label')}</span>
+            {/* 危险区 - 清空历史日志 */}
+            <div className="mt-4 flex flex-col rounded-2xl bg-destructive/5 border border-destructive/20 p-4">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <Trash2 className="h-4 w-4 text-destructive shrink-0" />
+                            <span className="text-sm font-medium text-destructive">{t('log.clear.label')}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground pl-6">执行后不可撤销，彻底清理所有网关请求历史数据。</span>
+                    </div>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleClearLogs}
+                        disabled={isClearing}
+                        className="rounded-xl shadow-none"
+                    >
+                        {isClearing ? t('log.clear.clearing') : t('log.clear.button')}
+                    </Button>
                 </div>
-                <Input
-                    type="number"
-                    value={keepPeriod}
-                    onChange={(e) => setKeepPeriod(e.target.value)}
-                    onBlur={handleKeepPeriodSave}
-                    placeholder={t('log.keepPeriod.placeholder')}
-                    className="w-48 rounded-xl"
-                    disabled={!enabled}
-                />
-            </div>
-
-            {/* 清空历史日志 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Trash2 className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('log.clear.label')}</span>
-                </div>
-                <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleClearLogs}
-                    disabled={isClearing}
-                    className="rounded-xl"
-                >
-                    {isClearing ? t('log.clear.clearing') : t('log.clear.button')}
-                </Button>
             </div>
         </div>
     );

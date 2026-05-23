@@ -60,54 +60,58 @@ export function SettingLLMPrice() {
     };
 
     return (
-        <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
-                <DollarSign className="h-5 w-5" />
-                {t('llmPrice.title')}
-            </h2>
-
-            <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">{t('llmPrice.syncOrder.upstream')}</Badge>
-                <Badge variant="outline">{t('llmPrice.syncOrder.official')}</Badge>
-                <Badge variant="outline">{t('llmPrice.syncOrder.manual')}</Badge>
-            </div>
-
-            <p className="text-xs text-muted-foreground">{t('llmPrice.syncHint')}</p>
-
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('llmPrice.updateInterval.label')}</span>
+        <div className="space-y-1">
+            <div className="flex flex-col gap-2 px-1 pb-2">
+                <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground/80">{t('llmPrice.title')}</h3>
                 </div>
-                <Input
-                    type="number"
-                    value={updateInterval}
-                    onChange={(e) => setUpdateInterval(e.target.value)}
-                    onBlur={() => handleSave(SettingKey.ModelInfoUpdateInterval, updateInterval, initialUpdateInterval.current)}
-                    placeholder={t('llmPrice.updateInterval.placeholder')}
-                    className="w-48 rounded-xl"
-                />
-            </div>
-
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-3">
-                        <RefreshCw className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm font-medium">{t('llmPrice.manualUpdate.label')}</span>
+                <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap gap-1.5">
+                        <Badge variant="secondary" className="rounded-md bg-secondary/50 font-normal">{t('llmPrice.syncOrder.upstream')}</Badge>
+                        <Badge variant="outline" className="rounded-md border-border/60 bg-background/50 font-normal">{t('llmPrice.syncOrder.official')}</Badge>
+                        <Badge variant="outline" className="rounded-md border-border/60 bg-background/50 font-normal">{t('llmPrice.syncOrder.manual')}</Badge>
                     </div>
-                    <span className="ml-8 text-xs text-muted-foreground">
-                        {t('llmPrice.lastUpdate')}: {formatLastUpdateTime(lastUpdateTime)}
-                    </span>
+                    <span className="text-xs text-muted-foreground ml-2 hidden sm:inline-block">{t('llmPrice.syncHint')}</span>
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleManualUpdate}
-                    disabled={updatePrice.isPending}
-                    className="rounded-xl"
-                >
-                    {updatePrice.isPending ? t('llmPrice.manualUpdate.updating') : t('llmPrice.manualUpdate.button')}
-                </Button>
+            </div>
+
+            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('llmPrice.updateInterval.label')}</span>
+                    </div>
+                    <Input
+                        type="number"
+                        value={updateInterval}
+                        onChange={(e) => setUpdateInterval(e.target.value)}
+                        onBlur={() => handleSave(SettingKey.ModelInfoUpdateInterval, updateInterval, initialUpdateInterval.current)}
+                        placeholder={t('llmPrice.updateInterval.placeholder')}
+                        className="w-64 rounded-xl bg-background/50"
+                    />
+                </div>
+
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-3">
+                            <RefreshCw className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="text-sm font-medium text-foreground/90">{t('llmPrice.manualUpdate.label')}</span>
+                        </div>
+                        <span className="text-[11px] leading-relaxed text-muted-foreground ml-7">
+                            {t('llmPrice.lastUpdate')}: {formatLastUpdateTime(lastUpdateTime)}
+                        </span>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleManualUpdate}
+                        disabled={updatePrice.isPending}
+                        className="w-64 rounded-xl shadow-none bg-background/50 hover:bg-background/80 hover:text-primary transition-colors border-border/60"
+                    >
+                        {updatePrice.isPending ? t('llmPrice.manualUpdate.updating') : t('llmPrice.manualUpdate.button')}
+                    </Button>
+                </div>
             </div>
         </div>
     );

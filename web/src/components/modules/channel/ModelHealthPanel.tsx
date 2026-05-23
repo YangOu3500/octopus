@@ -962,7 +962,7 @@ export function ChannelModelHealthPanel() {
                 </div>
             </section>
 
-            <section className="min-h-[28rem] overflow-hidden rounded-lg border border-border bg-card md:min-h-[32rem]">
+            <section className="flex-1 flex flex-col min-h-[28rem] overflow-hidden rounded-lg border border-border bg-card md:min-h-[32rem]">
                 {isLoading ? (
                     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                         <LoaderCircle className="mr-2 size-4 animate-spin" />

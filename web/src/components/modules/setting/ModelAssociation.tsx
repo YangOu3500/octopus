@@ -128,25 +128,25 @@ function SettingModelAssociationCard({
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between px-1">
                 <div className="min-w-0">
-                    <h2 className="flex items-center gap-2 text-lg font-bold text-card-foreground">
-                        <GitBranch className="h-5 w-5" />
+                    <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                        <GitBranch className="h-4 w-4 text-primary" />
                         {t('modelAssociation.title')}
                     </h2>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                         {t('modelAssociation.subtitle')}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className="rounded-md">
+                    <Badge variant="outline" className="rounded-md bg-background/50">
                         {bulkT(`association.${associationMode}`)}
                     </Badge>
-                    <Badge variant="outline" className="rounded-md">
+                    <Badge variant="outline" className="rounded-md bg-background/50">
                         {t('modelAssociation.summaryOptions', { count: enabledOptionCount })}
                     </Badge>
-                    <Badge variant="outline" className="rounded-md">
+                    <Badge variant="outline" className="rounded-md bg-background/50">
                         {t('modelAssociation.summaryManual', { count: normalizedManualAliases.length })}
                     </Badge>
                     <Badge
@@ -163,8 +163,8 @@ function SettingModelAssociationCard({
                 </div>
             </div>
 
-            <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-                <div className="rounded-lg border border-border bg-background/50 p-3 text-sm text-muted-foreground">
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center bg-background/30 border border-border/40 rounded-2xl p-4">
+                <div className="text-sm text-muted-foreground">
                     {t('modelAssociation.description')}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -172,48 +172,48 @@ function SettingModelAssociationCard({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-8 rounded-lg px-2.5 text-xs"
+                        className="h-8 rounded-lg px-3 text-xs bg-background/50 hover:bg-background/80 hover:text-primary border-border/60 shadow-none transition-colors"
                         onClick={() => setActiveItem('group')}
                     >
                         {t('modelAssociation.openGroup')}
-                        <ArrowRight className="size-3.5" />
+                        <ArrowRight className="size-3.5 ml-1.5" />
                     </Button>
                     <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-8 rounded-lg px-2.5 text-xs"
+                        className="h-8 rounded-lg px-3 text-xs bg-background/50 hover:bg-background/80 hover:text-primary border-border/60 shadow-none transition-colors"
                         onClick={restoreSaved}
                         disabled={settingsLoading || !hasPendingChanges}
                     >
-                        <RotateCcw className="size-3.5" />
+                        <RotateCcw className="size-3.5 mr-1.5" />
                         {t('modelAssociation.restore')}
                     </Button>
                     <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-8 rounded-lg px-2.5 text-xs"
+                        className="h-8 rounded-lg px-3 text-xs bg-background/50 hover:bg-background/80 hover:text-primary border-border/60 shadow-none transition-colors"
                         onClick={resetToRecommended}
                         disabled={setSetting.isPending}
                     >
-                        <Settings2 className="size-3.5" />
+                        <Settings2 className="size-3.5 mr-1.5" />
                         {t('modelAssociation.reset')}
                     </Button>
                     <Button
                         type="button"
                         size="sm"
-                        className="h-8 rounded-lg px-2.5 text-xs"
+                        className="h-8 rounded-lg px-3 text-xs transition-colors"
                         onClick={handleSave}
                         disabled={settingsLoading || setSetting.isPending || !hasPendingChanges}
                     >
-                        {setSetting.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+                        {setSetting.isPending ? <Loader2 className="size-3.5 mr-1.5 animate-spin" /> : <Save className="size-3.5 mr-1.5" />}
                         {setSetting.isPending ? t('modelAssociation.saving') : t('modelAssociation.save')}
                     </Button>
                 </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-1.5">
+            <div className="flex p-1 space-x-1 bg-muted/30 border border-border/40 rounded-xl w-fit">
                 {(['exact', 'alias'] as const).map((value) => (
                     <button
                         key={value}
@@ -223,10 +223,10 @@ function SettingModelAssociationCard({
                             setAssociationOptions(defaultAssociationOptions(value));
                         }}
                         className={cn(
-                            'rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                            'rounded-lg px-4 py-1.5 text-xs font-medium transition-all duration-200',
                             associationMode === value
-                                ? 'bg-primary/90 text-primary-foreground'
-                                : 'bg-background text-muted-foreground hover:bg-muted hover:text-foreground',
+                                ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50'
+                                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                         )}
                     >
                         {bulkT(`association.${value}`)}
@@ -234,20 +234,21 @@ function SettingModelAssociationCard({
                 ))}
             </div>
 
-            <div className="mt-3 grid gap-2 lg:grid-cols-2">
+            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
                 {ASSOCIATION_OPTION_KEYS.map((key) => (
-                    <div key={key} className="flex items-start justify-between gap-3 rounded-lg border border-border/60 bg-background/50 px-3 py-2.5">
+                    <div key={key} className="flex items-center justify-between gap-4 py-3 group">
                         <div className="min-w-0">
-                            <div className="text-xs font-medium text-foreground">
+                            <div className="text-sm font-medium text-foreground/90">
                                 {bulkT(`rules.options.${key}.label`)}
                             </div>
-                            <div className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                            <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                                 {bulkT(`rules.options.${key}.help`)}
                             </div>
                         </div>
                         <Switch
                             checked={Boolean(associationOptions[key])}
                             onCheckedChange={(checked) => setAssociationOption(key, checked)}
+                            className="shrink-0"
                         />
                     </div>
                 ))}

@@ -59,48 +59,50 @@ export function SettingLLMSync() {
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
-                <RefreshCw className="h-5 w-5" />
-                {t('llmSync.title')}
-            </h2>
-
-            {/* 同步间隔 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('llmSync.syncInterval.label')}</span>
-                </div>
-                <Input
-                    type="number"
-                    value={syncInterval}
-                    onChange={(e) => setSyncInterval(e.target.value)}
-                    onBlur={() => handleSave(SettingKey.SyncLLMInterval, syncInterval, initialSyncInterval.current)}
-                    placeholder={t('llmSync.syncInterval.placeholder')}
-                    className="w-48 rounded-xl"
-                />
+        <div className="space-y-1">
+            <div className="flex items-center gap-2 px-1 pb-2">
+                <RefreshCw className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground/80">{t('llmSync.title')}</h3>
             </div>
 
-            {/* 手动同步 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
+            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
+                {/* 同步间隔 */}
+                <div className="flex items-center justify-between gap-4 py-3">
                     <div className="flex items-center gap-3">
-                        <RefreshCw className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm font-medium">{t('llmSync.manualSync.label')}</span>
+                        <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('llmSync.syncInterval.label')}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground ml-8">
-                        {t('llmSync.lastSync')}: {formatLastSyncTime(lastSyncTime)}
-                    </span>
+                    <Input
+                        type="number"
+                        value={syncInterval}
+                        onChange={(e) => setSyncInterval(e.target.value)}
+                        onBlur={() => handleSave(SettingKey.SyncLLMInterval, syncInterval, initialSyncInterval.current)}
+                        placeholder={t('llmSync.syncInterval.placeholder')}
+                        className="w-64 rounded-xl bg-background/50"
+                    />
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleManualSync}
-                    disabled={syncChannel.isPending}
-                    className="rounded-xl"
-                >
-                    {syncChannel.isPending ? t('llmSync.manualSync.syncing') : t('llmSync.manualSync.button')}
-                </Button>
+
+                {/* 手动同步 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-3">
+                            <RefreshCw className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="text-sm font-medium text-foreground/90">{t('llmSync.manualSync.label')}</span>
+                        </div>
+                        <span className="text-[11px] leading-relaxed text-muted-foreground ml-7">
+                            {t('llmSync.lastSync')}: {formatLastSyncTime(lastSyncTime)}
+                        </span>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleManualSync}
+                        disabled={syncChannel.isPending}
+                        className="w-64 rounded-xl shadow-none bg-background/50 hover:bg-background/80 hover:text-primary transition-colors border-border/60"
+                    >
+                        {syncChannel.isPending ? t('llmSync.manualSync.syncing') : t('llmSync.manualSync.button')}
+                    </Button>
+                </div>
             </div>
         </div>
     );

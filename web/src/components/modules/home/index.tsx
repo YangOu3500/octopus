@@ -87,9 +87,9 @@ export function Home() {
         <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-3 pb-24 md:pb-4">
             <section className="space-y-2.5">
                 <DashboardSummaryCards />
-                <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)]">
+                <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)] items-start">
                     <StatsChart />
-                    <div className="space-y-2.5">
+                    <div className="space-y-2.5 w-full">
                         <GatewayOperationsPanel />
                         <GroupHealthSummaryStrip />
                     </div>

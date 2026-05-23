@@ -105,20 +105,20 @@ function SectionShell({
     children: ReactNode;
 }) {
     return (
-        <section className="rounded-lg border border-border/70 bg-card p-4 shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-border/60 pb-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/10 text-primary">
-                        <Icon className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                        <div className="text-sm font-semibold text-foreground">{title}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">{subtitle}</div>
+        <section className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                    <Icon className="size-4 text-primary" />
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground/80">{title}</h3>
+                        <p className="text-xs text-muted-foreground">{subtitle}</p>
                     </div>
                 </div>
-                {action ? <div className="shrink-0">{action}</div> : null}
+                {action && <div>{action}</div>}
             </div>
-            <div className="mt-4 space-y-4">{children}</div>
+            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
+                {children}
+            </div>
         </section>
     );
 }
@@ -137,17 +137,12 @@ function FieldCard({
     const Icon = field.icon;
 
     return (
-        <label className="rounded-md border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/20 hover:bg-background/70">
-            <div className="flex items-start gap-2">
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-card text-muted-foreground">
-                    <Icon className="size-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                        <span className="truncate text-sm font-medium text-foreground">{field.label}</span>
-                        <FieldHint hint={field.hint} />
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{field.hint}</div>
+        <div className="flex flex-col py-3 gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 group">
+            <div className="flex items-start gap-3">
+                <Icon className="size-4 text-muted-foreground shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-foreground/90">{field.label}</span>
+                    <span className="text-xs text-muted-foreground leading-relaxed">{field.hint}</span>
                 </div>
             </div>
             <Input
@@ -158,9 +153,9 @@ function FieldCard({
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 onBlur={onCommit}
-                className="mt-3 h-9 rounded-md"
+                className="w-full sm:w-64 shrink-0 rounded-xl bg-background/50"
             />
-        </label>
+        </div>
     );
 }
 
@@ -178,20 +173,17 @@ function SwitchCard({
     onCheckedChange: (checked: boolean) => void;
 }) {
     return (
-        <div className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-background/40 px-3 py-3 transition-colors hover:border-primary/20 hover:bg-background/70">
-            <div className="flex min-w-0 items-start gap-2">
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-card text-muted-foreground">
-                    <Icon className="size-3.5" />
-                </div>
-                <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                        <span className="truncate text-sm font-medium text-foreground">{label}</span>
-                        <FieldHint hint={hint} />
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{hint}</div>
+        <div className="flex flex-col py-3 gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 group">
+            <div className="flex items-start gap-3">
+                <Icon className="size-4 text-muted-foreground shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-foreground/90">{label}</span>
+                    <span className="text-xs text-muted-foreground leading-relaxed">{hint}</span>
                 </div>
             </div>
-            <Switch checked={checked} onCheckedChange={onCheckedChange} />
+            <div className="flex justify-start sm:justify-end shrink-0">
+                <Switch checked={checked} onCheckedChange={onCheckedChange} />
+            </div>
         </div>
     );
 }
@@ -212,21 +204,16 @@ function SelectCard({
     children: ReactNode;
 }) {
     return (
-        <div className="rounded-md border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/20 hover:bg-background/70">
-            <div className="flex items-start gap-2">
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-card text-muted-foreground">
-                    <Icon className="size-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                        <span className="truncate text-sm font-medium text-foreground">{label}</span>
-                        <FieldHint hint={hint} />
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{hint}</div>
+        <div className="flex flex-col py-3 gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 group">
+            <div className="flex items-start gap-3">
+                <Icon className="size-4 text-muted-foreground shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-foreground/90">{label}</span>
+                    <span className="text-xs text-muted-foreground leading-relaxed">{hint}</span>
                 </div>
             </div>
             <Select value={value} onValueChange={onValueChange}>
-                <SelectTrigger className="mt-3 h-9 rounded-md">
+                <SelectTrigger className="w-full sm:w-64 shrink-0 rounded-xl bg-background/50">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>{children}</SelectContent>
@@ -593,9 +580,7 @@ export function SettingHealthProbe() {
                         subtitle={t('healthProbe.health.subtitle')}
                         action={<Switch checked={healthScoreEnabled} onCheckedChange={handleHealthScoreChange} />}
                     >
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                            {healthFields.map(renderFieldCard)}
-                        </div>
+                        {healthFields.map(renderFieldCard)}
                     </SectionShell>
 
                     <SectionShell
@@ -604,19 +589,17 @@ export function SettingHealthProbe() {
                         subtitle={t('healthProbe.channelConcurrency.subtitle')}
                         action={<Switch checked={channelConcurrencyEnabled} onCheckedChange={handleChannelConcurrencyChange} />}
                     >
-                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-4">
-                            <SelectCard
-                                icon={Network}
-                                label={t('healthProbe.channelConcurrency.mode.label')}
-                                hint={t('healthProbe.channelConcurrency.mode.hint')}
-                                value={values[SettingKey.ChannelConcurrencyMode] ?? 'local'}
-                                onValueChange={(value) => handleSelectSave(SettingKey.ChannelConcurrencyMode, value)}
-                            >
-                                <SelectItem value="local">{t('healthProbe.channelConcurrency.mode.local')}</SelectItem>
-                                <SelectItem value="database">{t('healthProbe.channelConcurrency.mode.database')}</SelectItem>
-                            </SelectCard>
-                            {channelConcurrencyFields.map(renderFieldCard)}
-                        </div>
+                        <SelectCard
+                            icon={Network}
+                            label={t('healthProbe.channelConcurrency.mode.label')}
+                            hint={t('healthProbe.channelConcurrency.mode.hint')}
+                            value={values[SettingKey.ChannelConcurrencyMode] ?? 'local'}
+                            onValueChange={(value) => handleSelectSave(SettingKey.ChannelConcurrencyMode, value)}
+                        >
+                            <SelectItem value="local">{t('healthProbe.channelConcurrency.mode.local')}</SelectItem>
+                            <SelectItem value="database">{t('healthProbe.channelConcurrency.mode.database')}</SelectItem>
+                        </SelectCard>
+                        {channelConcurrencyFields.map(renderFieldCard)}
                     </SectionShell>
 
                     <SectionShell
@@ -624,10 +607,8 @@ export function SettingHealthProbe() {
                         title={t('healthProbe.stream.title')}
                         subtitle={t('healthProbe.stream.subtitle')}
                     >
-                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-4">
-                            {streamFields.map(renderFieldCard)}
-                            {streamSwitchFields.map(renderSwitchCard)}
-                        </div>
+                        {streamFields.map(renderFieldCard)}
+                        {streamSwitchFields.map(renderSwitchCard)}
                     </SectionShell>
                 </div>
 
@@ -720,12 +701,8 @@ export function SettingHealthProbe() {
                         subtitle={t('healthProbe.probe.subtitle')}
                         action={<Switch checked={probeEnabled} onCheckedChange={handleProbeChange} />}
                     >
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                            {probeFields.map(renderFieldCard)}
-                        </div>
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                            {probeSwitchFields.map(renderSwitchCard)}
-                        </div>
+                        {probeFields.map(renderFieldCard)}
+                        {probeSwitchFields.map(renderSwitchCard)}
                     </SectionShell>
                 </div>
             </div>

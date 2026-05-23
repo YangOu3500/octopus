@@ -644,9 +644,9 @@ function APIKeyPanelBase({
 
     return (
         <div className={containerClassName}>
-            <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
-                    <KeyRound className="h-5 w-5" />
+            <div className="flex items-center justify-between gap-3 px-1 pb-2">
+                <h2 className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
+                    <KeyRound className="h-4 w-4 text-primary" />
                     {t('apiKey.title')}
                 </h2>
                 <div className="flex items-center gap-2">
@@ -655,7 +655,7 @@ function APIKeyPanelBase({
                         type="button"
                         onClick={() => setIsAdding(true)}
                         disabled={disabledHeaderActions}
-                        className="h-9 w-9 flex items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                        className="h-8 w-8 flex items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
                         title={t('apiKey.add')}
                     >
                         <Plus className="size-4" />
@@ -699,17 +699,17 @@ function APIKeyPanelBase({
                 )}
             </AnimatePresence>
 
-            <div className={listClassName}>
+            <div className={cn(listClassName, "flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 p-2")}>
                 {apiKeysLoading ? (
-                    <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                    <div className="h-full flex items-center justify-center text-sm text-muted-foreground min-h-[100px]">
                         <Loader className="size-4 animate-spin" />
                     </div>
                 ) : apiKeysError ? (
-                    <div className="h-full flex items-center justify-center text-sm text-destructive">
+                    <div className="h-full flex items-center justify-center text-sm text-destructive min-h-[100px]">
                         {t('apiKey.loadFailed')}
                     </div>
                 ) : apiKeys?.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                    <div className="h-full flex items-center justify-center text-sm text-muted-foreground min-h-[100px]">
                         {t('apiKey.empty')}
                     </div>
                 ) : (
@@ -750,13 +750,13 @@ function APIKeyDialogPanel() {
     return (
         <APIKeyPanelBase
             idPrefix="apikey-dialog"
-            containerClassName="rounded-3xl border border-border bg-card p-6 space-y-5 relative w-screen max-w-full md:max-w-xl"
-            listClassName="space-y-2 h-[calc(100vh-10rem)] overflow-y-auto"
+            containerClassName="rounded-3xl border border-border bg-card p-6 space-y-3 relative w-screen max-w-full md:max-w-xl"
+            listClassName="space-y-1 h-[calc(100vh-10rem)] overflow-y-auto"
             renderHeaderExtra={() => (
                 <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="h-9 w-9 flex items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors hover:bg-muted"
+                    className="h-8 w-8 flex items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors hover:bg-muted"
                     title="Close"
                 >
                     <X className="size-4" />
@@ -770,11 +770,11 @@ export function SettingAPIKey() {
     return (
         <APIKeyPanelBase
             idPrefix="apikey"
-            containerClassName="rounded-3xl border border-border bg-card p-6 space-y-5 relative"
-            listClassName="space-y-2 h-36 overflow-y-auto"
+            containerClassName="space-y-1 relative"
+            listClassName="space-y-1 h-48 overflow-y-auto custom-scrollbar"
             renderHeaderExtra={() => (
                 <MorphingDialog>
-                    <MorphingDialogTrigger className="h-9 w-9 flex items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors hover:bg-muted">
+                    <MorphingDialogTrigger className="h-8 w-8 flex items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                         <Maximize2 className="size-4" />
                     </MorphingDialogTrigger>
                     <MorphingDialogContainer>

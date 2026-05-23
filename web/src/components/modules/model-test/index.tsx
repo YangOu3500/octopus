@@ -518,9 +518,9 @@ export function ModelTest() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-2">
-            <div className="shrink-0 rounded-lg border border-border bg-card p-2.5 shadow-sm">
-                <div className="flex flex-col gap-2">
-                    <div className="flex flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-between">
+            <div className="shrink-0 rounded-lg border border-border bg-card p-2 shadow-sm">
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
                         <div className="flex min-w-0 flex-col gap-1.5">
                             <div className="flex flex-wrap items-center gap-1.5">
                                 <button
@@ -872,10 +872,10 @@ export function ModelTest() {
                                                 <div className="min-w-0 px-3 py-3">
                                                     <div 
                                                         className={cn(
-                                                            "line-clamp-3 font-mono text-[11px] rounded-lg p-2 border border-border/10 tracking-wide break-all h-[4.5rem] overflow-y-auto leading-normal",
+                                                            "font-mono text-[11px] rounded-lg p-2 border border-border/10 tracking-wide whitespace-pre-wrap break-words h-[4.5rem] overflow-y-auto leading-normal",
                                                             status === 'success' ? 'bg-black/60 text-emerald-400 border-emerald-500/20' : 
                                                             status === 'failed' ? 'bg-black/60 text-red-400 border-red-500/20' : 
-                                                            isRunning ? 'bg-black/50 text-amber-300 border-amber-500/20 animate-pulse' : 
+                                                            isRunning ? 'bg-black/50 text-amber-300 border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]' : 
                                                             'bg-black/30 text-muted-foreground border-border/5'
                                                         )}
                                                         title={result?.response_text || result?.error_message || ''}

@@ -12,55 +12,63 @@ export function SettingAppearance() {
     const { locale, setLocale } = useSettingStore();
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
-                <Sun className="h-5 w-5" />
-                {t('appearance')}
-            </h2>
-
-            {/* 主题 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    {theme === 'dark' ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
-                    <span className="text-sm font-medium">{t('theme.label')}</span>
-                </div>
-                <Select value={theme} onValueChange={setTheme}>
-                    <SelectTrigger className="w-36 rounded-xl">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                        <SelectItem value="light" className="rounded-xl">
-                            <Sun className="size-4" />
-                            {t('theme.light')}
-                        </SelectItem>
-                        <SelectItem value="dark" className="rounded-xl">
-                            <Moon className="size-4" />
-                            {t('theme.dark')}
-                        </SelectItem>
-                        <SelectItem value="system" className="rounded-xl">
-                            <Monitor className="size-4" />
-                            {t('theme.system')}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
+        <div className="space-y-1">
+            <div className="flex items-center gap-2 px-1 pb-2">
+                <Sun className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground/80">{t('appearance')}</h3>
             </div>
 
-            {/* 语言 */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Languages className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{t('language.label')}</span>
+            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
+                {/* 主题 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        {theme === 'dark' ? <Moon className="h-4 w-4 text-muted-foreground shrink-0" /> : <Sun className="h-4 w-4 text-muted-foreground shrink-0" />}
+                        <span className="text-sm font-medium text-foreground/90">{t('theme.label')}</span>
+                    </div>
+                    <Select value={theme} onValueChange={setTheme}>
+                        <SelectTrigger className="w-48 rounded-xl bg-background/50">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                            <SelectItem value="light" className="rounded-xl">
+                                <span className="flex items-center gap-2">
+                                    <Sun className="size-4" />
+                                    {t('theme.light')}
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="dark" className="rounded-xl">
+                                <span className="flex items-center gap-2">
+                                    <Moon className="size-4" />
+                                    {t('theme.dark')}
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="system" className="rounded-xl">
+                                <span className="flex items-center gap-2">
+                                    <Monitor className="size-4" />
+                                    {t('theme.system')}
+                                </span>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
-                <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
-                    <SelectTrigger className="w-36 rounded-xl">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                        <SelectItem value="zh_hans" className="rounded-xl">{t('language.zh_hans')}</SelectItem>
-                        <SelectItem value="zh_hant" className="rounded-xl">{t('language.zh_hant')}</SelectItem>
-                        <SelectItem value="en" className="rounded-xl">{t('language.en')}</SelectItem>
-                    </SelectContent>
-                </Select>
+
+                {/* 语言 */}
+                <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Languages className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground/90">{t('language.label')}</span>
+                    </div>
+                    <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
+                        <SelectTrigger className="w-48 rounded-xl bg-background/50">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                            <SelectItem value="zh_hans" className="rounded-xl">{t('language.zh_hans')}</SelectItem>
+                            <SelectItem value="zh_hant" className="rounded-xl">{t('language.zh_hant')}</SelectItem>
+                            <SelectItem value="en" className="rounded-xl">{t('language.en')}</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
         </div>
     );
