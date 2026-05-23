@@ -211,7 +211,8 @@ export function StatsChart() {
             </div>
 
             {/* Area chart — only total_cost */}
-            <ChartContainer config={chartConfig} className="h-36 w-full px-2 pb-2">
+            <div className="mx-5 mb-5 p-3 rounded-2xl clay-pressed">
+                <ChartContainer config={chartConfig} className="h-32 w-full px-1">
                 <AreaChart accessibilityLayer data={chartData}>
                     <defs>
                         <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">
@@ -226,7 +227,6 @@ export function StatsChart() {
                             </feMerge>
                         </filter>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--border) / 0.25)" />
                     <XAxis 
                         dataKey="date" 
                         tickLine={false} 
@@ -256,7 +256,8 @@ export function StatsChart() {
                         filter="url(#glow)"
                     />
                 </AreaChart>
-            </ChartContainer>
+                </ChartContainer>
+            </div>
         </section>
     );
 }

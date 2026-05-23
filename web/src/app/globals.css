@@ -4,121 +4,136 @@
 @custom-variant dark (&:is(.dark *, html.dark *));
 
 :root {
-  --background: #FAF9F6; /* Warm off-white beige */
-  --foreground: #4A4A4A;
-  --card: #FFFFFF;
-  --card-foreground: #4A4A4A;
-  --popover: #FFFFFF;
-  --popover-foreground: #4A4A4A;
-  --primary: #FF8066; /* Coral Orange */
+  --background: #FDF1E7; /* Warm peach beige */
+  --foreground: #5D4A4A; /* Warm dark brown/gray */
+  --card: #FDF1E7; /* EXACTLY same as background for true clay */
+  --card-foreground: #5D4A4A;
+  --popover: #FDF1E7;
+  --popover-foreground: #5D4A4A;
+  --primary: #FF7B9C; /* Bright Pinkish-Red */
   --primary-foreground: #FFFFFF;
-  --secondary: #7FE8C3; /* Mint Green */
+  --secondary: #8DB4D0; /* Pastel Blue */
   --secondary-foreground: #FFFFFF;
-  --muted: #F0EEE9;
-  --muted-foreground: #8C8C8C;
-  --accent: #FFD1DC; /* Pastel Pink */
-  --accent-foreground: #4A4A4A;
-  --destructive: #FF6B9D; /* Rose Red */
+  --muted: rgba(230, 208, 192, 0.35); /* For soft inner areas */
+  --muted-foreground: #9C8989;
+  --accent: #FFAFD1; /* Pastel Pink */
+  --accent-foreground: #5D4A4A;
+  --destructive: #FF7B9C;
   --destructive-foreground: #FFFFFF;
-  --border: #E8E5DF;
-  --input: #E8E5DF;
-  --ring: #FF8066;
-  --chart-1: #FF8066;
-  --chart-2: #7FE8C3;
-  --chart-3: #FFD1DC;
-  --chart-4: #B3D9FF; /* Pastel Blue */
+  --border: #E6D0C0;
+  --input: #E6D0C0;
+  --ring: #FF7B9C;
+  --chart-1: #FF7B9C;
+  --chart-2: #8DB4D0;
+  --chart-3: #A7E1C7; /* Pastel Green */
+  --chart-4: #FFB347; /* Pastel Orange */
   --chart-5: #E6D5F5; /* Pastel Purple */
-  --sidebar: #FAF9F6;
-  --sidebar-foreground: #4A4A4A;
-  --sidebar-primary: #FF8066;
+  --sidebar: #FDF1E7;
+  --sidebar-foreground: #5D4A4A;
+  --sidebar-primary: #FF7B9C;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F0EEE9;
-  --sidebar-accent-foreground: #4A4A4A;
-  --sidebar-border: #E8E5DF;
-  --sidebar-ring: #FF8066;
-  --radius: 1.5rem; /* Larger radius for clay look */
+  --sidebar-accent: rgba(230, 208, 192, 0.35);
+  --sidebar-accent-foreground: #5D4A4A;
+  --sidebar-border: #E6D0C0;
+  --sidebar-ring: #FF7B9C;
+  --radius: 1.5rem;
   
   /* Claymorphism Shadows */
-  --shadow-color: rgba(0, 0, 0, 0.05);
+  --shadow-color: #E6D0C0;
   --shadow-clay-base: 
-    0 8px 20px var(--shadow-color),
-    0 4px 8px var(--shadow-color),
-    inset 0 -3px 6px rgba(255, 255, 255, 0.8),
-    inset 0 1px 3px rgba(0, 0, 0, 0.02);
-  --shadow-clay-hover:
-    0 12px 30px rgba(0, 0, 0, 0.08),
-    0 6px 12px rgba(0, 0, 0, 0.04),
-    inset 0 -3px 6px rgba(255, 255, 255, 0.9),
-    inset 0 1px 3px rgba(0, 0, 0, 0.02);
-  --shadow-clay-active:
-    0 2px 4px rgba(0, 0, 0, 0.04),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.5),
-    inset 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-clay-btn:
-    0 4px 8px rgba(0, 0, 0, 0.06),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.1),
-    inset 0 2px 4px rgba(255, 255, 255, 0.9);
+    14px 14px 28px var(--shadow-color),
+    -14px -14px 28px #FFFFFF,
+    inset 2px 2px 4px rgba(255, 255, 255, 0.8),
+    inset -2px -2px 4px rgba(230, 208, 192, 0.4);
   
-  --shadow-sm: 0 1px 2px 0px var(--shadow-color);
-  --shadow: 0 1px 3px 0px var(--shadow-color), 0 1px 2px -1px var(--shadow-color);
-  --shadow-md: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px var(--shadow-color);
-  --shadow-lg: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -4px var(--shadow-color);
+  --shadow-clay-hover:
+    18px 18px 36px var(--shadow-color),
+    -18px -18px 36px #FFFFFF,
+    inset 3px 3px 6px rgba(255, 255, 255, 0.9),
+    inset -3px -3px 6px rgba(230, 208, 192, 0.5);
+    
+  --shadow-clay-active:
+    6px 6px 12px var(--shadow-color),
+    -6px -6px 12px #FFFFFF,
+    inset 1px 1px 2px rgba(255, 255, 255, 0.6),
+    inset -1px -1px 2px rgba(230, 208, 192, 0.3);
+
+  --shadow-clay-pressed:
+    inset 8px 8px 16px var(--shadow-color),
+    inset -8px -8px 16px #FFFFFF;
+    
+  --shadow-clay-btn:
+    8px 8px 16px rgba(255, 123, 156, 0.3),
+    -6px -6px 12px #FFFFFF,
+    inset 2px 2px 4px rgba(255, 255, 255, 0.6),
+    inset -2px -2px 4px rgba(200, 80, 100, 0.3);
+  
+  --shadow-sm: 0 1px 2px 0px rgba(230, 208, 192, 0.5);
+  --shadow: 0 1px 3px 0px rgba(230, 208, 192, 0.5), 0 1px 2px -1px rgba(230, 208, 192, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(230, 208, 192, 0.5), 0 2px 4px -2px rgba(230, 208, 192, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(230, 208, 192, 0.5), 0 4px 6px -4px rgba(230, 208, 192, 0.5);
 }
 
 html.dark,
 .dark {
-  --background: #1C1A19; /* Warm dark gray */
-  --foreground: #F2EBE1;
-  --card: #282524;
-  --card-foreground: #F2EBE1;
-  --popover: #282524;
-  --popover-foreground: #F2EBE1;
-  --primary: #FF8066;
+  --background: #252220; /* Warm dark gray */
+  --foreground: #FDF1E7;
+  --card: #252220;
+  --card-foreground: #FDF1E7;
+  --popover: #252220;
+  --popover-foreground: #FDF1E7;
+  --primary: #FF7B9C;
   --primary-foreground: #FFFFFF;
-  --secondary: #5FD4A0;
-  --secondary-foreground: #1C1A19;
-  --muted: #383432;
-  --muted-foreground: #A19D98;
-  --accent: #6C5D61;
-  --accent-foreground: #F2EBE1;
-  --destructive: #FF6B9D;
+  --secondary: #8DB4D0;
+  --secondary-foreground: #252220;
+  --muted: rgba(0, 0, 0, 0.2);
+  --muted-foreground: #9C8989;
+  --accent: #FFAFD1;
+  --accent-foreground: #FDF1E7;
+  --destructive: #FF7B9C;
   --destructive-foreground: #FFFFFF;
-  --border: #383432;
-  --input: #383432;
-  --ring: #FF8066;
-  --chart-1: #FF8066; 
-  --chart-2: #5FD4A0;
-  --chart-3: #E6D5F5;
-  --chart-4: #B3D9FF;
-  --chart-5: #FFD1DC;
-  --sidebar: #1C1A19;
-  --sidebar-foreground: #F2EBE1;
-  --sidebar-primary: #FF8066;
+  --border: #181615;
+  --input: #181615;
+  --ring: #FF7B9C;
+  --chart-1: #FF7B9C; 
+  --chart-2: #8DB4D0;
+  --chart-3: #A7E1C7;
+  --chart-4: #FFB347;
+  --chart-5: #E6D5F5;
+  --sidebar: #252220;
+  --sidebar-foreground: #FDF1E7;
+  --sidebar-primary: #FF7B9C;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #383432;
-  --sidebar-accent-foreground: #F2EBE1;
-  --sidebar-border: #383432;
-  --sidebar-ring: #FF8066;
-
-  --shadow-color: rgba(0, 0, 0, 0.3);
+  --sidebar-accent: rgba(0, 0, 0, 0.2);
+  --sidebar-accent-foreground: #FDF1E7;
+  --sidebar-border: #181615;
+  --sidebar-ring: #FF7B9C;
+  
+  --shadow-color: #181615;
   --shadow-clay-base: 
-    0 8px 20px var(--shadow-color),
-    0 4px 8px var(--shadow-color),
-    inset 0 -3px 6px rgba(255, 255, 255, 0.05),
-    inset 0 1px 3px rgba(255, 255, 255, 0.05);
+    14px 14px 28px var(--shadow-color),
+    -14px -14px 28px #2C2926,
+    inset 2px 2px 4px rgba(255, 255, 255, 0.05),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.4);
   --shadow-clay-hover:
-    0 12px 30px rgba(0, 0, 0, 0.4),
-    0 6px 12px rgba(0, 0, 0, 0.2),
-    inset 0 -3px 6px rgba(255, 255, 255, 0.08),
-    inset 0 1px 3px rgba(255, 255, 255, 0.08);
+    18px 18px 36px var(--shadow-color),
+    -18px -18px 36px #2C2926,
+    inset 3px 3px 6px rgba(255, 255, 255, 0.08),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.5);
   --shadow-clay-active:
-    0 2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.02),
-    inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    6px 6px 12px var(--shadow-color),
+    -6px -6px 12px #2C2926,
+    inset 1px 1px 2px rgba(255, 255, 255, 0.03),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-clay-pressed:
+    inset 8px 8px 16px var(--shadow-color),
+    inset -8px -8px 16px #2C2926;
   --shadow-clay-btn:
-    0 4px 8px rgba(0, 0, 0, 0.25),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
-    inset 0 2px 4px rgba(255, 255, 255, 0.05);
+    8px 8px 16px rgba(255, 123, 156, 0.1),
+    -6px -6px 12px #2C2926,
+    inset 2px 2px 4px rgba(255, 255, 255, 0.1),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.4);
+}
 }
 
 @theme inline {
@@ -171,6 +186,7 @@ html.dark,
   --shadow-clay-hover: var(--shadow-clay-hover);
   --shadow-clay-active: var(--shadow-clay-active);
   --shadow-clay-btn: var(--shadow-clay-btn);
+  --shadow-clay-pressed: var(--shadow-clay-pressed);
 
   --animate-clay-bounce: clay-bounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
@@ -206,6 +222,10 @@ html.dark,
 
   .clay-btn {
     @apply bg-primary text-primary-foreground font-bold rounded-xl shadow-clay-btn transition-all duration-300 ease-out border-none active:shadow-clay-active active:translate-y-0.5;
+  }
+  
+  .clay-pressed {
+    @apply bg-muted/50 rounded-2xl shadow-clay-pressed transition-all duration-300 border-none;
   }
 }
 

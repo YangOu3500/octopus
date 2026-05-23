@@ -29,27 +29,27 @@ function SectionCard({
 }) {
     return (
         <section className="clay-card flex flex-col overflow-hidden">
-            <header className="flex items-center gap-3 px-5 py-4 border-b border-border/40 bg-card/40">
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-primary shadow-inner">
+            <header className="flex items-center gap-4 px-6 pt-6 pb-2">
+                <div className="flex min-w-0 flex-1 items-center gap-3.5">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary clay-pressed shadow-none">
                         {icon}
                     </div>
                     <div className="min-w-0 text-left">
-                        <h2 className="truncate text-base font-bold text-foreground/90 tracking-tight">{title}</h2>
-                        <p className="line-clamp-1 text-[13px] text-muted-foreground/80">{description}</p>
+                        <h2 className="truncate text-lg font-bold text-foreground/90 tracking-tight">{title}</h2>
+                        <p className="line-clamp-1 text-[13px] font-medium text-muted-foreground/80">{description}</p>
                     </div>
                 </div>
                 {chips.length > 0 ? (
-                    <div className="hidden flex-wrap items-center justify-end gap-1.5 md:flex">
+                    <div className="hidden flex-wrap items-center justify-end gap-2 md:flex">
                         {chips.map((chip) => (
-                            <Badge key={chip} variant="outline" className="h-6 rounded-md px-2 text-[11px] font-medium text-muted-foreground bg-muted/30 border-border/50">
+                            <Badge key={chip} variant="outline" className="clay-pressed h-7 rounded-lg px-3 text-[11px] font-bold text-muted-foreground border-none">
                                 {chip}
                             </Badge>
                         ))}
                     </div>
                 ) : null}
             </header>
-            <div className="p-4 flex-1">
+            <div className="p-4 px-5 flex-1">
                 {children}
             </div>
         </section>

@@ -28,12 +28,12 @@ export function GroupHealthSummaryStrip() {
         <section className="clay-card px-5 py-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2.5 text-base font-bold tracking-tight">
-                        <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-inner">
-                            <Activity className="size-4" />
+                    <div className="flex items-center gap-3 text-base font-bold tracking-tight text-foreground/90">
+                        <div className="flex size-10 items-center justify-center rounded-[12px] clay-pressed text-primary shadow-none">
+                            <Activity className="size-4.5" />
                         </div>
                         {t('title')}
-                        <span className="text-[13px] font-medium text-muted-foreground/80">{t('total', { count: summary.total })}</span>
+                        <span className="ml-1 text-[13px] font-medium text-muted-foreground/80">{t('total', { count: summary.total })}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] font-medium text-muted-foreground">
                         <span className="inline-flex items-center gap-1.5">
@@ -60,7 +60,7 @@ export function GroupHealthSummaryStrip() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-9 rounded-xl px-4 text-[13px] font-bold bg-muted/30 border-border/50 hover:bg-muted/50 transition-colors md:self-center"
+                    className="clay-pressed border-none h-10 rounded-xl px-5 text-[13px] font-bold hover:bg-muted/50 transition-colors md:self-center"
                     onClick={() => runAllGroupHealth.mutate()}
                     disabled={runAllGroupHealth.isPending}
                 >

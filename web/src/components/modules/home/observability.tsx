@@ -53,10 +53,10 @@ function MetricTile({
 }) {
     return (
         <div className={cn(
-            'rounded-xl bg-muted/40 px-4 py-3 transition-all duration-200 hover:-translate-y-px hover:bg-muted/60',
-            tone === 'success' && 'bg-primary/5',
-            tone === 'warning' && 'bg-amber-500/5',
-            tone === 'danger' && 'bg-destructive/5',
+            'clay-pressed rounded-[14px] px-4 py-3 transition-all duration-200',
+            tone === 'success' && 'text-primary',
+            tone === 'warning' && 'text-amber-500',
+            tone === 'danger' && 'text-destructive',
         )}>
             <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</div>
             <div className="mt-1 text-2xl font-bold tabular-nums text-foreground/90">{value}</div>
@@ -69,7 +69,7 @@ function BreakdownList({ title, items }: { title: string; items: StatsObservabil
     const t = useTranslations('home.observability');
 
     return (
-        <div className="rounded-2xl bg-muted/30 p-4">
+        <div className="clay-pressed rounded-2xl p-4">
             <div className="mb-3 flex items-center gap-2.5 text-[13px] font-bold text-foreground/80">
                 <Server className="size-4 text-muted-foreground" />
                 <span>{title}</span>
@@ -78,7 +78,7 @@ function BreakdownList({ title, items }: { title: string; items: StatsObservabil
                 {items.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{t('noData')}</div>
                 ) : items.map((item) => (
-                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-3 rounded-xl bg-card px-3 py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-px">
+                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-3 rounded-[12px] px-3 py-2.5 transition-all duration-200 hover:bg-muted/30">
                         <div className="min-w-0">
                             <div className="truncate text-[13px] font-bold text-foreground/90" title={item.name}>{item.name || '—'}</div>
                             <div className="mt-0.5 text-[11px] font-medium text-muted-foreground/80">
@@ -104,7 +104,7 @@ function RecentFailureList({ items }: { items: StatsObservabilityFailure[] }) {
     const t = useTranslations('home.observability');
 
     return (
-        <div className="rounded-2xl bg-muted/30 p-4">
+        <div className="clay-pressed rounded-2xl p-4">
             <div className="mb-3 flex items-center gap-2.5 text-[13px] font-bold text-foreground/80">
                 <AlertTriangle className="size-4 text-destructive" />
                 <span>{t('recentFailures')}</span>
@@ -113,9 +113,9 @@ function RecentFailureList({ items }: { items: StatsObservabilityFailure[] }) {
                 {items.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{t('noFailures')}</div>
                 ) : items.map((item) => (
-                    <div key={`${item.id}-${item.channel_id}-${item.failure_reason}`} className="rounded-xl bg-card shadow-sm px-3 py-2.5 transition-all duration-200 hover:-translate-y-px">
+                    <div key={`${item.id}-${item.channel_id}-${item.failure_reason}`} className="rounded-[12px] px-3 py-2.5 transition-all duration-200 hover:bg-muted/30">
                         <div className="flex min-w-0 items-center gap-2">
-                            <Badge variant="outline" className="h-5 shrink-0 px-1.5 text-[10px] bg-muted/50 border-border/50">
+                            <Badge variant="outline" className="clay-pressed border-none h-5 shrink-0 px-1.5 text-[10px]">
                                 {item.http_status || '—'}
                             </Badge>
                             <span className="truncate text-[13px] font-bold text-foreground/90" title={item.request_model}>
@@ -161,7 +161,7 @@ export function ObservabilityPanel() {
                 <div className="hidden md:block">
                     <p className="text-[13px] font-medium text-muted-foreground/80">{t('description')}</p>
                 </div>
-                <Badge variant={error ? 'outline' : 'secondary'} className={cn('w-fit h-6 px-3 rounded-md font-medium bg-muted/40 text-[11px]', error && 'border-destructive/30 text-destructive')}>
+                <Badge variant={error ? 'outline' : 'secondary'} className={cn('clay-pressed border-none w-fit h-7 px-3 rounded-lg font-bold text-[11px]', error && 'text-destructive')}>
                     {error ? t('loadFailed') : isLoading ? t('loading') : t('range24h')}
                 </Badge>
             </header>
