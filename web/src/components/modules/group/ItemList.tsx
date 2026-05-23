@@ -86,6 +86,7 @@ function MemberItem({
                 'flex items-center gap-3 rounded-xl bg-background/50 border border-border/30 px-3 py-2.5 select-none transition-all duration-300 relative overflow-hidden',
                 isRemoving && 'opacity-0',
                 isDisabled && 'opacity-60 grayscale',
+                /* eslint-disable-next-line react-hooks/refs */
                 dnd.isDragging ? 'border-secondary/60 bg-gradient-to-r from-background to-secondary/5' : 'hover:border-border/60 hover:bg-background/80'
             )}>
                 <span className={cn(
@@ -313,7 +314,7 @@ export function MemberList({
                             <div
                                 ref={droppableProvided.innerRef}
                                 {...droppableProvided.droppableProps}
-                                className="p-2 flex flex-col space-y-1.5"
+                                className="p-2 flex flex-col gap-1.5"
                             >
                                 {members.map((member, index) => (
                                     <Draggable

@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/animate-ui/components/animate/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/common/Toast';
+import { cn } from '@/lib/utils';
 
 export function Card({ channel, stats, layout = 'grid' }: { channel: Channel; stats: StatsMetricsFormatted; layout?: 'grid' | 'list' }) {
     const t = useTranslations('channel.card');
@@ -55,7 +56,13 @@ export function Card({ channel, stats, layout = 'grid' }: { channel: Channel; st
                         <div className="min-w-0 flex-1">
                             <Tooltip side="top" sideOffset={10} align="center">
                                 <TooltipTrigger asChild>
-                                    <h3 className="text-lg font-bold truncate min-w-0">{channel.name}</h3>
+                                    <div className="flex items-center gap-2 min-w-0 max-w-full">
+                                        <span className={cn(
+                                            "shrink-0 size-2 rounded-full",
+                                            channel.enabled ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" : "bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                                        )} />
+                                        <h3 className="text-lg font-bold truncate min-w-0">{channel.name}</h3>
+                                    </div>
                                 </TooltipTrigger>
                                 <TooltipContent key={channel.name}>{channel.name}</TooltipContent>
                             </Tooltip>

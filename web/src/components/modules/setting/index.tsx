@@ -1,9 +1,9 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { ArchiveRestore, Bot, Settings2, Sparkles, type LucideIcon } from 'lucide-react';
+
+import { ArchiveRestore, Bot, Settings2, type LucideIcon } from 'lucide-react';
 import { PageWrapper } from '@/components/common/PageWrapper';
-import { cn } from '@/lib/utils';
 import { SettingAppearance } from './Appearance';
 import { SettingSystem } from './System';
 import { SettingAPIKey } from './APIKey';
