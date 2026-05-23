@@ -2,25 +2,18 @@
 
 import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArchiveRestore, Bot, Settings2, ShieldCheck, Database, Key, Network, Palette, Info, type LucideIcon } from 'lucide-react';
+import { ArchiveRestore, Bot, Settings2, ShieldCheck, Database, Key, Network, Palette, Info, RefreshCw, Route, Activity, type LucideIcon } from 'lucide-react';
 import { PageWrapper } from '@/components/common/PageWrapper';
-import { SettingAppearance } from './Appearance';
-import { SettingSystem } from './System';
-import { SettingAPIKey } from './APIKey';
-import { SettingLLMPrice } from './LLMPrice';
-import { SettingAccount } from './Account';
-import { SettingInfo } from './Info';
-import { SettingLLMSync } from './LLMSync';
-import { SettingSiteAutomation } from './SiteAutomation';
-import { SettingLog } from './Log';
-import { SettingBackup } from './Backup';
-import { SettingCircuitBreaker } from './CircuitBreaker';
-import { SettingHealthProbe } from './HealthProbe';
-import { SettingFusionCapabilities } from './FusionCapabilities';
-import { SettingModelAssociation } from './ModelAssociation';
+import { SettingGeneral } from './general';
+import { SettingAccessKeys } from './access-keys';
+import { SettingSiteSync } from './site-sync';
+import { SettingModelGrouping } from './model-grouping';
+import { SettingRoutingFault } from './routing-fault';
+import { SettingHealthProbing } from './health-probing';
+import { SettingLogsMaintenance } from './logs-maintenance';
 import { cn } from '@/lib/utils';
 
-type TabKey = 'general' | 'brand' | 'routing' | 'models' | 'storage' | 'backup';
+type TabKey = 'basic' | 'access' | 'sync' | 'models' | 'routing' | 'health' | 'maintenance';
 
 function SettingGroup({ children }: { children: ReactNode }) {
     return (
@@ -37,15 +30,16 @@ function SettingGroup({ children }: { children: ReactNode }) {
 }
 
 export function Setting() {
-    const [activeTab, setActiveTab] = useState<TabKey>('general');
+    const [activeTab, setActiveTab] = useState<TabKey>('basic');
 
     const tabs: { key: TabKey; label: string; icon: LucideIcon }[] = [
-        { key: 'general', label: '常规', icon: Settings2 },
-        { key: 'brand', label: '品牌', icon: Palette },
-        { key: 'routing', label: '调度与重试', icon: Network },
-        { key: 'models', label: '模型与密钥', icon: Key },
-        { key: 'storage', label: '存储与日志', icon: Database },
-        { key: 'backup', label: '备份恢复', icon: ArchiveRestore },
+        { key: 'basic', label: '基础设置', icon: Settings2 },
+        { key: 'access', label: '访问与密钥', icon: Key },
+        { key: 'sync', label: '站点与同步', icon: RefreshCw },
+        { key: 'models', label: '模型与分组', icon: Network },
+        { key: 'routing', label: '路由与容错', icon: Route },
+        { key: 'health', label: '健康与探测', icon: Activity },
+        { key: 'maintenance', label: '日志与维护', icon: Database },
     ];
 
     return (
@@ -86,42 +80,39 @@ export function Setting() {
                 {/* Tab Content */}
                 <div className="pt-2">
                     <AnimatePresence mode="wait">
-                        {activeTab === 'general' && (
-                            <SettingGroup key="general">
-                                <SettingSystem />
-                                <SettingAppearance />
-                                <SettingAccount />
+                        {activeTab === 'basic' && (
+                            <SettingGroup key="basic">
+                                <SettingGeneral />
                             </SettingGroup>
                         )}
-                        {activeTab === 'brand' && (
-                            <SettingGroup key="brand">
-                                <SettingInfo />
+                        {activeTab === 'access' && (
+                            <SettingGroup key="access">
+                                <SettingAccessKeys />
                             </SettingGroup>
                         )}
-                        {activeTab === 'routing' && (
-                            <SettingGroup key="routing">
-                                <SettingSiteAutomation />
-                                <SettingHealthProbe />
-                                <SettingCircuitBreaker />
-                                <SettingModelAssociation />
-                                <SettingFusionCapabilities />
+                        {activeTab === 'sync' && (
+                            <SettingGroup key="sync">
+                                <SettingSiteSync />
                             </SettingGroup>
                         )}
                         {activeTab === 'models' && (
                             <SettingGroup key="models">
-                                <SettingAPIKey />
-                                <SettingLLMPrice />
-                                <SettingLLMSync />
+                                <SettingModelGrouping />
                             </SettingGroup>
                         )}
-                        {activeTab === 'storage' && (
-                            <SettingGroup key="storage">
-                                <SettingLog />
+                        {activeTab === 'routing' && (
+                            <SettingGroup key="routing">
+                                <SettingRoutingFault />
                             </SettingGroup>
                         )}
-                        {activeTab === 'backup' && (
-                            <SettingGroup key="backup">
-                                <SettingBackup />
+                        {activeTab === 'health' && (
+                            <SettingGroup key="health">
+                                <SettingHealthProbing />
+                            </SettingGroup>
+                        )}
+                        {activeTab === 'maintenance' && (
+                            <SettingGroup key="maintenance">
+                                <SettingLogsMaintenance />
                             </SettingGroup>
                         )}
                     </AnimatePresence>
