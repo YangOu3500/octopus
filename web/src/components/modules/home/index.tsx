@@ -82,8 +82,10 @@ export function Home() {
             <section className="space-y-8">
                 <DashboardSummaryCards />
                 <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)] items-start">
-                    <StatsChart />
-                    <div className="space-y-6 w-full">
+                    <div className="min-w-0 w-full">
+                        <StatsChart />
+                    </div>
+                    <div className="space-y-6 w-full min-w-0">
                         <GatewayOperationsPanel />
                         <GroupHealthSummaryStrip />
                     </div>

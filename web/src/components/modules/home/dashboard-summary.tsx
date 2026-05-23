@@ -54,7 +54,7 @@ function SummaryCard({
     return (
         <article
             className={cn(
-                'clay-card flex h-full min-h-[10.5rem] flex-col px-5 py-4',
+                'clay-card flex min-h-[10.5rem] flex-col px-5 py-4',
                 accent && 'bg-primary/5'
             )}
         >
@@ -147,7 +147,7 @@ export function DashboardSummaryCards() {
 
     return (
         <section className="space-y-6">
-            <div className="grid auto-rows-fr grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4 items-stretch">
                 <SummaryCard
                     icon={BarChart3}
                     title={t('totalRequests')}

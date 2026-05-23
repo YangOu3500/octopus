@@ -1,4 +1,5 @@
 import "./globals.css";
+import { Nunito } from "next/font/google";
 import { ThemeProvider } from "@/provider/theme";
 import { Toaster } from "@/components/ui/sonner"
 import { LocaleProvider } from "@/provider/locale";
@@ -6,7 +7,11 @@ import QueryProvider from "@/provider/query";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import { TooltipProvider } from "@/components/animate-ui/components/animate/tooltip";
 
-
+const nunito = Nunito({ 
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
+});
 
 export default function RootLayout({
   children,
@@ -93,7 +98,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">
+      <body className={`${nunito.className} antialiased`}>
         <div id="initial-loader" role="status" aria-label="Loading">
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <g className="octo-group">

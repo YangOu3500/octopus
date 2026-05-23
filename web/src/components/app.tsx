@@ -255,8 +255,8 @@ export function AppContainer() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.16 }}
             className={cn(
-                'flex h-dvh w-full max-w-none flex-col overflow-hidden px-3 md:grid md:gap-3 md:px-4 xl:px-5',
-                sidebarExpanded ? 'md:grid-cols-[14.5rem_minmax(0,1fr)]' : 'md:grid-cols-[4.75rem_minmax(0,1fr)]'
+                'flex h-dvh w-full max-w-none flex-col overflow-hidden px-3 md:grid md:gap-8 md:px-4 xl:px-6',
+                sidebarExpanded ? 'md:grid-cols-[17rem_minmax(0,1fr)]' : 'md:grid-cols-[5.5rem_minmax(0,1fr)]'
             )}
         >
             <NavBar />
