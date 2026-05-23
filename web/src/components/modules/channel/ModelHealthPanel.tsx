@@ -674,9 +674,9 @@ export function ChannelModelHealthPanel() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[7.2rem_minmax(9rem,1fr)_7.2rem_8rem_minmax(11rem,1fr)_auto_auto_auto]">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <Select value={timeRange} onValueChange={setTimeRange}>
-                                    <SelectTrigger className="h-8 w-full rounded-lg">
+                                    <SelectTrigger className="h-8 w-[120px] rounded-lg">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -688,7 +688,7 @@ export function ChannelModelHealthPanel() {
                                     </SelectContent>
                                 </Select>
                                 <Select value={channelId} onValueChange={setChannelId}>
-                                    <SelectTrigger className="h-8 w-full rounded-lg">
+                                    <SelectTrigger className="h-8 w-[160px] rounded-lg">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -701,7 +701,7 @@ export function ChannelModelHealthPanel() {
                                     </SelectContent>
                                 </Select>
                                 <Select value={source} onValueChange={setSource}>
-                                    <SelectTrigger className="h-8 w-full rounded-lg">
+                                    <SelectTrigger className="h-8 w-[120px] rounded-lg">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -712,7 +712,7 @@ export function ChannelModelHealthPanel() {
                                     </SelectContent>
                                 </Select>
                                 <Select value={quotaStatus} onValueChange={setQuotaStatus}>
-                                    <SelectTrigger className="h-8 w-full rounded-lg">
+                                    <SelectTrigger className="h-8 w-[140px] rounded-lg">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -724,21 +724,21 @@ export function ChannelModelHealthPanel() {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <div className="relative min-w-0">
+                                <div className="relative min-w-[200px] flex-1">
                                     <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         value={modelQuery}
                                         onChange={(event) => setModelQuery(event.target.value)}
                                         placeholder={t('searchModel')}
-                                        className="h-8 rounded-lg pl-9"
+                                        className="h-8 rounded-lg pl-9 w-full"
                                     />
                                 </div>
-                                <label className="flex h-8 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 text-sm text-muted-foreground">
+                                <label className="flex h-8 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 text-sm text-muted-foreground whitespace-nowrap">
                                     <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
                                     {t('autoRefresh')}
                                 </label>
                                 <Select value={refreshInterval} onValueChange={setRefreshInterval}>
-                                    <SelectTrigger className="h-8 w-full rounded-lg xl:w-[6rem]" disabled={!autoRefresh}>
+                                    <SelectTrigger className="h-8 w-[100px] rounded-lg" disabled={!autoRefresh}>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>

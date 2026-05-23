@@ -432,7 +432,7 @@ function AuditList({
     return (
         <div className="min-w-0">
             <div className="mb-2 text-xs font-medium text-muted-foreground">{title}</div>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                 {items.length === 0 ? (
                     <div className="text-xs text-muted-foreground">-</div>
                 ) : items.map((item) => {
@@ -733,21 +733,20 @@ function TraceTable({
 
     return (
         <div className="min-h-[24rem] overflow-x-auto rounded-lg border bg-card">
-            <table className="w-full min-w-[900px] text-left text-xs">
-                <thead className="sticky top-0 z-10 border-b bg-muted/70 text-muted-foreground backdrop-blur">
-                    <tr>
-                        <th className="w-[48px] px-2.5 py-2 font-medium">{t('table.compare')}</th>
-                        <th className="px-2.5 py-2 font-medium">{t('table.request')}</th>
-                        <th className="px-2.5 py-2 font-medium">{t('table.status')}</th>
-                        <th className="px-2.5 py-2 font-medium">{t('table.route')}</th>
-                        <th className="px-2.5 py-2 font-medium">{t('table.attempts')}</th>
-                        <th className="px-2.5 py-2 font-medium">{t('table.latency')}</th>
-                        <th className="px-2.5 py-2 font-medium">{t('table.tokens')}</th>
-                        <th className="px-2.5 py-2 font-medium">{t('table.cost')}</th>
-                        <th className="px-2.5 py-2 font-medium">{t('table.time')}</th>
+            <table className="w-full min-w-[900px] text-left text-sm">
+                <thead className="sticky top-0 z-10 border-b bg-muted/30 text-muted-foreground backdrop-blur">
+                    <tr className="text-xs">
+                        <th className="w-[48px] px-4 py-3 font-medium">{t('table.compare')}</th>
+                        <th className="px-4 py-3 font-medium">{t('table.request')}</th>
+                        <th className="px-4 py-3 font-medium">{t('table.status')}</th>
+                        <th className="px-4 py-3 font-medium">{t('table.route')}</th>
+                        <th className="px-4 py-3 font-medium">{t('table.latency')}</th>
+                        <th className="px-4 py-3 font-medium">{t('table.tokens')}</th>
+                        <th className="px-4 py-3 font-medium">{t('table.cost')}</th>
+                        <th className="px-4 py-3 font-medium">{t('table.time')}</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border/40">
                     {items.map((trace) => {
                         const active = trace.trace_id === selectedTraceId;
                         const compared = compareTraceIds.includes(trace.trace_id);
@@ -755,12 +754,12 @@ function TraceTable({
                             <tr
                                 key={trace.trace_id || trace.id}
                                 className={cn(
-                                    'cursor-pointer border-b last:border-0 hover:bg-primary/5',
+                                    'cursor-pointer transition-colors hover:bg-primary/5',
                                     active && 'bg-primary/10',
                                 )}
                                 onClick={() => onSelect(trace.trace_id)}
                             >
-                                <td className="px-2.5 py-2.5">
+                                <td className="px-4 py-3">
                                     <input
                                         type="checkbox"
                                         checked={compared}
@@ -770,50 +769,41 @@ function TraceTable({
                                         onClick={(event) => event.stopPropagation()}
                                     />
                                 </td>
-                                <td className="max-w-[230px] px-2.5 py-2.5">
-                                    <div className="truncate font-medium" title={trace.client_model}>{trace.client_model || '-'}</div>
-                                    <div className="mt-1 flex min-w-0 items-center gap-2">
-                                        <span className="truncate font-mono text-[11px] text-muted-foreground" title={trace.trace_id}>
-                                            {trace.trace_id}
-                                        </span>
-                                        <Badge variant="outline" className="h-5 rounded-md px-1.5 text-[10px]">
-                                            {sourceLabel(trace.request_source)}
-                                        </Badge>
+                                <td className="max-w-[200px] px-4 py-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="truncate font-semibold text-foreground" title={trace.client_model}>{trace.client_model || '-'}</div>
+                                        {trace.request_stream && <Badge variant="outline" className="h-4.5 rounded px-1.5 text-[10px] bg-blue-500/10 text-blue-500 border-none">{t('stream.stream')}</Badge>}
+                                    </div>
+                                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                        <span className="truncate" title={trace.trace_id}>{trace.trace_id.split('-')[0]}...</span>
+                                        <span className="opacity-50">|</span>
+                                        <span>{sourceLabel(trace.request_source)}</span>
                                     </div>
                                 </td>
-                                <td className="px-2.5 py-2.5">
-                                    <Badge variant="outline" className={cn('h-6 rounded-md px-2 text-[11px]', statusClass(trace.final_status))}>
+                                <td className="px-4 py-3">
+                                    <Badge variant="outline" className={cn('h-5.5 rounded-md px-2 text-[11px] font-medium border-none', statusClass(trace.final_status))}>
                                         {trace.final_status || '-'}
                                     </Badge>
-                                    <div className="mt-1 text-muted-foreground">{streamLabel(trace.request_stream, t)}</div>
                                 </td>
-                                <td className="max-w-[220px] px-2.5 py-2.5">
-                                    <div className="truncate" title={trace.final_upstream_model || undefined}>
+                                <td className="max-w-[200px] px-4 py-3">
+                                    <div className="truncate font-medium text-foreground" title={trace.final_upstream_model || undefined}>
                                         {trace.final_upstream_model || '-'}
                                     </div>
-                                    <div className="mt-1 text-muted-foreground">
-                                        {t('ids.channelSite', {
-                                            channel: trace.final_channel_id || 0,
-                                            site: trace.final_site_id || 0,
-                                        })}
+                                    <div className="mt-1 text-xs text-muted-foreground">
+                                        {t('ids.channelSite', { channel: trace.final_channel_id || 0, site: trace.final_site_id || 0 })}
+                                        {(trace.attempts_count || 0) > 1 && <span className="ml-2 text-amber-500">({trace.attempts_count} {t('table.attempts')})</span>}
                                     </div>
                                 </td>
-                                <td className="px-2.5 py-2.5 tabular-nums">
-                                    <div className="font-medium">{trace.attempts_count || 0}</div>
-                                    <div className="text-muted-foreground">
-                                        {(trace.attempts_count || 0) > 1 ? t('failover.yes') : t('failover.no')}
-                                    </div>
-                                </td>
-                                <td className="px-2.5 py-2.5 tabular-nums">
+                                <td className="px-4 py-3 font-mono text-xs tabular-nums text-foreground/80">
                                     {formatDuration(trace.total_latency_ms)}
                                 </td>
-                                <td className="px-2.5 py-2.5 font-mono tabular-nums">
+                                <td className="px-4 py-3 font-mono text-xs tabular-nums text-foreground/80">
                                     {formatTokens(trace)}
                                 </td>
-                                <td className="px-2.5 py-2.5 font-mono tabular-nums">
+                                <td className="px-4 py-3 font-mono text-xs tabular-nums text-foreground/80">
                                     {formatCost(trace.total_attempt_cost || trace.estimated_cost)}
                                 </td>
-                                <td className="px-2.5 py-2.5 tabular-nums">
+                                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                                     {formatTime(trace.created_at)}
                                 </td>
                             </tr>

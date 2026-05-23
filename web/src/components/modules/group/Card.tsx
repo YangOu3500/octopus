@@ -287,16 +287,19 @@ export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode
 
     if (viewMode === 'card') {
         return (
-            <article className="flex flex-col justify-between rounded-2xl border border-border bg-card text-card-foreground p-3.5 custom-shadow h-[12.5rem] hover:border-primary/20 hover:bg-card/90 transition-all duration-300">
-                <header className="flex items-start justify-between relative overflow-visible">
-                    <div className="relative flex-1 mr-2 min-w-0">
-                        <Tooltip side="top" sideOffset={10} align="center">
-                            <TooltipTrigger asChild>
-                                <h3 className="text-sm font-bold truncate text-foreground">{group.name}</h3>
-                            </TooltipTrigger>
-                            <TooltipContent key={group.name}>{group.name}</TooltipContent>
-                        </Tooltip>
-                        <div className="mt-1 flex items-center gap-1.5">
+            <article className="flex flex-col rounded-[24px] border border-border/50 bg-card/60 backdrop-blur-sm text-card-foreground p-3.5 transition-all hover:bg-card hover:shadow-md hover:border-primary/20 h-full">
+                <header className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-1.5">
+                            <Tooltip side="top" sideOffset={10} align="start">
+                                <TooltipTrigger asChild>
+                                    <h3 className="text-base font-bold truncate text-foreground/90">{group.name}</h3>
+                                </TooltipTrigger>
+                                <TooltipContent key={group.name}>{group.name}</TooltipContent>
+                            </Tooltip>
+                            <CopyIconButton text={group.name} className="h-5 w-5 text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 rounded" copyIconClassName="size-3" checkIconClassName="size-3" />
+                        </div>
+                        <div className="mt-1">
                             <Badge variant="secondary" className="rounded-md h-5 px-1.5 text-[10px] font-bold uppercase tracking-wider">
                                 {t(`mode.${MODE_LABELS[group.mode]}`)}
                             </Badge>
@@ -323,12 +326,12 @@ export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode
                     </div>
                 </header>
 
-                <div className="my-2 border-t border-border/20 pt-2 flex flex-col gap-1.5">
+                <div className="my-2 border-t border-border/20 pt-2 flex flex-col gap-1.5 flex-1">
                     <GroupRoutingBadge groupId={group.id} />
                     <GroupHealthBadge groupId={group.id} />
                 </div>
 
-                <footer className="flex items-center justify-between text-[10px] text-muted-foreground/80 font-semibold border-t border-border/20 pt-2">
+                <footer className="flex items-center justify-between text-[10px] text-muted-foreground/80 font-semibold border-t border-border/20 pt-2 shrink-0">
                     <span>{t('runtime.retry')}: {group.retry_enabled ? `${group.max_retries ?? 3}x` : t('runtime.off')}</span>
                     <span>{t('stats.visible')}: {effectiveDisplayMembers.length} models</span>
                 </footer>

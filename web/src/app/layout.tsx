@@ -106,7 +106,7 @@ export default function RootLayout({
           </svg>
         </div>
         <ServiceWorkerRegister />
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <QueryProvider>
             <LocaleProvider>
               <TooltipProvider>
