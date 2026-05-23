@@ -124,8 +124,8 @@ export function GatewayOperationsPanel() {
             <div className="clay-card p-5">
                 <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
-                        <div className="flex items-center gap-3 text-base font-black tracking-tight text-foreground">
-                            <div className="flex size-10 items-center justify-center rounded-[12px] bg-primary/10 text-primary shadow-sm">
+                        <div className="flex items-center gap-3 text-lg font-black tracking-tight text-foreground">
+                            <div className="flex size-11 items-center justify-center rounded-[12px] bg-primary text-white shadow-clay-btn">
                                 <Radar className="size-5" />
                             </div>
                             {t('title')}
@@ -154,9 +154,9 @@ export function GatewayOperationsPanel() {
                                             <Icon className="size-4.5" />
                                         </div>
                                         <div className="min-w-0">
-                                            <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t(`items.${item.id}.label`)}</div>
-                                            <div className="mt-1 text-lg font-black tabular-nums tracking-tight text-foreground drop-shadow-sm">{item.value}</div>
-                                            <div className="mt-1 line-clamp-2 text-[11px] font-semibold text-muted-foreground" title={item.sub}>{item.sub}</div>
+                                            <div className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">{t(`items.${item.id}.label`)}</div>
+                                            <div className="mt-1 text-xl font-black tabular-nums tracking-tight text-primary drop-shadow-sm">{item.value}</div>
+                                            <div className="mt-1 line-clamp-2 text-[11px] font-bold text-muted-foreground/80" title={item.sub}>{item.sub}</div>
                                         </div>
                                     </div>
                                 </article>

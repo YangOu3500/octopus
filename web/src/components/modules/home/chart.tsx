@@ -176,16 +176,16 @@ export function StatsChart() {
             {/* Header: hero + tabs */}
             <header className="flex flex-col gap-3 px-5 pb-3 pt-5 md:flex-row md:items-start md:justify-between">
                 <div>
-                    <p className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">{t(`headline.${PERIOD_KEY[period]}`)}</p>
-                    <p className="mt-1.5 text-3xl font-bold tracking-tight tabular-nums md:text-4xl text-foreground">
+                    <p className="text-[11px] font-black tracking-wider uppercase text-muted-foreground">{t(`headline.${PERIOD_KEY[period]}`)}</p>
+                    <p className="mt-1.5 text-3xl font-black tracking-tight tabular-nums md:text-4xl text-primary drop-shadow-sm">
                         {hero.value === undefined ? (
                             <span className="text-muted-foreground">—</span>
                         ) : (
                             <>
-                                <span className="mr-1.5 text-lg font-semibold text-primary/70">$</span>
+                                <span className="mr-1.5 text-lg font-bold text-primary/70">$</span>
                                 <AnimatedNumber value={hero.value} />
                                 {heroUnitSuffix && (
-                                    <span className="ml-1 text-base font-semibold text-muted-foreground">{heroUnitSuffix}</span>
+                                    <span className="ml-1 text-base font-bold text-muted-foreground/80">{heroUnitSuffix}</span>
                                 )}
                             </>
                         )}

@@ -43,22 +43,22 @@ function DesktopNavItem({
             title={expanded ? undefined : t(item)}
             className={cn(
                 'group grid w-full items-center rounded-xl border py-2 pl-2 pr-3 text-left transition-all duration-300 relative overflow-hidden',
-                expanded ? 'grid-cols-[2.25rem_minmax(0,1fr)] gap-3' : 'grid-cols-[2.25rem_0fr] gap-0',
+                expanded ? 'grid-cols-[2.5rem_minmax(0,1fr)] gap-3' : 'grid-cols-[2.5rem_0fr] gap-0',
                 isActive
-                    ? 'border-primary/20 bg-gradient-to-r from-primary/15 to-secondary/5 text-primary shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_12px_rgba(var(--primary),0.08)]'
+                    ? 'border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
                     : 'border-transparent text-sidebar-foreground/70 hover:border-sidebar-border/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
             )}
             whileHover={{ y: -0.5 }}
             whileTap={{ scale: 0.98 }}
         >
             {isActive && (
-                <span className="absolute left-0 top-1/4 bottom-1/4 w-0.5 rounded-r bg-primary shadow-[0_0_8px_oklch(var(--primary))]" />
+                <span className="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r bg-white/40 shadow-sm" />
             )}
             <span
                 className={cn(
-                    'flex size-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-300',
+                    'flex size-10 shrink-0 items-center justify-center rounded-[10px] transition-all duration-300',
                     isActive
-                        ? 'border-primary/30 bg-primary/10 text-primary shadow-[0_0_8px_oklch(var(--primary)/0.25)]'
+                        ? 'bg-transparent text-primary-foreground'
                         : 'border-sidebar-border/40 bg-background/40 group-hover:border-sidebar-border group-hover:bg-background/80'
                 )}
             >
@@ -66,7 +66,7 @@ function DesktopNavItem({
             </span>
             <span
                 className={cn(
-                    'min-w-0 overflow-hidden whitespace-nowrap text-xs font-semibold tracking-wide transition-all duration-200',
+                    'min-w-0 overflow-hidden whitespace-nowrap text-[14px] font-bold tracking-wide transition-all duration-200',
                     expanded ? 'translate-x-0 opacity-100' : 'pointer-events-none -translate-x-1 opacity-0'
                 )}
             >
@@ -91,21 +91,21 @@ function DesktopSidebar() {
         <motion.aside
             aria-label="Main Navigation"
             className={cn(
-                'hidden md:flex md:sticky md:top-3 md:h-[calc(100dvh-1.5rem)] md:flex-col md:overflow-hidden md:rounded-2xl md:border md:border-sidebar-border/40 md:bg-sidebar/35 md:p-3 md:text-sidebar-foreground md:shadow-[0_8px_32px_rgba(0,0,0,0.15)] md:backdrop-blur-xl transition-[width] duration-300',
-                sidebarExpanded ? 'md:w-[17rem]' : 'md:w-[5.5rem]'
+                'hidden md:flex md:sticky md:top-3 md:h-[calc(100dvh-1.5rem)] md:flex-col md:overflow-hidden md:rounded-[2rem] md:border md:border-sidebar-border md:bg-sidebar/80 md:p-4 md:text-sidebar-foreground md:shadow-[0_8px_32px_rgba(0,0,0,0.08)] md:backdrop-blur-xl transition-[width] duration-300',
+                sidebarExpanded ? 'md:w-[15rem]' : 'md:w-[5.5rem]'
             )}
             variants={ENTRANCE_VARIANTS.navbar}
             initial="initial"
             animate="animate"
         >
-            <div className={cn('mb-6 flex min-w-0 items-center gap-2.5', !sidebarExpanded && 'flex-col justify-center')}>
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border/40 bg-background/50 backdrop-blur-md shadow-sm">
-                    <Logo size={22} />
+            <div className={cn('mb-8 flex min-w-0 items-center gap-3', !sidebarExpanded && 'flex-col justify-center')}>
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border-none bg-primary/10 text-primary shadow-sm">
+                    <Logo size={24} />
                 </div>
                 {sidebarExpanded ? (
                     <div className="min-w-0">
-                        <div className="truncate text-sm font-extrabold tracking-wider uppercase text-sidebar-foreground">{t('brand')}</div>
-                        <div className="truncate text-[11px] font-semibold text-sidebar-foreground/50">{t('shellHint')}</div>
+                        <div className="truncate text-[15px] font-black tracking-widest uppercase text-sidebar-foreground">{t('brand')}</div>
+                        <div className="truncate text-xs font-bold text-sidebar-foreground/60">{t('shellHint')}</div>
                     </div>
                 ) : null}
             </div>

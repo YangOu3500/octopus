@@ -55,21 +55,21 @@ function SummaryCard({
         <article
             className={cn(
                 'clay-card flex min-h-[10.5rem] flex-col px-5 py-4',
-                accent && 'bg-primary/5'
+                accent && 'bg-primary text-white shadow-clay-btn border-none ring-0'
             )}
         >
             <div className="flex items-start justify-between gap-3">
                 <div className={cn(
                     'flex size-11 items-center justify-center rounded-[16px]',
-                    accent ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-background/80 text-primary shadow-sm'
+                    accent ? 'bg-white/20 text-white shadow-sm' : 'bg-background/80 text-primary shadow-sm'
                 )}>
                     <Icon className="size-5" />
                 </div>
                 {badge ? <div className="shrink-0">{badge}</div> : null}
             </div>
-            <div className="mt-3 text-[13px] font-bold tracking-wide text-muted-foreground uppercase">{title}</div>
-            <div className="mt-1 text-3xl font-black leading-none tabular-nums text-foreground tracking-tight drop-shadow-sm">{value}</div>
-            <div className="mt-1.5 line-clamp-1 text-[13px] text-muted-foreground/80 font-semibold">{detail}</div>
+            <div className={cn("mt-3 text-[13px] font-black tracking-wide uppercase", accent ? "text-white/80" : "text-muted-foreground")}>{title}</div>
+            <div className={cn("mt-1 text-3xl font-black leading-none tabular-nums tracking-tight drop-shadow-sm", accent ? "text-white" : "text-primary")}>{value}</div>
+            <div className={cn("mt-1.5 line-clamp-1 text-[13px] font-semibold", accent ? "text-white/70" : "text-muted-foreground/80")}>{detail}</div>
             {extra ? <div className="mt-auto pt-3">{extra}</div> : null}
         </article>
     );
@@ -92,22 +92,22 @@ function InsightTile({
         <div
             className={cn(
                 'clay-card flex items-center gap-4 px-5 py-4',
-                tone === 'warning' ? 'bg-amber-500/5' : ''
+                tone === 'warning' ? 'bg-amber-50' : 'bg-background'
             )}
         >
             <div className={cn(
                 'flex size-11 shrink-0 items-center justify-center rounded-[16px]',
-                tone === 'warning' ? 'bg-amber-500 text-white shadow-sm' : 'bg-background/80 text-muted-foreground shadow-sm'
+                tone === 'warning' ? 'bg-amber-500 text-white shadow-sm' : 'bg-primary/10 text-primary shadow-sm'
             )}>
                 <Icon className="size-5" />
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold tabular-nums text-foreground/90">{value}</span>
+                    <span className={cn("text-xl font-black tabular-nums tracking-tight", tone === 'warning' ? 'text-amber-600' : 'text-primary')}>{value}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[13px] font-semibold text-muted-foreground">{label}</span>
-                    <span className="text-xs text-muted-foreground/70 truncate">&middot; {detail}</span>
+                    <span className="text-[13px] font-bold text-muted-foreground">{label}</span>
+                    <span className="text-[11px] font-semibold text-muted-foreground/70 truncate">&middot; {detail}</span>
                 </div>
             </div>
         </div>
