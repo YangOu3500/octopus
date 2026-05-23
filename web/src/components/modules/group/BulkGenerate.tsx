@@ -370,6 +370,7 @@ export function GroupBulkGenerateDialog() {
                     <DialogDescription>{bulkT('description')}</DialogDescription>
                 </DialogHeader>
 
+                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                 <div className="grid shrink-0 gap-3 border-b border-border bg-muted/20 px-5 py-4 md:grid-cols-[1fr_auto]">
                     <div className="flex flex-wrap items-center gap-2">
                         {(['all', 'selected'] as const).map((value) => (
@@ -512,7 +513,7 @@ export function GroupBulkGenerateDialog() {
                     </div>
                 </div>
 
-                <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
+                <div className="flex shrink-0 flex-col px-5 py-4 min-h-[300px]">
                     <div className="mb-3 flex flex-wrap items-center gap-2">
                         <div className="relative min-w-48 flex-1">
                             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -572,7 +573,7 @@ export function GroupBulkGenerateDialog() {
                         )}
                     </div>
 
-                    <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border/60 bg-muted/20 p-2">
+                    <div className="mt-3 flex-1 rounded-xl border border-border/60 bg-muted/20 p-2">
                         {preview.isPending ? (
                             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                                 <Loader2 className="mr-2 size-4 animate-spin" />
@@ -658,6 +659,7 @@ export function GroupBulkGenerateDialog() {
                             </div>
                         )}
                     </div>
+                </div>
                 </div>
 
                 <DialogFooter className="shrink-0 border-t border-border px-5 py-4">
