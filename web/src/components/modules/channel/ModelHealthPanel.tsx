@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
 
 const HEALTH_ROW_GRID_COLUMNS = 'minmax(10rem,1.12fr) minmax(7rem,0.76fr) minmax(7.5rem,0.84fr) minmax(7rem,0.8fr) minmax(7rem,0.78fr) minmax(10rem,0.92fr)';
 const QUOTA_FILTER_STATUSES = [
@@ -403,14 +403,16 @@ function ChartWorkbenchCard({
     caption,
     children,
     empty,
+    className,
 }: {
     title: string;
     caption?: string;
     children: ReactNode;
     empty?: boolean;
+    className?: string;
 }) {
     return (
-        <div className="rounded-lg border border-border/70 bg-background/50 p-2.5">
+        <div className={cn("rounded-lg border border-border/70 bg-background/50 p-2.5", className)}>
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-foreground">{title}</div>
@@ -801,11 +803,12 @@ export function ChannelModelHealthPanel() {
                     </div>
                 </div>
 
-                <div className="mt-3.5 grid gap-3.5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)] 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.55fr)]">
+                <div className="mt-3.5 grid gap-3.5 lg:grid-cols-3">
                     <ChartWorkbenchCard
                         title={t('stats.healthScore')}
                         caption={t('insights.healthView')}
                         empty={!hasHealthBuckets}
+                        className="lg:col-span-2"
                     >
                         {hasHealthBuckets ? (
                             <ChartContainer config={healthChartConfig} className="h-44 w-full">
@@ -820,7 +823,7 @@ export function ChannelModelHealthPanel() {
                         ) : t('empty')}
                     </ChartWorkbenchCard>
 
-                    <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                    <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 lg:col-span-1">
                         <ChartWorkbenchCard
                             title={t('insights.worstHealth')}
                             caption={worstHealthRow ? `${worstHealthRow.channel_name || `#${worstHealthRow.channel_id}`} / ${worstHealthRow.model_name}` : undefined}
@@ -859,11 +862,12 @@ export function ChannelModelHealthPanel() {
                     </div>
                 </div>
 
-                <div className="mt-2.5 grid gap-2.5 xl:grid-cols-[0.92fr_1.08fr]">
+                <div className="mt-2.5 grid gap-2.5 lg:grid-cols-3">
                     <ChartWorkbenchCard
                         title={t('stats.rows')}
                         caption={rangeLabel}
                         empty={!hasStatusData}
+                        className="lg:col-span-2"
                     >
                         {hasStatusData ? (
                             <ChartContainer config={statusChartConfig} className="h-36 w-full">
@@ -897,24 +901,33 @@ export function ChannelModelHealthPanel() {
 
                         <div className="rounded-lg border border-border/70 bg-background/50 p-2.5">
                             <div className="text-xs text-muted-foreground">{t('insights.healthView')}</div>
-                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                                <div className="rounded-md bg-card px-2.5 py-2">
-                                    <div className="text-[11px] text-muted-foreground">{t('insights.blockedRows')}</div>
-                                    <div className="mt-1 text-sm font-medium">{blockedRows.length}</div>
+                            {hasStatusData ? (
+                                <div className="mt-2 h-[120px]">
+                                    <ChartContainer config={statusChartConfig} className="h-full w-full">
+                                        <PieChart>
+                                            <Pie
+                                                data={statusChartData.filter((d) => d.count > 0)}
+                                                dataKey="count"
+                                                nameKey="label"
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={25}
+                                                outerRadius={45}
+                                                paddingAngle={2}
+                                            >
+                                                {statusChartData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={`var(--chart-${(index % 5) + 1})`} />
+                                                ))}
+                                            </Pie>
+                                            <ChartTooltip content={<ChartTooltipContent />} />
+                                        </PieChart>
+                                    </ChartContainer>
                                 </div>
-                                <div className="rounded-md bg-card px-2.5 py-2">
-                                    <div className="text-[11px] text-muted-foreground">{t('insights.coolingRows')}</div>
-                                    <div className="mt-1 text-sm font-medium">{summary?.cooling_down_count ?? 0}</div>
+                            ) : (
+                                <div className="mt-2 flex h-[120px] items-center justify-center rounded-md bg-card/50 text-xs text-muted-foreground">
+                                    {t('empty')}
                                 </div>
-                                <div className="rounded-md bg-card px-2.5 py-2">
-                                    <div className="text-[11px] text-muted-foreground">{t('insights.avgLatency')}</div>
-                                    <div className="mt-1 text-sm font-medium">{formatMS(avgRowLatency)}</div>
-                                </div>
-                                <div className="rounded-md bg-card px-2.5 py-2">
-                                    <div className="text-[11px] text-muted-foreground">{t('insights.estimatedCost')}</div>
-                                    <div className="mt-1 text-sm font-medium">{formatCost(summary?.estimated_cost)}</div>
-                                </div>
-                            </div>
+                            )}
                             {worstHealthRow ? (
                                 <div className="mt-2.5 rounded-md border border-border/70 bg-card px-2.5 py-2">
                                     <div className="text-[11px] text-muted-foreground">{t('insights.worstHealth')}</div>

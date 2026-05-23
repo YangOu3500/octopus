@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArchiveRestore, Bot, Settings2, type LucideIcon } from 'lucide-react';
+import { ArchiveRestore, Bot, Settings2, ShieldCheck, Database, Key, Network, Palette, Info, type LucideIcon } from 'lucide-react';
 import { PageWrapper } from '@/components/common/PageWrapper';
 import { SettingAppearance } from './Appearance';
 import { SettingSystem } from './System';
@@ -20,7 +20,7 @@ import { SettingFusionCapabilities } from './FusionCapabilities';
 import { SettingModelAssociation } from './ModelAssociation';
 import { cn } from '@/lib/utils';
 
-type TabKey = 'core' | 'routing' | 'data';
+type TabKey = 'general' | 'brand' | 'routing' | 'models' | 'storage' | 'backup';
 
 function SettingGroup({ children }: { children: ReactNode }) {
     return (
@@ -37,12 +37,15 @@ function SettingGroup({ children }: { children: ReactNode }) {
 }
 
 export function Setting() {
-    const [activeTab, setActiveTab] = useState<TabKey>('core');
+    const [activeTab, setActiveTab] = useState<TabKey>('general');
 
     const tabs: { key: TabKey; label: string; icon: LucideIcon }[] = [
-        { key: 'core', label: '核心配置', icon: Settings2 },
-        { key: 'routing', label: '调度运行', icon: Bot },
-        { key: 'data', label: '数据维护', icon: ArchiveRestore },
+        { key: 'general', label: '常规', icon: Settings2 },
+        { key: 'brand', label: '品牌', icon: Palette },
+        { key: 'routing', label: '调度与重试', icon: Network },
+        { key: 'models', label: '模型与密钥', icon: Key },
+        { key: 'storage', label: '存储与日志', icon: Database },
+        { key: 'backup', label: '备份恢复', icon: ArchiveRestore },
     ];
 
     return (
@@ -50,7 +53,7 @@ export function Setting() {
             <PageWrapper childLayout={false} className="pb-24 md:pb-8 max-w-5xl mx-auto space-y-6">
                 
                 {/* Horizontal Tabs Header */}
-                <div className="flex items-center gap-2 p-1 rounded-2xl bg-muted/50 border border-border/50 shadow-sm backdrop-blur-xl w-fit">
+                <div className="flex flex-wrap items-center gap-2 p-1 rounded-2xl bg-muted/50 border border-border/50 shadow-sm backdrop-blur-xl w-fit">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab.key;
                         return (
@@ -83,11 +86,16 @@ export function Setting() {
                 {/* Tab Content */}
                 <div className="pt-2">
                     <AnimatePresence mode="wait">
-                        {activeTab === 'core' && (
-                            <SettingGroup key="core">
+                        {activeTab === 'general' && (
+                            <SettingGroup key="general">
                                 <SettingSystem />
                                 <SettingAppearance />
                                 <SettingAccount />
+                            </SettingGroup>
+                        )}
+                        {activeTab === 'brand' && (
+                            <SettingGroup key="brand">
+                                <SettingInfo />
                             </SettingGroup>
                         )}
                         {activeTab === 'routing' && (
@@ -97,16 +105,23 @@ export function Setting() {
                                 <SettingCircuitBreaker />
                                 <SettingModelAssociation />
                                 <SettingFusionCapabilities />
+                            </SettingGroup>
+                        )}
+                        {activeTab === 'models' && (
+                            <SettingGroup key="models">
                                 <SettingAPIKey />
                                 <SettingLLMPrice />
                                 <SettingLLMSync />
                             </SettingGroup>
                         )}
-                        {activeTab === 'data' && (
-                            <SettingGroup key="data">
+                        {activeTab === 'storage' && (
+                            <SettingGroup key="storage">
                                 <SettingLog />
+                            </SettingGroup>
+                        )}
+                        {activeTab === 'backup' && (
+                            <SettingGroup key="backup">
                                 <SettingBackup />
-                                <SettingInfo />
                             </SettingGroup>
                         )}
                     </AnimatePresence>

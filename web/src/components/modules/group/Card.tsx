@@ -461,19 +461,21 @@ export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode
 
             <GroupHealthBadge groupId={group.id} />
 
-            <section className="rounded-xl border border-border/50 bg-muted/30 overflow-hidden relative h-101">
-                <MemberList
-                    members={renderedMembers}
-                    onReorder={setMembers}
-                    onRemove={handleRemoveMember}
-                    onWeightChange={handleWeightChange}
-                    onDragStart={handleDragStart}
-                    onDrop={handleDropReorder}
-                    onDragFinish={handleDragFinish}
-                    autoScrollOnAdd={false}
-                    showWeight={group.mode === GroupMode.Weighted}
-                    layoutScope={`card-${group.id ?? 'unknown'}`}
-                />
+            <section className="rounded-xl border border-border/50 bg-muted/30 overflow-hidden relative max-h-[300px] flex flex-col">
+                <div className="flex-1 overflow-y-auto">
+                    <MemberList
+                        members={renderedMembers}
+                        onReorder={setMembers}
+                        onRemove={handleRemoveMember}
+                        onWeightChange={handleWeightChange}
+                        onDragStart={handleDragStart}
+                        onDrop={handleDropReorder}
+                        onDragFinish={handleDragFinish}
+                        autoScrollOnAdd={false}
+                        showWeight={group.mode === GroupMode.Weighted}
+                        layoutScope={`card-${group.id ?? 'unknown'}`}
+                    />
+                </div>
             </section>
         </article >
     );

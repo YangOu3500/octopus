@@ -1,8 +1,10 @@
 'use client'
 
-import { motion } from 'motion/react'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
+import { PanelLeftClose, PanelLeftOpen, Sun, Moon, Languages, Monitor } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useTheme } from 'next-themes'
+import { useSettingStore, type Locale } from '@/stores/setting'
 import Logo from '@/components/modules/logo'
 import { cn } from '@/lib/utils'
 import { useNavStore, type NavItem } from './nav-store'
@@ -79,46 +81,77 @@ function DesktopSidebar() {
     const sidebarExpanded = useNavStore((state) => state.sidebarExpanded)
     const toggleSidebarExpanded = useNavStore((state) => state.toggleSidebarExpanded)
     const ToggleIcon = sidebarExpanded ? PanelLeftClose : PanelLeftOpen
+    const { theme, setTheme } = useTheme()
+    const { locale, setLocale } = useSettingStore()
+
+    const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
+    const toggleLocale = () => setLocale(locale === 'en' ? 'zh_hans' : 'en')
 
     return (
         <motion.aside
             aria-label="Main Navigation"
             className={cn(
                 'hidden md:flex md:sticky md:top-3 md:h-[calc(100dvh-1.5rem)] md:flex-col md:overflow-hidden md:rounded-2xl md:border md:border-sidebar-border/40 md:bg-sidebar/35 md:p-3 md:text-sidebar-foreground md:shadow-[0_8px_32px_rgba(0,0,0,0.15)] md:backdrop-blur-xl transition-[width] duration-300',
-                sidebarExpanded ? 'md:w-[15rem]' : 'md:w-[5.25rem]'
+                sidebarExpanded ? 'md:w-[17rem]' : 'md:w-[5.5rem]'
             )}
             variants={ENTRANCE_VARIANTS.navbar}
             initial="initial"
             animate="animate"
         >
-            <div className={cn('mb-4 flex', sidebarExpanded ? 'items-center justify-between gap-2' : 'flex-col items-center gap-3')}>
-                <div className={cn('flex min-w-0 items-center gap-2.5', !sidebarExpanded && 'flex-col justify-center')}>
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-sidebar-border/40 bg-background/20 backdrop-blur-md">
-                        <Logo size={20} />
-                    </div>
-                    {sidebarExpanded ? (
-                        <div className="min-w-0">
-                            <div className="truncate text-xs font-bold tracking-wider uppercase text-sidebar-foreground">{t('brand')}</div>
-                            <div className="truncate text-[10px] font-semibold text-sidebar-foreground/50">{t('shellHint')}</div>
-                        </div>
-                    ) : null}
+            <div className={cn('mb-6 flex min-w-0 items-center gap-2.5', !sidebarExpanded && 'flex-col justify-center')}>
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border/40 bg-background/50 backdrop-blur-md shadow-sm">
+                    <Logo size={22} />
                 </div>
-
-                <button
-                    type="button"
-                    onClick={toggleSidebarExpanded}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-sidebar-border/50 bg-background/30 text-sidebar-foreground/75 transition-all duration-200 hover:border-primary/30 hover:bg-background/80 hover:text-foreground"
-                    title={sidebarExpanded ? t('collapse') : t('expand')}
-                    aria-label={sidebarExpanded ? t('collapse') : t('expand')}
-                >
-                    <ToggleIcon className="size-3.5" />
-                </button>
+                {sidebarExpanded ? (
+                    <div className="min-w-0">
+                        <div className="truncate text-sm font-extrabold tracking-wider uppercase text-sidebar-foreground">{t('brand')}</div>
+                        <div className="truncate text-[11px] font-semibold text-sidebar-foreground/50">{t('shellHint')}</div>
+                    </div>
+                ) : null}
             </div>
 
-            <div className="flex-1 space-y-1 overflow-y-auto pr-0.5">
+            <div className="flex-1 space-y-1.5 overflow-y-auto pr-0.5 scrollbar-thin">
                 {ROUTES.map((route) => (
                     <DesktopNavItem key={route.id} item={route.id as NavItem} expanded={sidebarExpanded} />
                 ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-sidebar-border/50 flex flex-col gap-2">
+                <div className={cn("flex", sidebarExpanded ? "flex-row items-center gap-2" : "flex-col items-center gap-2")}>
+                    <button
+                        type="button"
+                        onClick={toggleTheme}
+                        className={cn(
+                            "flex shrink-0 items-center justify-center rounded-xl border border-sidebar-border/50 bg-background/30 text-sidebar-foreground/75 transition-all duration-200 hover:border-primary/30 hover:bg-background/80 hover:text-foreground",
+                            sidebarExpanded ? "h-10 flex-1" : "size-10"
+                        )}
+                        title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        {theme === 'dark' ? <Moon className="size-4" /> : <Sun className="size-4" />}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={toggleLocale}
+                        className={cn(
+                            "flex shrink-0 items-center justify-center rounded-xl border border-sidebar-border/50 bg-background/30 text-sidebar-foreground/75 transition-all duration-200 hover:border-primary/30 hover:bg-background/80 hover:text-foreground",
+                            sidebarExpanded ? "h-10 flex-1" : "size-10"
+                        )}
+                        title="Switch Language"
+                    >
+                        <Languages className="size-4" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={toggleSidebarExpanded}
+                        className={cn(
+                            "flex shrink-0 items-center justify-center rounded-xl border border-sidebar-border/50 bg-background/30 text-sidebar-foreground/75 transition-all duration-200 hover:border-primary/30 hover:bg-background/80 hover:text-foreground",
+                            sidebarExpanded ? "h-10 px-3 flex-[2] gap-2" : "size-10"
+                        )}
+                        title={sidebarExpanded ? t('collapse') : t('expand')}
+                    >
+                        <ToggleIcon className="size-4" />
+                        {sidebarExpanded && <span className="text-xs font-semibold">{t('collapse')}</span>}
+                    </button>
+                </div>
             </div>
         </motion.aside>
     )

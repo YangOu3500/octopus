@@ -430,9 +430,9 @@ function AuditList({
     total: number;
 }) {
     return (
-        <div className="min-w-0">
-            <div className="mb-2 text-xs font-medium text-muted-foreground">{title}</div>
-            <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="min-w-0 flex flex-col h-full">
+            <div className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</div>
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar flex-1">
                 {items.length === 0 ? (
                     <div className="text-xs text-muted-foreground">-</div>
                 ) : items.map((item) => {
@@ -440,11 +440,11 @@ function AuditList({
                     return (
                         <div key={item.key} className="space-y-1">
                             <div className="flex min-w-0 items-center gap-2 text-xs">
-                                <span className="min-w-0 flex-1 truncate" title={item.label}>{item.label}</span>
-                                <span className="font-mono tabular-nums text-muted-foreground">{item.count} / {percent}%</span>
+                                <span className="min-w-0 flex-1 truncate font-medium text-foreground/90" title={item.label}>{item.label}</span>
+                                <span className="font-mono tabular-nums text-muted-foreground">{item.count} <span className="opacity-50">/ {percent}%</span></span>
                             </div>
-                            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                                <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(4, percent)}%` }} />
+                            <div className="h-1.5 overflow-hidden rounded-full bg-muted/50 border border-border/20">
+                                <div className="h-full rounded-full bg-primary/80" style={{ width: `${Math.max(4, percent)}%` }} />
                             </div>
                         </div>
                     );
@@ -754,8 +754,8 @@ function TraceTable({
                             <tr
                                 key={trace.trace_id || trace.id}
                                 className={cn(
-                                    'cursor-pointer transition-colors hover:bg-primary/5',
-                                    active && 'bg-primary/10',
+                                    'cursor-pointer transition-colors hover:bg-muted/50',
+                                    active && 'bg-primary/5',
                                 )}
                                 onClick={() => onSelect(trace.trace_id)}
                             >
@@ -764,46 +764,46 @@ function TraceTable({
                                         type="checkbox"
                                         checked={compared}
                                         aria-label={t('compare.selectTrace')}
-                                        className="size-4 rounded border-border accent-primary"
+                                        className="size-4 rounded border-border accent-primary/80"
                                         onChange={(event) => onToggleCompare(trace.trace_id, event.target.checked)}
                                         onClick={(event) => event.stopPropagation()}
                                     />
                                 </td>
                                 <td className="max-w-[200px] px-4 py-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="truncate font-semibold text-foreground" title={trace.client_model}>{trace.client_model || '-'}</div>
-                                        {trace.request_stream && <Badge variant="outline" className="h-4.5 rounded px-1.5 text-[10px] bg-blue-500/10 text-blue-500 border-none">{t('stream.stream')}</Badge>}
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="truncate font-medium text-foreground/90" title={trace.client_model}>{trace.client_model || '-'}</span>
+                                        {trace.request_stream && <Badge variant="outline" className="h-4.5 rounded-full px-1.5 text-[9px] bg-blue-500/10 text-blue-500 border-none uppercase tracking-wide">{t('stream.stream')}</Badge>}
                                     </div>
-                                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/80 font-mono">
                                         <span className="truncate" title={trace.trace_id}>{trace.trace_id.split('-')[0]}...</span>
-                                        <span className="opacity-50">|</span>
+                                        <span className="text-border">•</span>
                                         <span>{sourceLabel(trace.request_source)}</span>
                                     </div>
                                 </td>
                                 <td className="px-4 py-3">
-                                    <Badge variant="outline" className={cn('h-5.5 rounded-md px-2 text-[11px] font-medium border-none', statusClass(trace.final_status))}>
+                                    <Badge variant="outline" className={cn('h-5.5 rounded-md px-2 text-[10px] font-semibold tracking-wide border-none', statusClass(trace.final_status))}>
                                         {trace.final_status || '-'}
                                     </Badge>
                                 </td>
                                 <td className="max-w-[200px] px-4 py-3">
-                                    <div className="truncate font-medium text-foreground" title={trace.final_upstream_model || undefined}>
+                                    <div className="truncate font-medium text-foreground/90" title={trace.final_upstream_model || undefined}>
                                         {trace.final_upstream_model || '-'}
                                     </div>
-                                    <div className="mt-1 text-xs text-muted-foreground">
+                                    <div className="mt-1 text-[11px] text-muted-foreground/80">
                                         {t('ids.channelSite', { channel: trace.final_channel_id || 0, site: trace.final_site_id || 0 })}
-                                        {(trace.attempts_count || 0) > 1 && <span className="ml-2 text-amber-500">({trace.attempts_count} {t('table.attempts')})</span>}
+                                        {(trace.attempts_count || 0) > 1 && <span className="ml-1.5 text-amber-500 font-medium">({trace.attempts_count}x)</span>}
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 font-mono text-xs tabular-nums text-foreground/80">
+                                <td className="px-4 py-3 font-mono text-[11px] tabular-nums text-muted-foreground">
                                     {formatDuration(trace.total_latency_ms)}
                                 </td>
-                                <td className="px-4 py-3 font-mono text-xs tabular-nums text-foreground/80">
+                                <td className="px-4 py-3 font-mono text-[11px] tabular-nums text-muted-foreground">
                                     {formatTokens(trace)}
                                 </td>
-                                <td className="px-4 py-3 font-mono text-xs tabular-nums text-foreground/80">
+                                <td className="px-4 py-3 font-mono text-[11px] tabular-nums text-muted-foreground">
                                     {formatCost(trace.total_attempt_cost || trace.estimated_cost)}
                                 </td>
-                                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                                <td className="px-4 py-3 text-[11px] text-muted-foreground/80 whitespace-nowrap">
                                     {formatTime(trace.created_at)}
                                 </td>
                             </tr>

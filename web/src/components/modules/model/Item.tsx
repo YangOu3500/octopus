@@ -186,9 +186,9 @@ export const ModelItem = memo(function ModelItem({ model, layout = 'grid' }: Mod
                 (isEditOpen || confirmDelete) && 'z-50'
             )}
         >
-            <ModelAvatar size={52} />
+            <ModelAvatar size={isListLayout ? 36 : 40} />
 
-            <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
+            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
                 <div className="flex min-w-0 items-start justify-between gap-3">
                     <Tooltip side="top" sideOffset={10} align="start">
                         <TooltipTrigger className='min-w-0 text-left text-base font-semibold text-card-foreground leading-tight truncate'>
