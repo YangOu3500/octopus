@@ -78,19 +78,19 @@ export function Home() {
     }), [observability, t]);
 
     return (
-        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-4 pb-24 md:pb-6 px-2">
-            <section className="space-y-3">
+        <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-8 pb-24 md:pb-8 px-4">
+            <section className="space-y-8">
                 <DashboardSummaryCards />
-                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)] items-start">
+                <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)] items-start">
                     <StatsChart />
-                    <div className="space-y-3 w-full">
+                    <div className="space-y-6 w-full">
                         <GatewayOperationsPanel />
                         <GroupHealthSummaryStrip />
                     </div>
                 </div>
             </section>
 
-            <div className="space-y-3">
+            <div className="space-y-8">
                 <SectionCard
                     icon={<Radar className="size-4.5" />}
                     title={t('workbench.title')}
@@ -100,7 +100,7 @@ export function Home() {
                     <ObservabilityPanel />
                 </SectionCard>
 
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                     <SectionCard
                         icon={<BarChart3 className="size-4.5" />}
                         title={t('analytics.title')}

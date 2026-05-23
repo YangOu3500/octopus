@@ -53,14 +53,14 @@ function MetricTile({
 }) {
     return (
         <div className={cn(
-            'clay-pressed rounded-[14px] px-4 py-3 transition-all duration-200',
+            'bg-background/30 border border-border/20 rounded-[16px] px-4 py-4 transition-all duration-200',
             tone === 'success' && 'text-primary',
             tone === 'warning' && 'text-amber-500',
             tone === 'danger' && 'text-destructive',
         )}>
             <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</div>
-            <div className="mt-1 text-2xl font-bold tabular-nums text-foreground/90">{value}</div>
-            <div className="mt-1 text-[11px] font-medium text-muted-foreground/80">{sub}</div>
+            <div className="mt-1 text-2xl font-black tabular-nums text-foreground drop-shadow-sm">{value}</div>
+            <div className="mt-1 text-[11px] font-semibold text-muted-foreground/80">{sub}</div>
         </div>
     );
 }
@@ -69,8 +69,8 @@ function BreakdownList({ title, items }: { title: string; items: StatsObservabil
     const t = useTranslations('home.observability');
 
     return (
-        <div className="clay-pressed rounded-2xl p-4">
-            <div className="mb-3 flex items-center gap-2.5 text-[13px] font-bold text-foreground/80">
+        <div className="bg-background/30 border border-border/20 rounded-[20px] p-4">
+            <div className="mb-3 flex items-center gap-2.5 text-[13px] font-black text-foreground">
                 <Server className="size-4 text-muted-foreground" />
                 <span>{title}</span>
             </div>
@@ -78,10 +78,10 @@ function BreakdownList({ title, items }: { title: string; items: StatsObservabil
                 {items.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{t('noData')}</div>
                 ) : items.map((item) => (
-                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-3 rounded-[12px] px-3 py-2.5 transition-all duration-200 hover:bg-muted/30">
+                    <div key={`${item.id ?? item.name}-${item.name}`} className="grid grid-cols-[1fr_auto] gap-3 rounded-[12px] px-3 py-2.5 transition-all duration-200 hover:bg-background/50">
                         <div className="min-w-0">
-                            <div className="truncate text-[13px] font-bold text-foreground/90" title={item.name}>{item.name || '—'}</div>
-                            <div className="mt-0.5 text-[11px] font-medium text-muted-foreground/80">
+                            <div className="truncate text-[13px] font-bold text-foreground" title={item.name}>{item.name || '—'}</div>
+                            <div className="mt-0.5 text-[11px] font-semibold text-muted-foreground/80">
                                 {t('breakdownMeta', {
                                     requests: item.requests,
                                     failures: item.failures,
@@ -104,8 +104,8 @@ function RecentFailureList({ items }: { items: StatsObservabilityFailure[] }) {
     const t = useTranslations('home.observability');
 
     return (
-        <div className="clay-pressed rounded-2xl p-4">
-            <div className="mb-3 flex items-center gap-2.5 text-[13px] font-bold text-foreground/80">
+        <div className="bg-background/30 border border-border/20 rounded-[20px] p-4">
+            <div className="mb-3 flex items-center gap-2.5 text-[13px] font-black text-foreground">
                 <AlertTriangle className="size-4 text-destructive" />
                 <span>{t('recentFailures')}</span>
             </div>
@@ -113,12 +113,12 @@ function RecentFailureList({ items }: { items: StatsObservabilityFailure[] }) {
                 {items.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{t('noFailures')}</div>
                 ) : items.map((item) => (
-                    <div key={`${item.id}-${item.channel_id}-${item.failure_reason}`} className="rounded-[12px] px-3 py-2.5 transition-all duration-200 hover:bg-muted/30">
+                    <div key={`${item.id}-${item.channel_id}-${item.failure_reason}`} className="rounded-[12px] px-3 py-2.5 transition-all duration-200 hover:bg-background/50">
                         <div className="flex min-w-0 items-center gap-2">
-                            <Badge variant="outline" className="clay-pressed border-none h-5 shrink-0 px-1.5 text-[10px]">
+                            <Badge variant="outline" className="bg-background/40 border-none h-5 shrink-0 px-1.5 text-[10px]">
                                 {item.http_status || '—'}
                             </Badge>
-                            <span className="truncate text-[13px] font-bold text-foreground/90" title={item.request_model}>
+                            <span className="truncate text-[13px] font-bold text-foreground" title={item.request_model}>
                                 {item.request_model || '—'}
                             </span>
                             <span className="ml-auto shrink-0 text-[11px] font-medium text-muted-foreground tabular-nums">

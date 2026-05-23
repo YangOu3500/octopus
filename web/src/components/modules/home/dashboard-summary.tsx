@@ -60,16 +60,16 @@ function SummaryCard({
         >
             <div className="flex items-start justify-between gap-3">
                 <div className={cn(
-                    'flex size-11 items-center justify-center rounded-[14px]',
-                    accent ? 'clay-pressed text-primary' : 'clay-pressed text-primary'
+                    'flex size-11 items-center justify-center rounded-[16px]',
+                    accent ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-background/80 text-primary shadow-sm'
                 )}>
                     <Icon className="size-5" />
                 </div>
                 {badge ? <div className="shrink-0">{badge}</div> : null}
             </div>
-            <div className="mt-3 text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">{title}</div>
-            <div className="mt-1 text-3xl font-bold leading-none tabular-nums text-foreground/90 tracking-tight">{value}</div>
-            <div className="mt-1.5 line-clamp-1 text-[13px] text-muted-foreground/80 font-medium">{detail}</div>
+            <div className="mt-3 text-[13px] font-bold tracking-wide text-muted-foreground uppercase">{title}</div>
+            <div className="mt-1 text-3xl font-black leading-none tabular-nums text-foreground tracking-tight drop-shadow-sm">{value}</div>
+            <div className="mt-1.5 line-clamp-1 text-[13px] text-muted-foreground/80 font-semibold">{detail}</div>
             {extra ? <div className="mt-auto pt-3">{extra}</div> : null}
         </article>
     );
@@ -96,8 +96,8 @@ function InsightTile({
             )}
         >
             <div className={cn(
-                'flex size-11 shrink-0 items-center justify-center rounded-[14px]',
-                tone === 'warning' ? 'clay-pressed text-amber-500' : 'clay-pressed text-muted-foreground'
+                'flex size-11 shrink-0 items-center justify-center rounded-[16px]',
+                tone === 'warning' ? 'bg-amber-500 text-white shadow-sm' : 'bg-background/80 text-muted-foreground shadow-sm'
             )}>
                 <Icon className="size-5" />
             </div>
@@ -146,8 +146,8 @@ export function DashboardSummaryCards() {
     const ttfbFormatted = compactTime(observability?.avg_ttfb_ms);
 
     return (
-        <section className="space-y-2">
-            <div className="grid auto-rows-fr grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="space-y-6">
+            <div className="grid auto-rows-fr grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard
                     icon={BarChart3}
                     title={t('totalRequests')}
@@ -169,13 +169,13 @@ export function DashboardSummaryCards() {
                     )}
                     extra={(
                         <div className="grid grid-cols-2 gap-3 text-xs tabular-nums">
-                            <div className="clay-pressed rounded-[14px] px-3 py-2.5">
-                                <div className="text-muted-foreground font-semibold">{t('todayRequests')}</div>
-                                <div className="mt-1 font-bold text-foreground/90">{compactCount(todayRequests)}</div>
+                            <div className="bg-background/40 rounded-[16px] px-3 py-2.5">
+                                <div className="text-muted-foreground font-bold">{t('todayRequests')}</div>
+                                <div className="mt-1 font-black text-foreground text-sm">{compactCount(todayRequests)}</div>
                             </div>
-                            <div className="clay-pressed rounded-[14px] px-3 py-2.5">
-                                <div className="text-muted-foreground font-semibold">{t('weekTotal')}</div>
-                                <div className="mt-1 font-bold text-foreground/90">{compactCount(dailyWindows.last7Requests)}</div>
+                            <div className="bg-background/40 rounded-[16px] px-3 py-2.5">
+                                <div className="text-muted-foreground font-bold">{t('weekTotal')}</div>
+                                <div className="mt-1 font-black text-foreground text-sm">{compactCount(dailyWindows.last7Requests)}</div>
                             </div>
                         </div>
                     )}
@@ -209,18 +209,18 @@ export function DashboardSummaryCards() {
                     })}
                     badge={<Badge variant="outline" className="rounded-md px-2 text-[11px]">{observabilityT('range24h')}</Badge>}
                     extra={(
-                        <div className="grid grid-cols-3 gap-3 text-[11px] tabular-nums">
-                            <div className="clay-pressed rounded-[14px] px-2.5 py-2.5">
-                                <div className="text-muted-foreground font-semibold">{observabilityT('input')}</div>
-                                <div className="mt-1 font-bold text-foreground/90">{compactCount(observability?.input_tokens)}</div>
+                        <div className="grid grid-cols-3 gap-2 text-[11px] tabular-nums">
+                            <div className="bg-background/40 rounded-[12px] px-2.5 py-2.5">
+                                <div className="text-muted-foreground font-bold">{observabilityT('input')}</div>
+                                <div className="mt-1 font-black text-foreground">{compactCount(observability?.input_tokens)}</div>
                             </div>
-                            <div className="clay-pressed rounded-[14px] px-2.5 py-2.5">
-                                <div className="text-muted-foreground font-semibold">{observabilityT('output')}</div>
-                                <div className="mt-1 font-bold text-foreground/90">{compactCount(observability?.output_tokens)}</div>
+                            <div className="bg-background/40 rounded-[12px] px-2.5 py-2.5">
+                                <div className="text-muted-foreground font-bold">{observabilityT('output')}</div>
+                                <div className="mt-1 font-black text-foreground">{compactCount(observability?.output_tokens)}</div>
                             </div>
-                            <div className="clay-pressed rounded-[14px] px-2.5 py-2.5">
-                                <div className="text-muted-foreground font-semibold">{observabilityT('cache')}</div>
-                                <div className="mt-1 font-bold text-foreground/90">{compactCount(observability?.cache_tokens)}</div>
+                            <div className="bg-background/40 rounded-[12px] px-2.5 py-2.5">
+                                <div className="text-muted-foreground font-bold">{observabilityT('cache')}</div>
+                                <div className="mt-1 font-black text-foreground">{compactCount(observability?.cache_tokens)}</div>
                             </div>
                         </div>
                     )}
@@ -234,20 +234,20 @@ export function DashboardSummaryCards() {
                     accent
                     extra={(
                         <div className="grid grid-cols-2 gap-3 text-xs tabular-nums">
-                            <div className="clay-pressed rounded-[14px] text-primary px-3 py-2.5">
-                                <div className="font-semibold text-muted-foreground">{t('monthTotal')}</div>
-                                <div className="mt-1 font-bold">{compactCount(dailyWindows.last30Requests)}</div>
+                            <div className="bg-background/40 rounded-[16px] text-primary px-3 py-2.5">
+                                <div className="font-bold text-muted-foreground">{t('monthTotal')}</div>
+                                <div className="mt-1 font-black text-sm">{compactCount(dailyWindows.last30Requests)}</div>
                             </div>
-                            <div className="clay-pressed rounded-[14px] text-primary px-3 py-2.5">
-                                <div className="font-semibold text-muted-foreground">{observabilityT('range24h')}</div>
-                                <div className="mt-1 font-bold">{latencyFormatted}</div>
+                            <div className="bg-background/40 rounded-[16px] text-primary px-3 py-2.5">
+                                <div className="font-bold text-muted-foreground">{observabilityT('range24h')}</div>
+                                <div className="mt-1 font-black text-sm">{latencyFormatted}</div>
                             </div>
                         </div>
                     )}
                 />
             </div>
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                 <InsightTile
                     icon={AlertTriangle}
                     label={t('failureRequests')}
