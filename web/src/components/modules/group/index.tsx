@@ -16,7 +16,7 @@ export function Group() {
     const sortField = useToolbarViewOptionsStore((s) => s.getSortField(pageKey));
     const sortOrder = useToolbarViewOptionsStore((s) => s.getSortOrder(pageKey));
     const filter = useToolbarViewOptionsStore((s) => s.groupFilter);
-    const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'card'>('card');
 
     const sortedGroups = useMemo(() => {
         if (!groups) return [];

@@ -5,7 +5,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { useMemo } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { useTranslations } from 'next-intl';
-import { formatCount, formatMoney, formatTime } from '@/lib/utils';
+import { cn, formatCount, formatMoney, formatTime } from '@/lib/utils';
 import dayjs from 'dayjs';
 import { AnimatedNumber } from '@/components/common/AnimatedNumber';
 import { Tabs, TabsList, TabsTrigger } from '@/components/animate-ui/components/animate/tabs';
@@ -33,7 +33,7 @@ const PERIOD_KEY: Record<ChartPeriod, 'today' | 'last7Days' | 'last30Days' | 'al
     all: 'allTime',
 };
 
-export function StatsChart() {
+export function StatsChart({ className }: { className?: string }) {
     const t = useTranslations('home.summary');
 
     const { data: statsTotal } = useStatsTotal();
@@ -172,7 +172,7 @@ export function StatsChart() {
     }, [hero.unit]);
 
     return (
-        <section className="clay-card">
+        <section className={cn("clay-card flex flex-col", className)}>
             {/* Header: hero + tabs */}
             <header className="flex flex-col gap-3 px-5 pb-3 pt-5 md:flex-row md:items-start md:justify-between">
                 <div>
@@ -211,8 +211,8 @@ export function StatsChart() {
             </div>
 
             {/* Area chart — only total_cost */}
-            <div className="mx-5 mb-5 p-3 rounded-2xl clay-pressed">
-                <ChartContainer config={chartConfig} className="h-32 w-full px-1">
+            <div className="mx-5 mb-5 p-3 rounded-2xl clay-pressed flex-1 flex flex-col min-h-[300px]">
+                <ChartContainer config={chartConfig} className="h-full w-full flex-1 px-1">
                 <AreaChart accessibilityLayer data={chartData}>
                     <defs>
                         <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">

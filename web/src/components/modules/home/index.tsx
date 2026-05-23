@@ -81,9 +81,9 @@ export function Home() {
         <PageWrapper className="h-full min-h-0 overflow-y-auto overscroll-contain space-y-8 pb-24 md:pb-8 px-4">
             <section className="space-y-8">
                 <DashboardSummaryCards />
-                <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)] items-start">
-                    <div className="min-w-0 w-full">
-                        <StatsChart />
+                <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.58fr)_minmax(320px,0.88fr)] items-stretch">
+                    <div className="min-w-0 w-full flex flex-col">
+                        <StatsChart className="flex-1" />
                     </div>
                     <div className="space-y-6 w-full min-w-0">
                         <GatewayOperationsPanel />
