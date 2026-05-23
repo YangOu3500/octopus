@@ -161,7 +161,7 @@ export function ObservabilityPanel() {
                 <div className="hidden md:block">
                     <p className="text-[13px] font-medium text-muted-foreground/80">{t('description')}</p>
                 </div>
-                <Badge variant={error ? 'outline' : 'secondary'} className={cn('clay-pressed border-none w-fit h-7 px-3 rounded-lg font-bold text-[11px]', error && 'text-destructive')}>
+                <Badge variant={error ? 'outline' : 'secondary'} className={cn('fluent-pressed border-none w-fit h-7 px-3 rounded-lg font-bold text-[11px]', error && 'text-destructive')}>
                     {error ? t('loadFailed') : isLoading ? t('loading') : t('range24h')}
                 </Badge>
             </header>

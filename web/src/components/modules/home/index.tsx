@@ -28,10 +28,10 @@ function SectionCard({
     children: ReactNode;
 }) {
     return (
-        <section className="clay-card flex flex-col overflow-hidden">
+        <section className="fluent-card flex flex-col overflow-hidden">
             <header className="flex items-center gap-4 px-6 pt-6 pb-2">
                 <div className="flex min-w-0 flex-1 items-center gap-3.5">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary clay-pressed shadow-none">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary fluent-pressed shadow-none">
                         {icon}
                     </div>
                     <div className="min-w-0 text-left">
@@ -42,7 +42,7 @@ function SectionCard({
                 {chips.length > 0 ? (
                     <div className="hidden flex-wrap items-center justify-end gap-2 md:flex">
                         {chips.map((chip) => (
-                            <Badge key={chip} variant="outline" className="clay-pressed h-7 rounded-lg px-3 text-[11px] font-bold text-muted-foreground border-none">
+                            <Badge key={chip} variant="outline" className="fluent-pressed h-7 rounded-lg px-3 text-[11px] font-bold text-muted-foreground border-none">
                                 {chip}
                             </Badge>
                         ))}

@@ -121,11 +121,11 @@ export function GatewayOperationsPanel() {
 
     return (
         <section>
-            <div className="clay-card p-5">
+            <div className="fluent-card p-5">
                 <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                         <div className="flex items-center gap-3 text-lg font-black tracking-tight text-foreground">
-                            <div className="flex size-11 items-center justify-center rounded-[12px] bg-primary text-white shadow-clay-btn">
+                            <div className="flex size-11 items-center justify-center rounded-[12px] bg-primary text-white shadow-sm">
                                 <Radar className="size-5" />
                             </div>
                             {t('title')}

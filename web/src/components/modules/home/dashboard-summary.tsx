@@ -54,8 +54,8 @@ function SummaryCard({
     return (
         <article
             className={cn(
-                'clay-card flex min-h-[10.5rem] flex-col px-5 py-4',
-                accent && 'bg-primary text-white shadow-clay-btn border-none ring-0'
+                'fluent-card flex min-h-[10.5rem] flex-col px-5 py-4',
+                accent && 'bg-primary text-white shadow-md border-none ring-0'
             )}
         >
             <div className="flex items-start justify-between gap-3">
@@ -91,7 +91,7 @@ function InsightTile({
     return (
         <div
             className={cn(
-                'clay-card flex items-center gap-4 px-5 py-4',
+                'fluent-card flex items-center gap-4 px-5 py-4',
                 tone === 'warning' ? 'bg-amber-50' : 'bg-background'
             )}
         >

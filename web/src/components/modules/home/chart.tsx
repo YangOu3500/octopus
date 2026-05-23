@@ -172,7 +172,7 @@ export function StatsChart({ className }: { className?: string }) {
     }, [hero.unit]);
 
     return (
-        <section className={cn("clay-card flex flex-col", className)}>
+        <section className={cn("fluent-card flex flex-col", className)}>
             {/* Header: hero + tabs */}
             <header className="flex flex-col gap-3 px-5 pb-3 pt-5 md:flex-row md:items-start md:justify-between">
                 <div>
@@ -211,7 +211,7 @@ export function StatsChart({ className }: { className?: string }) {
             </div>
 
             {/* Area chart — only total_cost */}
-            <div className="mx-5 mb-5 p-3 rounded-2xl clay-pressed flex-1 flex flex-col min-h-[300px]">
+            <div className="mx-5 mb-5 p-3 rounded-2xl fluent-pressed flex-1 flex flex-col min-h-[300px]">
                 <ChartContainer config={chartConfig} className="h-full w-full flex-1 px-1">
                 <AreaChart accessibilityLayer data={chartData}>
                     <defs>
