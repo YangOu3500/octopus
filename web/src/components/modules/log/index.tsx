@@ -1117,10 +1117,10 @@ export function Log() {
     }, [hasMore, isLoading, isLoadingMore, logs.length, t]);
 
     return (
-        <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="shrink-0 rounded-lg border bg-card p-3">
-                <div className="flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
+        <div className="flex h-full min-h-0 flex-col gap-2">
+            <div className="shrink-0 rounded-lg border bg-card p-2">
+                <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                         <Badge variant={isConnected ? 'secondary' : 'outline'} className="h-8 px-2">
                             {isConnected ? 'SSE 已连接' : 'SSE 未连接'}
                         </Badge>
@@ -1168,17 +1168,17 @@ export function Log() {
                         onRefresh={() => void refetchActiveRequests()}
                     />
 
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 items-center">
+                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-4 items-center">
                         <div className="relative">
-                            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input value={modelFilter} onChange={(event) => setModelFilter(event.target.value)} placeholder="模型 / 上游模型" className="pl-8 h-8 rounded-lg text-xs" />
+                            <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                            <Input value={modelFilter} onChange={(event) => setModelFilter(event.target.value)} placeholder="模型 / 上游模型" className="pl-7 h-7 rounded-md text-[11px]" />
                         </div>
-                        <Input value={traceFilter} onChange={(event) => setTraceFilter(event.target.value)} placeholder="Trace ID / Request ID" className="h-8 rounded-lg text-xs" />
+                        <Input value={traceFilter} onChange={(event) => setTraceFilter(event.target.value)} placeholder="Trace ID / Request ID" className="h-7 rounded-md text-[11px]" />
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                            <SelectTrigger className="w-full h-7 rounded-md text-[11px]">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="text-[11px]">
                                 <SelectItem value="all">全部状态</SelectItem>
                                 <SelectItem value="success">成功</SelectItem>
                                 <SelectItem value="failed">失败</SelectItem>
@@ -1189,7 +1189,7 @@ export function Log() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-8 text-xs font-semibold w-full"
+                            className="h-7 text-[11px] font-medium w-full bg-secondary/30 hover:bg-secondary/60 transition-colors"
                             onClick={() => setShowMoreFilters(!showMoreFilters)}
                         >
                             {showMoreFilters ? '收起高级筛选' : '展开高级筛选'}
@@ -1197,7 +1197,7 @@ export function Log() {
                     </div>
 
                     {showMoreFilters && (
-                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4 border-t border-border/20 pt-2 transition-all duration-300">
+                        <div className="grid grid-cols-2 gap-1.5 md:grid-cols-4 xl:grid-cols-6 border-t border-border/20 pt-2 transition-all duration-300">
                             <Input value={apiKeyFilter} onChange={(event) => setApiKeyFilter(event.target.value)} placeholder="API Key 名称或 ID" className="h-8 rounded-lg text-xs" />
                             <Input value={failureFilter} onChange={(event) => setFailureFilter(event.target.value)} placeholder="失败原因" className="h-8 rounded-lg text-xs" />
                             <Select value={timeRange} onValueChange={setTimeRange}>
@@ -1296,23 +1296,21 @@ export function Log() {
                                     </SelectContent>
                                 </Select>
                                 <Select value={sortOrder} onValueChange={setSortOrder}>
-                                    <SelectTrigger className="w-full h-8 rounded-lg text-xs">
+                                    <SelectTrigger className="w-full h-7 rounded-md text-[11px]">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="text-[11px]">
                                         <SelectItem value="desc">降序</SelectItem>
                                         <SelectItem value="asc">升序</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <Button variant="ghost" size="sm" onClick={resetFilters} className="h-7 w-full text-[11px] mt-1 lg:mt-0 col-span-2 md:col-span-4 xl:col-span-1">
+                                <X className="size-3.5 mr-1" />
+                                重置筛选
+                            </Button>
                         </div>
                     )}
-                    <div className="flex justify-end">
-                        <Button variant="ghost" size="sm" onClick={resetFilters}>
-                            <X className="size-4" />
-                            重置筛选
-                        </Button>
-                    </div>
                 </div>
             </div>
 

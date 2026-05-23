@@ -938,15 +938,15 @@ function TraceDetailPanel({ traceId }: { traceId: string | null }) {
 
             <div>
                 <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('attemptTimeline')}</div>
-                <div className="relative pl-4 border-l border-border/30 space-y-3">
+                <div className="relative pl-3 ml-1.5 space-y-3">
                     {detail.attempts.length === 0 ? (
                         <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
                             {t('noAttempts')}
                         </div>
                     ) : detail.attempts.map((attempt, index) => (
-                        <div key={`${attempt.id}-${index}`} className="relative rounded-xl border border-border/30 bg-background/35 px-3 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:border-primary/20 hover:bg-background/60 transition-all duration-300">
+                        <div key={`${attempt.id}-${index}`} className="relative rounded-xl border border-border/30 bg-background/35 px-3 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:border-primary/20 hover:bg-background/60 transition-all duration-300 before:absolute before:-left-3 before:top-6 before:-bottom-3 before:w-px before:bg-border/30 last:before:hidden">
                             {/* Branch indicator */}
-                            <span className="absolute -left-[21px] top-4 size-2.5 rounded-full border border-border/40 bg-card flex items-center justify-center">
+                            <span className="absolute -left-[17px] top-4 size-2.5 rounded-full border border-border/40 bg-card flex items-center justify-center z-10 shadow-sm">
                                 <span className={cn("size-1.5 rounded-full", attempt.status === 'success' ? 'bg-emerald-500' : 'bg-destructive')} />
                             </span>
 
