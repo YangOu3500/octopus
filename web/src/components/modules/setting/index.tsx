@@ -38,35 +38,27 @@ function SettingGroup({ title, icon: Icon, children }: { title: string; icon: Lu
 export function Setting() {
     return (
         <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
-            <PageWrapper childLayout={false} className="pb-24 md:pb-8 max-w-7xl mx-auto space-y-6">
+            <PageWrapper childLayout={false} className="pb-24 md:pb-8 max-w-5xl mx-auto space-y-8">
                 <SettingGroup title="核心配置" icon={Settings2}>
                     <SettingSystem />
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                        <SettingAppearance />
-                        <SettingAccount />
-                    </div>
+                    <SettingAppearance />
+                    <SettingAccount />
                 </SettingGroup>
 
                 <SettingGroup title="调度运行" icon={Bot}>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                        <div className="xl:col-span-3">
-                            <SettingSiteAutomation />
-                        </div>
-                        <SettingHealthProbe />
-                        <SettingCircuitBreaker />
-                        <SettingModelAssociation />
-                        <SettingFusionCapabilities />
-                        <SettingAPIKey />
-                        <SettingLLMPrice />
-                        <SettingLLMSync />
-                    </div>
+                    <SettingSiteAutomation />
+                    <SettingHealthProbe />
+                    <SettingCircuitBreaker />
+                    <SettingModelAssociation />
+                    <SettingFusionCapabilities />
+                    <SettingAPIKey />
+                    <SettingLLMPrice />
+                    <SettingLLMSync />
                 </SettingGroup>
 
                 <SettingGroup title="数据维护" icon={ArchiveRestore}>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                        <SettingLog />
-                        <SettingBackup />
-                    </div>
+                    <SettingLog />
+                    <SettingBackup />
                     <SettingInfo />
                 </SettingGroup>
             </PageWrapper>
