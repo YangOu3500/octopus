@@ -1,7 +1,7 @@
 import { lazyWithPreload } from './lazy-with-preload';
 import { lazy, ComponentType } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { FlaskConical, HeartPulse, Home, Radio, Sparkles, FolderTree, Settings, Logs, Globe2, Radar } from 'lucide-react';
+import { FlaskConical, HeartPulse, Home, Radio, Sparkles, FolderTree, Settings, Logs, Globe2, Radar, TrendingUp } from 'lucide-react';
 
 export type LazyComponent = ReturnType<typeof lazy> & {
     preload: () => Promise<{ default: ComponentType<Record<string, never>> }>
@@ -23,6 +23,7 @@ const Model_Module = lazyWithPreload(() => import('@/components/modules/model').
 const Group_Module = lazyWithPreload(() => import('@/components/modules/group').then(m => ({ default: m.Group })));
 const Traces_Module = lazyWithPreload(() => import('@/components/modules/traces').then(m => ({ default: m.Traces })));
 const Log_Module = lazyWithPreload(() => import('@/components/modules/log').then(m => ({ default: m.Log })));
+const Analytics_Module = lazyWithPreload(() => import('@/components/modules/analytics').then(m => ({ default: m.Analytics })));
 const Setting_Module = lazyWithPreload(() => import('@/components/modules/setting').then(m => ({ default: m.Setting })));
 
 export const ROUTES: RouteConfig[] = [
@@ -35,6 +36,7 @@ export const ROUTES: RouteConfig[] = [
     { id: 'model', label: 'Model', icon: Sparkles, component: Model_Module },
     { id: 'traces', label: 'Traces', icon: Radar, component: Traces_Module },
     { id: 'log', label: 'Log', icon: Logs, component: Log_Module },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp, component: Analytics_Module },
     { id: 'setting', label: 'Setting', icon: Settings, component: Setting_Module },
 ];
 

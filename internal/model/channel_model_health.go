@@ -24,11 +24,14 @@ type ChannelModelHealthSummary struct {
 	ChannelConcurrencyMax     int            `json:"channel_concurrency_max"`
 	ChannelConcurrencyLeaseMS int64          `json:"channel_concurrency_lease_ttl_ms"`
 	TotalRows                 int            `json:"total_rows"`
+	RequestRows               int            `json:"request_rows"`
 	TotalRequests             int            `json:"total_requests"`
 	SuccessCount              int            `json:"success_count"`
 	FailureCount              int            `json:"failure_count"`
 	AvgSuccessRate            float64        `json:"avg_success_rate"`
 	AvgHealthScore            float64        `json:"avg_health_score"`
+	HealthSampleRows          int            `json:"health_sample_rows"`
+	HealthSampleCount         int            `json:"health_sample_count"`
 	CoolingDownCount          int            `json:"cooling_down_count"`
 	ActiveSelections          int            `json:"active_selections"`
 	ChannelConcurrencyActive  int            `json:"channel_concurrency_active"`

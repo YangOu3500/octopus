@@ -145,6 +145,9 @@ export type ChannelModelHealthSummary = {
     channel_concurrency_max: number;
     channel_concurrency_lease_ttl_ms: number;
     total_rows: number;
+    request_rows: number;
+    health_sample_rows: number;
+    health_sample_count: number;
     total_requests: number;
     success_count: number;
     failure_count: number;
@@ -283,6 +286,9 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             channel_concurrency_max: typeof summary.channel_concurrency_max === 'number' ? summary.channel_concurrency_max : 0,
             channel_concurrency_lease_ttl_ms: typeof summary.channel_concurrency_lease_ttl_ms === 'number' ? summary.channel_concurrency_lease_ttl_ms : 0,
             total_rows: typeof summary.total_rows === 'number' ? summary.total_rows : 0,
+            request_rows: typeof summary.request_rows === 'number' ? summary.request_rows : 0,
+            health_sample_rows: typeof summary.health_sample_rows === 'number' ? summary.health_sample_rows : 0,
+            health_sample_count: typeof summary.health_sample_count === 'number' ? summary.health_sample_count : 0,
             total_requests: typeof summary.total_requests === 'number' ? summary.total_requests : 0,
             success_count: typeof summary.success_count === 'number' ? summary.success_count : 0,
             failure_count: typeof summary.failure_count === 'number' ? summary.failure_count : 0,

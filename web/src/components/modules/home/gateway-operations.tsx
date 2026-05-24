@@ -87,12 +87,7 @@ export function GatewayOperationsPanel() {
             value: compactCount(data?.total_requests),
             sub: t('items.requests.sub', { failover: data?.failover_requests ?? 0 }),
         },
-        {
-            id: 'traces',
-            icon: Radar,
-            value: compactCount(data?.total_attempts),
-            sub: t('items.traces.sub', { max: data?.max_attempts ?? 0 }),
-        },
+
         {
             id: 'channels',
             icon: Server,
@@ -147,16 +142,16 @@ export function GatewayOperationsPanel() {
                             return (
                                 <article
                                     key={item.id}
-                                    className="min-h-[84px] cursor-default rounded-2xl bg-background/30 border border-border/20 p-4 text-left transition-all duration-200"
+                                    className="min-h-[84px] cursor-default rounded-xl bg-background/40 border border-border/30 p-4 text-left transition-all duration-200 hover:bg-background/80 hover:shadow-sm"
                                 >
                                     <div className="flex min-w-0 items-start gap-3">
-                                        <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary shadow-sm">
+                                        <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-primary shadow-sm">
                                             <Icon className="size-4.5" />
                                         </div>
-                                        <div className="min-w-0">
+                                        <div className="min-w-0 flex-1">
                                             <div className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">{t(`items.${item.id}.label`)}</div>
                                             <div className="mt-1 text-xl font-black tabular-nums tracking-tight text-primary drop-shadow-sm">{item.value}</div>
-                                            <div className="mt-1 line-clamp-2 text-[11px] font-bold text-muted-foreground/80" title={item.sub}>{item.sub}</div>
+                                            <div className="mt-1 text-[11px] font-bold text-muted-foreground/80 break-words leading-tight" title={item.sub}>{item.sub}</div>
                                         </div>
                                     </div>
                                 </article>

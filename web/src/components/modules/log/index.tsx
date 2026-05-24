@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type ActiveRequestEvent, type ActiveRequestSnapshot, type ChannelAttempt, type LogListFilters, type RelayLog, useActiveRequests, useLogs } from '@/api/endpoints/log';
 import { LogCard, type LogSiteActionTarget, type LogSiteActionTargets } from './Item';
-import { Activity, Download, Loader2, RefreshCw, Search, X } from 'lucide-react';
+import { Activity, Download, Loader2, RefreshCw, Search, X, PlusCircle, Calendar, SlidersHorizontal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { VirtualizedGrid } from '@/components/common/VirtualizedGrid';
 import { useChannelList } from '@/api/endpoints/channel';
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -122,17 +123,22 @@ function nonAll(value: string) {
 
 function LogTableHeader() {
     return (
-        <div className="hidden lg:grid grid-cols-[1.05fr_1.6fr_1.2fr_0.8fr_0.8fr_0.75fr_0.85fr_1fr_0.9fr_0.55fr] gap-3 rounded-lg border bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
-            <span>时间 / Trace / 来源</span>
-            <span>模型</span>
-            <span>渠道 / 协议</span>
+        <div className="hidden lg:grid grid-cols-[minmax(50px,0.5fr)_minmax(120px,1.5fr)_minmax(50px,0.5fr)_minmax(60px,0.5fr)_minmax(90px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(60px,0.6fr)_minmax(120px,1.2fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(100px,0.8fr)_minmax(80px,0.6fr)_minmax(90px,0.8fr)] gap-3 rounded-lg border bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
+            <span>ID</span>
+            <span>模型ID</span>
+            <span>流式</span>
+            <span>来源</span>
+            <span>客户端IP</span>
+            <span>渠道</span>
+            <span>API密钥</span>
             <span>状态</span>
-            <span>HTTP</span>
-            <span>TTFB</span>
-            <span>耗时 / Tok/s</span>
-            <span>Token / 缓存</span>
+            <span>词元</span>
+            <span>读缓存</span>
+            <span>写缓存</span>
             <span>成本</span>
-            <span>尝试</span>
+            <span>耗时</span>
+            <span>详情</span>
+            <span>创建时间</span>
         </div>
     );
 }
@@ -1118,84 +1124,6 @@ export function Log() {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-2">
-            <div className="shrink-0 rounded-lg border bg-card p-2">
-                <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                        <Badge variant={isConnected ? 'secondary' : 'outline'} className="h-8 px-2">
-                            {isConnected ? 'SSE 已连接' : 'SSE 未连接'}
-                        </Badge>
-                        <Badge variant="outline" className="h-8 px-2">
-                            {total} 条
-                        </Badge>
-                        {error ? (
-                            <Badge variant="outline" className="h-8 border-destructive/30 px-2 text-destructive">
-                                {error.message}
-                            </Badge>
-                        ) : null}
-                        <div className="ml-auto flex flex-wrap items-center gap-2">
-                            <div className="flex items-center gap-2 rounded-md border px-2 py-1.5">
-                                <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
-                                <span className="text-sm text-muted-foreground">实时刷新</span>
-                            </div>
-                            <Select value={refreshInterval} onValueChange={setRefreshInterval}>
-                                <SelectTrigger size="sm" className="w-[92px]">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="5000">5 秒</SelectItem>
-                                    <SelectItem value="10000">10 秒</SelectItem>
-                                    <SelectItem value="30000">30 秒</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
-                                {isFetching ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-                                刷新
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={handleExportLoadedLogs} disabled={logs.length === 0}>
-                                <Download className="size-4" />
-                                {t('list.export.button')}
-                            </Button>
-                        </div>
-                    </div>
-
-                    <ActiveRequestsPanel
-                        items={activeRequests?.items ?? []}
-                        total={activeRequests?.total ?? 0}
-                        isFetching={isFetchingActiveRequests}
-                        isStreamConnected={autoRefresh && isActiveRequestStreamConnected}
-                        streamError={autoRefresh ? activeRequestStreamError : null}
-                        recentEvents={autoRefresh ? activeRequestEvents : []}
-                        onRefresh={() => void refetchActiveRequests()}
-                    />
-
-                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-4 items-center">
-                        <div className="relative">
-                            <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                            <Input value={modelFilter} onChange={(event) => setModelFilter(event.target.value)} placeholder="模型 / 上游模型" className="pl-7 h-7 rounded-md text-[11px]" />
-                        </div>
-                        <Input value={traceFilter} onChange={(event) => setTraceFilter(event.target.value)} placeholder="Trace ID / Request ID" className="h-7 rounded-md text-[11px]" />
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="w-full h-7 rounded-md text-[11px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="text-[11px]">
-                                <SelectItem value="all">全部状态</SelectItem>
-                                <SelectItem value="success">成功</SelectItem>
-                                <SelectItem value="failed">失败</SelectItem>
-                                <SelectItem value="canceled">已取消</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-[11px] font-medium w-full bg-secondary/30 hover:bg-secondary/60 transition-colors"
-                            onClick={() => setShowMoreFilters(!showMoreFilters)}
-                        >
-                            {showMoreFilters ? '收起高级筛选' : '展开高级筛选'}
-                        </Button>
-                    </div>
-
                     {showMoreFilters && (
                         <div className="grid grid-cols-2 gap-1.5 md:grid-cols-4 xl:grid-cols-6 border-t border-border/20 pt-2 transition-all duration-300">
                             <Input value={apiKeyFilter} onChange={(event) => setApiKeyFilter(event.target.value)} placeholder="API Key 名称或 ID" className="h-8 rounded-lg text-xs" />

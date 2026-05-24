@@ -64,9 +64,9 @@ export function SettingBackup() {
                 <h3 className="text-sm font-semibold text-foreground/80">{t('backup.title')}</h3>
             </div>
 
-            <div className="flex flex-col divide-y divide-border/40 rounded-2xl bg-background/30 border border-border/40 px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 divide-y md:divide-y-0 md:divide-x divide-border/40 rounded-2xl bg-background/30 border border-border/40 p-4">
                 {/* 导出 */}
-                <div className="flex flex-col gap-3 py-3">
+                <div className="flex flex-col gap-3 md:pr-4">
                     <div className="text-sm font-medium text-foreground/90">{t('backup.export.title')}</div>
 
                     <div className="flex items-center justify-between gap-4">
@@ -92,7 +92,7 @@ export function SettingBackup() {
                 </div>
 
                 {/* 导入 */}
-                <div className="flex flex-col gap-3 py-3">
+                <div className="flex flex-col gap-3 pt-4 md:pt-0 md:pl-4">
                     <div className="text-sm font-medium text-foreground/90">{t('backup.import.title')}</div>
 
                     <Input

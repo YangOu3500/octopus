@@ -119,28 +119,6 @@ function DesktopSidebar() {
                 <div className={cn("flex", sidebarExpanded ? "flex-row items-center gap-2" : "flex-col items-center gap-2")}>
                     <button
                         type="button"
-                        onClick={toggleTheme}
-                        className={cn(
-                            "flex shrink-0 items-center justify-center rounded-xl border border-sidebar-border/50 bg-background/30 text-sidebar-foreground/75 transition-all duration-200 hover:border-primary/30 hover:bg-background/80 hover:text-foreground",
-                            sidebarExpanded ? "h-10 flex-1" : "size-10"
-                        )}
-                        title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                    >
-                        {theme === 'dark' ? <Moon className="size-4" /> : <Sun className="size-4" />}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={toggleLocale}
-                        className={cn(
-                            "flex shrink-0 items-center justify-center rounded-xl border border-sidebar-border/50 bg-background/30 text-sidebar-foreground/75 transition-all duration-200 hover:border-primary/30 hover:bg-background/80 hover:text-foreground",
-                            sidebarExpanded ? "h-10 flex-1" : "size-10"
-                        )}
-                        title="Switch Language"
-                    >
-                        <Languages className="size-4" />
-                    </button>
-                    <button
-                        type="button"
                         onClick={toggleSidebarExpanded}
                         className={cn(
                             "flex shrink-0 items-center justify-center rounded-xl border border-sidebar-border/50 bg-background/30 text-sidebar-foreground/75 transition-all duration-200 hover:border-primary/30 hover:bg-background/80 hover:text-foreground",

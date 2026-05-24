@@ -630,7 +630,7 @@ export function ModelTest() {
 
                         {showAdvanced ? (
                             <div className="rounded-lg border border-border/40 bg-background/50 p-2 transition-all duration-300">
-                                <div className="grid gap-2 sm:grid-cols-2">
+                                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                                     <label className="grid gap-0.5">
                                         <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">{t('maxTokens')}</span>
                                         <Input

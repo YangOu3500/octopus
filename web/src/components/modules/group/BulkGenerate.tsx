@@ -361,7 +361,7 @@ export function GroupBulkGenerateDialog() {
                     {bulkT('trigger')}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="flex h-[min(88vh,46rem)] max-w-[min(94vw,54rem)] flex-col overflow-hidden rounded-3xl p-0">
+            <DialogContent className="flex h-[min(88vh,46rem)] max-w-[min(94vw,54rem)] flex-col overflow-hidden rounded-2xl p-0">
                 <DialogHeader className="shrink-0 border-b border-border px-5 py-4">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                         <Layers3 className="size-5" />

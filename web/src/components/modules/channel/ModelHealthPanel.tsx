@@ -544,7 +544,7 @@ export function ChannelModelHealthPanel() {
             id: 'rows',
             icon: Server,
             label: t('stats.rows'),
-            value: formatNumber(summary?.total_rows),
+            value: formatNumber(summary?.request_rows),
             sub: t('stats.rowsSub', { requests: summary?.total_requests ?? 0 }),
         },
         {
@@ -558,7 +558,9 @@ export function ChannelModelHealthPanel() {
             id: 'health',
             icon: Gauge,
             label: t('stats.healthScore'),
-            value: formatDecimal(summary?.avg_health_score, 1),
+            value: (summary?.health_score_enabled && (summary?.health_sample_count ?? 0) > 0)
+                ? formatDecimal(summary?.avg_health_score, 1)
+                : <span className="text-sm font-normal text-muted-foreground">{t('noHealthSampleOrDisabled')}</span>,
             sub: t(`strategy.${summary?.load_balancing_strategy === 'health_score' ? 'healthScore' : 'staticGroupMode'}`),
         },
         {
@@ -599,7 +601,7 @@ export function ChannelModelHealthPanel() {
             { label: '40-59', count: 0 },
             { label: '0-39', count: 0 },
         ];
-        rows.forEach((row) => {
+        rows.filter((row) => row.health_sample_count > 0).forEach((row) => {
             if (row.health_score >= 80) buckets[0].count += 1;
             else if (row.health_score >= 60) buckets[1].count += 1;
             else if (row.health_score >= 40) buckets[2].count += 1;
@@ -1003,7 +1005,7 @@ export function ChannelModelHealthPanel() {
 
                             {rows.length === 0 ? (
                                 <div className="px-3 py-12 text-center text-sm text-muted-foreground">
-                                    {t('empty')}
+                                    {(summary?.request_rows ?? 0) === 0 ? t('noCallRecords') : t('empty')}
                                 </div>
                             ) : (
                                 <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
@@ -1044,22 +1046,30 @@ export function ChannelModelHealthPanel() {
                                                     ) : null}
                                                 </div>
                                                 <div className="px-3 py-3 tabular-nums">
-                                                    <div className={cn('text-base font-semibold', healthTone(row.health_score))}>
-                                                        {row.health_score.toFixed(1)}
-                                                    </div>
-                                                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted/80">
-                                                        <div
-                                                            className={cn(
-                                                                'h-full rounded-full',
-                                                                row.health_score >= 80
-                                                                    ? 'bg-emerald-500'
-                                                                    : row.health_score >= 50
-                                                                        ? 'bg-amber-500'
-                                                                        : 'bg-destructive'
-                                                            )}
-                                                            style={{ width: `${Math.max(6, Math.min(100, row.health_score))}%` }}
-                                                        />
-                                                    </div>
+                                                    {row.health_sample_count > 0 ? (
+                                                        <>
+                                                            <div className={cn('text-base font-semibold', healthTone(row.health_score))}>
+                                                                {row.health_score.toFixed(1)}
+                                                            </div>
+                                                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted/80">
+                                                                <div
+                                                                    className={cn(
+                                                                        'h-full rounded-full',
+                                                                        row.health_score >= 80
+                                                                            ? 'bg-emerald-500'
+                                                                            : row.health_score >= 50
+                                                                                ? 'bg-amber-500'
+                                                                                : 'bg-destructive'
+                                                                    )}
+                                                                    style={{ width: `${Math.max(6, Math.min(100, row.health_score))}%` }}
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="mb-3 mt-1 text-sm font-medium text-muted-foreground">
+                                                            {t('unrated')}
+                                                        </div>
+                                                    )}
                                                     <div className="text-xs text-muted-foreground">
                                                         {row.health_sample_count ? t('healthSamples', {
                                                             success: row.health_success_count,

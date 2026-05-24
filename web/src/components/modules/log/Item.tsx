@@ -686,7 +686,7 @@ function RetryBadgeWithTooltip({ channelName, brandColor, attempts }: RetryBadge
                     {channelName}
                 </Badge>
             </TooltipTrigger>
-            <TooltipContent className="border bg-card p-2 min-w-[280px] shadow-sm rounded-3xl flex flex-col gap-1">
+            <TooltipContent className="border bg-card p-2 min-w-[280px] shadow-sm rounded-2xl flex flex-col gap-1">
                 {merged.map((attempt, idx) => {
                     const statusMeta = getAttemptStatusMeta(attempt.status, t);
 
@@ -1181,77 +1181,102 @@ function LogRowTriggerContent({
 }) {
     const t = useTranslations('log.card');
     const statusLabel = formatFinalStatus(log.final_status || (hasError ? 'failed' : 'success'), t);
-    const httpStatus = getLogHTTPStatus(log);
-    const failureReason = getLogFailureReason(log);
-    const attemptCount = getLogAttemptCount(log);
     const inputTokens = getHeadlineInputTokens(log);
-    const cacheTokens = log.cache_tokens || log.cache_read_tokens || log.cache_write_tokens || 0;
-
+    const totalTokens = (inputTokens ?? 0) + (log.output_tokens ?? 0);
+    const isStream = log.request_stream;
+    
     return (
-        <div className="grid gap-3 px-3 py-2.5 text-sm lg:grid-cols-[1.05fr_1.6fr_1.2fr_0.8fr_0.8fr_0.75fr_0.85fr_1fr_0.9fr_0.55fr] lg:items-center">
-            <div className="min-w-0">
-                <div className="tabular-nums text-xs text-muted-foreground">{formatTime(log.time)}</div>
-                <div className="truncate font-mono text-xs text-muted-foreground" title={log.trace_id || String(log.id)}>
-                    {log.trace_id || `#${log.id}`}
-                </div>
-                <div className="truncate text-xs text-muted-foreground" title={log.client_ip || log.request_source || undefined}>
-                    {formatClientIP(log.client_ip)} · {formatRequestSource(log.request_source)}
-                </div>
+        <div className="grid gap-3 px-3 py-2 text-sm lg:grid-cols-[minmax(50px,0.5fr)_minmax(120px,1.5fr)_minmax(50px,0.5fr)_minmax(60px,0.5fr)_minmax(90px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(60px,0.6fr)_minmax(120px,1.2fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(100px,0.8fr)_minmax(80px,0.6fr)_minmax(90px,0.8fr)] lg:items-center min-w-[1220px]">
+            {/* 1. ID */}
+            <div className="min-w-0 font-mono text-xs text-muted-foreground truncate" title={`#${log.id}`}>
+                #{log.id}
             </div>
+
+            {/* 2. 模型ID */}
             <div className="min-w-0">
-                <div className="truncate font-semibold text-foreground" title={log.request_model_name}>
+                <div className="truncate font-medium text-foreground text-xs" title={log.request_model_name}>
                     {log.request_model_name}
                 </div>
-                <div className="truncate text-xs text-muted-foreground" title={displayActualModelName}>
-                    {displayActualModelName}
-                </div>
             </div>
+
+            {/* 3. 流式 */}
             <div className="min-w-0">
-                <div className="truncate font-medium" title={log.channel_name}>
-                    {log.channel_name || `#${log.channel}`}
-                </div>
-                <div className="truncate text-xs text-muted-foreground" title={getLogProtocol(log)}>
-                    {getLogProtocol(log)} · {log.request_stream ? 'stream' : 'nonstream'}
-                </div>
+                <Badge variant="outline" className={cn("px-1.5 py-0 text-[10px]", isStream ? "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-800" : "bg-muted text-muted-foreground")}>
+                    {isStream ? '流式' : '非流式'}
+                </Badge>
             </div>
-            <div className="flex min-w-0 items-center gap-1.5">
-                <Badge
-                    variant="secondary"
-                    className={cn(
-                        'shrink-0 px-1.5 py-0 text-xs',
-                        hasError ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary',
-                    )}
-                >
+
+            {/* 4. 来源 */}
+            <div className="min-w-0">
+                <Badge variant="outline" className={cn("px-1.5 py-0 text-[10px]", log.request_source === 'relay' ? "bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-800" : "bg-purple-500/10 text-purple-600 border-purple-200 dark:border-purple-800")}>
+                    {formatRequestSource(log.request_source)}
+                </Badge>
+            </div>
+
+            {/* 5. 客户端IP */}
+            <div className="min-w-0 truncate text-xs text-muted-foreground">
+                {formatClientIP(log.client_ip)}
+            </div>
+
+            {/* 6. 渠道 */}
+            <div className="min-w-0 truncate text-xs text-muted-foreground" title={log.channel_name || `#${log.channel}`}>
+                {log.channel_name || `#${log.channel}`}
+            </div>
+
+            {/* 7. API密钥 */}
+            <div className="min-w-0 truncate text-xs text-muted-foreground" title={requestAPIKeyName}>
+                {requestAPIKeyName || 'all'}
+            </div>
+
+            {/* 8. 状态 */}
+            <div className="min-w-0">
+                <span className={cn("text-xs font-medium truncate", hasError ? "text-destructive" : "text-emerald-600 dark:text-emerald-400")}>
                     {statusLabel}
-                </Badge>
+                </span>
             </div>
-            <div className="tabular-nums text-muted-foreground">{httpStatus || '—'}</div>
-            <div className="tabular-nums text-muted-foreground">{formatOptionalDuration(log.ftut)}</div>
+
+            {/* 9. 词元 */}
             <div className="min-w-0 text-muted-foreground">
-                <div className="tabular-nums">{formatOptionalDuration(log.total_latency_ms || log.use_time)}</div>
-                <div className="text-xs tabular-nums">{formatTokPerSecond(log)}</div>
-            </div>
-            <div className="min-w-0 text-muted-foreground">
-                <div className="tabular-nums">
-                    {inputTokens.toLocaleString()} / {log.output_tokens.toLocaleString()}
-                </div>
-                <div className="text-xs tabular-nums">cache {cacheTokens.toLocaleString()}</div>
-            </div>
-            <div className="min-w-0">
-                <div className="tabular-nums text-emerald-600 dark:text-emerald-400">{getLogCost(log).toFixed(6)}</div>
-                <div className="truncate text-xs text-muted-foreground" title={requestAPIKeyName}>
-                    {requestAPIKeyName || '—'}
-                </div>
-            </div>
-            <div className="min-w-0">
-                <Badge variant="outline" className="px-1.5 py-0 text-xs tabular-nums">
-                    {attemptCount || 1}
-                </Badge>
-                {failureReason ? (
-                    <div className="mt-1 line-clamp-1 text-xs text-destructive" title={failureReason}>
-                        {failureReason}
+                <div className="text-xs text-foreground font-medium tabular-nums truncate">总计: {totalTokens > 0 ? totalTokens.toLocaleString() : '-'}</div>
+                {totalTokens > 0 ? (
+                    <div className="text-[10px] tabular-nums truncate">
+                        输入: {inputTokens?.toLocaleString()} | 输出: {log.output_tokens?.toLocaleString()}
                     </div>
                 ) : null}
+            </div>
+
+            {/* 10. 读缓存 */}
+            <div className="min-w-0 tabular-nums text-xs text-muted-foreground truncate">
+                {log.cache_read_tokens || '-'}
+            </div>
+
+            {/* 11. 写缓存 */}
+            <div className="min-w-0 tabular-nums text-xs text-muted-foreground truncate">
+                {log.cache_write_tokens || '-'}
+            </div>
+
+            {/* 12. 成本 */}
+            <div className="min-w-0 tabular-nums text-xs text-emerald-600 dark:text-emerald-400 truncate">
+                {getLogCost(log) > 0 ? getLogCost(log).toFixed(6) : '-'}
+            </div>
+
+            {/* 13. 耗时 */}
+            <div className="min-w-0 text-muted-foreground truncate">
+                <div className="text-xs text-foreground font-medium tabular-nums">{formatOptionalDuration(log.total_latency_ms || log.use_time)}</div>
+                <div className="text-[10px] tabular-nums">TTFT: {formatOptionalDuration(log.ftut)}</div>
+            </div>
+
+            {/* 14. 详情 */}
+            <div className="min-w-0">
+                <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
+                    <MessageSquare className="size-3" />
+                    查看详情
+                </span>
+            </div>
+
+            {/* 15. 创建时间 */}
+            <div className="min-w-0 tabular-nums text-xs text-muted-foreground truncate">
+                {formatTime(log.time)}
             </div>
         </div>
     );
@@ -1379,7 +1404,7 @@ export function LogCard({
                     className={cn(
                         variant === 'row'
                             ? 'rounded-lg border bg-card w-full text-left transition hover:bg-muted/40'
-                            : 'rounded-3xl border bg-card w-full text-left',
+                            : 'fluent-card w-full text-left',
                         hasError ? 'border-destructive/40' : 'border-border',
                     )}
                 >
@@ -1474,7 +1499,7 @@ export function LogCard({
                 </MorphingDialogTrigger>
 
                 <MorphingDialogContainer>
-                    <MorphingDialogContent className="relative w-[calc(100vw-2rem)] md:w-[80vw] bg-card text-card-foreground px-6 py-4 rounded-3xl h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+                    <MorphingDialogContent className="relative w-[calc(100vw-2rem)] md:w-[80vw] bg-card text-card-foreground px-6 py-4 rounded-2xl h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
                         <MorphingDialogClose className="top-4 right-5 text-muted-foreground hover:text-foreground transition-colors" />
                         <MorphingDialogTitle className="mb-3 flex min-w-0 items-start gap-3 pr-14 text-sm md:pr-16">
                             <div className="flex min-w-0 flex-1 items-center gap-2">

@@ -104,11 +104,20 @@ func BuildChannelModelHealth(ctx context.Context, query model.ChannelModelHealth
 	sortChannelModelHealthRows(out)
 	result.Rows = out
 	result.Summary.TotalRows = len(out)
+	healthScoreRows := 0
 	for _, row := range out {
+		if row.RequestCount > 0 {
+			result.Summary.RequestRows++
+		}
 		result.Summary.TotalRequests += row.RequestCount
 		result.Summary.SuccessCount += row.SuccessCount
 		result.Summary.FailureCount += row.FailureCount
-		result.Summary.AvgHealthScore += row.HealthScore
+		if row.HealthSampleCount > 0 {
+			result.Summary.AvgHealthScore += row.HealthScore
+			result.Summary.HealthSampleRows++
+			result.Summary.HealthSampleCount += row.HealthSampleCount
+			healthScoreRows++
+		}
 		result.Summary.ActiveSelections += row.ActiveSelections
 		result.Summary.ChannelConcurrencyActive += row.ChannelConcurrencyActive
 		result.Summary.EstimatedCost += row.EstimatedCost
@@ -121,8 +130,8 @@ func BuildChannelModelHealth(ctx context.Context, query model.ChannelModelHealth
 			result.Summary.CoolingDownCount++
 		}
 	}
-	if result.Summary.TotalRows > 0 {
-		result.Summary.AvgHealthScore /= float64(result.Summary.TotalRows)
+	if healthScoreRows > 0 {
+		result.Summary.AvgHealthScore /= float64(healthScoreRows)
 	}
 	if result.Summary.SuccessCount+result.Summary.FailureCount > 0 {
 		result.Summary.AvgSuccessRate = float64(result.Summary.SuccessCount) / float64(result.Summary.SuccessCount+result.Summary.FailureCount)

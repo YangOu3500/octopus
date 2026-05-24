@@ -1,5 +1,7 @@
 'use client';
 
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useChannelList } from '@/api/endpoints/channel';
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
@@ -9,6 +11,17 @@ import { useHomeViewStore, type RankSortMode } from '@/components/modules/home/s
 import { cn } from '@/lib/utils';
 
 type ChannelData = NonNullable<ReturnType<typeof useChannelList>['data']>[number];
+
+const RANK_COLORS = [
+    'hsl(var(--primary))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))',
+    'hsl(var(--chart-5))',
+    'hsl(var(--primary) / 0.6)',
+    'hsl(var(--chart-2) / 0.6)',
+    'hsl(var(--chart-3) / 0.6)',
+];
 
 function rankBadgeTone(rank: number) {
     if (rank === 1) return 'border-primary/20 bg-primary/10 text-primary';
@@ -87,30 +100,67 @@ export function Rank() {
             );
         }
 
+        const top8 = channels.slice(0, 8);
+        const chartData = top8.map((channel, index) => ({
+            name: channel.raw.name,
+            value: mode === 'tokens' ? channel.formatted.total_token.raw : (mode === 'cost' ? channel.formatted.total_cost.raw : channel.formatted.request_count.raw),
+            formattedValue: mode === 'tokens' 
+                ? `${channel.formatted.total_token.formatted.value}${channel.formatted.total_token.formatted.unit}`
+                : (mode === 'cost' ? `$${channel.formatted.total_cost.formatted.value}${channel.formatted.total_cost.formatted.unit.replace('$', '')}` : `${channel.formatted.request_count.formatted.value}${channel.formatted.request_count.formatted.unit}`),
+            color: RANK_COLORS[index] || RANK_COLORS[0],
+        }));
+        
+        const chartConfig = {
+            value: { label: t(`sortBy${mode.charAt(0).toUpperCase() + mode.slice(1)}`) }
+        };
+
         return (
-            <div className="space-y-2">
-                {channels.slice(0, 8).map((channel, index) => {
-                    const rank = index + 1;
-                    return (
-                        <div
-                            key={channel.raw.id}
-                            className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/80"
-                        >
-                            <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-lg border text-sm font-semibold', rankBadgeTone(rank))}>
-                                {rank}
-                            </div>
+            <div className="space-y-6">
+                <div className="h-[200px] w-full mt-2">
+                    <ChartContainer config={chartConfig} className="h-full w-full">
+                        <BarChart accessibilityLayer data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--border) / 0.4)" />
+                            <XAxis 
+                                dataKey="name" 
+                                tickLine={false} 
+                                axisLine={false} 
+                                tickMargin={8} 
+                                stroke="oklch(var(--foreground) / 0.55)"
+                                className="text-[10px] font-semibold truncate"
+                                tickFormatter={(value) => value.length > 6 ? `${value.substring(0, 6)}...` : value}
+                            />
+                            <ChartTooltip cursor={{ fill: 'oklch(var(--muted) / 0.5)' }} content={<ChartTooltipContent />} />
+                            <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                                {chartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ChartContainer>
+                </div>
+                
+                <div className="space-y-2">
+                    {top8.map((channel, index) => {
+                        const rank = index + 1;
+                        return (
+                            <div
+                                key={channel.raw.id}
+                                className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-background/80"
+                            >
+                                <div className="flex size-3 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: RANK_COLORS[index] || RANK_COLORS[0] }} />
 
-                            <div className="min-w-0 flex-1">
-                                <div className="truncate text-sm font-medium">{channel.raw.name}</div>
-                                <div className="mt-1 truncate text-xs text-muted-foreground">{renderSub(channel, mode)}</div>
-                            </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="truncate text-sm font-medium">{channel.raw.name}</div>
+                                    <div className="mt-1 truncate text-xs text-muted-foreground">{renderSub(channel, mode)}</div>
+                                </div>
 
-                            <div className="shrink-0 text-right text-sm">
-                                {renderValue(channel, mode)}
+                                <div className="shrink-0 text-right text-sm">
+                                    {renderValue(channel, mode)}
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
         );
     };

@@ -206,7 +206,7 @@ export function GroupHealthBadge({ groupId }: { groupId?: number }) {
                 </CardContent>
             </Card>
 
-            <DialogContent className="flex h-[min(85vh,42rem)] flex-col overflow-hidden rounded-3xl sm:max-w-2xl">
+            <DialogContent className="flex h-[min(85vh,42rem)] flex-col overflow-hidden rounded-2xl sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <span className={cn('size-2.5 rounded-full', statusDotTone(latest?.status))} />

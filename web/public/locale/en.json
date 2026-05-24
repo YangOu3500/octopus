@@ -64,7 +64,8 @@
         "model": "Model Pricing",
         "traces": "Traces",
         "log": "Request Logs",
-        "setting": "Settings"
+        "setting": "Settings",
+        "analytics": "Analytics"
     },
     "toolbar": {
         "popover": {
@@ -1815,6 +1816,9 @@
             },
             "healthSamples": "{success}/{total} · {rate}",
             "noSamples": "No health samples",
+            "unrated": "Unrated",
+            "noHealthSampleOrDisabled": "No health score samples / Scheduling disabled",
+            "noCallRecords": "No actual call records",
             "emptyRate": "Empty",
             "callMeta": "Success {success} / Failed {failed} · {rate}",
             "range": {

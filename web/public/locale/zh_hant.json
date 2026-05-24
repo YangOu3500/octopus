@@ -1815,6 +1815,9 @@
             },
             "healthSamples": "{success}/{total} · {rate}",
             "noSamples": "暫無健康樣本",
+            "unrated": "未評分",
+            "noHealthSampleOrDisabled": "暫無健康評分樣本 / 健康調度未啟用",
+            "noCallRecords": "沒有實際調用記錄",
             "emptyRate": "空回應",
             "callMeta": "成功 {success} / 失敗 {failed} · {rate}",
             "range": {

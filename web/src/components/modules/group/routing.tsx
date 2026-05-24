@@ -558,7 +558,7 @@ export function GroupRoutingBadge({ groupId }: { groupId?: number }) {
                 </Button>
             </DialogTrigger>
 
-            <DialogContent className="flex h-[min(85vh,42rem)] flex-col overflow-hidden rounded-3xl sm:max-w-5xl">
+            <DialogContent className="flex h-[min(85vh,42rem)] flex-col overflow-hidden rounded-2xl sm:max-w-5xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Gauge className="size-5 text-primary" />

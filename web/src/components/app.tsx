@@ -11,6 +11,7 @@ import { NavBar, useNavStore } from '@/components/modules/navbar';
 import { useTranslations } from 'next-intl'
 import Logo, { LOGO_DRAW_END_MS } from '@/components/modules/logo';
 import { Toolbar } from '@/components/modules/toolbar';
+import { GlobalActions } from '@/components/modules/toolbar/global-actions';
 import { ChannelTabSwitcher, ChannelHeaderActions } from '@/components/modules/channel/TabSwitcher';
 import { ENTRANCE_VARIANTS } from '@/lib/animations/fluid-transitions';
 import { useQueryClient } from '@tanstack/react-query';
@@ -298,6 +299,7 @@ export function AppContainer() {
                     <div className="flex items-center gap-2 lg:ml-auto">
                         {activeItem === 'channel' && <ChannelHeaderActions />}
                         <Toolbar />
+                        <GlobalActions />
                     </div>
                 </header>
                 <AnimatePresence mode="sync" initial={false}>

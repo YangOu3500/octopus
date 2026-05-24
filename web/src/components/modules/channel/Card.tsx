@@ -51,7 +51,7 @@ export function Card({ channel, stats, layout = 'grid' }: { channel: Channel; st
     return (
         <MorphingDialog>
             <MorphingDialogTrigger className="w-full">
-                <article className="flex flex-col gap-4 rounded-3xl border border-border bg-card text-card-foreground p-4 transition-all duration-300">
+                <article className="fluent-card flex flex-col gap-4 p-4 transition-all duration-300 hover:shadow-sm hover:bg-background/80">
                     <header className="relative flex items-center justify-between gap-2">
                         <div className="min-w-0 flex-1">
                             <Tooltip side="top" sideOffset={10} align="center">
@@ -84,7 +84,7 @@ export function Card({ channel, stats, layout = 'grid' }: { channel: Channel; st
 
                     {isListLayout ? (
                         <dl className="grid grid-cols-2 gap-2 lg:grid-cols-6">
-                            <div className="rounded-2xl border border-border/70 bg-background/80 p-2">
+                            <div className="fluent-pressed p-2">
                                 <dt className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
                                     <MessageSquare className="size-3.5 text-primary" />
                                     {t('requestCount')}
@@ -94,35 +94,35 @@ export function Card({ channel, stats, layout = 'grid' }: { channel: Channel; st
                                     <span className="ml-1 text-xs text-muted-foreground">{stats.request_count.formatted.unit}</span>
                                 </dd>
                             </div>
-                            <div className="rounded-2xl border border-border/70 bg-background/80 p-2">
+                            <div className="fluent-pressed p-2">
                                 <dt className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
                                     <Layers className="size-3.5 text-primary" />
                                     {tForm('model')}
                                 </dt>
                                 <dd className="text-sm font-semibold">{modelCount}</dd>
                             </div>
-                            <div className="rounded-2xl border border-border/70 bg-background/80 p-2">
+                            <div className="fluent-pressed p-2">
                                 <dt className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
                                     <Key className="size-3.5 text-primary" />
                                     {tSections('keys')}
                                 </dt>
                                 <dd className="text-sm font-semibold">{enabledKeyCount}/{channel.keys.length}</dd>
                             </div>
-                            <div className="rounded-2xl border border-border/70 bg-background/80 p-2">
+                            <div className="fluent-pressed p-2">
                                 <dt className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
                                     <CheckCircle2 className="size-3.5 text-emerald-500" />
                                     {tMetrics('successRequests')}
                                 </dt>
                                 <dd className="text-sm font-semibold">{stats.request_success.formatted.value}</dd>
                             </div>
-                            <div className="rounded-2xl border border-border/70 bg-background/80 p-2">
+                            <div className="fluent-pressed p-2">
                                 <dt className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
                                     <XCircle className="size-3.5 text-destructive" />
                                     {tMetrics('failedRequests')}
                                 </dt>
                                 <dd className="text-sm font-semibold">{stats.request_failed.formatted.value}</dd>
                             </div>
-                            <div className="rounded-2xl border border-border/70 bg-background/80 p-2">
+                            <div className="fluent-pressed p-2">
                                 <dt className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
                                     <DollarSign className="size-3.5 text-primary" />
                                     {t('totalCost')}
@@ -135,9 +135,9 @@ export function Card({ channel, stats, layout = 'grid' }: { channel: Channel; st
                         </dl>
                     ) : (
                         <dl className="grid grid-cols-1 gap-3">
-                            <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/80 p-2">
+                            <div className="flex items-center justify-between fluent-pressed p-2">
                                 <div className="flex items-center gap-3">
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
                                         <MessageSquare className="h-5 w-5" />
                                     </span>
                                     <dt className="text-sm text-muted-foreground">{t('requestCount')}</dt>
@@ -148,9 +148,9 @@ export function Card({ channel, stats, layout = 'grid' }: { channel: Channel; st
                                 </dd>
                             </div>
 
-                            <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/80 p-2">
+                            <div className="flex items-center justify-between fluent-pressed p-2">
                                 <div className="flex items-center gap-3">
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
                                         <DollarSign className="h-5 w-5" />
                                     </span>
                                     <dt className="text-sm text-muted-foreground">{t('totalCost')}</dt>
@@ -167,7 +167,7 @@ export function Card({ channel, stats, layout = 'grid' }: { channel: Channel; st
             </MorphingDialogTrigger>
 
             <MorphingDialogContainer>
-                <MorphingDialogContent className="w-full md:max-w-xl bg-card text-card-foreground px-4 py-2 rounded-3xl max-h-[90vh] overflow-y-auto">
+                <MorphingDialogContent className="w-full md:max-w-xl bg-card text-card-foreground px-4 py-2 rounded-2xl max-h-[90vh] overflow-y-auto">
                     <CardContent channel={channel} stats={stats} />
                 </MorphingDialogContent>
             </MorphingDialogContainer>

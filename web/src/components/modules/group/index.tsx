@@ -66,7 +66,7 @@ export function Group() {
             <div className="min-h-0 flex-1">
                 <VirtualizedGrid
                     items={visibleGroups}
-                    columns={viewMode === 'card' ? { default: 1, sm: 2, lg: 3, xl: 4 } : { default: 1, xl: 2 }}
+                    columns={viewMode === 'card' ? { default: 1, sm: 2, lg: 3, xl: 4 } : { default: 1, '2xl': 2 }}
                     estimateItemHeight={viewMode === 'card' ? 220 : 580}
                     getItemKey={(group, index) => group.id ?? `group-${index}`}
                     renderItem={(group) => <GroupCard group={group} viewMode={viewMode} />}

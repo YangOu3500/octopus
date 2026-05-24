@@ -24,7 +24,7 @@ type HeroValue = {
     unit: string;
 };
 
-type ChartPoint = { date: string; total_cost: number };
+type ChartPoint = { date: string; total_cost: number; requests: number; tokens: number };
 
 const PERIOD_KEY: Record<ChartPeriod, 'today' | 'last7Days' | 'last30Days' | 'allTime'> = {
     '1': 'today',
@@ -65,6 +65,8 @@ export function StatsChart({ className }: { className?: string }) {
             const points: ChartPoint[] = sortedDaily.map((stat) => ({
                 date: dayjs(stat.date).format('MM/DD'),
                 total_cost: stat.total_cost.raw,
+                requests: stat.request_count.raw,
+                tokens: stat.total_token.raw,
             }));
 
             if (statsTotal) {
@@ -83,7 +85,21 @@ export function StatsChart({ className }: { className?: string }) {
             }
 
             if (sortedDaily.length === 0) {
-                return { hero: emptyHero, metrics: emptyMetrics, chartData: [] };
+                const points = Array.from({ length: 7 }, (_, i) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - 6 + i);
+                    return { date: dayjs(d).format('MM/DD'), total_cost: 0, requests: 0, tokens: 0 };
+                });
+                const costFmt = formatMoney(0).formatted;
+                return {
+                    hero: { value: costFmt.value, unit: costFmt.unit },
+                    metrics: {
+                        requests: formatCount(0).formatted,
+                        tokens: formatCount(0).formatted,
+                        waitTime: formatTime(0).formatted,
+                    },
+                    chartData: points,
+                };
             }
 
             const cost = sortedDaily.reduce((acc, s) => acc + s.total_cost.raw, 0);
@@ -104,12 +120,30 @@ export function StatsChart({ className }: { className?: string }) {
 
         if (period === '1') {
             // 今日档：聚合 statsHourly
-            if (!statsHourly) {
-                return { hero: emptyHero, metrics: emptyMetrics, chartData: [] };
+            if (!statsHourly || statsHourly.length === 0) {
+                const currentHour = new Date().getHours();
+                const points = Array.from({ length: Math.max(6, currentHour + 1) }, (_, i) => ({
+                    date: `${i.toString().padStart(2, '0')}:00`,
+                    total_cost: 0,
+                    requests: 0,
+                    tokens: 0,
+                }));
+                const costFmt = formatMoney(0).formatted;
+                return {
+                    hero: { value: costFmt.value, unit: costFmt.unit },
+                    metrics: {
+                        requests: formatCount(0).formatted,
+                        tokens: formatCount(0).formatted,
+                        waitTime: formatTime(0).formatted,
+                    },
+                    chartData: points,
+                };
             }
             const points: ChartPoint[] = statsHourly.map((stat) => ({
                 date: `${stat.hour}:00`,
                 total_cost: stat.total_cost.raw,
+                requests: stat.request_count.raw,
+                tokens: stat.total_token.raw,
             }));
             const cost = statsHourly.reduce((acc, s) => acc + s.total_cost.raw, 0);
             const requests = statsHourly.reduce((acc, s) => acc + s.request_count.raw, 0);
@@ -133,10 +167,26 @@ export function StatsChart({ className }: { className?: string }) {
         const points: ChartPoint[] = recent.map((stat) => ({
             date: dayjs(stat.date).format('MM/DD'),
             total_cost: stat.total_cost.raw,
+            requests: stat.request_count.raw,
+            tokens: stat.total_token.raw,
         }));
 
         if (recent.length === 0) {
-            return { hero: emptyHero, metrics: emptyMetrics, chartData: [] };
+            const points = Array.from({ length: days }, (_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - (days - 1) + i);
+                return { date: dayjs(d).format('MM/DD'), total_cost: 0, requests: 0, tokens: 0 };
+            });
+            const costFmt = formatMoney(0).formatted;
+            return {
+                hero: { value: costFmt.value, unit: costFmt.unit },
+                metrics: {
+                    requests: formatCount(0).formatted,
+                    tokens: formatCount(0).formatted,
+                    waitTime: formatTime(0).formatted,
+                },
+                chartData: points,
+            };
         }
 
         const cost = recent.reduce((acc, s) => acc + s.total_cost.raw, 0);
@@ -157,7 +207,9 @@ export function StatsChart({ className }: { className?: string }) {
 
     const chartConfig = useMemo(
         () => ({
-            total_cost: { label: t('headline.allTime') },
+            tokens: { label: t('metrics.tokens'), color: 'hsl(var(--primary) / 0.7)' },
+            requests: { label: t('metrics.requests'), color: 'hsl(var(--chart-2))' },
+            total_cost: { label: t('headline.allTime'), color: 'hsl(var(--chart-3))' },
         }),
         [t]
     );
@@ -210,23 +262,32 @@ export function StatsChart({ className }: { className?: string }) {
                 <StatItem label={t('metrics.waitTime')} value={metrics.waitTime} />
             </div>
 
-            {/* Area chart — only total_cost */}
-            <div className="mx-5 mb-5 p-3 rounded-2xl fluent-pressed flex-1 flex flex-col min-h-[300px]">
+            {/* Area chart */}
+            <div className="mx-5 mb-5 p-3 rounded-2xl flex-1 flex flex-col min-h-[300px] border border-border/60 bg-background/30">
                 <ChartContainer config={chartConfig} className="h-full w-full flex-1 px-1">
-                <AreaChart accessibilityLayer data={chartData}>
+                <AreaChart accessibilityLayer data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
+                        <linearGradient id="fillTokens" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--color-tokens)" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="var(--color-tokens)" stopOpacity={0.0} />
+                        </linearGradient>
+                        <linearGradient id="fillRequests" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--color-requests)" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="var(--color-requests)" stopOpacity={0.0} />
+                        </linearGradient>
                         <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.25} />
-                            <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0} />
+                            <stop offset="5%" stopColor="var(--color-total_cost)" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="var(--color-total_cost)" stopOpacity={0.0} />
                         </linearGradient>
                         <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-                            <feGaussianBlur stdDeviation="4" result="blur" />
+                            <feGaussianBlur stdDeviation="3" result="blur" />
                             <feMerge>
                                 <feMergeNode in="blur" />
                                 <feMergeNode in="SourceGraphic" />
                             </feMerge>
                         </filter>
                     </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--border) / 0.4)" />
                     <XAxis 
                         dataKey="date" 
                         tickLine={false} 
@@ -236,6 +297,18 @@ export function StatsChart({ className }: { className?: string }) {
                         className="text-[10px] font-semibold tracking-wider font-mono"
                     />
                     <YAxis
+                        yAxisId="left"
+                        orientation="left"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        stroke="oklch(var(--foreground) / 0.55)"
+                        className="text-[10px] font-semibold tracking-wider font-mono"
+                        tickFormatter={(value) => formatCount(value).formatted.value + formatCount(value).formatted.unit}
+                    />
+                    <YAxis
+                        yAxisId="right"
+                        orientation="right"
                         tickLine={false}
                         axisLine={false}
                         tickMargin={8}
@@ -243,17 +316,33 @@ export function StatsChart({ className }: { className?: string }) {
                         className="text-[10px] font-semibold tracking-wider font-mono"
                         tickFormatter={(value) => {
                             const formatted = formatMoney(value);
-                            return `${formatted.formatted.value}${formatted.formatted.unit}`;
+                            return `$${formatted.formatted.value}${formatted.formatted.unit.replace('$', '')}`;
                         }}
                     />
                     <ChartTooltip cursor={{ stroke: 'oklch(var(--border) / 0.3)', strokeWidth: 1 }} content={<ChartTooltipContent indicator="line" />} />
                     <Area
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="tokens"
+                        stroke="var(--color-tokens)"
+                        strokeWidth={2}
+                        fill="url(#fillTokens)"
+                    />
+                    <Area
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="requests"
+                        stroke="var(--color-requests)"
+                        strokeWidth={2}
+                        fill="url(#fillRequests)"
+                    />
+                    <Area
+                        yAxisId="right"
                         type="monotone"
                         dataKey="total_cost"
-                        stroke="var(--primary)"
+                        stroke="var(--color-total_cost)"
                         strokeWidth={2}
                         fill="url(#fillCost)"
-                        filter="url(#glow)"
                     />
                 </AreaChart>
                 </ChartContainer>

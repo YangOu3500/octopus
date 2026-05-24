@@ -125,11 +125,94 @@ func TestBuildChannelModelHealthAggregatesAttemptsAndRuntimeHealth(t *testing.T)
 	if row.HealthSampleCount != 2 || row.HealthSuccessCount != 1 || row.HealthFailureCount != 1 {
 		t.Fatalf("unexpected health samples: %+v", row)
 	}
+	if result.Summary.RequestRows != 1 || result.Summary.HealthSampleRows != 1 || result.Summary.HealthSampleCount != 2 {
+		t.Fatalf("unexpected health summary sample counts: %+v", result.Summary)
+	}
+	if result.Summary.AvgHealthScore <= 0 || result.Summary.AvgHealthScore > 100 {
+		t.Fatalf("unexpected average health score: %+v", result.Summary)
+	}
 	if !row.CoolingDown || row.CooldownRemainingMS <= 0 || row.CooldownReason == "" {
 		t.Fatalf("expected active cooldown state: %+v", row)
 	}
 	if row.AvgTTFBMS != 90 || row.AvgTotalMS != 375 {
 		t.Fatalf("unexpected latency averages: %+v", row)
+	}
+}
+
+func TestBuildChannelModelHealthDoesNotAverageDefaultHealthWithoutSamples(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	balancer.Reset()
+	t.Cleanup(balancer.Reset)
+
+	if err := op.RelayLogClear(ctx); err != nil {
+		t.Fatalf("RelayLogClear failed: %v", err)
+	}
+	if err := op.SettingSetString(model.SettingKeyHealthScoreEnabled, "false"); err != nil {
+		t.Fatalf("SettingSetString failed: %v", err)
+	}
+
+	channel := &model.Channel{
+		Name:     "health-log-only",
+		Type:     outbound.OutboundTypeOpenAIChat,
+		Enabled:  true,
+		BaseUrls: []model.BaseUrl{{URL: "https://health-log-only.example.test/v1"}},
+		Model:    "log-only-model",
+		Keys:     []model.ChannelKey{{Enabled: true, ChannelKey: "sk-log-only-secret"}},
+	}
+	if err := op.ChannelCreate(channel, ctx); err != nil {
+		t.Fatalf("ChannelCreate failed: %v", err)
+	}
+
+	entry := model.RelayLog{
+		Time:             time.Now().Unix(),
+		TraceID:          "trace-log-only-health",
+		RequestModelName: "log-only-model",
+		ActualModelName:  "log-only-model",
+		FinalStatus:      "failed",
+		RequestSource:    "relay",
+		ChannelId:        channel.ID,
+		ChannelName:      channel.Name,
+		AttemptsCount:    1,
+		Attempts: []model.ChannelAttempt{
+			{
+				AttemptIndex:  1,
+				ChannelID:     channel.ID,
+				ChannelName:   channel.Name,
+				ModelName:     "log-only-model",
+				Status:        model.AttemptFailed,
+				HTTPStatus:    500,
+				FailureReason: "upstream_error",
+				TotalMS:       250,
+			},
+		},
+	}
+	if err := op.RelayLogAdd(ctx, entry); err != nil {
+		t.Fatalf("RelayLogAdd failed: %v", err)
+	}
+
+	result, err := BuildChannelModelHealth(ctx, model.ChannelModelHealthQuery{TimeRange: "all"})
+	if err != nil {
+		t.Fatalf("BuildChannelModelHealth failed: %v", err)
+	}
+	if result.Summary.HealthScoreEnabled {
+		t.Fatalf("expected health scheduling disabled summary: %+v", result.Summary)
+	}
+	if result.Summary.TotalRequests != 1 || result.Summary.RequestRows != 1 || result.Summary.FailureCount != 1 {
+		t.Fatalf("expected real request aggregation to remain visible: %+v", result.Summary)
+	}
+	if result.Summary.HealthSampleRows != 0 || result.Summary.HealthSampleCount != 0 {
+		t.Fatalf("expected no health samples: %+v", result.Summary)
+	}
+	if result.Summary.AvgHealthScore != 0 {
+		t.Fatalf("expected no default average health score without samples, got %+v", result.Summary)
+	}
+
+	row := findChannelModelHealthRow(result.Rows, channel.ID, "log-only-model")
+	if row == nil {
+		t.Fatalf("expected channel/model row, got %+v", result.Rows)
+	}
+	if row.RequestCount != 1 || row.HealthSampleCount != 0 {
+		t.Fatalf("unexpected row counts: %+v", row)
 	}
 }
 

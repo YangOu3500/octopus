@@ -64,7 +64,8 @@
         "model": "模型价格",
         "traces": "链路追踪",
         "log": "请求日志",
-        "setting": "系统设置"
+        "setting": "系统设置",
+        "analytics": "趋势分析"
     },
     "toolbar": {
         "popover": {
@@ -1815,6 +1816,9 @@
             },
             "healthSamples": "{success}/{total} · {rate}",
             "noSamples": "暂无健康样本",
+            "unrated": "未评分",
+            "noHealthSampleOrDisabled": "暂无健康评分样本 / 健康调度未启用",
+            "noCallRecords": "没有实际调用记录",
             "emptyRate": "空响应",
             "callMeta": "成功 {success} / 失败 {failed} · {rate}",
             "range": {

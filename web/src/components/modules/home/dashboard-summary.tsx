@@ -34,46 +34,7 @@ function growthDelta(current: number, previous: number) {
     return ((current - previous) / previous) * 100;
 }
 
-function SummaryCard({
-    icon: Icon,
-    title,
-    value,
-    detail,
-    badge,
-    accent,
-    extra,
-}: {
-    icon: LucideIcon;
-    title: string;
-    value: string;
-    detail: string;
-    badge?: ReactNode;
-    accent?: boolean;
-    extra?: ReactNode;
-}) {
-    return (
-        <article
-            className={cn(
-                'fluent-card flex min-h-[10.5rem] flex-col px-5 py-4',
-                accent && 'bg-primary text-white shadow-md border-none ring-0'
-            )}
-        >
-            <div className="flex items-start justify-between gap-3">
-                <div className={cn(
-                    'flex size-11 items-center justify-center rounded-[16px]',
-                    accent ? 'bg-white/20 text-white shadow-sm' : 'bg-background/80 text-primary shadow-sm'
-                )}>
-                    <Icon className="size-5" />
-                </div>
-                {badge ? <div className="shrink-0">{badge}</div> : null}
-            </div>
-            <div className={cn("mt-3 text-[13px] font-black tracking-wide uppercase", accent ? "text-white/80" : "text-muted-foreground")}>{title}</div>
-            <div className={cn("mt-1 text-3xl font-black leading-none tabular-nums tracking-tight drop-shadow-sm", accent ? "text-white" : "text-primary")}>{value}</div>
-            <div className={cn("mt-1.5 line-clamp-1 text-[13px] font-semibold", accent ? "text-white/70" : "text-muted-foreground/80")}>{detail}</div>
-            {extra ? <div className="mt-auto pt-3">{extra}</div> : null}
-        </article>
-    );
-}
+
 
 function InsightTile({
     icon: Icon,
@@ -148,103 +109,95 @@ export function DashboardSummaryCards() {
     return (
         <section className="space-y-6">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4 items-stretch">
-                <SummaryCard
-                    icon={BarChart3}
-                    title={t('totalRequests')}
-                    value={`${total?.request_count.formatted.value ?? '0'}${total?.request_count.formatted.unit ?? ''}`}
-                    detail={t('comparePrevWeek')}
-                    badge={(
+                {/* Card 1: Total Requests */}
+                <article className="fluent-card relative overflow-hidden px-6 py-5 flex flex-col justify-between min-h-[10.5rem]">
+                    <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                        <BarChart3 className="size-4.5" />
+                        {t('totalRequests')}
+                    </div>
+                    <div className="mt-4 mb-6">
+                        <div className="text-4xl font-black tabular-nums tracking-tight text-foreground drop-shadow-sm">
+                            {total?.request_count.formatted.value ?? '0'}
+                            <span className="text-2xl ml-0.5">{total?.request_count.formatted.unit ?? ''}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center mt-auto">
                         <Badge
                             variant="outline"
                             className={cn(
-                                'rounded-md px-2 text-[11px]',
+                                'rounded-full px-2.5 py-0.5 text-xs border-none font-bold',
                                 growthPositive
-                                    ? 'border-primary/20 bg-primary/10 text-primary'
-                                    : 'border-destructive/20 bg-destructive/10 text-destructive',
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'bg-destructive/10 text-destructive',
                             )}
                         >
                             {growthPositive ? '+' : ''}
-                            {weeklyGrowth.toFixed(0)}%
+                            {weeklyGrowth.toFixed(0)}% {t('comparePrevWeek')}
                         </Badge>
-                    )}
-                    extra={(
-                        <div className="grid grid-cols-2 gap-3 text-xs tabular-nums">
-                            <div className="bg-background/40 rounded-[16px] px-3 py-2.5">
-                                <div className="text-muted-foreground font-bold">{t('todayRequests')}</div>
-                                <div className="mt-1 font-black text-foreground text-sm">{compactCount(todayRequests)}</div>
-                            </div>
-                            <div className="bg-background/40 rounded-[16px] px-3 py-2.5">
-                                <div className="text-muted-foreground font-bold">{t('weekTotal')}</div>
-                                <div className="mt-1 font-black text-foreground text-sm">{compactCount(dailyWindows.last7Requests)}</div>
-                            </div>
-                        </div>
-                    )}
-                />
+                    </div>
+                </article>
 
-                <SummaryCard
-                    icon={Gauge}
-                    title={t('successRate')}
-                    value={percent(observability?.success_rate)}
-                    detail={t('successSub', { failed: failureCount })}
-                    badge={<Badge variant="outline" className="rounded-md px-2 text-[11px]">{observabilityT('range24h')}</Badge>}
-                    extra={(
-                        <div className="space-y-1.5">
-                            <Progress value={successRateValue} className="h-2 bg-muted/80" />
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>{t('failureRequests')}</span>
-                                <span className="font-medium text-foreground">{compactCount(failureCount)}</span>
-                            </div>
+                {/* Card 2: Success Rate */}
+                <article className="fluent-card relative overflow-hidden px-6 py-5 flex flex-col justify-between min-h-[10.5rem]">
+                    <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                        <Gauge className="size-4.5" />
+                        {t('successRate')}
+                    </div>
+                    <div className="mt-4 mb-4">
+                        <div className="text-4xl font-black tabular-nums tracking-tight text-foreground drop-shadow-sm">
+                            {percent(observability?.success_rate)}
                         </div>
-                    )}
-                />
+                    </div>
+                    <div className="mt-auto space-y-2">
+                        <Progress value={successRateValue} className="h-1.5 bg-muted" />
+                        <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+                            <span>{compactCount(failureCount)} {t('failureRequests')}</span>
+                            <span>{observabilityT('range24h')}</span>
+                        </div>
+                    </div>
+                </article>
 
-                <SummaryCard
-                    icon={Layers3}
-                    title={t('tokens')}
-                    value={compactCount(tokenTotal)}
-                    detail={t('tokenSub', {
-                        input: compactCount(observability?.input_tokens),
-                        output: compactCount(observability?.output_tokens),
-                        cache: compactCount(observability?.cache_tokens),
-                    })}
-                    badge={<Badge variant="outline" className="rounded-md px-2 text-[11px]">{observabilityT('range24h')}</Badge>}
-                    extra={(
-                        <div className="grid grid-cols-3 gap-2 text-[11px] tabular-nums">
-                            <div className="bg-background/40 rounded-[12px] px-2.5 py-2.5">
-                                <div className="text-muted-foreground font-bold">{observabilityT('input')}</div>
-                                <div className="mt-1 font-black text-foreground">{compactCount(observability?.input_tokens)}</div>
-                            </div>
-                            <div className="bg-background/40 rounded-[12px] px-2.5 py-2.5">
-                                <div className="text-muted-foreground font-bold">{observabilityT('output')}</div>
-                                <div className="mt-1 font-black text-foreground">{compactCount(observability?.output_tokens)}</div>
-                            </div>
-                            <div className="bg-background/40 rounded-[12px] px-2.5 py-2.5">
-                                <div className="text-muted-foreground font-bold">{observabilityT('cache')}</div>
-                                <div className="mt-1 font-black text-foreground">{compactCount(observability?.cache_tokens)}</div>
-                            </div>
+                {/* Card 3: Tokens */}
+                <article className="fluent-card relative overflow-hidden px-6 py-5 flex flex-col justify-between min-h-[10.5rem]">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                            <Layers3 className="size-4.5" />
+                            {t('tokens')}
                         </div>
-                    )}
-                />
+                        <Badge variant="outline" className="rounded-full bg-muted/50 text-[10px] font-bold border-none px-2">{observabilityT('range24h')}</Badge>
+                    </div>
+                    <div className="mt-auto pt-6 flex items-center justify-between gap-2">
+                        <div className="flex flex-col gap-1 min-w-0">
+                            <span className="text-[11px] font-bold text-muted-foreground">{observabilityT('input')}</span>
+                            <span className="text-xl font-black tabular-nums tracking-tight text-foreground truncate">{compactCount(observability?.input_tokens)}</span>
+                        </div>
+                        <div className="flex flex-col gap-1 min-w-0">
+                            <span className="text-[11px] font-bold text-muted-foreground">{observabilityT('output')}</span>
+                            <span className="text-xl font-black tabular-nums tracking-tight text-foreground truncate">{compactCount(observability?.output_tokens)}</span>
+                        </div>
+                        <div className="flex flex-col gap-1 min-w-0">
+                            <span className="text-[11px] font-bold text-muted-foreground">{observabilityT('cache')}</span>
+                            <span className="text-xl font-black tabular-nums tracking-tight text-foreground truncate">{compactCount(observability?.cache_tokens)}</span>
+                        </div>
+                    </div>
+                </article>
 
-                <SummaryCard
-                    icon={Zap}
-                    title={t('todayRequests')}
-                    value={compactCount(todayRequests)}
-                    detail={t('todaySub', { rpm: (observability?.rpm ?? 0).toFixed(2) })}
-                    accent
-                    extra={(
-                        <div className="grid grid-cols-2 gap-3 text-xs tabular-nums">
-                            <div className="bg-background/40 rounded-[16px] text-primary px-3 py-2.5">
-                                <div className="font-bold text-muted-foreground">{t('monthTotal')}</div>
-                                <div className="mt-1 font-black text-sm">{compactCount(dailyWindows.last30Requests)}</div>
-                            </div>
-                            <div className="bg-background/40 rounded-[16px] text-primary px-3 py-2.5">
-                                <div className="font-bold text-muted-foreground">{observabilityT('range24h')}</div>
-                                <div className="mt-1 font-black text-sm">{latencyFormatted}</div>
-                            </div>
+                {/* Card 4: Today Requests */}
+                <article className="fluent-card bg-primary text-primary-foreground border-none shadow-md relative overflow-hidden px-6 py-5 flex flex-col justify-between min-h-[10.5rem]">
+                    <div className="flex items-center gap-2 text-sm font-bold text-primary-foreground/90">
+                        <Zap className="size-4.5" />
+                        {t('todayRequests')}
+                    </div>
+                    <div className="mt-4 mb-6">
+                        <div className="text-4xl font-black tabular-nums tracking-tight text-white drop-shadow-sm">
+                            {compactCount(todayRequests)}
                         </div>
-                    )}
-                />
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-bold text-primary-foreground/80 mt-auto pt-2">
+                        <span>{t('weekTotal')}: {compactCount(dailyWindows.last7Requests)}</span>
+                        <span>{t('monthTotal')}: {compactCount(dailyWindows.last30Requests)}</span>
+                    </div>
+                </article>
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">

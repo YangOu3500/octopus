@@ -287,7 +287,7 @@ export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode
 
     if (viewMode === 'card') {
         return (
-            <article className="flex flex-col rounded-[24px] border border-border/50 bg-card/60 backdrop-blur-sm text-card-foreground p-3.5 transition-all hover:bg-card hover:shadow-md hover:border-primary/20 h-full">
+            <article className="fluent-card flex flex-col p-3.5 transition-all hover:shadow-sm hover:bg-background/80 h-full">
                 <header className="flex items-start justify-between mb-2">
                     <div className="flex-1 min-w-0 pr-2">
                         <div className="flex items-center gap-1.5">
@@ -313,7 +313,7 @@ export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode
                             </MorphingDialogTrigger>
 
                             <MorphingDialogContainer>
-                                <MorphingDialogContent className="relative w-screen max-w-full md:max-w-4xl bg-card text-card-foreground px-6 py-4 rounded-3xl h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+                                <MorphingDialogContent className="relative w-screen max-w-full md:max-w-4xl bg-card text-card-foreground px-6 py-4 rounded-2xl h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
                                     <EditDialogContent
                                         group={group}
                                         displayMembers={effectiveDisplayMembers}
@@ -340,7 +340,7 @@ export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode
     }
 
     return (
-        <article className="flex flex-col rounded-3xl border border-border bg-card text-card-foreground p-4 custom-shadow max-w-[700px] mx-auto w-full">
+        <article className="fluent-card flex flex-col p-4 custom-shadow w-full">
             <header className="flex items-start justify-between mb-3 relative overflow-visible rounded-xl -mx-1 px-1 -my-1 py-1">
                 <div className="relative flex-1 mr-2 min-w-0 group/title">
                     <Tooltip side="top" sideOffset={10} align="center">
@@ -363,7 +363,7 @@ export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode
                         </MorphingDialogTrigger>
 
                         <MorphingDialogContainer>
-                            <MorphingDialogContent className="relative w-screen max-w-full md:max-w-4xl bg-card text-card-foreground px-6 py-4 rounded-3xl h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+                            <MorphingDialogContent className="relative w-screen max-w-full md:max-w-4xl bg-card text-card-foreground px-6 py-4 rounded-2xl h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
                                 <EditDialogContent
                                     group={group}
                                     displayMembers={displayMembers}
@@ -436,20 +436,20 @@ export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode
                 ))}
             </div>
 
-            <div className="mb-3 grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-3">
-                <Badge variant="outline" className="min-w-0 justify-start rounded-lg px-2 py-1 font-normal">
+            <div className="mb-4 flex flex-wrap gap-2 text-xs">
+                <Badge variant="outline" className="min-w-0 flex-1 justify-start rounded-lg px-2.5 py-1.5 font-normal">
                     <Clock3 className="mr-1.5 size-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">
                         {t('runtime.firstValid')}: {group.first_token_time_out && group.first_token_time_out > 0 ? `${group.first_token_time_out}s` : t('runtime.inheritGlobal')}
                     </span>
                 </Badge>
-                <Badge variant="outline" className="min-w-0 justify-start rounded-lg px-2 py-1 font-normal">
+                <Badge variant="outline" className="min-w-0 flex-1 justify-start rounded-lg px-2.5 py-1.5 font-normal">
                     <Repeat2 className="mr-1.5 size-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">
                         {t('runtime.retry')}: {group.retry_enabled ? `${group.max_retries ?? 3}x` : t('runtime.off')}
                     </span>
                 </Badge>
-                <Badge variant="outline" className="min-w-0 justify-start rounded-lg px-2 py-1 font-normal">
+                <Badge variant="outline" className="min-w-0 flex-1 justify-start rounded-lg px-2.5 py-1.5 font-normal">
                     <Pin className="mr-1.5 size-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">
                         {t('runtime.session')}: {group.session_keep_time && group.session_keep_time > 0 ? `${group.session_keep_time}s` : t('runtime.off')}
@@ -461,7 +461,7 @@ export function GroupCard({ group, viewMode = 'list' }: { group: Group; viewMode
 
             <GroupHealthBadge groupId={group.id} />
 
-            <section className="rounded-xl border border-border/50 bg-muted/30 overflow-hidden relative max-h-[300px] flex flex-col">
+            <section className="rounded-xl border border-border/50 bg-muted/30 overflow-hidden relative max-h-[400px] flex flex-col mt-2">
                 <div className="flex-1 overflow-y-auto">
                     <MemberList
                         members={renderedMembers}

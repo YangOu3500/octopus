@@ -157,7 +157,7 @@ export function CheckinPanel({
   }, [manualCheckinUrls]);
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)]">
+    <section className="fluent-card overflow-hidden transition-all duration-300">
       <div className="border-b border-border/60 bg-gradient-to-br from-background via-card to-muted/10 px-5 py-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-1">
@@ -245,7 +245,7 @@ export function CheckinPanel({
                     )
                   }
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
                     filterTone(filter.key, active),
                   )}
                 >

@@ -1801,7 +1801,7 @@ export function Site() {
       <section
         key={site.id}
         className={cn(
-          "rounded-[28px] border bg-card p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.45)] transition-colors",
+          "fluent-card p-5 transition-all duration-300",
           cardToneClass(summary.healthTone),
           highlightedSiteId === site.id &&
             "ring-2 ring-primary/35 ring-offset-2 ring-offset-background",
@@ -2056,7 +2056,7 @@ export function Site() {
                               key={account.id}
                               ref={(node) => setAccountElementRef(account.id, node)}
                               className={cn(
-                                "rounded-2xl border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors",
+                                "fluent-card px-4 py-3 transition-colors",
                                 cardToneClass(accountTone),
                                 highlightedAccountId === account.id &&
                                   "ring-2 ring-primary/35 ring-offset-2 ring-offset-background",
@@ -2324,7 +2324,7 @@ export function Site() {
         />
 
         {selectedSiteIds.length > 0 ? (
-          <section className="rounded-3xl border border-primary/30 bg-primary/5 p-4">
+          <section className="fluent-pressed bg-primary/5 border border-primary/30 p-4">
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm font-medium">
                 已选 {selectedSiteIds.length} 个站点
@@ -2387,19 +2387,19 @@ export function Site() {
         ) : null}
 
         {error ? (
-          <section className="rounded-3xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
+          <section className="fluent-pressed border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
             站点列表加载失败：{getSiteErrorMessage(locale, error, t)}
           </section>
         ) : null}
 
         {isLoading ? (
-          <section className="rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground">
+          <section className="fluent-pressed border border-border bg-card p-6 text-sm text-muted-foreground">
             正在加载站点信息...
           </section>
         ) : null}
 
         {!isLoading && !error && (!sites || sites.length === 0) ? (
-          <section className="rounded-3xl border border-dashed border-border bg-card p-10 text-center">
+          <section className="fluent-pressed border border-dashed border-border bg-card p-10 text-center">
             <CircleAlert className="mx-auto size-8 text-muted-foreground" />
             <div className="mt-4 text-lg font-semibold">还没有站点</div>
             <p className="mt-2 text-sm text-muted-foreground">
