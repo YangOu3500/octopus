@@ -14,17 +14,17 @@ export interface RouteConfig {
     component: LazyComponent;
 }
 
-const Home_Module = lazyWithPreload(() => import('@/components/modules/home').then(m => ({ default: m.Home })));
-const Site_Module = lazyWithPreload(() => import('@/components/modules/site').then(m => ({ default: m.Site })));
-const Channel_Module = lazyWithPreload(() => import('@/components/modules/channel').then(m => ({ default: m.Channel })));
-const ModelHealth_Module = lazyWithPreload(() => import('@/components/modules/model-health').then(m => ({ default: m.ModelHealth })));
-const ModelTest_Module = lazyWithPreload(() => import('@/components/modules/model-test').then(m => ({ default: m.ModelTest })));
-const Model_Module = lazyWithPreload(() => import('@/components/modules/model').then(m => ({ default: m.Model })));
-const Group_Module = lazyWithPreload(() => import('@/components/modules/group').then(m => ({ default: m.Group })));
-const Traces_Module = lazyWithPreload(() => import('@/components/modules/traces').then(m => ({ default: m.Traces })));
-const Log_Module = lazyWithPreload(() => import('@/components/modules/log').then(m => ({ default: m.Log })));
-const Analytics_Module = lazyWithPreload(() => import('@/components/modules/analytics').then(m => ({ default: m.Analytics })));
-const Setting_Module = lazyWithPreload(() => import('@/components/modules/setting').then(m => ({ default: m.Setting })));
+const Home_Module = lazyWithPreload(() => import('@/components/pages/home').then(m => ({ default: m.Home })));
+const Site_Module = lazyWithPreload(() => import('@/components/pages/site').then(m => ({ default: m.Site })));
+const Channel_Module = lazyWithPreload(() => import('@/components/pages/channel').then(m => ({ default: m.Channel })));
+const ModelHealth_Module = lazyWithPreload(() => import('@/components/pages/model-health').then(m => ({ default: m.ModelHealth })));
+const ModelTest_Module = lazyWithPreload(() => import('@/components/pages/model-test').then(m => ({ default: m.ModelTest })));
+const Group_Module = lazyWithPreload(() => import('@/components/pages/group').then(m => ({ default: m.Group })));
+const Model_Module = lazyWithPreload(() => import('@/components/pages/model').then(m => ({ default: m.Model })));
+const Traces_Module = lazyWithPreload(() => import('@/components/pages/traces').then(m => ({ default: m.Traces })));
+const Log_Module = lazyWithPreload(() => import('@/components/pages/log').then(m => ({ default: m.Log })));
+const Analytics_Module = lazyWithPreload(() => import('@/components/pages/analytics').then(m => ({ default: m.Analytics })));
+const Setting_Module = lazyWithPreload(() => import('@/components/pages/settings').then(m => ({ default: m.Setting })));
 
 export const ROUTES: RouteConfig[] = [
     { id: 'home', label: 'Home', icon: Home, component: Home_Module },

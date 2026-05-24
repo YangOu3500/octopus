@@ -106,6 +106,7 @@ export type ChannelModelHealthRow = {
     cache_tokens: number;
     estimated_cost: number;
     health_score: number;
+    health_score_available: boolean;
     health_sample_count: number;
     health_success_count: number;
     health_failure_count: number;
@@ -323,6 +324,7 @@ function normalizeChannelModelHealth(data: Partial<ChannelModelHealthResult>): C
             cache_tokens: typeof row.cache_tokens === 'number' ? row.cache_tokens : 0,
             estimated_cost: typeof row.estimated_cost === 'number' ? row.estimated_cost : 0,
             health_score: typeof row.health_score === 'number' ? row.health_score : 100,
+            health_score_available: row.health_score_available === true,
             health_sample_count: typeof row.health_sample_count === 'number' ? row.health_sample_count : 0,
             health_success_count: typeof row.health_success_count === 'number' ? row.health_success_count : 0,
             health_failure_count: typeof row.health_failure_count === 'number' ? row.health_failure_count : 0,

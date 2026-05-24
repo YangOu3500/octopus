@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useNavStore, type NavItem } from '@/components/modules/navbar';
+import { useNavStore, type NavItem } from '@/stores/nav';
 
 export type SiteJumpTarget =
     | { kind: 'site-card'; siteId: number }

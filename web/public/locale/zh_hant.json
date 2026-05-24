@@ -64,7 +64,8 @@
         "model": "模型價格",
         "traces": "鏈路追蹤",
         "log": "請求日誌",
-        "setting": "系統設定"
+        "setting": "系統設定",
+        "analytics": "趨勢分析"
     },
     "toolbar": {
         "popover": {
@@ -964,6 +965,9 @@
         }
     },
     "group": {
+        "stats": {
+            "visible": "可見"
+        },
         "toast": {
             "created": "建立成功",
             "createFailed": "建立失敗",
@@ -1261,6 +1265,9 @@
         "empty": "暫無分組，點擊左上角按鈕建立"
     },
     "modelTest": {
+        "periods": {
+            "allTime": "累計"
+        },
         "mode": {
             "channel": "按供應源測試",
             "model": "按模型測試"

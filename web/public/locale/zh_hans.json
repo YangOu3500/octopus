@@ -965,6 +965,9 @@
         }
     },
     "group": {
+        "stats": {
+            "visible": "可见"
+        },
         "toast": {
             "created": "创建成功",
             "createFailed": "创建失败",
@@ -1262,6 +1265,9 @@
         "empty": "暂无分组，点击左上角按钮创建"
     },
     "modelTest": {
+        "periods": {
+            "allTime": "累计"
+        },
         "mode": {
             "channel": "按渠道测试",
             "model": "按模型测试"

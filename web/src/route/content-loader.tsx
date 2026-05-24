@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { CONTENT_MAP } from './config';
 import { ErrorBoundary } from './error-boundary';
-import type { NavItem } from '@/components/modules/navbar/nav-store';
+import type { NavItem } from '@/stores/nav';
 
 export function ContentLoader({ activeRoute }: { activeRoute: NavItem }) {
     const Component = CONTENT_MAP[activeRoute];

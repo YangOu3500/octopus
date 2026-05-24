@@ -965,6 +965,9 @@
         }
     },
     "group": {
+        "stats": {
+            "visible": "Visible"
+        },
         "toast": {
             "created": "Created successfully",
             "createFailed": "Create failed",
@@ -1262,6 +1265,9 @@
         "empty": "No groups yet, click the button above to create one"
     },
     "modelTest": {
+        "periods": {
+            "allTime": "All time"
+        },
         "mode": {
             "channel": "By channel",
             "model": "By model"
