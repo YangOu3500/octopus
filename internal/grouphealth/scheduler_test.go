@@ -210,6 +210,81 @@ func TestSlowProbeSchedulerBacksOffAfterFailure(t *testing.T) {
 	}
 }
 
+func TestSlowProbeSchedulerTriggersUnknownAndStaleDegradedCandidates(t *testing.T) {
+	ctx := setupGroupHealthTestDB(t)
+	var requests int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt64(&requests, 1)
+		writeValidChatProbeResponse(w)
+	}))
+	defer server.Close()
+
+	healthyGroup, healthyItem, _ := createProbeGroupItemWithChannel(t, ctx, "trigger-healthy-group", "trigger-healthy-channel", server.URL)
+	degradedGroup, degradedItem, _ := createProbeGroupItemWithChannel(t, ctx, "trigger-degraded-group", "trigger-degraded-channel", server.URL)
+	createProbeGroupWithChannel(t, ctx, "trigger-unknown-group", "trigger-unknown-channel", server.URL)
+
+	now := time.Date(2026, 5, 16, 9, 0, 0, 0, time.UTC)
+	seedProbeSnapshot(t, healthyGroup, healthyItem, model.GroupHealthAttemptStatusSuccess, now.Add(-30*time.Minute))
+	seedProbeSnapshot(t, degradedGroup, degradedItem, model.GroupHealthAttemptStatusFailed, now.Add(-2*time.Hour))
+
+	scheduler := NewSlowProbeScheduler(op.NewGroupHealthRepository(), &Prober{CandidateTimeout: time.Second})
+	scheduler.now = func() time.Time { return now }
+	if err := scheduler.RunOnceWithConfig(ctx, ProbeConfig{
+		Enabled:                 true,
+		SiteMinInterval:         time.Minute,
+		ModelMinInterval:        time.Hour,
+		MaxConcurrency:          2,
+		DailyMaxRequestsPerSite: 20,
+		Prompt:                  "只回复 OK",
+		MaxTokens:               8,
+		JitterRatio:             0,
+	}); err != nil {
+		t.Fatalf("RunOnceWithConfig failed: %v", err)
+	}
+
+	if requests != 2 {
+		t.Fatalf("expected stale degraded and unknown candidates to probe while recent healthy skips, got %d requests", requests)
+	}
+}
+
+func TestSlowProbeSchedulerFailureBackoffDecaysAfterLongQuietPeriod(t *testing.T) {
+	now := time.Date(2026, 5, 16, 9, 0, 0, 0, time.UTC)
+	scheduler := NewSlowProbeScheduler(nil, nil)
+	cfg := ProbeConfig{
+		SiteMinInterval:  time.Minute,
+		ModelMinInterval: time.Hour,
+		JitterRatio:      0,
+	}
+	job := slowProbeJob{
+		item: model.GroupItem{ChannelID: 9, ModelName: "probe-model"},
+		channel: model.Channel{
+			ID: 9,
+		},
+		usedKey: model.ChannelKey{ID: 99},
+	}
+	key := candidateProbeKey{ChannelID: 9, ChannelKeyID: 99, ModelName: "probe-model"}
+
+	scheduler.recordCandidateResult(cfg, job, ProbeResult{Success: false}, now)
+	first := scheduler.backoffs[key]
+	if first.Failures != 1 || first.Until.Sub(now) != time.Minute {
+		t.Fatalf("first backoff = %+v, want failures=1 duration=1m", first)
+	}
+
+	secondNow := now.Add(2 * time.Minute)
+	scheduler.recordCandidateResult(cfg, job, ProbeResult{Success: false}, secondNow)
+	second := scheduler.backoffs[key]
+	if second.Failures != 2 || second.Until.Sub(secondNow) != 2*time.Minute {
+		t.Fatalf("second backoff = %+v, want failures=2 duration=2m", second)
+	}
+
+	decayedNow := secondNow.Add(25 * time.Hour)
+	scheduler.recordCandidateResult(cfg, job, ProbeResult{Success: false}, decayedNow)
+	decayed := scheduler.backoffs[key]
+	if decayed.Failures != 1 || decayed.Until.Sub(decayedNow) != time.Minute {
+		t.Fatalf("decayed backoff = %+v, want failures reset to 1 duration=1m", decayed)
+	}
+}
+
 func TestSlowProbeSchedulerUsesFallbackKeyWhenPrimaryKeyHardBlocked(t *testing.T) {
 	ctx := setupGroupHealthTestDB(t)
 	var requests int64
@@ -273,7 +348,12 @@ func TestSlowProbeSchedulerUsesFallbackKeyWhenPrimaryKeyHardBlocked(t *testing.T
 
 func createProbeGroupWithChannel(t *testing.T, ctx context.Context, groupName string, channelName string, baseURL string) *model.Channel {
 	t.Helper()
+	_, _, channel := createProbeGroupItemWithChannel(t, ctx, groupName, channelName, baseURL)
+	return channel
+}
 
+func createProbeGroupItemWithChannel(t *testing.T, ctx context.Context, groupName string, channelName string, baseURL string) (*model.Group, *model.GroupItem, *model.Channel) {
+	t.Helper()
 	channel := &model.Channel{
 		Name:     channelName,
 		Type:     outbound.OutboundTypeOpenAIChat,
@@ -289,14 +369,15 @@ func createProbeGroupWithChannel(t *testing.T, ctx context.Context, groupName st
 	if err := op.GroupCreate(group, ctx); err != nil {
 		t.Fatalf("GroupCreate failed: %v", err)
 	}
-	if err := op.GroupItemAdd(&model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "probe-model", Priority: 1, Weight: 1}, ctx); err != nil {
+	item := &model.GroupItem{GroupID: group.ID, ChannelID: channel.ID, ModelName: "probe-model", Priority: 1, Weight: 1}
+	if err := op.GroupItemAdd(item, ctx); err != nil {
 		t.Fatalf("GroupItemAdd failed: %v", err)
 	}
 	reloaded, err := op.ChannelGet(channel.ID, ctx)
 	if err != nil {
 		t.Fatalf("ChannelGet failed: %v", err)
 	}
-	return reloaded
+	return group, item, reloaded
 }
 
 func createProbeSite(t *testing.T) (int, int) {
@@ -377,4 +458,39 @@ func countGroupHealthAttempts(t *testing.T) int64 {
 		t.Fatalf("count attempts failed: %v", err)
 	}
 	return count
+}
+
+func seedProbeSnapshot(t *testing.T, group *model.Group, item *model.GroupItem, status model.GroupHealthAttemptStatus, finishedAt time.Time) {
+	t.Helper()
+	finalStatus := model.GroupHealthStatusFailed
+	if status == model.GroupHealthAttemptStatusSuccess {
+		finalStatus = model.GroupHealthStatusSuccess
+	}
+	snapshot := model.GroupHealthSnapshot{
+		GroupID:      group.ID,
+		GroupName:    group.Name,
+		GroupMode:    group.Mode,
+		RequestModel: group.Name,
+		Status:       finalStatus,
+		StartedAt:    finishedAt.Add(-time.Second),
+		FinishedAt:   &finishedAt,
+	}
+	if err := dbpkg.GetDB().Create(&snapshot).Error; err != nil {
+		t.Fatalf("seed snapshot failed: %v", err)
+	}
+	attempt := model.GroupHealthAttempt{
+		SnapshotID:  snapshot.ID,
+		GroupItemID: item.ID,
+		ChannelID:   item.ChannelID,
+		ChannelName: "seeded-channel",
+		ModelName:   item.ModelName,
+		Priority:    item.Priority,
+		Weight:      item.Weight,
+		Status:      status,
+		HTTPStatus:  http.StatusOK,
+		DurationMS:  100,
+	}
+	if err := dbpkg.GetDB().Create(&attempt).Error; err != nil {
+		t.Fatalf("seed attempt failed: %v", err)
+	}
 }

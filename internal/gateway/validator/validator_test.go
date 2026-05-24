@@ -230,6 +230,68 @@ func TestValidateNonStream_Anthropic(t *testing.T) {
 	}
 }
 
+func TestValidateNonStream_AnthropicAdditionalFormats(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		body   string
+		status ValidationStatus
+		reason string
+	}{
+		{
+			name:   "thinking block",
+			body:   `{"id":"msg_think","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"internal reasoning"}],"model":"claude"}`,
+			status: ValidationOK,
+		},
+		{
+			name:   "redacted thinking block",
+			body:   `{"id":"msg_redacted","type":"message","role":"assistant","content":[{"type":"redacted_thinking","data":"opaque"}],"model":"claude"}`,
+			status: ValidationOK,
+		},
+		{
+			name:   "server tool use",
+			body:   `{"id":"msg_tool","type":"message","role":"assistant","content":[{"type":"server_tool_use","id":"srv_1","name":"web_search","input":{"query":"x"}}],"model":"claude"}`,
+			status: ValidationOK,
+		},
+		{
+			name:   "tool result",
+			body:   `{"id":"msg_result","type":"message","role":"assistant","content":[{"type":"tool_result","content":[{"type":"text","text":"OK"}]}],"model":"claude"}`,
+			status: ValidationOK,
+		},
+		{
+			name:   "empty text with stop reason",
+			body:   `{"id":"msg_empty_text","type":"message","role":"assistant","content":[{"type":"text","text":"   "}],"model":"claude","stop_reason":"end_turn"}`,
+			status: ValidationRetry,
+			reason: ReasonStopWithoutContent,
+		},
+		{
+			name:   "top level error json",
+			body:   `{"type":"error","error":{"type":"overloaded_error","message":"overloaded"}}`,
+			status: ValidationRetry,
+			reason: ReasonUpstreamErrorJSON,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := ValidateNonStream(ProviderAnthropic, Response{
+				StatusCode: http.StatusOK,
+				Header:     jsonHeader(),
+				Body:       []byte(tc.body),
+			})
+			if got.Status != tc.status {
+				t.Fatalf("status = %q, want %q", got.Status, tc.status)
+			}
+			if got.Reason != tc.reason {
+				t.Fatalf("reason = %q, want %q", got.Reason, tc.reason)
+			}
+		})
+	}
+}
+
 func TestValidateNonStream_Gemini(t *testing.T) {
 	t.Parallel()
 
@@ -294,6 +356,79 @@ func TestValidateNonStream_Gemini(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			got := ValidateNonStream(ProviderGemini, tc.resp)
+			if got.Status != tc.status {
+				t.Fatalf("status = %q, want %q", got.Status, tc.status)
+			}
+			if got.Reason != tc.reason {
+				t.Fatalf("reason = %q, want %q", got.Reason, tc.reason)
+			}
+		})
+	}
+}
+
+func TestValidateNonStream_GeminiAdditionalFormats(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		body   string
+		status ValidationStatus
+		reason string
+	}{
+		{
+			name:   "thought only text is not visible output",
+			body:   `{"candidates":[{"index":0,"content":{"role":"model","parts":[{"text":"hidden reasoning","thought":true}]}}]}`,
+			status: ValidationRetry,
+			reason: ReasonNoValidCandidate,
+		},
+		{
+			name:   "thought plus visible text",
+			body:   `{"candidates":[{"index":0,"content":{"role":"model","parts":[{"text":"hidden reasoning","thought":true},{"text":"OK"}]}}]}`,
+			status: ValidationOK,
+		},
+		{
+			name:   "inline data candidate",
+			body:   `{"candidates":[{"index":0,"content":{"role":"model","parts":[{"inlineData":{"mimeType":"image/png","data":"AA=="}}]}}]}`,
+			status: ValidationOK,
+		},
+		{
+			name:   "file data candidate",
+			body:   `{"candidates":[{"index":0,"content":{"role":"model","parts":[{"fileData":{"mimeType":"application/pdf","fileUri":"gs://bucket/file.pdf"}}]}}]}`,
+			status: ValidationOK,
+		},
+		{
+			name:   "executable code candidate",
+			body:   `{"candidates":[{"index":0,"content":{"role":"model","parts":[{"executableCode":{"language":"PYTHON","code":"print(1)"}}]}}]}`,
+			status: ValidationOK,
+		},
+		{
+			name:   "code execution result candidate",
+			body:   `{"candidates":[{"index":0,"content":{"role":"model","parts":[{"codeExecutionResult":{"outcome":"OUTCOME_OK","output":"1"}}]}}]}`,
+			status: ValidationOK,
+		},
+		{
+			name:   "blocked candidate without visible reply",
+			body:   `{"candidates":[{"index":0,"content":{"role":"model","parts":[{"text":"blocked","thought":true}]}}],"promptFeedback":{"blockReason":"SAFETY"}}`,
+			status: ValidationRetry,
+			reason: ReasonBlockedNoValidReply,
+		},
+		{
+			name:   "top level error json",
+			body:   `{"error":{"code":503,"message":"model overloaded","status":"UNAVAILABLE"}}`,
+			status: ValidationRetry,
+			reason: ReasonUpstreamErrorJSON,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := ValidateNonStream(ProviderGemini, Response{
+				StatusCode: http.StatusOK,
+				Header:     jsonHeader(),
+				Body:       []byte(tc.body),
+			})
 			if got.Status != tc.status {
 				t.Fatalf("status = %q, want %q", got.Status, tc.status)
 			}

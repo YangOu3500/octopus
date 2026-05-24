@@ -282,6 +282,109 @@ func TestHealthCooldownUsesManagedAccountAndSiteScopes(t *testing.T) {
 	}
 }
 
+func TestHealthCooldownScopesAreModelScopedAndLayered(t *testing.T) {
+	Reset()
+	enableHealthForTest(t)
+
+	RecordHealthAttempt(HealthAttempt{
+		ChannelID:     1,
+		ChannelKeyID:  11,
+		ModelName:     "gpt-a",
+		Status:        model.AttemptFailed,
+		HTTPStatus:    429,
+		FailureReason: "rate_limit",
+	})
+	assertHealthCooldown(t, 1, 11, 0, 0, "gpt-a", "", "rate_limit")
+	assertNoHealthCooldown(t, 1, 22, 0, 0, "gpt-a", "")
+	assertNoHealthCooldown(t, 1, 11, 0, 0, "gpt-b", "")
+
+	RecordHealthAttempt(HealthAttempt{
+		ChannelID:     1,
+		ChannelKeyID:  11,
+		ModelName:     "gpt-a",
+		Status:        model.AttemptFailed,
+		HTTPStatus:    200,
+		FailureReason: "response validation failed: empty_choices",
+	})
+	assertHealthCooldown(t, 1, 22, 0, 0, "gpt-a", "", "empty_choices")
+	assertNoHealthCooldown(t, 1, 22, 0, 0, "gpt-b", "")
+	assertNoHealthCooldown(t, 2, 22, 0, 0, "gpt-a", "")
+
+	RecordHealthAttempt(HealthAttempt{
+		ChannelID:     2,
+		ChannelKeyID:  21,
+		SiteID:        55,
+		ModelName:     "gpt-a",
+		BaseURL:       "https://example.test/v1/",
+		Status:        model.AttemptFailed,
+		HTTPStatus:    503,
+		FailureReason: "server_error",
+	})
+	assertHealthCooldown(t, 2, 99, 0, 0, "gpt-a", "", "server_error")
+	assertHealthCooldown(t, 99, 99, 55, 0, "gpt-a", "", "server_error")
+	assertHealthCooldown(t, 99, 99, 0, 0, "gpt-a", "https://example.test/v1", "server_error")
+	assertNoHealthCooldown(t, 99, 99, 56, 0, "gpt-a", "")
+	assertNoHealthCooldown(t, 99, 99, 55, 0, "gpt-b", "https://example.test/v1")
+}
+
+func TestHealthCooldownSuccessClearsAllScopesForCandidate(t *testing.T) {
+	Reset()
+	enableHealthForTest(t)
+
+	baseURL := "https://recover.example/v1"
+	failures := []HealthAttempt{
+		{
+			ChannelID:     7,
+			ChannelKeyID:  71,
+			SiteAccountID: 170,
+			ModelName:     "gpt-recover",
+			Status:        model.AttemptFailed,
+			HTTPStatus:    402,
+			FailureReason: "insufficient_quota",
+		},
+		{
+			ChannelID:     7,
+			ChannelKeyID:  71,
+			SiteID:        70,
+			ModelName:     "gpt-recover",
+			BaseURL:       baseURL,
+			Status:        model.AttemptFailed,
+			HTTPStatus:    503,
+			FailureReason: "server_error",
+		},
+		{
+			ChannelID:     7,
+			ChannelKeyID:  71,
+			ModelName:     "gpt-other",
+			Status:        model.AttemptFailed,
+			HTTPStatus:    429,
+			FailureReason: "rate_limit",
+		},
+	}
+	for _, attempt := range failures {
+		RecordHealthAttempt(attempt)
+	}
+
+	assertHealthCooldown(t, 7, 71, 70, 170, "gpt-recover", baseURL, "quota_error")
+	assertHealthCooldown(t, 7, 71, 0, 0, "gpt-other", "", "rate_limit")
+
+	RecordHealthAttempt(HealthAttempt{
+		ChannelID:     7,
+		ChannelKeyID:  71,
+		SiteID:        70,
+		SiteAccountID: 170,
+		ModelName:     "gpt-recover",
+		BaseURL:       baseURL,
+		Status:        model.AttemptSuccess,
+		HTTPStatus:    200,
+	})
+
+	assertNoHealthCooldown(t, 7, 71, 70, 170, "gpt-recover", baseURL)
+	assertNoHealthCooldown(t, 7, 99, 70, 170, "gpt-recover", baseURL)
+	assertNoHealthCooldown(t, 99, 99, 70, 170, "gpt-recover", baseURL)
+	assertHealthCooldown(t, 7, 71, 0, 0, "gpt-other", "", "rate_limit")
+}
+
 func TestListHealthCooldownPoliciesMatchesRuntimeRules(t *testing.T) {
 	policies := ListHealthCooldownPolicies()
 	if len(policies) == 0 {
@@ -336,4 +439,26 @@ func TestListHealthCooldownPoliciesMatchesRuntimeRules(t *testing.T) {
 	assertPolicy("invalid_sse", 30, []string{"channel"}, false, true)
 	assertPolicy("html_or_login_page", 120, []string{"channel"}, false, true)
 	assertPolicy("attempt_failed", 30, []string{"channel"}, false, true)
+}
+
+func assertHealthCooldown(t *testing.T, channelID, channelKeyID, siteID, siteAccountID int, modelName, baseURL, wantReason string) {
+	t.Helper()
+	cooling, remaining, reason := IsHealthCoolingDownWithScope(channelID, channelKeyID, siteID, siteAccountID, modelName, baseURL)
+	if !cooling {
+		t.Fatalf("expected cooldown for channel=%d key=%d site=%d account=%d model=%s base=%s", channelID, channelKeyID, siteID, siteAccountID, modelName, baseURL)
+	}
+	if remaining <= 0 {
+		t.Fatalf("expected positive remaining cooldown, got %v", remaining)
+	}
+	if reason != wantReason {
+		t.Fatalf("cooldown reason = %q, want %q", reason, wantReason)
+	}
+}
+
+func assertNoHealthCooldown(t *testing.T, channelID, channelKeyID, siteID, siteAccountID int, modelName, baseURL string) {
+	t.Helper()
+	cooling, remaining, reason := IsHealthCoolingDownWithScope(channelID, channelKeyID, siteID, siteAccountID, modelName, baseURL)
+	if cooling {
+		t.Fatalf("did not expect cooldown for channel=%d key=%d site=%d account=%d model=%s base=%s; remaining=%v reason=%s", channelID, channelKeyID, siteID, siteAccountID, modelName, baseURL, remaining, reason)
+	}
 }
