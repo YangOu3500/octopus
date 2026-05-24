@@ -2184,5 +2184,81 @@
                 "missing_data": "Sub2API response is missing required data. Check site compatibility or try again later."
             }
         }
+    },
+    "site": {
+        "title": "Site Management",
+        "description": "Manage upstream provider sites, account balances, and automated checkin configurations.",
+        "actions": {
+            "syncAll": "Sync All",
+            "checkinAll": "Checkin All",
+            "import": "Import Sites",
+            "archived": "Archived Sites",
+            "create": "Create Site"
+        },
+        "card": {
+            "accounts": "Accounts",
+            "keys": "Keys",
+            "models": "Models",
+            "balance": "Balance",
+            "todayIncome": "Today Income",
+            "proxy": "Proxy",
+            "systemProxy": "System Proxy",
+            "direct": "Direct",
+            "customHeaders": "{count} Headers",
+            "manualCheckin": "Manual Checkin",
+            "addAccount": "Add Account",
+            "moreActions": "More Site Actions",
+            "viewChannels": "View Channels",
+            "edit": "Edit Site",
+            "pin": "Pin",
+            "unpin": "Unpin",
+            "disable": "Disable Site",
+            "enable": "Enable Site",
+            "archive": "Archive Site",
+            "delete": "Delete Site",
+            "statusNormal": "Normal",
+            "statusSyncError": "Sync Error",
+            "statusCheckinError": "Check-in Error"
+        },
+        "account": {
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "groups": "Groups",
+            "models": "Models",
+            "balance": "Balance",
+            "todayIncome": "Today Income",
+            "autoSync": "Auto Sync",
+            "manualSync": "Manual Sync",
+            "randomCheckin": "Random Checkin",
+            "autoCheckin": "Auto Checkin",
+            "manualCheckin": "Manual Checkin",
+            "proxy": "Proxy",
+            "toggleEnable": "Toggle Enable",
+            "sync": "Sync Account",
+            "syncing": "Syncing",
+            "moreActions": "More Account Actions",
+            "immediateCheckin": "Immediate Checkin",
+            "edit": "Edit Account",
+            "delete": "Delete Account",
+            "syncStatus": "Sync",
+            "checkinStatus": "Checkin",
+            "waitingSync": "Waiting for Sync",
+            "waitingCheckin": "Waiting for Checkin"
+        },
+        "platforms": {
+            "metapi": "MetAPI",
+            "allapihub": "All API Hub",
+            "newapi": "New API",
+            "donehub": "DoneHub",
+            "sub2api": "Sub2API",
+            "openai": "OpenAI",
+            "claude": "Claude",
+            "gemini": "Gemini"
+        },
+        "credentials": {
+            "username_password": "Username/Password",
+            "api_key": "API Key",
+            "access_token": "Access Token"
+        }
     }
 }

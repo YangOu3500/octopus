@@ -2184,5 +2184,81 @@
                 "missing_data": "Sub2API 响应缺少必要数据，请检查站点兼容性或稍后重试。"
             }
         }
+    },
+    "site": {
+        "title": "站点管理",
+        "description": "管理上游提供商站点、同步账号余额及签到自动配置。",
+        "actions": {
+            "syncAll": "同步全部",
+            "checkinAll": "签到全部",
+            "import": "导入站点",
+            "archived": "归档站点",
+            "create": "新建站点"
+        },
+        "card": {
+            "accounts": "账号",
+            "keys": "Key",
+            "models": "模型",
+            "balance": "余额",
+            "todayIncome": "今日收入",
+            "proxy": "代理",
+            "systemProxy": "系统代理",
+            "direct": "直连",
+            "customHeaders": "{count} 个 Header",
+            "manualCheckin": "手动签到",
+            "addAccount": "新增账号",
+            "moreActions": "更多站点操作",
+            "viewChannels": "查看站点渠道",
+            "edit": "编辑站点",
+            "pin": "置顶",
+            "unpin": "取消置顶",
+            "disable": "停用站点",
+            "enable": "启用站点",
+            "archive": "归档站点",
+            "delete": "删除站点",
+            "statusNormal": "正常",
+            "statusSyncError": "同步异常",
+            "statusCheckinError": "签到异常"
+        },
+        "account": {
+            "enabled": "启用中",
+            "disabled": "已停用",
+            "groups": "分组",
+            "models": "模型",
+            "balance": "余额",
+            "todayIncome": "今日收入",
+            "autoSync": "自动同步",
+            "manualSync": "手动同步",
+            "randomCheckin": "随机签到",
+            "autoCheckin": "自动签到",
+            "manualCheckin": "手动签到",
+            "proxy": "代理",
+            "toggleEnable": "切换启用",
+            "sync": "同步账号",
+            "syncing": "同步中",
+            "moreActions": "更多账号操作",
+            "immediateCheckin": "立即签到",
+            "edit": "编辑账号",
+            "delete": "删除账号",
+            "syncStatus": "同步",
+            "checkinStatus": "签到",
+            "waitingSync": "等待首次同步",
+            "waitingCheckin": "等待首次签到"
+        },
+        "platforms": {
+            "metapi": "MetAPI",
+            "allapihub": "All API Hub",
+            "newapi": "New API",
+            "donehub": "DoneHub",
+            "sub2api": "Sub2API",
+            "openai": "OpenAI",
+            "claude": "Claude",
+            "gemini": "Gemini"
+        },
+        "credentials": {
+            "username_password": "用户名密码",
+            "api_key": "API Key",
+            "access_token": "Access Token"
+        }
     }
 }
