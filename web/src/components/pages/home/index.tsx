@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { useHomeViewStore, type HomeSectionId } from './store';
 import { DashboardSummaryCards } from './dashboard-summary';
 import { StatsChart } from './chart';
-import { GatewayOperationsPanel } from './gateway-operations';
 import { GroupHealthSummaryStrip } from './group-health-summary-strip';
 import { ObservabilityPanel } from './observability';
 import { TopRankings } from './rank';
@@ -21,6 +20,7 @@ import { toast } from 'sonner';
 export function Home() {
     const t = useTranslations('navbar');
     const sectionsT = useTranslations('home.sections');
+    const homeT = useTranslations('home');
     const queryClient = useQueryClient();
 
     const openSections = useHomeViewStore((state) => state.openSections);
@@ -50,7 +50,7 @@ export function Home() {
             workbench: [
                 sectionsT('workbenchChip.requests', { count: obsData.total_requests }),
                 sectionsT('workbenchChip.failover', { count: obsData.failover_requests }),
-                sectionsT('workbenchChip.latency', { count: obsData.avg_latency_ms.toFixed(0) }),
+                sectionsT('workbenchChip.latency', { latency: obsData.avg_latency_ms.toFixed(0) }),
             ],
             analytics: [
                 sectionsT('analyticsChip.models', { count: obsData.top_models?.length ?? 0 }),
@@ -68,7 +68,7 @@ export function Home() {
         <div className="flex flex-col gap-6 p-6 max-w-(--breakpoint-2xl) mx-auto w-full">
             <PageHeader
                 title={t('home')}
-                description="Gateway status and analytics dashboard."
+                description={homeT('description')}
                 actions={
                     <Button
                         variant="outline"
@@ -98,8 +98,7 @@ export function Home() {
                 chips={chips.workbench}
                 onToggle={toggleSection}
             >
-                <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-6 items-stretch">
-                    <GatewayOperationsPanel />
+                <div className="w-full">
                     <ObservabilityPanel />
                 </div>
             </SectionWrapper>

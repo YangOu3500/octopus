@@ -111,7 +111,7 @@ interface ChartTooltipContentProps extends React.ComponentProps<"div"> {
     value?: string | number | Array<string | number>
     dataKey?: string | number
     color?: string
-    payload?: Record<string, any> & { fill?: string }
+    payload?: Record<string, unknown> & { fill?: string }
     type?: string
   }>
   hideLabel?: boolean
@@ -120,9 +120,18 @@ interface ChartTooltipContentProps extends React.ComponentProps<"div"> {
   nameKey?: string
   labelKey?: string
   label?: string | number
-  labelFormatter?: (value: any, payload: any[]) => React.ReactNode
+  labelFormatter?: (
+    value: React.ReactNode,
+    payload: unknown[]
+  ) => React.ReactNode
   labelClassName?: string
-  formatter?: (value: any, name: any, item: any, index: number, payload: any) => React.ReactNode
+  formatter?: (
+    value: string | number | Array<string | number>,
+    name: string | number,
+    item: { payload?: Record<string, unknown> } & Record<string, unknown>,
+    index: number,
+    payload?: Record<string, unknown> & { fill?: string }
+  ) => React.ReactNode
   color?: string
 }
 
@@ -271,7 +280,7 @@ interface ChartLegendContentProps extends React.ComponentProps<"div"> {
   hideIcon?: boolean
   nameKey?: string
   payload?: Array<{
-    value: any
+    value: unknown
     type?: string
     color?: string
     dataKey?: string | number
@@ -308,7 +317,7 @@ function ChartLegendContent({
 
           return (
             <div
-              key={item.value}
+              key={item.value as React.Key}
               className={cn(
                 "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3"
               )}

@@ -49,6 +49,9 @@
         "navLabels": "顯示說明",
         "collapse": "收起側欄",
         "expand": "展開側欄",
+        "themeLight": "切換至亮色模式",
+        "themeDark": "切換至暗色模式",
+        "language": "切換語言",
         "groups": {
             "workbench": "工作台",
             "resources": "資源管理",
@@ -108,12 +111,13 @@
         }
     },
     "home": {
+        "description": "閘道狀態與分析儀表盤。",
         "dashboard": {
             "totalRequests": "總請求數",
             "totalSub": "近 24 小時失敗 {failed}",
             "successRate": "成功率",
             "successSub": "失敗請求 {failed}",
-            "tokens": "詞元統計",
+            "tokens": "Token 用量",
             "tokenSub": "入 {input} / 出 {output} / 快取 {cache}",
             "todayRequests": "今日請求",
             "todaySub": "近 24 小時 RPM {rpm}",
@@ -129,15 +133,15 @@
         },
         "sections": {
             "workbench": {
-                "title": "請求與鏈路",
+                "title": "流量監控",
                 "description": "高頻排障、鏈路觀測與渠道狀態"
             },
             "analytics": {
-                "title": "趨勢與排行",
-                "description": "成本走勢、請求熱度與渠道排行"
+                "title": "趨勢",
+                "description": "成本走势、请求热度和渠道排行"
             },
             "activity": {
-                "title": "活動熱力",
+                "title": "活動概覽",
                 "description": "按天查看請求活躍度"
             },
             "workbenchChip": {
@@ -156,11 +160,18 @@
             }
         },
         "activity": {
+            "title": "請求熱力圖",
             "requestCount": "請求次數",
             "waitTime": "等待時間",
             "totalToken": "消耗 Token",
             "totalCost": "消耗費用",
-            "noData": "無數據"
+            "noData": "無數據",
+            "notEnoughData": "暫無足夠數據",
+            "days": {
+                "mon": "週一",
+                "wed": "週三",
+                "fri": "週五"
+            }
         },
         "summary": {
             "periods": {
@@ -2061,6 +2072,16 @@
     "siteSync": {
         "errors": {
             "missingGroupKey": "分組“{groupKey}”沒有可用的 Key。請先到站點建立這個分組的 Key，再重新同步。"
+        }
+    },
+    "stubs": {
+        "comingSoon": "即將在 Phase {phase} 實現",
+        "description": {
+            "site": "管理您的 API 消費站點。",
+            "channel": "配置上遊渠道和供應商。",
+            "modelHealth": "監控供應商健康得分和響應率。",
+            "modelTest": "直接測試模型、流和延遲。",
+            "setting": "網關系統和代理設置。"
         }
     },
     "errors": {

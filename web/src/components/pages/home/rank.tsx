@@ -10,7 +10,7 @@ import { useHomeViewStore, type RankSortMode } from './store';
 import { cn, formatCount, formatMoney } from '@/lib/utils';
 import { Award, Percent, TrendingUp, Zap } from 'lucide-react';
 
-type TabType = 'keys' | 'models' | 'channels';
+type TabType = 'keys' | 'models' | 'channels' | 'sources';
 
 export function TopRankings({ className }: { className?: string }) {
     const t = useTranslations('home.rank');
@@ -31,6 +31,8 @@ export function TopRankings({ className }: { className?: string }) {
                 return obsData.top_models ?? [];
             case 'channels':
                 return obsData.top_channels ?? [];
+            case 'sources':
+                return obsData.source_breakdown ?? [];
             default:
                 return [];
         }
@@ -42,11 +44,9 @@ export function TopRankings({ className }: { className?: string }) {
             if (sortMode === 'cost') {
                 return (b.cost ?? 0) - (a.cost ?? 0);
             }
-            // Count / Tokens (observability breakdown has requests and failures, no direct tokens. We use requests for count, and cost for tokens fallback)
             if (sortMode === 'count') {
                 return b.requests - a.requests;
             }
-            // tokens: fallback to cost/requests
             return (b.cost ?? 0) - (a.cost ?? 0) || b.requests - a.requests;
         });
     }, [rawList, sortMode]);
@@ -68,7 +68,7 @@ export function TopRankings({ className }: { className?: string }) {
             } else if (sortMode === 'count') {
                 value = item.requests;
             } else {
-                value = item.cost ?? 0; // fallback for tokens
+                value = item.cost ?? 0;
             }
 
             return {
@@ -92,7 +92,7 @@ export function TopRankings({ className }: { className?: string }) {
                         <Award className="h-5 w-5" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-bold tracking-tight text-foreground">{t('title')}</h2>
+                        <h3 className="text-sm font-bold text-foreground">{t('title')}</h3>
                         <p className="text-xs text-muted-foreground">{obsT('range24h')}</p>
                     </div>
                 </div>
@@ -122,6 +122,7 @@ export function TopRankings({ className }: { className?: string }) {
                     <TabsTrigger value="keys" className="text-xs px-3.5 py-1 rounded-md">{obsT('topApiKeys')}</TabsTrigger>
                     <TabsTrigger value="models" className="text-xs px-3.5 py-1 rounded-md">{obsT('topModels')}</TabsTrigger>
                     <TabsTrigger value="channels" className="text-xs px-3.5 py-1 rounded-md">{obsT('topChannels')}</TabsTrigger>
+                    <TabsTrigger value="sources" className="text-xs px-3.5 py-1 rounded-md">{obsT('sourceBreakdown')}</TabsTrigger>
                 </TabsList>
 
                 {sortedList.length === 0 ? (
@@ -132,11 +133,11 @@ export function TopRankings({ className }: { className?: string }) {
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-5 items-start">
                         {/* Left side: Horizontal Bar Chart */}
-                        <div className="rounded-xl border border-border/50 bg-background/20 p-4 min-h-[220px] flex flex-col justify-between">
+                        <div className="rounded-xl border border-border/50 bg-background/20 p-4 flex flex-col justify-between">
                             <div className="mb-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                Top 5 {activeTab === 'keys' ? 'API Keys' : activeTab === 'models' ? 'Models' : 'Channels'}
+                                Top 5 {activeTab === 'keys' ? 'API Keys' : activeTab === 'models' ? 'Models' : activeTab === 'channels' ? 'Channels' : 'Request Sources'}
                             </div>
-                            <div className="h-[180px] w-full">
+                            <div style={{ height: `${Math.max(80, chartData.length * 32)}px` }} className="w-full">
                                 <ChartContainer config={chartConfig} className="h-full w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart

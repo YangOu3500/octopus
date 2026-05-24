@@ -49,6 +49,9 @@
         "navLabels": "显示说明",
         "collapse": "收起侧栏",
         "expand": "展开侧栏",
+        "themeLight": "切换至亮色模式",
+        "themeDark": "切换至暗色模式",
+        "language": "切换语言",
         "groups": {
             "workbench": "工作台",
             "resources": "资源管理",
@@ -108,12 +111,13 @@
         }
     },
     "home": {
+        "description": "网关状态与分析仪表盘。",
         "dashboard": {
             "totalRequests": "总请求数",
             "totalSub": "近 24 小时失败 {failed}",
             "successRate": "成功率",
             "successSub": "失败请求 {failed}",
-            "tokens": "词元统计",
+            "tokens": "Token 用量",
             "tokenSub": "入 {input} / 出 {output} / 缓存 {cache}",
             "todayRequests": "今日请求",
             "todaySub": "近 24 小时 RPM {rpm}",
@@ -129,15 +133,15 @@
         },
         "sections": {
             "workbench": {
-                "title": "请求与链路",
+                "title": "流量监控",
                 "description": "高频排障、链路观察和渠道状态"
             },
             "analytics": {
-                "title": "趋势与排行",
+                "title": "趋势",
                 "description": "成本走势、请求热度和渠道排行"
             },
             "activity": {
-                "title": "活动热力",
+                "title": "活动概览",
                 "description": "按天查看请求活跃度"
             },
             "workbenchChip": {
@@ -156,11 +160,18 @@
             }
         },
         "activity": {
+            "title": "请求热力图",
             "requestCount": "请求次数",
             "waitTime": "等待时间",
             "totalToken": "消耗 Token",
             "totalCost": "消耗费用",
-            "noData": "无数据"
+            "noData": "无数据",
+            "notEnoughData": "暂无足够数据",
+            "days": {
+                "mon": "周一",
+                "wed": "周三",
+                "fri": "周五"
+            }
         },
         "summary": {
             "periods": {
@@ -2061,6 +2072,16 @@
     "siteSync": {
         "errors": {
             "missingGroupKey": "分组“{groupKey}”没有可用的 Key。请先到站点创建这个分组的 Key，再重新同步。"
+        }
+    },
+    "stubs": {
+        "comingSoon": "即将在 Phase {phase} 实现",
+        "description": {
+            "site": "管理您的 API 消费站点。",
+            "channel": "配置上游渠道和供应商。",
+            "modelHealth": "监控供应商健康得分和响应率。",
+            "modelTest": "直接测试模型、流和延迟。",
+            "setting": "网关系统和代理设置。"
         }
     },
     "errors": {

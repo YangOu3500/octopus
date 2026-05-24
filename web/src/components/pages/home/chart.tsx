@@ -1,7 +1,7 @@
 'use client';
 
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { useHomeViewStore, type ChartPeriod } from './store';
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
@@ -195,6 +195,7 @@ export function StatsChart({ className }: { className?: string }) {
                             }}
                         />
                         <ChartTooltip cursor={{ stroke: 'hsl(var(--border) / 0.3)', strokeWidth: 1 }} content={<ChartTooltipContent indicator="line" />} />
+                        <ChartLegend content={<ChartLegendContent />} />
                         <Area
                             yAxisId="left"
                             type="monotone"

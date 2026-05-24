@@ -70,7 +70,7 @@ export function Sidebar() {
                     <button
                         type="button"
                         onClick={toggleTheme}
-                        title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                        title={theme === 'dark' ? t('themeLight') : t('themeDark')}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted outline-none transition-colors"
                     >
                         {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -79,7 +79,7 @@ export function Sidebar() {
                     <button
                         type="button"
                         onClick={toggleLocale}
-                        title="Switch Language"
+                        title={t('language')}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted outline-none transition-colors"
                     >
                         <Languages className="h-4 w-4" />

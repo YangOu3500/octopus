@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useSettingStore } from '@/stores/setting';
 import { useStatsDaily } from '@/api/endpoints/stats';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -12,9 +13,19 @@ type ActivityMetric = 'requests' | 'cost' | 'tokens' | 'latency';
 export function ActivityHeatmap({ className }: { className?: string }) {
     const t = useTranslations('home.activity');
     const sectionsT = useTranslations('home.sections.activity');
+    const { locale } = useSettingStore();
     const { data: daily = [] } = useStatsDaily();
 
     const [metric, setMetric] = useState<ActivityMetric>('requests');
+
+    const localeCode = useMemo(() => {
+        return locale === 'zh_hans' ? 'zh-CN' : locale === 'zh_hant' ? 'zh-TW' : 'en-US';
+    }, [locale]);
+
+    // Check if there is enough activity data (e.g. at least 3 active days)
+    const hasData = useMemo(() => {
+        return daily.length > 0 && daily.filter(item => item.request_count.raw > 0).length >= 3;
+    }, [daily]);
 
     // 1. Generate last 26 weeks of dates (starting on a Sunday and ending on a Saturday)
     const { days, colMonthLabels } = useMemo(() => {
@@ -42,7 +53,7 @@ export function ActivityHeatmap({ className }: { className?: string }) {
         for (let c = 0; c < 26; c++) {
             const dayIndex = c * 7;
             const date = generatedDays[dayIndex];
-            const monthName = date.toLocaleString('default', { month: 'short' });
+            const monthName = date.toLocaleString(localeCode, { month: 'short' });
             if (monthName !== prevMonthName) {
                 monthLabels.push({ index: c, label: monthName });
                 prevMonthName = monthName;
@@ -50,7 +61,7 @@ export function ActivityHeatmap({ className }: { className?: string }) {
         }
 
         return { days: generatedDays, colMonthLabels: monthLabels };
-    }, []);
+    }, [localeCode]);
 
     // 2. Map date string 'YYYYMMDD' to daily stats
     const statsMap = useMemo(() => {
@@ -98,7 +109,7 @@ export function ActivityHeatmap({ className }: { className?: string }) {
         return days.map((date) => {
             const dateStr = getFormattedDateString(date);
             const item = statsMap.get(dateStr);
-            const formattedDate = date.toLocaleDateString(undefined, {
+            const formattedDate = date.toLocaleDateString(localeCode, {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',
@@ -143,7 +154,29 @@ export function ActivityHeatmap({ className }: { className?: string }) {
                 level,
             };
         });
-    }, [days, statsMap, metric, maxVal, t]);
+    }, [days, statsMap, metric, maxVal, t, localeCode]);
+
+    if (!hasData) {
+        return (
+            <section className={cn('rounded-xl border border-border bg-card p-5 shadow-2xs flex flex-col', className)}>
+                <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-xs">
+                            <ActivityIcon className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold tracking-tight text-foreground">{sectionsT('title')}</h2>
+                            <p className="text-xs text-muted-foreground">{sectionsT('description')}</p>
+                        </div>
+                    </div>
+                </header>
+                <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl bg-background/10">
+                    <ActivityIcon className="h-8 w-8 text-muted-foreground/45 mb-2 animate-pulse" />
+                    <span className="text-sm font-semibold text-muted-foreground">{t('notEnoughData')}</span>
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section className={cn('rounded-xl border border-border bg-card p-5 shadow-2xs flex flex-col', className)}>
@@ -154,7 +187,7 @@ export function ActivityHeatmap({ className }: { className?: string }) {
                         <ActivityIcon className="h-5 w-5" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-bold tracking-tight text-foreground">{sectionsT('title')}</h2>
+                        <h2 className="text-lg font-bold tracking-tight text-foreground">{t('title')}</h2>
                         <p className="text-xs text-muted-foreground">{sectionsT('description')}</p>
                     </div>
                 </div>
@@ -201,11 +234,11 @@ export function ActivityHeatmap({ className }: { className?: string }) {
                         {/* Day labels on left */}
                         <div className="grid grid-rows-7 gap-1 text-[9px] text-muted-foreground font-semibold h-[104px] justify-end pr-1 pt-[2px] w-6 shrink-0">
                             <div className="h-3 leading-none flex items-center justify-end" />
-                            <div className="h-3 leading-none flex items-center justify-end">Mon</div>
+                            <div className="h-3 leading-none flex items-center justify-end">{t('days.mon')}</div>
                             <div className="h-3 leading-none flex items-center justify-end" />
-                            <div className="h-3 leading-none flex items-center justify-end">Wed</div>
+                            <div className="h-3 leading-none flex items-center justify-end">{t('days.wed')}</div>
                             <div className="h-3 leading-none flex items-center justify-end" />
-                            <div className="h-3 leading-none flex items-center justify-end">Fri</div>
+                            <div className="h-3 leading-none flex items-center justify-end">{t('days.fri')}</div>
                             <div className="h-3 leading-none flex items-center justify-end" />
                         </div>
 

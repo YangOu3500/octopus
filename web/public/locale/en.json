@@ -49,6 +49,9 @@
         "navLabels": "Show labels",
         "collapse": "Collapse sidebar",
         "expand": "Expand sidebar",
+        "themeLight": "Switch to Light Mode",
+        "themeDark": "Switch to Dark Mode",
+        "language": "Switch Language",
         "groups": {
             "workbench": "Workbench",
             "resources": "Resources",
@@ -108,6 +111,7 @@
         }
     },
     "home": {
+        "description": "Gateway status and analytics dashboard.",
         "dashboard": {
             "totalRequests": "Total Requests",
             "totalSub": "Failed in 24h {failed}",
@@ -129,15 +133,15 @@
         },
         "sections": {
             "workbench": {
-                "title": "Requests & Traces",
+                "title": "Traffic Monitoring",
                 "description": "High-frequency debugging, trace visibility, and channel status"
             },
             "analytics": {
-                "title": "Trends & Rankings",
+                "title": "Trends",
                 "description": "Cost trends, request heat, and channel rankings"
             },
             "activity": {
-                "title": "Activity Heatmap",
+                "title": "Activity Overview",
                 "description": "Daily request activity"
             },
             "workbenchChip": {
@@ -156,11 +160,18 @@
             }
         },
         "activity": {
+            "title": "Request Heatmap",
             "requestCount": "Requests",
             "waitTime": "Wait Time",
             "totalToken": "Tokens Used",
             "totalCost": "Total Cost",
-            "noData": "No Data"
+            "noData": "No Data",
+            "notEnoughData": "No activity data",
+            "days": {
+                "mon": "Mon",
+                "wed": "Wed",
+                "fri": "Fri"
+            }
         },
         "summary": {
             "periods": {
@@ -2061,6 +2072,16 @@
     "siteSync": {
         "errors": {
             "missingGroupKey": "Group \"{groupKey}\" has no available key. Create a key for this group on the site and sync again."
+        }
+    },
+    "stubs": {
+        "comingSoon": "Will be implemented in Phase {phase}",
+        "description": {
+            "site": "Manage your API consumer sites.",
+            "channel": "Configure upstream channels and providers.",
+            "modelHealth": "Monitor provider health scores and response rates.",
+            "modelTest": "Test models, streams and latencies directly.",
+            "setting": "Gateway system and proxy settings."
         }
     },
     "errors": {
