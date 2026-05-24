@@ -125,6 +125,9 @@ func TestBuildChannelModelHealthAggregatesAttemptsAndRuntimeHealth(t *testing.T)
 	if row.HealthSampleCount != 2 || row.HealthSuccessCount != 1 || row.HealthFailureCount != 1 {
 		t.Fatalf("unexpected health samples: %+v", row)
 	}
+	if !row.HealthScoreAvailable || row.HealthScore <= 0 || row.HealthScore > 100 {
+		t.Fatalf("expected scored row with bounded health score: %+v", row)
+	}
 	if result.Summary.RequestRows != 1 || result.Summary.HealthSampleRows != 1 || result.Summary.HealthSampleCount != 2 {
 		t.Fatalf("unexpected health summary sample counts: %+v", result.Summary)
 	}
@@ -213,6 +216,9 @@ func TestBuildChannelModelHealthDoesNotAverageDefaultHealthWithoutSamples(t *tes
 	}
 	if row.RequestCount != 1 || row.HealthSampleCount != 0 {
 		t.Fatalf("unexpected row counts: %+v", row)
+	}
+	if row.HealthScoreAvailable || row.HealthScore != 0 {
+		t.Fatalf("expected unscored row to avoid exposing default health score, got %+v", row)
 	}
 }
 

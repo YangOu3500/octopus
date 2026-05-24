@@ -328,8 +328,13 @@ func finalizeChannelModelHealthRow(acc *channelModelHealthAccumulator, channels 
 	}
 
 	stats := balancer.GetHealthStats(row.ChannelID, row.ModelName)
-	row.HealthScore = stats.HealthScore
 	row.HealthSampleCount = stats.SampleCount
+	row.HealthScoreAvailable = stats.SampleCount > 0
+	if row.HealthScoreAvailable {
+		row.HealthScore = stats.HealthScore
+	} else {
+		row.HealthScore = 0
+	}
 	row.HealthSuccessCount = stats.SuccessCount
 	row.HealthFailureCount = stats.FailureCount
 	row.HealthSuccessRate = stats.SuccessRate

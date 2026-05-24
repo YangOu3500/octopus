@@ -62,6 +62,7 @@ type ChannelModelHealthRow struct {
 	CacheTokens              int     `json:"cache_tokens"`
 	EstimatedCost            float64 `json:"estimated_cost"`
 	HealthScore              float64 `json:"health_score"`
+	HealthScoreAvailable     bool    `json:"health_score_available"`
 	HealthSampleCount        int     `json:"health_sample_count"`
 	HealthSuccessCount       int     `json:"health_success_count"`
 	HealthFailureCount       int     `json:"health_failure_count"`
