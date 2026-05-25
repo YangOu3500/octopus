@@ -14,7 +14,7 @@ export function Log() {
     const state = useLogState();
 
     return (
-        <div className="flex flex-col gap-4 text-xs h-full min-h-0 p-6 overflow-hidden relative">
+        <div className="flex flex-col gap-4 text-sm h-full min-h-0 p-6 overflow-hidden relative">
             {/* Page Header */}
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex flex-col gap-1">

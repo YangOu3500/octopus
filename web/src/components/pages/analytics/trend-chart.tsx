@@ -47,7 +47,7 @@ export function TrendChart({ data, keys, isLoading }: TrendChartProps) {
     const textStroke = theme === 'dark' ? '#a1a1aa' : '#71717a';
 
     return (
-        <ResponsiveContainer width="100%" height="100%" minHeight={280}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={220}>
             <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                     {keys.map((key, i) => (

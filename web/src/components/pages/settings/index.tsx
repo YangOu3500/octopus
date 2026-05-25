@@ -33,14 +33,14 @@ export function Setting() {
     ];
 
     return (
-        <div className="flex flex-col gap-4 p-6 max-w-5xl mx-auto h-full min-h-0 overflow-y-auto custom-scrollbar">
+        <div className="flex flex-col gap-4 p-6 max-w-5xl mx-auto h-full min-h-0 overflow-hidden">
             <div className="flex flex-col gap-1 px-1">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('setting')}</h1>
                 <p className="text-xs text-muted-foreground">{s('description.setting')}</p>
             </div>
 
-            <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as TabKey)} className="w-full space-y-6">
-                <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md -mx-6 px-6 py-2 border-b border-border/50">
+            <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as TabKey)} className="w-full flex-1 flex flex-col min-h-0 space-y-6">
+                <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md -mx-6 px-6 py-2 border-b border-border/50 shrink-0">
                     <TabsList className="flex flex-wrap h-auto gap-1 bg-transparent p-0 justify-start">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
@@ -58,7 +58,7 @@ export function Setting() {
                     </TabsList>
                 </div>
 
-                <div className="mt-4 outline-hidden focus-visible:outline-hidden">
+                <div className="flex-1 overflow-y-auto min-h-0 mt-4 pr-1 outline-hidden focus-visible:outline-hidden custom-scrollbar">
                     <TabsContent value="basic" className="outline-hidden mt-0">
                         <SettingGeneral />
                     </TabsContent>

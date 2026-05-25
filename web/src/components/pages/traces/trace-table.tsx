@@ -32,9 +32,9 @@ export function TraceTable({
 
     return (
         <div className="min-h-[24rem] overflow-x-auto rounded-xl border border-border bg-card shadow-2xs">
-            <table className="w-full min-w-[900px] text-left text-xs">
+            <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="sticky top-0 z-10 border-b border-border bg-muted/60 text-muted-foreground backdrop-blur-md">
-                    <tr className="text-[10px] uppercase font-bold tracking-wider">
+                    <tr className="text-[13px] uppercase font-bold tracking-wider">
                         <th className="w-[48px] px-4 py-3">{t('table.compare')}</th>
                         <th className="px-4 py-3">{t('table.request')}</th>
                         <th className="px-4 py-3">{t('table.status')}</th>
@@ -76,13 +76,13 @@ export function TraceTable({
                                         {trace.request_stream && (
                                             <Badge
                                                 variant="outline"
-                                                className="h-4.5 rounded-full px-1.5 text-[8.5px] bg-blue-500/10 text-blue-500 border-none uppercase tracking-wide font-bold shrink-0"
+                                                className="h-4.5 rounded-full px-1.5 text-[13px] bg-blue-500/10 text-blue-500 border-none uppercase tracking-wide font-bold shrink-0"
                                             >
                                                 {t('stream.stream')}
                                             </Badge>
                                         )}
                                     </div>
-                                    <div className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground/60 font-semibold font-mono">
+                                    <div className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground/60 font-semibold font-mono">
                                         <span className="truncate" title={trace.trace_id}>
                                             {trace.trace_id.split('-')[0]}...
                                         </span>
@@ -94,7 +94,7 @@ export function TraceTable({
                                     <Badge
                                         variant="outline"
                                         className={cn(
-                                            'h-5.5 rounded-md px-2 text-[10px] font-bold tracking-wide border-none',
+                                            'h-5.5 rounded-md px-2 text-[13px] font-bold tracking-wide border-none',
                                             statusClass(trace.final_status)
                                         )}
                                     >
@@ -102,10 +102,10 @@ export function TraceTable({
                                     </Badge>
                                 </td>
                                 <td className="max-w-[200px] px-4 py-3">
-                                    <div className="truncate font-bold text-foreground" title={trace.final_upstream_model || undefined}>
+                                    <div className="truncate font-bold text-foreground text-sm" title={trace.final_upstream_model || undefined}>
                                         {trace.final_upstream_model || '-'}
                                     </div>
-                                    <div className="mt-1 text-[10px] text-muted-foreground/60 font-semibold">
+                                    <div className="mt-1 text-[13px] text-muted-foreground/60 font-semibold">
                                         {t('ids.channelSite', { channel: trace.final_channel_id || 0, site: trace.final_site_id || 0 })}
                                         {(trace.attempts_count || 0) > 1 && (
                                             <span className="ml-1.5 text-amber-500 font-bold">
@@ -114,16 +114,16 @@ export function TraceTable({
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 font-mono text-[11px] tabular-nums text-muted-foreground">
+                                <td className="px-4 py-3 font-mono text-[13px] tabular-nums text-muted-foreground">
                                     {formatDuration(trace.total_latency_ms)}
                                 </td>
-                                <td className="px-4 py-3 font-mono text-[11px] tabular-nums text-muted-foreground">
+                                <td className="px-4 py-3 font-mono text-[13px] tabular-nums text-muted-foreground">
                                     {formatTokens(trace)}
                                 </td>
-                                <td className="px-4 py-3 font-mono text-[11px] tabular-nums text-muted-foreground">
+                                <td className="px-4 py-3 font-mono text-[13px] tabular-nums text-muted-foreground">
                                     {formatCost(trace.total_attempt_cost || trace.estimated_cost)}
                                 </td>
-                                <td className="px-4 py-3 text-[10px] text-muted-foreground/80 whitespace-nowrap">
+                                <td className="px-4 py-3 text-[13px] text-muted-foreground/80 whitespace-nowrap">
                                     {formatTime(trace.created_at)}
                                 </td>
                             </tr>
