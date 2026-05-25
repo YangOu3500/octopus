@@ -40,7 +40,7 @@ export function Setting() {
             </div>
 
             <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as TabKey)} className="w-full space-y-6">
-                <div className="border-b border-border/50 pb-1">
+                <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md -mx-6 px-6 py-2 border-b border-border/50">
                     <TabsList className="flex flex-wrap h-auto gap-1 bg-transparent p-0 justify-start">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;

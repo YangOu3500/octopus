@@ -479,6 +479,7 @@
         },
         "apiKey": {
             "title": "API 密钥",
+            "description": "网关访问密钥列表。客户端可通过这些密钥进行身份认证并调用代理服务。请妥善保管您的密钥。",
             "empty": "暂无 API 密钥",
             "add": "添加密钥",
             "loadFailed": "加载失败",
@@ -628,7 +629,7 @@
             "maintenance": "账户与备份"
         },
         "fusionCapabilities": {
-            "title": "Fusion 能力可见性",
+            "title": "Fusion 功能可见性",
             "subtitle": "参照 AxonHub / ccLoad，已融合能力需要有入口、有状态、能排障。",
             "sources": {
                 "both": "AxonHub / ccLoad"
@@ -842,7 +843,7 @@
                 "subtitle": "只读展示失败原因、冷却范围和退避规则，便于理解候选为什么被跳过",
                 "summary": {
                     "total": "{value} 条规则",
-                    "retryAfter": "{value} 条支持 Retry-After",
+                    "retryAfter": "{value} 条支持重试等待 (Retry-After)",
                     "modelScoped": "{value} 条按模型隔离"
                 },
                 "columns": {
@@ -893,7 +894,7 @@
                 "seconds": "{value} 秒",
                 "minutes": "{value} 分钟",
                 "max": "最大 {value}",
-                "retryAfter": "优先 Retry-After",
+                "retryAfter": "重试等待 (Retry-After)",
                 "exponential": "指数退避",
                 "modelScoped": "按模型隔离",
                 "notModelScoped": "不按模型隔离",
@@ -919,13 +920,13 @@
                     "hint": "达到上限后的本地等待时间，0 表示不等待直接切换候选"
                 },
                 "lease": {
-                    "label": "Lease TTL（毫秒）",
+                    "label": "租约超时 Lease TTL（毫秒）",
                     "hint": "database 模式下 slot 的租约时间；请求进行中会自动续租，进程异常退出后到期释放"
                 }
             },
             "probe": {
                 "title": "慢速主动探测",
-                "subtitle": "默认关闭，只用于 unknown / degraded / cooldown 到期候选",
+                "subtitle": "默认关闭，只用于未知/降级/冷却 (unknown / degraded / cooldown) 到期候选",
                 "siteInterval": {
                     "label": "同站点间隔（分钟）",
                     "hint": "同一站点两次主动探测的最小间隔"
@@ -1091,16 +1092,16 @@
                 },
                 "options": {
                     "strip_provider_prefix": {
-                        "label": "去掉 provider/model 前缀",
-                        "help": "把 openai/、anthropic/、openrouter/ 等前缀折叠到同一模型名。"
+                        "label": "去掉 <code>provider/model</code> 前缀",
+                        "help": "把 <code>openai/</code>、<code>anthropic/</code>、<code>openrouter/</code> 等前缀折叠到同一模型名。"
                     },
                     "strip_models_namespace": {
-                        "label": "去掉 models/ 前缀",
-                        "help": "把 models/gemini-1.5-pro 这类命名归并到真实模型名。"
+                        "label": "去掉 <code>models/</code> 前缀",
+                        "help": "把 <code>models/gemini-1.5-pro</code> 这类命名归并到真实模型名。"
                     },
                     "normalize_case": {
                         "label": "大小写归一化",
-                        "help": "把 GPT-4O 与 gpt-4o 视作同一模型名。"
+                        "help": "把 <code>GPT-4O</code> 与 <code>gpt-4o</code> 视作同一模型名。"
                     },
                     "normalize_separators": {
                         "label": "分隔符归一化",
@@ -1423,6 +1424,7 @@
     },
     "traces": {
         "title": "链路追踪工作台",
+        "description": "监控并审计客户端 API 请求的完整路由与故障转移链路",
         "loadFailed": "链路加载失败",
         "autoRefresh": "实时刷新",
         "refresh": "刷新",
@@ -1849,20 +1851,217 @@
             "duration": "总耗时",
             "time": "请求时间",
             "actions": "操作"
-        }
+        },
+        "title": "请求日志",
+        "description": "查看和分析中继转发的请求调用历史与重试轨迹",
+        "activeDebug": "活跃请求 Debug",
+        "filters": {
+            "searchModelPlaceholder": "搜索模型ID/名称...",
+            "searchTracePlaceholder": "搜索 Trace ID...",
+            "timeRange": "时间范围",
+            "status": "响应状态",
+            "allStatus": "所有状态",
+            "success": "成功",
+            "failed": "失败",
+            "canceled": "已取消",
+            "advanced": "高级筛选",
+            "moreFilters": "更多筛选项",
+            "filterDesc": "根据以下条件过滤日志",
+            "apiKey": "API Key",
+            "apiKeyPlaceholder": "密钥名称/ID",
+            "httpStatus": "HTTP 状态",
+            "httpStatusPlaceholder": "例: 200, 429",
+            "errorDesc": "错误描述",
+            "errorDescPlaceholder": "过滤错误信息...",
+            "protocol": "协议类型",
+            "allProtocols": "所有协议",
+            "requestSource": "请求来源",
+            "allSources": "所有来源",
+            "stream": "流式响应",
+            "allStream": "全部",
+            "streamTrue": "流式",
+            "streamFalse": "非流式",
+            "failover": "故障转移",
+            "failoverTrue": "发生重试",
+            "failoverFalse": "无重试",
+            "cacheHit": "缓存命中",
+            "cacheHitTrue": "命中",
+            "cacheHitFalse": "未命中",
+            "reset": "重置全部筛选",
+            "autoRefresh": "自动刷新"
+        },
+        "clear": {
+            "confirm": "确定要清空所有历史日志吗？该操作不可逆。",
+            "success": "历史日志已清空",
+            "failed": "清空日志失败",
+            "button": "清空历史"
+        },
+        "success": "成功",
+        "failed": "失败",
+        "skipped": "跳过",
+        "circuitBreak": "熔断"
     },
     "channel": {
         "title": "渠道管理",
         "description": "配置与管理网关的后端大模型接入渠道",
         "health": {
+            "title": "渠道模型健康",
+            "healthEnabled": "健康调度已启用",
+            "healthDisabled": "健康调度未启用",
+            "managed": "托管",
+            "refresh": "刷新",
+            "loading": "正在加载渠道模型健康度...",
+            "loadFailed": "渠道模型健康度加载失败",
+            "empty": "目前筛选条件下没有渠道模型健康记录",
+            "autoRefresh": "实时刷新",
+            "searchModel": "搜索模型",
+            "channelAll": "全部渠道",
+            "cooldown": "冷却中",
+            "noCooldown": "无冷却",
+            "requests": "请求",
+            "ttfb": "首字",
+            "duration": "耗时",
+            "tokenIn": "输入",
+            "tokenOut": "输出",
+            "tokenCache": "缓存",
+            "activeSelections": "活跃选择",
+            "channelConcurrency": "硬并发",
+            "queueMode": {
+                "local": "本地队列",
+                "database": "共享队列",
+                "enabled": "{mode}",
+                "disabled": "硬并发关闭"
+            },
+            "healthSamples": "{success}/{total} · {rate}",
+            "noSamples": "暂无健康样本",
+            "unrated": "未评分",
+            "noHealthSampleOrDisabled": "暂无健康评分样本 / 健康调度未启用",
+            "noCallRecords": "没有实际调用记录",
+            "emptyRate": "空响应",
+            "callMeta": "成功 {success} / 失败 {failed} · {rate}",
+            "range": {
+                "1h": "1 小时",
+                "24h": "24 小时",
+                "7d": "7 天",
+                "30d": "30 天",
+                "all": "全部"
+            },
+            "source": {
+                "all": "全部来源",
+                "relay": "真实请求",
+                "modelTest": "模型测试",
+                "probe": "慢探测"
+            },
+            "strategy": {
+                "healthScore": "健康分参与负载均衡",
+                "staticGroupMode": "按分组模式调度"
+            },
+            "quota": {
+                "all": "全部配额",
+                "available": "配额可用",
+                "zeroBalance": "余额不足",
+                "accountDisabled": "账号停用",
+                "quotaError": "额度错误",
+                "authError": "认证阻断",
+                "rateLimited": "限流中",
+                "noKey": "无 Key",
+                "siteDisabled": "站点停用",
+                "accountMissing": "账号缺失",
+                "modelDisabled": "模型停用",
+                "reason": "原因",
+                "unknown": "配额未知"
+            },
+            "capacity": {
+                "label": "容量",
+                "available": "可用",
+                "blocked": "阻断",
+                "unknown": "未知",
+                "observed": "观测",
+                "expires": "到期",
+                "reason": "容量原因"
+            },
+            "reasons": {
+                "quotaError": "额度错误",
+                "authError": "认证阻断",
+                "rateLimited": "限流中",
+                "http402": "HTTP 402",
+                "httpAuth": "HTTP 401/403",
+                "siteAccountBalance": "站点账号余额",
+                "zeroBalance": "已知零余额",
+                "siteDisabled": "站点停用",
+                "accountMissing": "账号缺失",
+                "accountDisabled": "账号停用",
+                "modelDisabled": "模型停用",
+                "noAvailableKey": "无可用 Key",
+                "healthCooldown": "健康冷却",
+                "circuitBreaker": "熔断冷却",
+                "runtimeCheckFailed": "运行期检查失败",
+                "channelDisabled": "渠道停用",
+                "channelMissing": "渠道缺失"
+            },
+            "insights": {
+                "topLoaded": "目前最高负载",
+                "topLoadedSub": "{mode} / {cooldown}",
+                "topBlocked": "主要阻断原因",
+                "allHealthy": "目前结果里没有阻断或冷却列",
+                "healthView": "健康视图",
+                "blockedRows": "阻断列数",
+                "coolingRows": "冷却列数",
+                "avgLatency": "平均延迟",
+                "estimatedCost": "预估成本",
+                "worstHealth": "最低健康候选",
+                "worstHealthSub": "健康分 {score} / 成功率 {rate}"
+            },
+            "status": {
+                "cooldown": "冷却",
+                "failed": "失败",
+                "active": "活跃",
+                "idle": "空闲"
+            },
+            "stats": {
+                "rows": "渠道模型",
+                "rowsSub": "{requests} 次请求样本",
+                "successRate": "成功率",
+                "successSub": "成功 {success} / 失败 {failed}",
+                "healthScore": "平均健康分",
+                "load": "目前负载",
+                "loadSub": "{cooldown} 个冷却中",
+                "loadSubWithConcurrency": "{cooldown} 个冷却中 · {mode} {active}/{limit}",
+                "capacity": "容量阻断",
+                "capacitySub": "{available} 个可用 · {unknown} 个未知"
+            },
+            "export": {
+                "button": "导出",
+                "empty": "没有可导出的渠道模型健康记录",
+                "success": "渠道模型健康记录已导出",
+                "failed": "渠道模型健康记录导出失败",
+                "safe": "导出仅包含结构化脱敏字段，不包含完整 Key 或认证信息"
+            },
+            "table": {
+                "channel": "渠道 / 模型",
+                "health": "健康度",
+                "calls": "调用",
+                "latency": "延迟",
+                "throughput": "吞吐",
+                "tokens": "Token",
+                "cost": "成本",
+                "load": "负载 / 冷却",
+                "quota": "配额",
+                "lastFailure": "最近失败"
+            },
             "tooltips": {
                 "toks": "每秒 Token 数量 (吞吐量)",
                 "rpm": "每分钟请求数 (并发频率)",
                 "ttfb": "第一字返回时间 (首字延迟)",
                 "inout": "输入 Token / 输出 Token 数量",
-                "bal": "渠道账号的配额余额",
+                "bal": "渠道账号 of variables",
                 "used": "渠道账号已消耗的配额"
             }
+        },
+        "tabs": {
+            "site": "站点渠道",
+            "manual": "通用渠道",
+            "health": "模型健康"
         }
     },
     "siteChannel": {
@@ -2071,6 +2270,9 @@
             "allapihub": "All API Hub",
             "newapi": "New API",
             "new-api": "New API",
+            "one-api": "One API",
+            "onehub": "OneHub",
+            "one-hub": "OneHub",
             "donehub": "DoneHub",
             "done-hub": "DoneHub",
             "anyrouter": "Anyrouter",

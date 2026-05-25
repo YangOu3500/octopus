@@ -78,7 +78,7 @@ export function LogTable({
     return (
         <div className="flex-1 flex flex-col min-h-0 border border-border bg-card rounded-xl shadow-xs overflow-hidden">
             {/* Header row */}
-            <div className="grid grid-cols-[80px_1fr_60px_60px_100px_100px_70px_140px_80px_80px_130px_60px] gap-2 px-4 py-2 border-b border-border bg-muted/30 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider shrink-0 select-none">
+            <div className="grid grid-cols-[70px_1fr_55px_65px_95px_130px_70px_115px_70px_70px_120px_50px] gap-2 px-4 py-2 border-b border-border bg-muted/30 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider shrink-0 select-none">
                 <span>{t('table.id')}</span>
                 <span>{t('table.model')}</span>
                 <span>{t('table.stream')}</span>
@@ -122,7 +122,7 @@ export function LogTable({
                                     transform: `translateY(${virtualRow.start}px)`,
                                 }}
                                 className={cn(
-                                    "grid grid-cols-[80px_1fr_60px_60px_100px_100px_70px_140px_80px_80px_130px_60px] gap-2 px-4 py-2.5 border-b border-border/40 items-center hover:bg-muted/15 transition-colors",
+                                    "grid grid-cols-[70px_1fr_55px_65px_95px_130px_70px_115px_70px_70px_120px_50px] gap-2 px-4 py-2.5 border-b border-border/40 items-center hover:bg-muted/15 transition-colors",
                                     virtualRow.index % 2 === 1 ? "bg-muted/5" : ""
                                 )}
                             >

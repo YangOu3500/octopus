@@ -201,6 +201,7 @@ export function StatsChart({ className }: { className?: string }) {
                             yAxisId="left"
                             type="monotone"
                             dataKey="tokens"
+                            name={t('metrics.tokens')}
                             stroke="var(--color-tokens)"
                             strokeWidth={1.5}
                             fill="url(#fillTokens)"
@@ -209,6 +210,7 @@ export function StatsChart({ className }: { className?: string }) {
                             yAxisId="left"
                             type="monotone"
                             dataKey="requests"
+                            name={t('metrics.requests')}
                             stroke="var(--color-requests)"
                             strokeWidth={1.5}
                             fill="url(#fillRequests)"
@@ -217,6 +219,7 @@ export function StatsChart({ className }: { className?: string }) {
                             yAxisId="right"
                             type="monotone"
                             dataKey="total_cost"
+                            name={t('metrics.cost')}
                             stroke="var(--color-total_cost)"
                             strokeWidth={1.5}
                             fill="url(#fillCost)"

@@ -30,14 +30,14 @@ export function TrendChart({ data, keys, isLoading }: TrendChartProps) {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center h-full gap-2 text-xs text-muted-foreground min-h-[300px]">
+            <div className="flex flex-col items-center justify-center h-full gap-2 text-xs text-muted-foreground min-h-[260px]">
                 <Loader className="size-4 animate-spin" />
             </div>
         );
     }
     if (data.length === 0) {
         return (
-            <div className="flex items-center justify-center h-full text-xs text-muted-foreground min-h-[300px]">
+            <div className="flex items-center justify-center h-full text-xs text-muted-foreground min-h-[260px]">
                 {t('no_data')}
             </div>
         );
@@ -47,7 +47,7 @@ export function TrendChart({ data, keys, isLoading }: TrendChartProps) {
     const textStroke = theme === 'dark' ? '#a1a1aa' : '#71717a';
 
     return (
-        <ResponsiveContainer width="100%" height="100%" minHeight={360}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={280}>
             <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                     {keys.map((key, i) => (

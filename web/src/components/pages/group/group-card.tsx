@@ -5,6 +5,8 @@ import { Pencil, Trash2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type Group, useDeleteGroup, useUpdateGroup, type GroupUpdateRequest } from '@/api/endpoints/group';
 import { useModelChannelList } from '@/api/endpoints/model';
+import { useGroupHealthList } from '@/api/endpoints/group-health';
+import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -26,6 +28,15 @@ export function GroupCard({ group }: GroupCardProps) {
     const updateGroup = useUpdateGroup();
     const deleteGroup = useDeleteGroup();
     const { data: modelChannels = [] } = useModelChannelList();
+    const { data: healthViews = [] } = useGroupHealthList();
+
+    const groupHealth = useMemo(
+        () => healthViews.find((hv) => hv.group_id === group.id),
+        [healthViews, group.id]
+    );
+    const latest = groupHealth?.latest ?? null;
+    const attempts = latest?.attempts ?? [];
+    const successCount = attempts.filter((attempt) => attempt.status === 'success').length;
 
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
@@ -213,9 +224,49 @@ export function GroupCard({ group }: GroupCardProps) {
                 </div>
             </header>
 
-            <div className="my-2 border-t border-border/20 pt-2 flex flex-col gap-1.5 flex-1">
-                <GroupRoutingBadge groupId={group.id} />
-                <GroupHealthBadge groupId={group.id} />
+            <div className="my-3 border-t border-border/20 pt-3 flex flex-col gap-3 flex-1 text-[11px]">
+                {/* Candidate Channels Section */}
+                <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">候选渠道 ({displayMembers.length})</span>
+                    <div className="rounded-lg border bg-muted/15 p-2.5 space-y-1 max-h-24 overflow-y-auto">
+                        {displayMembers.length === 0 ? (
+                            <span className="text-muted-foreground italic">无候选渠道</span>
+                        ) : (
+                            displayMembers.slice(0, 3).map((member) => (
+                                <div key={member.id} className="flex items-center justify-between gap-2 py-0.5">
+                                    <span className="font-mono text-muted-foreground truncate" title={member.name}>{member.name}</span>
+                                    <span className="text-foreground truncate font-medium" title={member.channel_name}>{member.channel_name}</span>
+                                </div>
+                            ))
+                        )}
+                        {displayMembers.length > 3 && (
+                            <div className="text-[9px] text-muted-foreground italic border-t border-border/10 pt-1 mt-1">
+                                更多 {displayMembers.length - 3} 个候选...
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Health & Scheduler stats */}
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg border bg-muted/10 p-2 text-center">
+                        <div className="text-[9px] text-muted-foreground font-semibold">健康成功率</div>
+                        <div className="mt-0.5 font-bold text-sm text-foreground">
+                            {latest ? `${Math.round((successCount / Math.max(1, attempts.length)) * 100)}%` : '100%'}
+                        </div>
+                    </div>
+                    <div className="rounded-lg border bg-muted/10 p-2 text-center">
+                        <div className="text-[9px] text-muted-foreground font-semibold">最后调度</div>
+                        <div className="mt-0.5 font-bold text-[10px] text-foreground truncate">
+                            {latest ? dayjs(latest.finished_at || latest.started_at).format('MM-DD HH:mm') : '从未'}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5 pt-1">
+                    <GroupRoutingBadge groupId={group.id} />
+                    <GroupHealthBadge groupId={group.id} />
+                </div>
             </div>
 
             <footer className="flex items-center justify-between text-[10px] text-muted-foreground/80 font-semibold border-t border-border/20 pt-2 shrink-0">

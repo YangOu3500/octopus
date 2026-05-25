@@ -120,7 +120,7 @@
   }
 
   body {
-    @apply bg-background text-foreground transition-colors duration-150;
+    @apply bg-background text-foreground text-sm transition-colors duration-150;
     isolation: isolate;
   }
 }

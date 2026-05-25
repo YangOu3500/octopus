@@ -62,10 +62,9 @@ export function Traces() {
 
     return (
         <div className="flex flex-col gap-4 text-xs h-full min-h-0 p-6 overflow-y-auto">
-            {/* Page Header Titles */}
             <div className="flex flex-col gap-1 shrink-0">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('title')}</h1>
-                <p className="text-xs text-muted-foreground/80 font-medium">监控并审计客户端 API 请求的完整路由与故障转移链路</p>
+                <p className="text-xs text-muted-foreground/80 font-medium">{t('description')}</p>
             </div>
 
             {/* Aggregated Tiles */}

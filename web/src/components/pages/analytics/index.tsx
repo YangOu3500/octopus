@@ -62,7 +62,7 @@ export function Analytics() {
             </div>
 
             {/* Chart Container */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-xs min-h-[420px] flex flex-col justify-between">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-xs min-h-[340px] flex flex-col justify-between">
                 <div className="flex-1 w-100 flex items-center justify-center">
                     <TrendChart data={data} keys={keys} isLoading={isLoading} />
                 </div>

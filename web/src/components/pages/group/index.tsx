@@ -63,7 +63,7 @@ export function Group() {
     };
 
     return (
-        <div className="flex flex-col gap-4 text-xs">
+        <div className="flex flex-col gap-4 text-sm p-6 overflow-y-auto h-full min-h-0">
             <PageHeader
                 title="模型分组"
                 description="对各个渠道的模型进行分组，提供高可用的调度和健康检查支持"

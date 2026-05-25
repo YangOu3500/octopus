@@ -77,21 +77,26 @@ export function SettingAccessKeys() {
 
     return (
         <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3 px-1 pb-1">
-                <h2 className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
-                    <KeyRound className="h-4 w-4 text-primary" />
-                    {t('apiKey.title')}
-                </h2>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setIsAdding(true)}
-                    className="h-8 w-8 rounded-lg shrink-0"
-                    title={t('apiKey.add')}
-                >
-                    <Plus className="size-4" />
-                </Button>
+            <div className="flex flex-col gap-1 px-1 pb-2">
+                <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
+                        <KeyRound className="h-4 w-4 text-primary" />
+                        {t('apiKey.title')}
+                    </h2>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsAdding(true)}
+                        className="h-8 w-8 rounded-lg shrink-0"
+                        title={t('apiKey.add')}
+                    >
+                        <Plus className="size-4" />
+                    </Button>
+                </div>
+                <p className="text-xs text-muted-foreground leading-normal">
+                    {t('apiKey.description')}
+                </p>
             </div>
 
             <div className="flex flex-col gap-2 rounded-2xl bg-card border border-border p-4 shadow-2xs">

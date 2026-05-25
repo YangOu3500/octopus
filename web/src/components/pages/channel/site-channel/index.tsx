@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Globe2 } from 'lucide-react';
 import {
@@ -9,6 +9,8 @@ import {
     useUpdateSiteSourceKeys,
     useUpdateSiteChannelModelDisabled,
     useUpdateSiteChannelModelRoutes,
+    type SiteChannelCard,
+    type SiteChannelAccount,
     type SiteChannelGroup,
     type SiteChannelModel,
     type SiteSourceKeyUpdateRequest,
@@ -17,116 +19,34 @@ import {
 import { useEnableChannel } from '@/api/endpoints/channel';
 import { useJumpStore, isSiteChannelJumpTarget } from '@/stores/jump';
 import { useSettingStore } from '@/stores/setting';
-import { SiteSelector } from './SiteSelector';
 import { ChannelGrid } from './ChannelGrid';
 import { SourceKeysDialog, ModelRouteDialog } from './ChannelActions';
 import { EmptyState } from '@/components/shared/empty-state';
 import { translateSiteMessage } from '../../site/site-message';
+import { Badge } from '@/components/ui/badge';
 
-export default function SiteChannelSection() {
+interface AccountChannelSectionProps {
+    card: SiteChannelCard;
+    account: SiteChannelAccount;
+    onEditKeys: (siteId: number, accountId: number, group: SiteChannelGroup) => void;
+    onEditRoute: (siteId: number, accountId: number, group: SiteChannelGroup, model: SiteChannelModel) => void;
+}
+
+function AccountChannelSection({ card, account, onEditKeys, onEditRoute }: AccountChannelSectionProps) {
     const locale = useSettingStore((state) => state.locale);
-    const { data: cards, isLoading, error } = useSiteChannelList();
+    const siteId = card.site_id;
+    const accountId = account.account_id;
 
-    // Selection states
-    const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
-    const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
-
-    // Mutations
-    const createProjected = useCreateSiteChannelKey(selectedSiteId ?? 0, selectedAccountId ?? 0);
-    const updateSourceKeys = useUpdateSiteSourceKeys(selectedSiteId ?? 0, selectedAccountId ?? 0);
+    // Mutations specific to this account
+    const createProjected = useCreateSiteChannelKey(siteId, accountId);
     const updateModelDisabled = useUpdateSiteChannelModelDisabled();
-    const updateModelRoute = useUpdateSiteChannelModelRoutes(selectedSiteId ?? 0, selectedAccountId ?? 0);
     const enableChannel = useEnableChannel();
 
-    // Dialog states
-    const [isKeysOpen, setIsKeysOpen] = useState(false);
-    const [activeGroupForKeys, setActiveGroupForKeys] = useState<SiteChannelGroup | null>(null);
-
-    const [isRouteOpen, setIsRouteOpen] = useState(false);
-    const [activeGroupForRoute, setActiveGroupForRoute] = useState<SiteChannelGroup | null>(null);
-    const [activeModelForRoute, setActiveModelForRoute] = useState<SiteChannelModel | null>(null);
-
-    // Operation pending states
     const [togglingChannelIds, setTogglingChannelIds] = useState<Set<number>>(new Set());
     const [togglingModelKeys, setTogglingModelKeys] = useState<Set<string>>(new Set());
 
-    // Jump handling
-    const pendingJump = useJumpStore((state) => state.pending);
-    const clearPending = useJumpStore((state) => state.clearPending);
-
-    useEffect(() => {
-        if (cards && cards.length > 0) {
-            const hasJump = pendingJump && isSiteChannelJumpTarget(pendingJump.target);
-            if (hasJump) return;
-
-            if (selectedSiteId === null) {
-                const firstCard = cards[0];
-                setSelectedSiteId(firstCard.site_id);
-                if (firstCard.accounts && firstCard.accounts.length > 0) {
-                    setSelectedAccountId(firstCard.accounts[0].account_id);
-                }
-            }
-        }
-    }, [cards, selectedSiteId, pendingJump]);
-
-    useEffect(() => {
-        if (pendingJump && isSiteChannelJumpTarget(pendingJump.target)) {
-            const { siteId } = pendingJump.target;
-            setSelectedSiteId(siteId);
-
-            const card = cards?.find((c) => c.site_id === siteId);
-            if (card) {
-                if (pendingJump.target.kind === 'site-channel-account' || pendingJump.target.kind === 'site-channel-model') {
-                    const { accountId } = pendingJump.target;
-                    setSelectedAccountId(accountId);
-
-                    if (pendingJump.target.kind === 'site-channel-model') {
-                        const { groupKey, modelName } = pendingJump.target;
-                        setTimeout(() => {
-                            const el = document.getElementById(`model-row-${groupKey}-${modelName}`);
-                            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            // Apply CSS animation highlight class if available
-                            el?.classList.add('bg-primary/10');
-                            setTimeout(() => el?.classList.remove('bg-primary/10'), 2000);
-                        }, 500);
-                    }
-                } else if (card.accounts && card.accounts.length > 0) {
-                    setSelectedAccountId(card.accounts[0].account_id);
-                }
-            }
-            clearPending(pendingJump.requestId);
-        }
-    }, [pendingJump, cards, clearPending]);
-
-    const activeCard = useMemo(() => {
-        return cards?.find((c) => c.site_id === selectedSiteId) ?? null;
-    }, [cards, selectedSiteId]);
-
-    const activeAccount = useMemo(() => {
-        if (!activeCard) return null;
-        return activeCard.accounts.find((a) => a.account_id === selectedAccountId) ?? null;
-    }, [activeCard, selectedAccountId]);
-
-    const handleSelect = useCallback((siteId: number, accountId: number) => {
-        setSelectedSiteId(siteId);
-        setSelectedAccountId(accountId);
-    }, []);
-
-    const handleEditKeys = useCallback((group: SiteChannelGroup) => {
-        setActiveGroupForKeys(group);
-        setIsKeysOpen(true);
-    }, []);
-
-    const handleEditRoute = useCallback((group: SiteChannelGroup, model: SiteChannelModel) => {
-        setActiveGroupForRoute(group);
-        setActiveModelForRoute(model);
-        setIsRouteOpen(true);
-    }, []);
-
-    // Mutation triggers
     const handleCreateProjected = useCallback(
         async (group: SiteChannelGroup) => {
-            if (!selectedSiteId || !selectedAccountId) return;
             await toast.promise(
                 createProjected.mutateAsync({
                     group_key: group.group_key,
@@ -139,7 +59,7 @@ export default function SiteChannelSection() {
                 }
             );
         },
-        [selectedSiteId, selectedAccountId, createProjected, locale]
+        [createProjected, locale]
     );
 
     const handleToggleProjectedChannel = useCallback(
@@ -163,14 +83,13 @@ export default function SiteChannelSection() {
 
     const handleToggleModel = useCallback(
         async (group: SiteChannelGroup, modelName: string, disabled: boolean) => {
-            if (!selectedSiteId || !selectedAccountId) return;
             const modelKey = `${group.group_key}:${modelName}`;
             setTogglingModelKeys((prev) => new Set(prev).add(modelKey));
 
             try {
                 await updateModelDisabled.mutateAsync({
-                    siteId: selectedSiteId,
-                    accountId: selectedAccountId,
+                    siteId,
+                    accountId,
                     payload: [{ group_key: group.group_key, model_name: modelName, disabled }]
                 });
                 toast.success(disabled ? '模型已禁用' : '模型已启用');
@@ -185,8 +104,96 @@ export default function SiteChannelSection() {
                 });
             }
         },
-        [selectedSiteId, selectedAccountId, updateModelDisabled, locale]
+        [siteId, accountId, updateModelDisabled, locale]
     );
+
+    return (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="py-3 px-5 bg-muted/20 border-b border-border/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <h4 className="text-xs font-semibold text-foreground">{account.account_name}</h4>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                        所属站点: <span className="font-medium text-foreground">{card.site_name}</span> ({card.platform}) | {account.group_count} 分组 | {account.model_count} 模型
+                    </p>
+                </div>
+            </div>
+            <div className="p-5">
+                {account.groups && account.groups.length > 0 ? (
+                    <ChannelGrid
+                        groups={account.groups}
+                        onEditKeys={(group) => onEditKeys(siteId, accountId, group)}
+                        onCreateProjectedChannel={handleCreateProjected}
+                        isCreatingProjected={createProjected.isPending}
+                        onToggleProjectedChannel={handleToggleProjectedChannel}
+                        togglingChannelIds={togglingChannelIds}
+                        onEditRoute={(group, model) => onEditRoute(siteId, accountId, group, model)}
+                        onToggleModel={handleToggleModel}
+                        togglingModelKeys={togglingModelKeys}
+                    />
+                ) : (
+                    <div className="text-xs text-muted-foreground italic py-2">
+                        无账号渠道数据，请在站点管理中新增并手动同步账号。
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function SiteChannelSection() {
+    const locale = useSettingStore((state) => state.locale);
+    const { data: cards, isLoading, error } = useSiteChannelList();
+
+    // Selection states for active dialog target
+    const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
+    const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+
+    // Mutation triggers (active dialogs bound to top-level state)
+    const updateSourceKeys = useUpdateSiteSourceKeys(selectedSiteId ?? 0, selectedAccountId ?? 0);
+    const updateModelRoute = useUpdateSiteChannelModelRoutes(selectedSiteId ?? 0, selectedAccountId ?? 0);
+
+    // Dialog states
+    const [isKeysOpen, setIsKeysOpen] = useState(false);
+    const [activeGroupForKeys, setActiveGroupForKeys] = useState<SiteChannelGroup | null>(null);
+
+    const [isRouteOpen, setIsRouteOpen] = useState(false);
+    const [activeGroupForRoute, setActiveGroupForRoute] = useState<SiteChannelGroup | null>(null);
+    const [activeModelForRoute, setActiveModelForRoute] = useState<SiteChannelModel | null>(null);
+
+    // Jump handling
+    const pendingJump = useJumpStore((state) => state.pending);
+    const clearPending = useJumpStore((state) => state.clearPending);
+
+    useEffect(() => {
+        if (pendingJump && isSiteChannelJumpTarget(pendingJump.target)) {
+            if (pendingJump.target.kind === 'site-channel-model') {
+                const { groupKey, modelName } = pendingJump.target;
+                setTimeout(() => {
+                    const el = document.getElementById(`model-row-${groupKey}-${modelName}`);
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el?.classList.add('bg-primary/10');
+                    setTimeout(() => el?.classList.remove('bg-primary/10'), 2000);
+                }, 500);
+            }
+            clearPending(pendingJump.requestId);
+        }
+    }, [pendingJump, clearPending]);
+
+    // Dialog callbacks
+    const handleEditKeys = useCallback((siteId: number, accountId: number, group: SiteChannelGroup) => {
+        setSelectedSiteId(siteId);
+        setSelectedAccountId(accountId);
+        setActiveGroupForKeys(group);
+        setIsKeysOpen(true);
+    }, []);
+
+    const handleEditRoute = useCallback((siteId: number, accountId: number, group: SiteChannelGroup, model: SiteChannelModel) => {
+        setSelectedSiteId(siteId);
+        setSelectedAccountId(accountId);
+        setActiveGroupForRoute(group);
+        setActiveModelForRoute(model);
+        setIsRouteOpen(true);
+    }, []);
 
     const handleSaveKeys = useCallback(
         async (payload: SiteSourceKeyUpdateRequest) => {
@@ -249,32 +256,29 @@ export default function SiteChannelSection() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <SiteSelector
-                cards={cards}
-                selectedSiteId={selectedSiteId}
-                selectedAccountId={selectedAccountId}
-                onSelect={handleSelect}
-            />
-
-            {activeAccount && activeAccount.groups ? (
-                <ChannelGrid
-                    groups={activeAccount.groups}
-                    onEditKeys={handleEditKeys}
-                    onCreateProjectedChannel={handleCreateProjected}
-                    isCreatingProjected={createProjected.isPending}
-                    onToggleProjectedChannel={handleToggleProjectedChannel}
-                    togglingChannelIds={togglingChannelIds}
-                    onEditRoute={handleEditRoute}
-                    onToggleModel={handleToggleModel}
-                    togglingModelKeys={togglingModelKeys}
-                />
-            ) : (
-                <EmptyState
-                    title="无账号数据"
-                    description="该站点下暂无任何已同步成功的账号。请在站点管理中新增并手动同步账号。"
-                />
-            )}
+        <div className="flex flex-col gap-8">
+            {cards.map((card) => (
+                <div key={card.site_id} className="space-y-4">
+                    <div className="flex items-center gap-2 border-b pb-2">
+                        <Globe2 className="size-4 text-muted-foreground" />
+                        <h3 className="text-xs font-semibold">{card.site_name}</h3>
+                        <Badge variant="outline" className="text-[10px] py-0 h-5">
+                            {card.platform}
+                        </Badge>
+                    </div>
+                    <div className="grid gap-6 grid-cols-1">
+                        {card.accounts.map((account) => (
+                            <AccountChannelSection
+                                key={account.account_id}
+                                card={card}
+                                account={account}
+                                onEditKeys={handleEditKeys}
+                                onEditRoute={handleEditRoute}
+                            />
+                        ))}
+                    </div>
+                </div>
+            ))}
 
             <SourceKeysDialog
                 open={isKeysOpen}

@@ -239,10 +239,14 @@ function SettingModelAssociationCard({
                     <div key={key} className="flex items-center justify-between gap-4 py-3 group">
                         <div className="min-w-0">
                             <div className="text-xs font-semibold text-foreground/90">
-                                {bulkT(`rules.options.${key}.label`)}
+                                {bulkT.rich(`rules.options.${key}.label`, {
+                                    code: (chunks) => <code className="px-1 py-0.5 bg-muted/80 text-muted-foreground rounded text-[10px] font-mono border border-border/20">{chunks}</code>
+                                })}
                             </div>
                             <div className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
-                                {bulkT(`rules.options.${key}.help`)}
+                                {bulkT.rich(`rules.options.${key}.help`, {
+                                    code: (chunks) => <code className="px-1 py-0.5 bg-muted/80 text-muted-foreground rounded text-[10px] font-mono border border-border/20">{chunks}</code>
+                                })}
                             </div>
                         </div>
                         <Switch

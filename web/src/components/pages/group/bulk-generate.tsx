@@ -330,8 +330,16 @@ export function GroupBulkGenerateDialog() {
                                 {ASSOCIATION_OPTION_KEYS.map((key) => (
                                     <div key={key} className="flex items-start justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
                                         <div className="min-w-0">
-                                            <div className="text-[11px] font-semibold text-foreground">{bulkT(`rules.options.${key}.label`)}</div>
-                                            <div className="text-[10px] text-muted-foreground">{bulkT(`rules.options.${key}.help`)}</div>
+                                            <div className="text-[11px] font-semibold text-foreground">
+                                                {bulkT.rich(`rules.options.${key}.label`, {
+                                                    code: (chunks) => <code className="px-1 py-0.5 bg-muted text-muted-foreground rounded text-[9.5px] font-mono border border-border/20">{chunks}</code>
+                                                })}
+                                            </div>
+                                            <div className="text-[10px] text-muted-foreground">
+                                                {bulkT.rich(`rules.options.${key}.help`, {
+                                                    code: (chunks) => <code className="px-1 py-0.5 bg-muted text-muted-foreground rounded text-[9.5px] font-mono border border-border/20">{chunks}</code>
+                                                })}
+                                            </div>
                                         </div>
                                         <Switch checked={Boolean(associationOptions[key])} onCheckedChange={(checked) => setAssociationOptions(prev => ({ ...prev, [key]: checked }))} className="scale-75" />
                                     </div>

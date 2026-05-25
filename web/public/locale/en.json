@@ -479,6 +479,7 @@
         },
         "apiKey": {
             "title": "API Keys",
+            "description": "API keys list for gateway access. Clients use these keys to authenticate and invoke gateway proxies. Keep them secure.",
             "empty": "No API keys",
             "add": "Add Key",
             "loadFailed": "Failed to load",
@@ -1091,16 +1092,16 @@
                 },
                 "options": {
                     "strip_provider_prefix": {
-                        "label": "Strip provider/model prefixes",
-                        "help": "Fold openai/, anthropic/, openrouter/, and similar prefixes into the same model name."
+                        "label": "Strip <code>provider/model</code> prefixes",
+                        "help": "Fold <code>openai/</code>, <code>anthropic/</code>, <code>openrouter/</code>, and similar prefixes into the same model name."
                     },
                     "strip_models_namespace": {
-                        "label": "Strip models/ prefix",
-                        "help": "Fold names such as models/gemini-1.5-pro into the real model name."
+                        "label": "Strip <code>models/</code> prefix",
+                        "help": "Fold names such as <code>models/gemini-1.5-pro</code> into the real model name."
                     },
                     "normalize_case": {
                         "label": "Normalize case",
-                        "help": "Treat GPT-4O and gpt-4o as the same model name."
+                        "help": "Treat <code>GPT-4O</code> and <code>gpt-4o</code> as the same model name."
                     },
                     "normalize_separators": {
                         "label": "Normalize separators",
@@ -1423,6 +1424,7 @@
     },
     "traces": {
         "title": "Trace Workspace",
+        "description": "Monitor and audit the complete routing and failover chain of client API requests.",
         "loadFailed": "Failed to load traces",
         "autoRefresh": "Live refresh",
         "refresh": "Refresh",
@@ -1849,7 +1851,55 @@
             "duration": "Duration",
             "time": "Time",
             "actions": "Actions"
-        }
+        },
+        "title": "Request Logs",
+        "description": "View and analyze relay request logs and failover history.",
+        "activeDebug": "Active Request Debug",
+        "filters": {
+            "searchModelPlaceholder": "Search model ID/name...",
+            "searchTracePlaceholder": "Search Trace ID...",
+            "timeRange": "Time Range",
+            "status": "Response Status",
+            "allStatus": "All Status",
+            "success": "Success",
+            "failed": "Failed",
+            "canceled": "Canceled",
+            "advanced": "Advanced Filter",
+            "moreFilters": "More Filters",
+            "filterDesc": "Filter logs by following criteria",
+            "apiKey": "API Key",
+            "apiKeyPlaceholder": "Key Name/ID",
+            "httpStatus": "HTTP Status",
+            "httpStatusPlaceholder": "e.g., 200, 429",
+            "errorDesc": "Error Description",
+            "errorDescPlaceholder": "Filter error messages...",
+            "protocol": "Protocol Type",
+            "allProtocols": "All Protocols",
+            "requestSource": "Request Source",
+            "allSources": "All Sources",
+            "stream": "Stream Response",
+            "allStream": "All",
+            "streamTrue": "Stream",
+            "streamFalse": "Non-stream",
+            "failover": "Failover",
+            "failoverTrue": "Retried",
+            "failoverFalse": "No retry",
+            "cacheHit": "Cache Hit",
+            "cacheHitTrue": "Hit",
+            "cacheHitFalse": "Miss",
+            "reset": "Reset All Filters",
+            "autoRefresh": "Auto Refresh"
+        },
+        "clear": {
+            "confirm": "Are you sure you want to clear all history logs? This action is irreversible.",
+            "success": "History logs cleared successfully.",
+            "failed": "Failed to clear logs.",
+            "button": "Clear History"
+        },
+        "success": "Success",
+        "failed": "Failed",
+        "skipped": "Skipped",
+        "circuitBreak": "Circuit Break"
     },
     "channel": {
         "tabs": {
@@ -2314,6 +2364,9 @@
             "allapihub": "All API Hub",
             "newapi": "New API",
             "new-api": "New API",
+            "one-api": "One API",
+            "onehub": "OneHub",
+            "one-hub": "OneHub",
             "donehub": "DoneHub",
             "done-hub": "DoneHub",
             "anyrouter": "Anyrouter",

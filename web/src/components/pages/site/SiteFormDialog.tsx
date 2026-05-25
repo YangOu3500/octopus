@@ -45,14 +45,17 @@ export type SiteFormState = {
 const AUTO_DETECT_VALUE = '__auto__';
 
 const PLATFORM_LABELS: Record<string, string> = {
-    metapi: 'MetAPI',
-    allapihub: 'All API Hub',
-    newapi: 'New API',
-    donehub: 'DoneHub',
-    sub2api: 'Sub2API',
-    openai: 'OpenAI',
-    claude: 'Claude',
-    gemini: 'Gemini',
+    'new-api': 'New API',
+    'anyrouter': 'Anyrouter',
+    'one-api': 'One API',
+    'one-hub': 'OneHub',
+    'done-hub': 'DoneHub',
+    'sub2api': 'Sub2API',
+    'openai': 'OpenAI',
+    'claude': 'Claude',
+    'gemini': 'Gemini',
+    'metapi': 'MetAPI',
+    'allapihub': 'All API Hub',
 };
 
 export function createEmptySiteForm(): SiteFormState {

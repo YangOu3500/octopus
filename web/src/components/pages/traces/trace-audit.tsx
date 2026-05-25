@@ -73,6 +73,7 @@ export function TraceAuditPanel({
     isError,
 }: TraceAuditPanelProps) {
     const t = useTranslations('traces.audit');
+    const tRoot = useTranslations('traces');
 
     if (traces.length === 0 && !audit?.total) return null;
 
@@ -101,19 +102,27 @@ export function TraceAuditPanel({
     const avgLatency = hasAudit ? Math.round(audit.avg_latency_ms) : pageAvgLatency;
 
     const statusBuckets = hasAudit
-        ? mapAuditBuckets(audit.status_buckets, (key) => key === 'unknown' ? t('unknown') : key)
+        ? mapAuditBuckets(audit.status_buckets, (key) => {
+            if (key === 'unknown') return t('unknown');
+            const lowerKey = key.toLowerCase();
+            return tRoot.has(`status.${lowerKey}`) ? tRoot(`status.${lowerKey}`) : key;
+        })
         : buildAuditBuckets(
             traces,
             (trace) => trace.final_status,
-            (_trace, key) => key === 'unknown' ? t('unknown') : key,
+            (_trace, key) => {
+                if (key === 'unknown') return t('unknown');
+                const lowerKey = key.toLowerCase();
+                return tRoot.has(`status.${lowerKey}`) ? tRoot(`status.${lowerKey}`) : key;
+            },
         );
 
     const sourceBuckets = hasAudit
-        ? mapAuditBuckets(audit.source_buckets, (key) => key === 'unknown' ? t('unknown') : sourceLabel(key, t))
+        ? mapAuditBuckets(audit.source_buckets, (key) => key === 'unknown' ? t('unknown') : sourceLabel(key, tRoot))
         : buildAuditBuckets(
             traces,
             (trace) => trace.request_source,
-            (trace, key) => key === 'unknown' ? t('unknown') : sourceLabel(trace.request_source || key, t),
+            (trace, key) => key === 'unknown' ? t('unknown') : sourceLabel(trace.request_source || key, tRoot),
         );
 
     const modelBuckets = hasAudit

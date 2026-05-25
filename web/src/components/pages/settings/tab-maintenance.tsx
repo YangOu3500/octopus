@@ -331,14 +331,19 @@ export function SettingMaintenance() {
                             <Github className="h-4 w-4 text-muted-foreground shrink-0" />
                             <span className="text-sm font-medium text-foreground/90">{t('info.github')}</span>
                         </div>
-                        <a
-                            href={GITHUB_REPO}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-primary hover:underline"
-                        >
-                            {GITHUB_REPO.replace('https://github.com/', '')}
-                        </a>
+                        <div className="flex items-center gap-2">
+                            <a
+                                href={GITHUB_REPO}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline"
+                            >
+                                {GITHUB_REPO.replace('https://github.com/', '')}
+                            </a>
+                            <span className="text-xs text-muted-foreground/60">
+                                (feat/gemini-frontend-edit)
+                            </span>
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-between gap-4 py-3">

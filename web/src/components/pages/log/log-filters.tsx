@@ -30,12 +30,12 @@ export function LogFilters({ state }: LogFiltersProps) {
     const t = useTranslations('log');
 
     const handleClearLogs = async () => {
-        if (!window.confirm('确定要清空所有历史日志吗？该操作不可逆。')) return;
+        if (!window.confirm(t('clear.confirm'))) return;
         try {
             await state.clearLogsMutation.mutateAsync();
-            toast.success('历史日志已清空');
+            toast.success(t('clear.success'));
         } catch (error) {
-            toast.error('清空日志失败', { description: error instanceof Error ? error.message : String(error) });
+            toast.error(t('clear.failed'), { description: error instanceof Error ? error.message : String(error) });
         }
     };
 
@@ -47,7 +47,7 @@ export function LogFilters({ state }: LogFiltersProps) {
                     <div className="relative flex-1">
                         <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground/60" />
                         <Input
-                            placeholder="搜索模型ID/名称..."
+                            placeholder={t('filters.searchModelPlaceholder')}
                             value={state.modelFilter}
                             onChange={(e) => state.setModelFilter(e.target.value)}
                             className="h-9 pl-8 rounded-lg text-xs"
@@ -56,7 +56,7 @@ export function LogFilters({ state }: LogFiltersProps) {
                     <div className="relative flex-1">
                         <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground/60" />
                         <Input
-                            placeholder="搜索 Trace ID..."
+                            placeholder={t('filters.searchTracePlaceholder')}
                             value={state.traceFilter}
                             onChange={(e) => state.setTraceFilter(e.target.value)}
                             className="h-9 pl-8 rounded-lg text-xs"
@@ -68,7 +68,7 @@ export function LogFilters({ state }: LogFiltersProps) {
                     {/* Time range */}
                     <Select value={state.timeRange} onValueChange={state.setTimeRange}>
                         <SelectTrigger className="h-9 w-[110px] rounded-lg text-xs">
-                            <SelectValue placeholder="时间范围" />
+                            <SelectValue placeholder={t('filters.timeRange')} />
                         </SelectTrigger>
                         <SelectContent className="text-xs">
                             <SelectItem value="1h">最近 1 小时</SelectItem>
@@ -84,13 +84,13 @@ export function LogFilters({ state }: LogFiltersProps) {
                     {/* Status filter */}
                     <Select value={state.statusFilter} onValueChange={state.setStatusFilter}>
                         <SelectTrigger className="h-9 w-[100px] rounded-lg text-xs">
-                            <SelectValue placeholder="响应状态" />
+                            <SelectValue placeholder={t('filters.status')} />
                         </SelectTrigger>
                         <SelectContent className="text-xs">
-                            <SelectItem value="all">所有状态</SelectItem>
-                            <SelectItem value="success">成功</SelectItem>
-                            <SelectItem value="failed">失败</SelectItem>
-                            <SelectItem value="canceled">已取消</SelectItem>
+                            <SelectItem value="all">{t('filters.allStatus')}</SelectItem>
+                            <SelectItem value="success">{t('filters.success')}</SelectItem>
+                            <SelectItem value="failed">{t('filters.failed')}</SelectItem>
+                            <SelectItem value="canceled">{t('filters.canceled')}</SelectItem>
                         </SelectContent>
                     </Select>
 
@@ -99,67 +99,67 @@ export function LogFilters({ state }: LogFiltersProps) {
                         <PopoverTrigger asChild>
                             <Button variant="outline" size="sm" className="h-9 rounded-lg gap-1.5 text-xs font-bold">
                                 <SlidersHorizontal className="size-3.5" />
-                                <span>高级筛选</span>
+                                <span>{t('filters.advanced')}</span>
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-80 p-4 border border-border bg-card rounded-xl shadow-md text-xs" align="end">
                             <div className="grid gap-3">
                                 <div className="space-y-1">
-                                    <h4 className="font-bold leading-none text-foreground">更多筛选项</h4>
-                                    <p className="text-[10px] text-muted-foreground">根据以下条件过滤日志</p>
+                                    <h4 className="font-bold leading-none text-foreground">{t('filters.moreFilters')}</h4>
+                                    <p className="text-[10px] text-muted-foreground">{t('filters.filterDesc')}</p>
                                 </div>
                                 <div className="grid gap-2">
                                     <div className="grid grid-cols-3 items-center gap-2">
-                                        <Label htmlFor="apiKeyFilter">API Key</Label>
+                                        <Label htmlFor="apiKeyFilter">{t('filters.apiKey')}</Label>
                                         <Input
                                             id="apiKeyFilter"
                                             value={state.apiKeyFilter}
                                             onChange={(e) => state.setApiKeyFilter(e.target.value)}
-                                            placeholder="密钥名称/ID"
+                                            placeholder={t('filters.apiKeyPlaceholder')}
                                             className="col-span-2 h-8 rounded-md"
                                         />
                                     </div>
                                     <div className="grid grid-cols-3 items-center gap-2">
-                                        <Label htmlFor="httpStatusFilter">HTTP 状态</Label>
+                                        <Label htmlFor="httpStatusFilter">{t('filters.httpStatus')}</Label>
                                         <Input
                                             id="httpStatusFilter"
                                             value={state.httpStatusFilter}
                                             onChange={(e) => state.setHttpStatusFilter(e.target.value)}
-                                            placeholder="例: 200, 429"
+                                            placeholder={t('filters.httpStatusPlaceholder')}
                                             className="col-span-2 h-8 rounded-md"
                                         />
                                     </div>
                                     <div className="grid grid-cols-3 items-center gap-2">
-                                        <Label htmlFor="failureFilter">错误描述</Label>
+                                        <Label htmlFor="failureFilter">{t('filters.errorDesc')}</Label>
                                         <Input
                                             id="failureFilter"
                                             value={state.failureFilter}
                                             onChange={(e) => state.setFailureFilter(e.target.value)}
-                                            placeholder="过滤错误信息..."
+                                            placeholder={t('filters.errorDescPlaceholder')}
                                             className="col-span-2 h-8 rounded-md"
                                         />
                                     </div>
                                     <div className="grid grid-cols-3 items-center gap-2">
-                                        <Label>协议类型</Label>
+                                        <Label>{t('filters.protocol')}</Label>
                                         <Select value={state.protocolFilter} onValueChange={state.setProtocolFilter}>
                                             <SelectTrigger className="col-span-2 h-8 rounded-md">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="text-xs">
-                                                <SelectItem value="all">所有协议</SelectItem>
+                                                <SelectItem value="all">{t('filters.allProtocols')}</SelectItem>
                                                 <SelectItem value="http">HTTP</SelectItem>
                                                 <SelectItem value="websocket">WebSocket</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                     <div className="grid grid-cols-3 items-center gap-2">
-                                        <Label>请求来源</Label>
+                                        <Label>{t('filters.requestSource')}</Label>
                                         <Select value={state.sourceFilter} onValueChange={state.setSourceFilter}>
                                             <SelectTrigger className="col-span-2 h-8 rounded-md">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="text-xs">
-                                                <SelectItem value="all">所有来源</SelectItem>
+                                                <SelectItem value="all">{t('filters.allSources')}</SelectItem>
                                                 <SelectItem value="relay">Relay</SelectItem>
                                                 <SelectItem value="model_test">模型测试</SelectItem>
                                                 <SelectItem value="probe">健康探测</SelectItem>
@@ -168,47 +168,47 @@ export function LogFilters({ state }: LogFiltersProps) {
                                         </Select>
                                     </div>
                                     <div className="grid grid-cols-3 items-center gap-2">
-                                        <Label>流式响应</Label>
+                                        <Label>{t('filters.stream')}</Label>
                                         <Select value={state.streamFilter} onValueChange={state.setStreamFilter}>
                                             <SelectTrigger className="col-span-2 h-8 rounded-md">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="text-xs">
-                                                <SelectItem value="all">全部</SelectItem>
-                                                <SelectItem value="true">流式</SelectItem>
-                                                <SelectItem value="false">非流式</SelectItem>
+                                                <SelectItem value="all">{t('filters.allStream')}</SelectItem>
+                                                <SelectItem value="true">{t('filters.streamTrue')}</SelectItem>
+                                                <SelectItem value="false">{t('filters.streamFalse')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                     <div className="grid grid-cols-3 items-center gap-2">
-                                        <Label>故障转移</Label>
+                                        <Label>{t('filters.failover')}</Label>
                                         <Select value={state.failoverFilter} onValueChange={state.setFailoverFilter}>
                                             <SelectTrigger className="col-span-2 h-8 rounded-md">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="text-xs">
-                                                <SelectItem value="all">全部</SelectItem>
-                                                <SelectItem value="true">发生重试</SelectItem>
-                                                <SelectItem value="false">无重试</SelectItem>
+                                                <SelectItem value="all">{t('filters.allStream')}</SelectItem>
+                                                <SelectItem value="true">{t('filters.failoverTrue')}</SelectItem>
+                                                <SelectItem value="false">{t('filters.failoverFalse')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                     <div className="grid grid-cols-3 items-center gap-2">
-                                        <Label>缓存命中</Label>
+                                        <Label>{t('filters.cacheHit')}</Label>
                                         <Select value={state.cacheHitFilter} onValueChange={state.setCacheHitFilter}>
                                             <SelectTrigger className="col-span-2 h-8 rounded-md">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="text-xs">
-                                                <SelectItem value="all">全部</SelectItem>
-                                                <SelectItem value="true">命中</SelectItem>
-                                                <SelectItem value="false">未命中</SelectItem>
+                                                <SelectItem value="all">{t('filters.allStream')}</SelectItem>
+                                                <SelectItem value="true">{t('filters.cacheHitTrue')}</SelectItem>
+                                                <SelectItem value="false">{t('filters.cacheHitFalse')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                 </div>
                                 <Button variant="outline" size="sm" onClick={state.resetFilters} className="w-full mt-1 h-8 rounded-md font-bold">
-                                    重置全部筛选
+                                    {t('filters.reset')}
                                 </Button>
                             </div>
                         </PopoverContent>
@@ -222,7 +222,7 @@ export function LogFilters({ state }: LogFiltersProps) {
                             onCheckedChange={state.setAutoRefresh}
                         />
                         <Label htmlFor="log-auto-refresh" className="cursor-pointer text-[10px] font-bold text-muted-foreground uppercase">
-                            自动刷新
+                            {t('filters.autoRefresh')}
                         </Label>
                         {state.autoRefresh && (
                             <Select value={state.refreshInterval} onValueChange={state.setRefreshInterval}>
@@ -271,7 +271,7 @@ export function LogFilters({ state }: LogFiltersProps) {
                         className="h-9 rounded-lg gap-1.5 px-3 border-destructive/30 hover:bg-destructive/10 hover:text-destructive font-bold text-muted-foreground"
                     >
                         {state.clearLogsMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-                        <span>清空历史</span>
+                        <span>{t('clear.button')}</span>
                     </Button>
                 </div>
             </div>

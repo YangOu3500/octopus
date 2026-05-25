@@ -100,7 +100,7 @@ export function LogAttempts({ attempts }: LogAttemptsProps) {
                             {/* Header details */}
                             <div className="flex flex-wrap items-start gap-2">
                                 <Badge variant="outline" className={cn('h-5 rounded-md px-1.5 text-[9px] font-bold uppercase tracking-wider', statusBadgeClass(attempt.status))}>
-                                    {attempt.status || '-'}
+                                    {attempt.status ? (t.has(attempt.status.toLowerCase()) ? t(attempt.status.toLowerCase()) : attempt.status) : '-'}
                                     {attempt.repeat > 1 ? ` (x${attempt.repeat})` : ''}
                                 </Badge>
                                 <div className="min-w-0 flex-1">

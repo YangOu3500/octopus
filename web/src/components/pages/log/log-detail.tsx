@@ -181,7 +181,7 @@ export function LogDetail({ logId, open, onOpenChange }: LogDetailProps) {
                             <div className="flex flex-col gap-1">
                                 <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">{t('finalStatus')}</span>
                                 <Badge variant="outline" className={`w-fit h-5 rounded-md px-1.5 text-[9px] font-bold uppercase ${statusBadgeClass(log.final_status)}`}>
-                                    {log.final_status}
+                                    {log.final_status ? (t.has(log.final_status.toLowerCase()) ? t(log.final_status.toLowerCase()) : log.final_status) : '—'}
                                 </Badge>
                             </div>
                             <div className="flex flex-col gap-1">
