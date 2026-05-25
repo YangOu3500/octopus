@@ -191,7 +191,7 @@
             },
             "metrics": {
                 "requests": "请求",
-                "tokens": "Token 用量",
+                "tokens": "Token",
                 "waitTime": "耗时",
                 "cost": "费用"
             }

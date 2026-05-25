@@ -118,7 +118,7 @@ export function Model() {
     };
 
     return (
-        <div className="flex flex-col gap-4 text-sm p-6 overflow-y-auto h-full min-h-0">
+        <div className="flex flex-col gap-6 p-6">
             <PageHeader
                 title="模型价格"
                 description="配置模型的输入输出价格，支持缓存读取和写入单价计算"

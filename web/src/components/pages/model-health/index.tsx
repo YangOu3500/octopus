@@ -275,7 +275,7 @@ export function ModelHealth() {
     }, [autoRefresh, refreshInterval, refetch]);
 
     return (
-        <div className="flex flex-col gap-4 text-sm h-full min-h-0 p-6 overflow-y-auto">
+        <div className="flex flex-col gap-6 p-6 h-full min-h-0 overflow-hidden">
             <PageHeader
                 title="模型健康工作台"
                 description="监控各渠道模型的请求成功率、延迟、负载情况及熔断冷却状态"

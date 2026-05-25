@@ -20,7 +20,7 @@ export function ModelTest() {
     const state = useModelTestState();
 
     return (
-        <div className="flex flex-col gap-4 text-sm p-6 overflow-y-auto h-full min-h-0">
+        <div className="flex flex-col gap-6 p-6">
             <PageHeader
                 title={navT('modelTest')}
                 description="直接测试模型、流和延迟"
