@@ -113,6 +113,8 @@
     },
     "home": {
         "description": "Gateway status and analytics dashboard.",
+        "refresh": "Refresh",
+        "refreshed": "Dashboard data refreshed",
         "dashboard": {
             "totalRequests": "Total Requests",
             "totalSub": "Failed in 24h {failed}",
@@ -190,16 +192,23 @@
             "metrics": {
                 "requests": "Requests",
                 "tokens": "Tokens",
-                "waitTime": "Latency"
+                "waitTime": "Latency",
+                "cost": "Cost"
             }
         },
         "rank": {
-            "title": "Ranking",
+            "title": "Rankings",
             "sortByCost": "Cost",
-            "sortByCount": "Count",
+            "sortByCount": "Requests",
             "sortByTokens": "Tokens",
             "noData": "No ranking data",
-            "successRate": "Success Rate"
+            "successRate": "Success Rate",
+            "keys": "API Keys",
+            "models": "Models",
+            "channels": "Channels",
+            "sources": "Request Sources",
+            "top5": "Top 5 {type}",
+            "reqs": "{count} reqs"
         },
         "groupHealth": {
             "title": "Group Health",
@@ -1357,7 +1366,12 @@
             "cost": "Cost",
             "response": "Response",
             "actions": "Actions"
-        }
+        },
+        "consoleIdle": "[CONSOLE]: IDLE",
+        "streamMode": "Stream Mode: {status} ({maxTokens} max tokens)",
+        "statusOn": "ON",
+        "statusOff": "OFF",
+        "advancedSettings": "Advanced Settings"
     },
     "model": {
         "create": {
@@ -1408,7 +1422,7 @@
         }
     },
     "traces": {
-        "title": "Standalone Requests / Traces Workbench",
+        "title": "Trace Workspace",
         "loadFailed": "Failed to load traces",
         "autoRefresh": "Live refresh",
         "refresh": "Refresh",
@@ -1497,7 +1511,11 @@
             "canceled": "Canceled"
         },
         "source": {
-            "all": "All sources"
+            "all": "All Sources",
+            "relay": "Relay",
+            "model_test": "Model Test",
+            "images": "Images",
+            "probe": "Probe"
         },
         "stream": {
             "all": "All modes",
@@ -1594,7 +1612,13 @@
                 "success": "Loaded logs exported",
                 "failed": "Failed to export loaded logs",
                 "safe": "The export only contains structured fields from currently loaded rows, without full request / response bodies, API key names, or auth data"
-            }
+            },
+            "loading": "Loading request logs...",
+            "empty": "No logs matching the filters",
+            "total": "Total matched: {count} logs",
+            "fetching": "Syncing server data...",
+            "scrollLoad": "Scroll down to load more",
+            "allLoaded": "All data loaded"
         },
         "active": {
             "title": "Active Request Debug",
@@ -1718,7 +1742,7 @@
             "retryable": "Retryable",
             "failureReason": "Failure Reason",
             "errorSummary": "Error Summary",
-            "tokenUsage": "Token Usage",
+            "tokenUsage": "Tokens",
             "costIncurred": "Token Cost Incurred",
             "inputCost": "Input Cost",
             "outputCost": "Output Cost",
@@ -1795,7 +1819,36 @@
             "transportInput": "Transport Input",
             "billInput": "Billed Input",
             "cacheRead": "Cache Read",
-            "cacheWrite": "Cache Write"
+            "cacheWrite": "Cache Write",
+            "createdAt": "Created Time",
+            "logDetails": "Request Log Details",
+            "failedToLoadDetails": "Failed to load details, please retry",
+            "payloadTab": "Payloads",
+            "attemptsTab": "Attempts ({count})",
+            "metaTab": "Metadata",
+            "errorLog": "Error Log",
+            "noContent": "No {title} content",
+            "copied": "Copied {title}",
+            "source": {
+                "relay": "Relay",
+                "model_test": "Model Test",
+                "images": "Images",
+                "probe": "Probe"
+            }
+        },
+        "table": {
+            "id": "Log ID",
+            "model": "Model",
+            "stream": "Stream",
+            "source": "Source",
+            "ip": "Client IP",
+            "channel": "Channel",
+            "status": "Status",
+            "tokens": "Tokens",
+            "cost": "Cost",
+            "duration": "Duration",
+            "time": "Time",
+            "actions": "Actions"
         }
     },
     "channel": {
@@ -1948,6 +2001,14 @@
                 "load": "Load / Cooldown",
                 "quota": "Quota",
                 "lastFailure": "Last failure"
+            },
+            "tooltips": {
+                "toks": "Tokens per second (throughput)",
+                "rpm": "Requests per minute",
+                "ttfb": "Time to First Token (TTFB)",
+                "inout": "Input / Output tokens count",
+                "bal": "Remaining quota balance",
+                "used": "Used quota of the channel"
             }
         },
         "card": {
@@ -2043,7 +2104,9 @@
             "matchRegex": "Match Regex",
             "matchRegexPlaceholder": "Optional: regex pattern to match request model names",
             "remark": "Remark"
-        }
+        },
+        "title": "Channel Management",
+        "description": "Configure and manage upstream LLM API provider channels"
     },
     "siteChannel": {
         "card": {
@@ -2250,7 +2313,10 @@
             "metapi": "MetAPI",
             "allapihub": "All API Hub",
             "newapi": "New API",
+            "new-api": "New API",
             "donehub": "DoneHub",
+            "done-hub": "DoneHub",
+            "anyrouter": "Anyrouter",
             "sub2api": "Sub2API",
             "openai": "OpenAI",
             "claude": "Claude",

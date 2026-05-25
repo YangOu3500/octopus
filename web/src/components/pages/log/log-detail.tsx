@@ -35,13 +35,14 @@ interface LogDetailProps {
 }
 
 function JsonOrText({ value, title }: { value: string | undefined; title: string }) {
+    const t = useTranslations('log.card');
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
     if (!value) {
         return (
             <div className="text-center py-8 text-xs text-muted-foreground bg-muted/10 rounded-lg border border-dashed border-border/80">
-                无{title}内容
+                {t('noContent', { title })}
             </div>
         );
     }
@@ -55,7 +56,7 @@ function JsonOrText({ value, title }: { value: string | undefined; title: string
 
     const handleCopy = () => {
         navigator.clipboard.writeText(value);
-        toast.success(`已复制${title}`);
+        toast.success(t('copied', { title }));
     };
 
     return (
@@ -137,10 +138,10 @@ export function LogDetail({ logId, open, onOpenChange }: LogDetailProps) {
                     <div className="min-w-0">
                         <DialogTitle className="text-sm font-bold text-foreground flex items-center gap-1.5">
                             <Terminal className="size-4 text-primary" />
-                            <span>请求日志详情 #{logId}</span>
+                            <span>{t('logDetails')} #{logId}</span>
                         </DialogTitle>
                         <DialogDescription className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate max-w-[500px]">
-                            {log?.trace_id ? `Trace: ${log.trace_id}` : '正在加载详情...'}
+                            {log?.trace_id ? `Trace: ${log.trace_id}` : t('loadingDetails')}
                         </DialogDescription>
                     </div>
                     {log && (
@@ -151,7 +152,7 @@ export function LogDetail({ logId, open, onOpenChange }: LogDetailProps) {
                             className="h-8 rounded-lg text-xs gap-1.5 px-3 font-bold shrink-0 mr-6"
                         >
                             <Download className="size-3.5" />
-                            <span>导出详情</span>
+                            <span>{t('exportDetail')}</span>
                         </Button>
                     )}
                 </DialogHeader>
@@ -165,7 +166,7 @@ export function LogDetail({ logId, open, onOpenChange }: LogDetailProps) {
 
                 {error && (
                     <div className="p-6 text-center text-destructive font-semibold">
-                        加载详情失败，请重试
+                        {t('failedToLoadDetails')}
                     </div>
                 )}
 
@@ -174,21 +175,21 @@ export function LogDetail({ logId, open, onOpenChange }: LogDetailProps) {
                         {/* Summary grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border border-border/50 bg-background/25 rounded-xl p-3">
                             <div className="flex flex-col gap-1">
-                                <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">请求模型</span>
+                                <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">{t('clientRequestModel')}</span>
                                 <span className="font-bold text-foreground truncate" title={log.request_model_name}>{log.request_model_name}</span>
                             </div>
                             <div className="flex flex-col gap-1">
-                                <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">最终状态</span>
+                                <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">{t('finalStatus')}</span>
                                 <Badge variant="outline" className={`w-fit h-5 rounded-md px-1.5 text-[9px] font-bold uppercase ${statusBadgeClass(log.final_status)}`}>
                                     {log.final_status}
                                 </Badge>
                             </div>
                             <div className="flex flex-col gap-1">
-                                <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">总耗时</span>
+                                <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">{t('totalLatency')}</span>
                                 <span className="font-bold text-foreground font-mono">{formatDuration(log.total_latency_ms || log.use_time)}</span>
                             </div>
                             <div className="flex flex-col gap-1">
-                                <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">总费用</span>
+                                <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">{t('cost')}</span>
                                 <span className="font-bold text-foreground font-mono">{formatCost(log.cost)}</span>
                             </div>
                         </div>
@@ -196,9 +197,9 @@ export function LogDetail({ logId, open, onOpenChange }: LogDetailProps) {
                         {/* Detail tabs */}
                         <Tabs defaultValue="payload" className="w-full flex flex-col gap-3">
                             <TabsList className="grid grid-cols-3 h-8 w-fit bg-muted p-0.5 rounded-lg border">
-                                <TabsTrigger value="payload" className="text-xs h-7 rounded px-4 font-bold">正文负载</TabsTrigger>
-                                <TabsTrigger value="attempts" className="text-xs h-7 rounded px-4 font-bold">路由尝试 ({log.attempts?.length || 0})</TabsTrigger>
-                                <TabsTrigger value="meta" className="text-xs h-7 rounded px-4 font-bold">元数据</TabsTrigger>
+                                <TabsTrigger value="payload" className="text-xs h-7 rounded px-4 font-bold">{t('payloadTab')}</TabsTrigger>
+                                <TabsTrigger value="attempts" className="text-xs h-7 rounded px-4 font-bold">{t('attemptsTab', { count: log.attempts?.length || 0 })}</TabsTrigger>
+                                <TabsTrigger value="meta" className="text-xs h-7 rounded px-4 font-bold">{t('metaTab')}</TabsTrigger>
                             </TabsList>
 
                             {/* Payload tab */}
@@ -207,7 +208,7 @@ export function LogDetail({ logId, open, onOpenChange }: LogDetailProps) {
                                 <JsonOrText value={log.response_content} title={t('responseContent') || '响应内容'} />
                                 {log.error && (
                                     <div className="border border-destructive/20 bg-destructive/5 rounded-xl p-3 text-destructive font-semibold">
-                                        <div className="font-bold mb-1">错误日志</div>
+                                        <div className="font-bold mb-1">{t('errorLog')}</div>
                                         <pre className="font-mono whitespace-pre-wrap leading-relaxed text-[10.5px]">{log.error}</pre>
                                     </div>
                                 )}
@@ -222,42 +223,44 @@ export function LogDetail({ logId, open, onOpenChange }: LogDetailProps) {
                             <TabsContent value="meta" className="mt-0 focus-visible:outline-none">
                                 <div className="border border-border/80 rounded-xl divide-y divide-border/60 overflow-hidden bg-background/20">
                                     <div className="grid grid-cols-3 p-2.5">
-                                        <span className="font-bold text-muted-foreground/70">Trace ID</span>
+                                        <span className="font-bold text-muted-foreground/70">{t('traceId')}</span>
                                         <span className="col-span-2 font-mono text-foreground select-all">{log.trace_id || '—'}</span>
                                     </div>
                                     <div className="grid grid-cols-3 p-2.5">
-                                        <span className="font-bold text-muted-foreground/70">Thread ID</span>
+                                        <span className="font-bold text-muted-foreground/70">{t('threadId')}</span>
                                         <span className="col-span-2 font-mono text-foreground select-all">{log.thread_id || '—'}</span>
                                     </div>
                                     <div className="grid grid-cols-3 p-2.5">
-                                        <span className="font-bold text-muted-foreground/70">创建时间</span>
+                                        <span className="font-bold text-muted-foreground/70">{t('createdAt')}</span>
                                         <span className="col-span-2 text-foreground font-mono">{formatDateTime(log.time)}</span>
                                     </div>
                                     <div className="grid grid-cols-3 p-2.5">
-                                        <span className="font-bold text-muted-foreground/70">客户端 IP</span>
+                                        <span className="font-bold text-muted-foreground/70">{t('clientIP')}</span>
                                         <span className="col-span-2 text-foreground font-mono">{formatClientIP(log.client_ip)}</span>
                                     </div>
                                     <div className="grid grid-cols-3 p-2.5">
-                                        <span className="font-bold text-muted-foreground/70">客户端 Key ID</span>
+                                        <span className="font-bold text-muted-foreground/70">{t('clientApiKeyId')}</span>
                                         <span className="col-span-2 text-foreground font-mono">#{log.client_api_key_id || '—'}</span>
                                     </div>
                                     <div className="grid grid-cols-3 p-2.5">
-                                        <span className="font-bold text-muted-foreground/70">网关渠道</span>
+                                        <span className="font-bold text-muted-foreground/70">{t('channel')}</span>
                                         <span className="col-span-2 text-foreground">{log.channel_name || '—'} (#{log.channel})</span>
                                     </div>
                                     <div className="grid grid-cols-3 p-2.5">
-                                        <span className="font-bold text-muted-foreground/70">流式传输</span>
-                                        <span className="col-span-2 text-foreground">{log.request_stream ? '是 (Stream)' : '否 (JSON)'}</span>
+                                        <span className="font-bold text-muted-foreground/70">{t('protocol')}</span>
+                                        <span className="col-span-2 text-foreground">{log.request_stream ? `${t('yes')} (Stream)` : `${t('no')} (JSON)`}</span>
                                     </div>
                                     <div className="grid grid-cols-3 p-2.5">
-                                        <span className="font-bold text-muted-foreground/70">请求来源</span>
-                                        <span className="col-span-2 text-foreground">{log.request_source || '—'}</span>
+                                        <span className="font-bold text-muted-foreground/70">{t('requestSource')}</span>
+                                        <span className="col-span-2 text-foreground">
+                                            {log.request_source ? (t.has(`source.${log.request_source}`) ? t(`source.${log.request_source}`) : log.request_source) : '—'}
+                                        </span>
                                     </div>
                                     <div className="grid grid-cols-3 p-2.5">
-                                        <span className="font-bold text-muted-foreground/70">消耗 Tokens</span>
+                                        <span className="font-bold text-muted-foreground/70">{t('tokenUsage')}</span>
                                         <span className="col-span-2 text-foreground font-mono">
-                                            输入 {log.input_tokens?.toLocaleString() || 0} / 输出 {log.output_tokens?.toLocaleString() || 0}
-                                            {log.cache_tokens ? ` / 缓存 ${log.cache_tokens?.toLocaleString()}` : ''}
+                                            {t('inputShort')} {log.input_tokens?.toLocaleString() || 0} / {t('outputShort')} {log.output_tokens?.toLocaleString() || 0}
+                                            {log.cache_tokens ? ` / ${t('cacheShort')} ${log.cache_tokens?.toLocaleString()}` : ''}
                                         </span>
                                     </div>
                                 </div>

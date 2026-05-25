@@ -85,8 +85,15 @@ export function statusClass(status: string | undefined) {
     }
 }
 
-export function sourceLabel(source: string | undefined) {
-    switch ((source ?? '').trim()) {
+export function sourceLabel(source: string | undefined, t?: Translator) {
+    const trimmed = (source ?? '').trim();
+    if (t) {
+        const key = `source.${trimmed}`;
+        if (typeof t.has === 'function' && t.has(key)) {
+            return t(key);
+        }
+    }
+    switch (trimmed) {
         case 'relay':
             return 'Relay';
         case 'model_test':
@@ -96,7 +103,7 @@ export function sourceLabel(source: string | undefined) {
         case 'probe':
             return 'Probe';
         default:
-            return source?.trim() || '-';
+            return trimmed || '-';
     }
 }
 

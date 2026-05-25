@@ -191,7 +191,7 @@ export function TraceDetailPanel({ traceId }: TraceDetailProps) {
                 <div className="rounded-lg border border-border bg-background/20 px-3 py-2">
                     <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">{t('finalStatus')}</div>
                     <Badge variant="outline" className={cn('mt-1 h-5 rounded-md px-1.5 text-[9px] font-bold border-none', statusClass(trace.final_status))}>
-                        {trace.final_status || '-'}
+                        {trace.final_status ? (t.has(`status.${trace.final_status.toLowerCase()}`) ? t(`status.${trace.final_status.toLowerCase()}`) : trace.final_status) : '-'}
                     </Badge>
                 </div>
                 <div className="rounded-lg border border-border bg-background/20 px-3 py-2">
@@ -220,7 +220,7 @@ export function TraceDetailPanel({ traceId }: TraceDetailProps) {
 
                             <div className="flex flex-wrap items-start gap-2">
                                 <Badge variant="outline" className={cn('h-5 rounded-md px-1.5 text-[9px] font-bold uppercase tracking-wider border-none', statusClass(attempt.status))}>
-                                    {attempt.status || '-'}
+                                    {attempt.status ? (t.has(`status.${attempt.status.toLowerCase()}`) ? t(`status.${attempt.status.toLowerCase()}`) : attempt.status) : '-'}
                                 </Badge>
                                 <div className="min-w-0 flex-1">
                                     <div className="truncate font-bold text-foreground" title={attempt.channel_name || undefined}>

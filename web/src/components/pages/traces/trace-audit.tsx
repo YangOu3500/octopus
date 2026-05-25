@@ -109,11 +109,11 @@ export function TraceAuditPanel({
         );
 
     const sourceBuckets = hasAudit
-        ? mapAuditBuckets(audit.source_buckets, (key) => key === 'unknown' ? t('unknown') : sourceLabel(key))
+        ? mapAuditBuckets(audit.source_buckets, (key) => key === 'unknown' ? t('unknown') : sourceLabel(key, t))
         : buildAuditBuckets(
             traces,
             (trace) => trace.request_source,
-            (trace, key) => key === 'unknown' ? t('unknown') : sourceLabel(trace.request_source || key),
+            (trace, key) => key === 'unknown' ? t('unknown') : sourceLabel(trace.request_source || key, t),
         );
 
     const modelBuckets = hasAudit

@@ -39,7 +39,7 @@ export function Home() {
     const handleRefresh = async () => {
         await queryClient.invalidateQueries({ queryKey: ['stats'] });
         await queryClient.invalidateQueries({ queryKey: ['group-health'] });
-        toast.success('Dashboard data refreshed');
+        toast.success(homeT('refreshed'));
     };
 
     // Calculate metadata chips for collapsed/expanded headers
@@ -78,7 +78,7 @@ export function Home() {
                         className="h-8 font-semibold"
                     >
                         <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
-                        Refresh
+                        {homeT('refresh')}
                     </Button>
                 }
             />

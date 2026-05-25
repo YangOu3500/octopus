@@ -113,6 +113,8 @@
     },
     "home": {
         "description": "网关状态与分析仪表盘。",
+        "refresh": "刷新",
+        "refreshed": "仪表盘数据已刷新",
         "dashboard": {
             "totalRequests": "总请求数",
             "totalSub": "近 24 小时失败 {failed}",
@@ -189,8 +191,9 @@
             },
             "metrics": {
                 "requests": "请求",
-                "tokens": "Token",
-                "waitTime": "耗时"
+                "tokens": "Token 用量",
+                "waitTime": "耗时",
+                "cost": "费用"
             }
         },
         "rank": {
@@ -199,7 +202,13 @@
             "sortByCount": "次数",
             "sortByTokens": "Tokens",
             "noData": "暂无排行数据",
-            "successRate": "成功率"
+            "successRate": "成功率",
+            "keys": "API 密钥",
+            "models": "模型",
+            "channels": "渠道",
+            "sources": "请求来源",
+            "top5": "Top 5 {type}",
+            "reqs": "{count} 次请求"
         },
         "groupHealth": {
             "title": "分组健康",
@@ -1357,7 +1366,12 @@
             "cost": "费用",
             "response": "响应",
             "actions": "操作"
-        }
+        },
+        "consoleIdle": "[控制台]: 空闲",
+        "streamMode": "流式模式：{status} (最大 {maxTokens} tokens)",
+        "statusOn": "开启",
+        "statusOff": "关闭",
+        "advancedSettings": "高级设置"
     },
     "model": {
         "create": {
@@ -1408,7 +1422,7 @@
         }
     },
     "traces": {
-        "title": "独立 Requests / Traces 工作台",
+        "title": "链路追踪工作台",
         "loadFailed": "链路加载失败",
         "autoRefresh": "实时刷新",
         "refresh": "刷新",
@@ -1497,7 +1511,11 @@
             "canceled": "已取消"
         },
         "source": {
-            "all": "全部来源"
+            "all": "全部来源",
+            "relay": "中继转发",
+            "model_test": "模型测试",
+            "images": "图像生成",
+            "probe": "慢探测"
         },
         "stream": {
             "all": "全部模式",
@@ -1594,7 +1612,13 @@
                 "success": "当前加载日志已导出",
                 "failed": "当前加载日志导出失败",
                 "safe": "导出仅包含当前已加载行的结构化字段，不包含完整请求 / 响应正文、API Key 名称或认证信息"
-            }
+            },
+            "loading": "正在加载请求日志...",
+            "empty": "没有符合筛选条件的日志",
+            "total": "匹配总计: {count} 条日志",
+            "fetching": "正在同步服务器数据...",
+            "scrollLoad": "向下滚动自动加载更多",
+            "allLoaded": "已加载全部数据"
         },
         "active": {
             "title": "活跃请求 Debug",
@@ -1718,7 +1742,7 @@
             "retryable": "可重试",
             "failureReason": "失败原因",
             "errorSummary": "错误摘要",
-            "tokenUsage": "Token 用量",
+            "tokenUsage": "Token 词元",
             "costIncurred": "Token 消耗",
             "inputCost": "输入费用",
             "outputCost": "输出费用",
@@ -1795,254 +1819,50 @@
             "transportInput": "传输输入",
             "billInput": "计费输入",
             "cacheRead": "缓存读取",
-            "cacheWrite": "缓存写入"
+            "cacheWrite": "缓存写入",
+            "createdAt": "创建时间",
+            "logDetails": "请求日志详情",
+            "failedToLoadDetails": "加载详情失败，请重试",
+            "payloadTab": "正文负载",
+            "attemptsTab": "路由尝试 ({count})",
+            "metaTab": "元数据",
+            "errorLog": "错误日志",
+            "noContent": "无 {title} 内容",
+            "copied": "已复制 {title}",
+            "source": {
+                "relay": "中继转发",
+                "model_test": "模型测试",
+                "images": "图像生成",
+                "probe": "慢探测"
+            }
+        },
+        "table": {
+            "id": "日志ID",
+            "model": "请求模型",
+            "stream": "流式",
+            "source": "来源",
+            "ip": "客户端IP",
+            "channel": "目标渠道",
+            "status": "响应状态",
+            "tokens": "Token 词元",
+            "cost": "计费成本",
+            "duration": "总耗时",
+            "time": "请求时间",
+            "actions": "操作"
         }
     },
     "channel": {
-        "tabs": {
-            "site": "站点渠道",
-            "manual": "普通渠道",
-            "health": "模型健康"
-        },
+        "title": "渠道管理",
+        "description": "配置与管理网关的后端大模型接入渠道",
         "health": {
-            "title": "渠道模型健康",
-            "healthEnabled": "健康调度已启用",
-            "healthDisabled": "健康调度未启用",
-            "managed": "托管",
-            "refresh": "刷新",
-            "loading": "正在加载渠道模型健康度...",
-            "loadFailed": "渠道模型健康度加载失败",
-            "empty": "当前筛选条件下没有渠道模型健康记录",
-            "autoRefresh": "实时刷新",
-            "searchModel": "搜索模型",
-            "channelAll": "全部渠道",
-            "cooldown": "冷却中",
-            "noCooldown": "无冷却",
-            "requests": "请求",
-            "ttfb": "首字",
-            "duration": "耗时",
-            "tokenIn": "输入",
-            "tokenOut": "输出",
-            "tokenCache": "缓存",
-            "activeSelections": "活跃选择",
-            "channelConcurrency": "硬并发",
-            "queueMode": {
-                "local": "本机队列",
-                "database": "共享队列",
-                "enabled": "{mode}",
-                "disabled": "硬并发关闭"
-            },
-            "healthSamples": "{success}/{total} · {rate}",
-            "noSamples": "暂无健康样本",
-            "unrated": "未评分",
-            "noHealthSampleOrDisabled": "暂无健康评分样本 / 健康调度未启用",
-            "noCallRecords": "没有实际调用记录",
-            "emptyRate": "空响应",
-            "callMeta": "成功 {success} / 失败 {failed} · {rate}",
-            "range": {
-                "1h": "1 小时",
-                "24h": "24 小时",
-                "7d": "7 天",
-                "30d": "30 天",
-                "all": "全部"
-            },
-            "source": {
-                "all": "全部来源",
-                "relay": "真实请求",
-                "modelTest": "模型测试",
-                "probe": "慢探测"
-            },
-            "strategy": {
-                "healthScore": "健康分参与负载均衡",
-                "staticGroupMode": "按分组模式调度"
-            },
-            "quota": {
-                "all": "全部配额",
-                "available": "配额可用",
-                "zeroBalance": "余额不足",
-                "accountDisabled": "账号禁用",
-                "quotaError": "额度错误",
-                "authError": "认证阻断",
-                "rateLimited": "限流中",
-                "noKey": "无 Key",
-                "siteDisabled": "站点禁用",
-                "accountMissing": "账号缺失",
-                "modelDisabled": "模型禁用",
-                "reason": "原因",
-                "unknown": "配额未知"
-            },
-            "capacity": {
-                "label": "容量",
-                "available": "可用",
-                "blocked": "阻断",
-                "unknown": "未知",
-                "observed": "观测",
-                "expires": "到期",
-                "reason": "容量原因"
-            },
-            "reasons": {
-                "quotaError": "额度错误",
-                "authError": "认证阻断",
-                "rateLimited": "限流中",
-                "http402": "HTTP 402",
-                "httpAuth": "HTTP 401/403",
-                "siteAccountBalance": "站点账号余额",
-                "zeroBalance": "已知零余额",
-                "siteDisabled": "站点禁用",
-                "accountMissing": "账号缺失",
-                "accountDisabled": "账号禁用",
-                "modelDisabled": "模型禁用",
-                "noAvailableKey": "无可用 Key",
-                "healthCooldown": "健康冷却",
-                "circuitBreaker": "熔断冷却",
-                "runtimeCheckFailed": "运行期检查失败",
-                "channelDisabled": "渠道禁用",
-                "channelMissing": "渠道缺失"
-            },
-            "insights": {
-                "topLoaded": "当前最高负载",
-                "topLoadedSub": "{mode} / {cooldown}",
-                "topBlocked": "主要阻断原因",
-                "allHealthy": "当前结果里没有阻断或冷却行",
-                "healthView": "健康视图",
-                "blockedRows": "阻断行数",
-                "coolingRows": "冷却行数",
-                "avgLatency": "平均延迟",
-                "estimatedCost": "预估成本",
-                "worstHealth": "最低健康候选",
-                "worstHealthSub": "健康分 {score} / 成功率 {rate}"
-            },
-            "status": {
-                "cooldown": "冷却",
-                "failed": "失败",
-                "active": "活跃",
-                "idle": "空闲"
-            },
-            "stats": {
-                "rows": "渠道模型",
-                "rowsSub": "{requests} 次请求样本",
-                "successRate": "成功率",
-                "successSub": "成功 {success} / 失败 {failed}",
-                "healthScore": "平均健康分",
-                "load": "当前负载",
-                "loadSub": "{cooldown} 个冷却中",
-                "loadSubWithConcurrency": "{cooldown} 个冷却中 · {mode} {active}/{limit}",
-                "capacity": "容量阻断",
-                "capacitySub": "{available} 个可用 · {unknown} 个未知"
-            },
-            "export": {
-                "button": "导出",
-                "empty": "没有可导出的渠道模型健康记录",
-                "success": "渠道模型健康记录已导出",
-                "failed": "渠道模型健康记录导出失败",
-                "safe": "导出仅包含结构化脱敏字段，不包含完整 Key 或认证信息"
-            },
-            "table": {
-                "channel": "渠道 / 模型",
-                "health": "健康度",
-                "calls": "调用",
-                "latency": "延迟",
-                "throughput": "吞吐",
-                "tokens": "Token",
-                "cost": "成本",
-                "load": "负载 / 冷却",
-                "quota": "配额",
-                "lastFailure": "最近失败"
+            "tooltips": {
+                "toks": "每秒 Token 数量 (吞吐量)",
+                "rpm": "每分钟请求数 (并发频率)",
+                "ttfb": "第一字返回时间 (首字延迟)",
+                "inout": "输入 Token / 输出 Token 数量",
+                "bal": "渠道账号的配额余额",
+                "used": "渠道账号已消耗的配额"
             }
-        },
-        "card": {
-            "requestCount": "请求次数",
-            "totalCost": "总成本",
-            "toast": {
-                "enabled": "渠道已启用",
-                "disabled": "渠道已禁用"
-            }
-        },
-        "detail": {
-            "title": {
-                "edit": "编辑渠道",
-                "view": "渠道详情"
-            },
-            "sections": {
-                "requests": "请求详情",
-                "tokens": "Token 使用",
-                "costs": "成本详情",
-                "baseUrls": "Base URLs",
-                "keys": "密钥"
-            },
-            "noBaseUrls": "暂无 Base URL",
-            "noKeys": "暂无密钥",
-            "metrics": {
-                "totalRequests": "总请求",
-                "totalToken": "总 Token",
-                "totalCost": "总成本",
-                "successRequests": "成功请求",
-                "failedRequests": "失败请求",
-                "inputToken": "输入 Token",
-                "outputToken": "输出 Token",
-                "inputCost": "输入成本",
-                "outputCost": "输出成本",
-                "avgWaitTime": "等待时间"
-            },
-            "actions": {
-                "edit": "编辑",
-                "cancel": "取消",
-                "save": "保存",
-                "saving": "保存中...",
-                "delete": "删除",
-                "confirmDelete": "确认删除",
-                "deleting": "删除中..."
-            }
-        },
-        "create": {
-            "dialogTitle": "创建新渠道",
-            "submit": "创建渠道",
-            "submitting": "创建中..."
-        },
-        "form": {
-            "add": "添加",
-            "name": "渠道名称",
-            "type": "渠道类型",
-            "baseUrls": "Base URLs",
-            "baseUrlUrl": "地址",
-            "baseUrlDelay": "延迟(ms)",
-            "advanced": "高级设置",
-            "apiKey": "API Key",
-            "customHeader": "自定义 Header",
-            "customHeaderKey": "Header Key",
-            "customHeaderValue": "Header Value",
-            "customHeaderAdd": "添加 Header",
-            "channelProxy": "渠道代理",
-            "channelProxyPlaceholder": "可选：仅对该渠道生效（覆盖全局代理）",
-            "paramOverride": "参数覆盖",
-            "paramOverridePlaceholder": "可选：JSON 字符串，用于覆盖请求参数",
-            "model": "模型",
-            "enabled": "启用",
-            "proxy": "使用代理",
-            "modelCustomPlaceholder": "自定义模型名称",
-            "modelAdd": "添加",
-            "modelRefresh": "刷新",
-            "modelRefreshSuccess": "模型列表获取成功",
-            "modelRefreshFailed": "模型列表获取失败",
-            "modelRefreshEmpty": "未获取到模型列表",
-            "modelSelected": "已选模型",
-            "modelNoSelected": "暂未选择模型",
-            "modelClearAll": "清除全部",
-            "typeOpenAIChat": "OpenAI Chat",
-            "typeOpenAIResponse": "OpenAI Response",
-            "typeOpenAIEmbedding": "OpenAI Embedding",
-            "typeAnthropic": "Anthropic",
-            "typeGemini": "Gemini",
-            "typeVolcengine": "火山引擎",
-            "autoSync": "自动同步",
-            "autoGroup": "自动分组",
-            "autoGroupNone": "不自动分组",
-            "autoGroupFuzzy": "模糊匹配",
-            "autoGroupExact": "准确匹配",
-            "autoGroupRegex": "正则匹配",
-            "matchRegex": "匹配正则",
-            "matchRegexPlaceholder": "可选：用于匹配请求模型名称的正则表达式",
-            "remark": "备注"
         }
     },
     "siteChannel": {
@@ -2250,7 +2070,10 @@
             "metapi": "MetAPI",
             "allapihub": "All API Hub",
             "newapi": "New API",
+            "new-api": "New API",
             "donehub": "DoneHub",
+            "done-hub": "DoneHub",
+            "anyrouter": "Anyrouter",
             "sub2api": "Sub2API",
             "openai": "OpenAI",
             "claude": "Claude",

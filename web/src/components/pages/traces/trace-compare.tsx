@@ -29,6 +29,7 @@ export function TraceComparisonPanel({
     onFocus,
 }: TraceComparisonPanelProps) {
     const t = useTranslations('traces.compare');
+    const tracesT = useTranslations('traces');
 
     if (traces.length === 0) return null;
 
@@ -124,7 +125,7 @@ export function TraceComparisonPanel({
                                 </td>
                                 <td className="px-3 py-2">
                                     <Badge variant="outline" className={cn('h-5 rounded-md px-1.5 text-[9px] font-bold border-none', statusClass(trace.final_status))}>
-                                        {trace.final_status || '-'}
+                                        {trace.final_status ? (tracesT.has(`status.${trace.final_status.toLowerCase()}`) ? tracesT(`status.${trace.final_status.toLowerCase()}`) : trace.final_status) : '-'}
                                     </Badge>
                                 </td>
                                 <td className="max-w-[200px] px-3 py-2">

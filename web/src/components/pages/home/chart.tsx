@@ -21,23 +21,24 @@ const PERIOD_KEY: Record<ChartPeriod, string> = {
     'all': 'allTime',
 };
 
-const chartConfig = {
-    tokens: {
-        label: 'Tokens',
-        color: 'hsl(var(--primary))',
-    },
-    requests: {
-        label: 'Requests',
-        color: 'hsl(var(--muted-foreground) / 0.7)',
-    },
-    total_cost: {
-        label: 'Cost',
-        color: 'hsl(var(--primary) / 0.5)',
-    },
-};
-
 export function StatsChart({ className }: { className?: string }) {
     const t = useTranslations('home.summary');
+
+    const chartConfig = useMemo(() => ({
+        tokens: {
+            label: t('metrics.tokens'),
+            color: 'hsl(var(--primary))',
+        },
+        requests: {
+            label: t('metrics.requests'),
+            color: 'hsl(var(--muted-foreground) / 0.7)',
+        },
+        total_cost: {
+            label: t('metrics.cost'),
+            color: 'hsl(var(--primary) / 0.5)',
+        },
+    }), [t]);
+
     const period = useHomeViewStore((state) => state.chartPeriod);
     const setChartPeriod = useHomeViewStore((state) => state.setChartPeriod);
 

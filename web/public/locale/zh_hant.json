@@ -113,6 +113,8 @@
     },
     "home": {
         "description": "閘道狀態與分析儀表盤。",
+        "refresh": "刷新",
+        "refreshed": "儀表板數據已刷新",
         "dashboard": {
             "totalRequests": "總請求數",
             "totalSub": "近 24 小時失敗 {failed}",
@@ -189,8 +191,9 @@
             },
             "metrics": {
                 "requests": "請求",
-                "tokens": "Token",
-                "waitTime": "耗時"
+                "tokens": "Token 用量",
+                "waitTime": "耗時",
+                "cost": "費用"
             }
         },
         "rank": {
@@ -199,7 +202,13 @@
             "sortByCount": "次數",
             "sortByTokens": "Tokens",
             "noData": "暫無排行數據",
-            "successRate": "成功率"
+            "successRate": "成功率",
+            "keys": "API 金鑰",
+            "models": "模型",
+            "channels": "渠道",
+            "sources": "請求來源",
+            "top5": "Top 5 {type}",
+            "reqs": "{count} 次請求"
         },
         "groupHealth": {
             "title": "分組健康",
@@ -1357,7 +1366,12 @@
             "cost": "費用",
             "response": "回應",
             "actions": "操作"
-        }
+        },
+        "consoleIdle": "[控制台]: 空閒",
+        "streamMode": "流式模式：{status} (最大 {maxTokens} tokens)",
+        "statusOn": "開啟",
+        "statusOff": "關閉",
+        "advancedSettings": "高級設置"
     },
     "model": {
         "create": {
@@ -1408,7 +1422,7 @@
         }
     },
     "traces": {
-        "title": "獨立 Requests / Traces 工作台",
+        "title": "链路追踪工作台",
         "loadFailed": "鏈路載入失敗",
         "autoRefresh": "即時刷新",
         "refresh": "刷新",
@@ -1497,7 +1511,11 @@
             "canceled": "已取消"
         },
         "source": {
-            "all": "全部來源"
+            "all": "全部來源",
+            "relay": "中繼轉發",
+            "model_test": "模型測試",
+            "images": "圖像生成",
+            "probe": "慢探測"
         },
         "stream": {
             "all": "全部模式",
@@ -1594,7 +1612,13 @@
                 "success": "目前載入日誌已匯出",
                 "failed": "目前載入日誌匯出失敗",
                 "safe": "匯出僅包含目前已載入列的結構化欄位，不包含完整請求 / 響應正文、API Key 名稱或認證資訊"
-            }
+            },
+            "loading": "正在載入請求日誌...",
+            "empty": "沒有符合篩選條件的日誌",
+            "total": "匹配總計: {count} 條日誌",
+            "fetching": "正在同步伺服器數據...",
+            "scrollLoad": "向下滾動自動載入更多",
+            "allLoaded": "已載入全部數據"
         },
         "active": {
             "title": "活躍請求 Debug",
@@ -1718,7 +1742,7 @@
             "retryable": "可重試",
             "failureReason": "失敗原因",
             "errorSummary": "錯誤摘要",
-            "tokenUsage": "Token 用量",
+            "tokenUsage": "Token 詞元",
             "costIncurred": "Token 消耗",
             "inputCost": "輸入費用",
             "outputCost": "輸出費用",
@@ -1795,7 +1819,36 @@
             "transportInput": "傳輸輸入",
             "billInput": "計費輸入",
             "cacheRead": "快取讀取",
-            "cacheWrite": "快取寫入"
+            "cacheWrite": "快取寫入",
+            "createdAt": "創建時間",
+            "logDetails": "請求日誌詳情",
+            "failedToLoadDetails": "載入詳情失敗，請重試",
+            "payloadTab": "正文負載",
+            "attemptsTab": "路由嘗試 ({count})",
+            "metaTab": "元數據",
+            "errorLog": "錯誤日誌",
+            "noContent": "無 {title} 內容",
+            "copied": "已複製 {title}",
+            "source": {
+                "relay": "中繼轉發",
+                "model_test": "模型測試",
+                "images": "圖像生成",
+                "probe": "慢探測"
+            }
+        },
+        "table": {
+            "id": "日誌ID",
+            "model": "請求模型",
+            "stream": "流式",
+            "source": "來源",
+            "ip": "客戶端IP",
+            "channel": "目標渠道",
+            "status": "響應狀態",
+            "tokens": "Token 詞元",
+            "cost": "計費成本",
+            "duration": "總耗時",
+            "time": "請求時間",
+            "actions": "操作"
         }
     },
     "channel": {
@@ -1948,6 +2001,14 @@
                 "load": "負載 / 冷卻",
                 "quota": "配額",
                 "lastFailure": "最近失敗"
+            },
+            "tooltips": {
+                "toks": "每秒 Token 數量 (吞吐量)",
+                "rpm": "每分鐘請求數 (並發頻率)",
+                "ttfb": "第一字返回時間 (首字延遲)",
+                "inout": "輸入 Token / 輸出 Token 數量",
+                "bal": "渠道帳號的配額餘額",
+                "used": "渠道帳號已消耗的配額"
             }
         },
         "card": {
@@ -2043,7 +2104,9 @@
             "matchRegex": "匹配正規",
             "matchRegexPlaceholder": "可選：用於匹配請求模型名稱的正規表示式",
             "remark": "備註"
-        }
+        },
+        "title": "渠道管理",
+        "description": "配置與管理網關的後端大模型接入渠道"
     },
     "siteChannel": {
         "card": {
@@ -2250,7 +2313,10 @@
             "metapi": "MetAPI",
             "allapihub": "All API Hub",
             "newapi": "New API",
+            "new-api": "New API",
             "donehub": "DoneHub",
+            "done-hub": "DoneHub",
+            "anyrouter": "Anyrouter",
             "sub2api": "Sub2API",
             "openai": "OpenAI",
             "claude": "Claude",

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useLogState } from './use-log-state';
 import { LogFilters } from './log-filters';
 import { LogTable } from './log-table';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Activity } from 'lucide-react';
 
 export function Log() {
+    const t = useTranslations('log');
     const state = useLogState();
 
     return (
@@ -16,8 +18,8 @@ export function Log() {
             {/* Page Header */}
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">请求日志</h1>
-                    <p className="text-xs text-muted-foreground/80 font-medium">网关历史 API 请求流、响应载荷、多渠道尝试与重试详情审计</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('title')}</h1>
+                    <p className="text-xs text-muted-foreground/80 font-medium">{t('description')}</p>
                 </div>
                 <Button
                     type="button"
@@ -27,7 +29,7 @@ export function Log() {
                     className="h-9 rounded-lg gap-1.5 px-3 font-bold"
                 >
                     <Activity className="size-4 text-primary" />
-                    <span>活跃请求 Debug</span>
+                    <span>{t('activeDebug')}</span>
                 </Button>
             </div>
 

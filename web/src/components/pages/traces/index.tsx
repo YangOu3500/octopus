@@ -101,7 +101,7 @@ export function Traces() {
                 <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between border-b border-border/50 pb-2.5">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <Badge variant="outline" className="h-7 rounded-lg px-2.5 font-bold border-border/80 bg-background/50">
-                            {t('title')} List
+                            {t('title')}
                         </Badge>
                         {state.tracesQuery.error && (
                             <Badge variant="outline" className="h-7 border-destructive/30 px-2 text-destructive font-bold bg-destructive/5">
@@ -233,10 +233,10 @@ export function Traces() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all" className="text-xs">{t('source.all')}</SelectItem>
-                            <SelectItem value="relay" className="text-xs">Relay</SelectItem>
-                            <SelectItem value="model_test" className="text-xs">Model Test</SelectItem>
-                            <SelectItem value="images" className="text-xs">Images</SelectItem>
-                            <SelectItem value="probe" className="text-xs">Probe</SelectItem>
+                            <SelectItem value="relay" className="text-xs">{t('source.relay')}</SelectItem>
+                            <SelectItem value="model_test" className="text-xs">{t('source.model_test')}</SelectItem>
+                            <SelectItem value="images" className="text-xs">{t('source.images')}</SelectItem>
+                            <SelectItem value="probe" className="text-xs">{t('source.probe')}</SelectItem>
                         </SelectContent>
                     </Select>
                     <Select value={state.streamFilter} onValueChange={(value) => {

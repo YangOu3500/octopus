@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { type ChannelModelHealthRow } from '@/api/endpoints/channel';
 import { formatCount, formatMoney } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 // Row grid layout definition to match headers exactly
 const HEALTH_ROW_GRID_COLUMNS = 'minmax(12rem, 1.25fr) minmax(9rem, 0.9fr) minmax(9rem, 0.9fr) minmax(8rem, 0.8fr) minmax(9rem, 0.9fr) minmax(11rem, 1.1fr)';
@@ -243,8 +244,9 @@ export function HealthTable({
     }
 
     return (
-        <div ref={containerRef} className="flex-1 overflow-auto overscroll-contain border border-border bg-card rounded-xl text-xs">
-            <div className="min-w-[62rem] text-left">
+        <TooltipProvider>
+            <div ref={containerRef} className="flex-1 overflow-auto overscroll-contain border border-border bg-card rounded-xl text-xs">
+                <div className="min-w-[62rem] text-left">
                 {/* Header Row */}
                 <div
                     className="sticky top-0 z-10 grid border-b border-border bg-muted/80 text-[10px] uppercase font-bold tracking-wider text-muted-foreground backdrop-blur-md"
@@ -370,16 +372,43 @@ export function HealthTable({
                                             })}
                                         </div>
                                         <div className="text-[10px] text-muted-foreground/60 font-semibold mt-0.5">
-                                            Tok/s: {formatDecimal(row.tokens_per_second, 1)} / RPM: {formatDecimal(row.rpm, 1)}
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="cursor-help border-b border-dashed border-muted-foreground/30">Tok/s</span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>{t('tooltips.toks')}</TooltipContent>
+                                            </Tooltip>
+                                            : {formatDecimal(row.tokens_per_second, 1)} /{' '}
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="cursor-help border-b border-dashed border-muted-foreground/30">RPM</span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>{t('tooltips.rpm')}</TooltipContent>
+                                            </Tooltip>
+                                            : {formatDecimal(row.rpm, 1)}
                                         </div>
                                     </div>
 
                                     {/* Latency & Metrics */}
                                     <div className="px-4 py-3 flex flex-col justify-center tabular-nums font-medium text-muted-foreground/95">
-                                        <div>TTFB: {formatMS(row.avg_ttfb_ms)}</div>
+                                        <div>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="cursor-help border-b border-dashed border-muted-foreground/30">TTFB</span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>{t('tooltips.ttfb')}</TooltipContent>
+                                            </Tooltip>
+                                            : {formatMS(row.avg_ttfb_ms)}
+                                        </div>
                                         <div className="text-[10px] text-muted-foreground/60 font-semibold">{t('duration')}: {formatMS(row.avg_total_ms)}</div>
                                         <div className="mt-1 text-[10px] text-muted-foreground/60 leading-normal font-semibold">
-                                            In/Out: {formatNumber(row.input_tokens)} / {formatNumber(row.output_tokens)}
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="cursor-help border-b border-dashed border-muted-foreground/30">In/Out</span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>{t('tooltips.inout')}</TooltipContent>
+                                            </Tooltip>
+                                            : {formatNumber(row.input_tokens)} / {formatNumber(row.output_tokens)}
                                         </div>
                                         <div className="text-[10px] text-muted-foreground/60 leading-normal font-semibold">
                                             Cache: {formatNumber(row.cache_tokens)}
@@ -421,7 +450,20 @@ export function HealthTable({
                                         </div>
                                         {row.quota_balance !== undefined && (
                                             <div className="mt-1 tabular-nums text-[10px] text-muted-foreground/80 font-bold">
-                                                Bal: {formatDecimal(row.quota_balance, 2)} / Used: {formatDecimal(row.quota_used, 2)}
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span className="cursor-help border-b border-dashed border-muted-foreground/30">Bal</span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>{t('tooltips.bal')}</TooltipContent>
+                                                </Tooltip>
+                                                : {formatDecimal(row.quota_balance, 2)} /{' '}
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span className="cursor-help border-b border-dashed border-muted-foreground/30">Used</span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>{t('tooltips.used')}</TooltipContent>
+                                                </Tooltip>
+                                                : {formatDecimal(row.quota_used, 2)}
                                             </div>
                                         )}
                                         {row.quota_reason && (
@@ -453,5 +495,6 @@ export function HealthTable({
                 )}
             </div>
         </div>
+        </TooltipProvider>
     );
 }

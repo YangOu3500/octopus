@@ -91,7 +91,7 @@ export function TestControls({
                     onClick={() => setShowAdvanced(!showAdvanced)}
                     className="h-7 rounded-lg border border-border/80 bg-background/50 px-2.5 text-[11px] font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
-                    {showAdvanced ? t('clearVisible') : t('periods.allTime')} Settings
+                    {t('advancedSettings')}
                 </button>
             </div>
 
@@ -188,7 +188,12 @@ export function TestControls({
                 </div>
             ) : (
                 <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/10 h-8.5 px-3 text-xs text-muted-foreground/80">
-                    <span className="font-medium">Stream Mode: {stream ? 'ON' : 'OFF'} ({maxTokens} max tokens)</span>
+                    <span className="font-medium">
+                        {t('streamMode', {
+                            status: stream ? t('statusOn') : t('statusOff'),
+                            maxTokens
+                        })}
+                    </span>
                     <Switch checked={stream} onCheckedChange={setStream} className="scale-75 origin-right" />
                 </div>
             )}

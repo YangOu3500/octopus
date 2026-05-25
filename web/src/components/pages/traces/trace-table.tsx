@@ -87,7 +87,7 @@ export function TraceTable({
                                             {trace.trace_id.split('-')[0]}...
                                         </span>
                                         <span className="text-border/40">•</span>
-                                        <span>{sourceLabel(trace.request_source)}</span>
+                                        <span>{sourceLabel(trace.request_source, t)}</span>
                                     </div>
                                 </td>
                                 <td className="px-4 py-3">
@@ -98,7 +98,7 @@ export function TraceTable({
                                             statusClass(trace.final_status)
                                         )}
                                     >
-                                        {trace.final_status || '-'}
+                                        {trace.final_status ? (t.has(`status.${trace.final_status.toLowerCase()}`) ? t(`status.${trace.final_status.toLowerCase()}`) : trace.final_status) : '-'}
                                     </Badge>
                                 </td>
                                 <td className="max-w-[200px] px-4 py-3">

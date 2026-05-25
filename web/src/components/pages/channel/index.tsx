@@ -160,8 +160,8 @@ export function Channel() {
     return (
         <div className="flex flex-col gap-6 p-6 h-full min-h-0">
             <PageHeader
-                title={t('channel.form.model')}
-                description={t('stubs.description.channel')}
+                title={t('channel.title')}
+                description={t('channel.description')}
                 actions={
                     activeTab === 'manual' ? (
                         <div className="flex items-center gap-2">

@@ -12,7 +12,6 @@ type ActivityMetric = 'requests' | 'cost' | 'tokens' | 'latency';
 
 export function ActivityHeatmap({ className }: { className?: string }) {
     const t = useTranslations('home.activity');
-    const sectionsT = useTranslations('home.sections.activity');
     const { locale } = useSettingStore();
     const { data: daily = [] } = useStatsDaily();
 
@@ -159,17 +158,6 @@ export function ActivityHeatmap({ className }: { className?: string }) {
     if (!hasData) {
         return (
             <section className={cn('rounded-xl border border-border bg-card p-5 shadow-2xs flex flex-col', className)}>
-                <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-xs">
-                            <ActivityIcon className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-bold tracking-tight text-foreground">{sectionsT('title')}</h2>
-                            <p className="text-xs text-muted-foreground">{sectionsT('description')}</p>
-                        </div>
-                    </div>
-                </header>
                 <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl bg-background/10">
                     <ActivityIcon className="h-8 w-8 text-muted-foreground/45 mb-2 animate-pulse" />
                     <span className="text-sm font-semibold text-muted-foreground">{t('notEnoughData')}</span>
@@ -180,20 +168,9 @@ export function ActivityHeatmap({ className }: { className?: string }) {
 
     return (
         <section className={cn('rounded-xl border border-border bg-card p-5 shadow-2xs flex flex-col', className)}>
-            {/* Header */}
-            <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-xs">
-                        <ActivityIcon className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold tracking-tight text-foreground">{t('title')}</h2>
-                        <p className="text-xs text-muted-foreground">{sectionsT('description')}</p>
-                    </div>
-                </div>
-
-                {/* Metric Selectors */}
-                <div className="flex bg-muted p-0.5 rounded-lg border border-border/30 h-8 self-start sm:self-center">
+            {/* Metric Selectors */}
+            <div className="flex justify-end mb-5">
+                <div className="flex bg-muted p-0.5 rounded-lg border border-border/30 h-8">
                     {(['requests', 'cost', 'tokens', 'latency'] as const).map((m) => (
                         <button
                             key={m}
@@ -210,7 +187,7 @@ export function ActivityHeatmap({ className }: { className?: string }) {
                         </button>
                     ))}
                 </div>
-            </header>
+            </div>
 
             {/* Grid Container */}
             <div className="overflow-x-auto -mx-5 px-5 pb-2">

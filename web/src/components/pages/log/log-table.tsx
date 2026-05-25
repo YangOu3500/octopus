@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Eye, RefreshCw } from 'lucide-react';
@@ -34,6 +35,7 @@ export function LogTable({
     loadMore,
     onViewDetail,
 }: LogTableProps) {
+    const t = useTranslations('log');
     const containerRef = useRef<HTMLDivElement | null>(null);
 
     const rowVirtualizer = useVirtualizer({
@@ -59,7 +61,7 @@ export function LogTable({
         return (
             <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-foreground border rounded-xl bg-card">
                 <RefreshCw className="size-6 animate-spin text-primary mb-2" />
-                <span className="text-xs font-semibold">正在加载请求日志...</span>
+                <span className="text-xs font-semibold">{t('list.loading')}</span>
             </div>
         );
     }
@@ -68,7 +70,7 @@ export function LogTable({
         return (
             <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-foreground border rounded-xl bg-card">
                 <AlertTriangle className="size-8 text-muted-foreground/60 mb-2" />
-                <span className="text-xs font-semibold">没有符合筛选条件的日志</span>
+                <span className="text-xs font-semibold">{t('list.empty')}</span>
             </div>
         );
     }
@@ -77,18 +79,18 @@ export function LogTable({
         <div className="flex-1 flex flex-col min-h-0 border border-border bg-card rounded-xl shadow-xs overflow-hidden">
             {/* Header row */}
             <div className="grid grid-cols-[80px_1fr_60px_60px_100px_100px_70px_140px_80px_80px_130px_60px] gap-2 px-4 py-2 border-b border-border bg-muted/30 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider shrink-0 select-none">
-                <span>日志ID</span>
-                <span>请求模型</span>
-                <span>流式</span>
-                <span>来源</span>
-                <span>客户端IP</span>
-                <span>目标渠道</span>
-                <span>响应状态</span>
-                <span>Tokens 词元</span>
-                <span>计费成本</span>
-                <span>总耗时</span>
-                <span>请求时间</span>
-                <span className="text-right">操作</span>
+                <span>{t('table.id')}</span>
+                <span>{t('table.model')}</span>
+                <span>{t('table.stream')}</span>
+                <span>{t('table.source')}</span>
+                <span>{t('table.ip')}</span>
+                <span>{t('table.channel')}</span>
+                <span>{t('table.status')}</span>
+                <span>{t('table.tokens')}</span>
+                <span>{t('table.cost')}</span>
+                <span>{t('table.duration')}</span>
+                <span>{t('table.time')}</span>
+                <span className="text-right">{t('table.actions')}</span>
             </div>
 
             {/* Virtualized list body */}
@@ -146,7 +148,9 @@ export function LogTable({
                                         </Badge>
                                     )}
                                 </span>
-                                <span className="font-medium text-muted-foreground/90 capitalize">{log.request_source || '—'}</span>
+                                <span className="font-medium text-muted-foreground/90">
+                                    {log.request_source ? (t.has(`source.${log.request_source}`) ? t(`source.${log.request_source}`) : log.request_source) : '—'}
+                                </span>
                                 <span className="font-mono text-muted-foreground">{formatClientIP(log.client_ip)}</span>
                                 <div className="truncate">
                                     <div className="truncate font-semibold text-foreground" title={log.channel_name}>
@@ -159,8 +163,8 @@ export function LogTable({
                                     )}
                                 </div>
                                 <span>
-                                    <Badge variant="outline" className={cn('h-4.5 rounded px-1.5 text-[9px] font-bold border-none uppercase', statusBadgeClass(log.final_status))}>
-                                        {log.final_status || '—'}
+                                    <Badge variant="outline" className={cn('h-4.5 rounded px-1.5 text-[9px] font-bold border-none', statusBadgeClass(log.final_status))}>
+                                        {log.final_status ? (t.has(log.final_status.toLowerCase()) ? t(log.final_status.toLowerCase()) : log.final_status) : '—'}
                                     </Badge>
                                 </span>
                                 <div className="font-mono text-muted-foreground/90">
@@ -194,10 +198,10 @@ export function LogTable({
 
             {/* Bottom count info */}
             <div className="px-4 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground font-bold uppercase tracking-wider flex justify-between items-center shrink-0 select-none">
-                <span>匹配总计: {total.toLocaleString()} 条日志</span>
-                {isFetching && <span className="text-[9px] font-semibold text-primary animate-pulse">正在同步服务器数据...</span>}
-                {hasMore && !isFetching && <span className="text-[9px] text-muted-foreground/60">向下滚动自动加载更多</span>}
-                {!hasMore && <span className="text-[9px] text-muted-foreground/60">已加载全部数据</span>}
+                <span>{t('list.total', { count: total.toLocaleString() })}</span>
+                {isFetching && <span className="text-[9px] font-semibold text-primary animate-pulse">{t('list.fetching')}</span>}
+                {hasMore && !isFetching && <span className="text-[9px] text-muted-foreground/60">{t('list.scrollLoad')}</span>}
+                {!hasMore && <span className="text-[9px] text-muted-foreground/60">{t('list.allLoaded')}</span>}
             </div>
         </div>
     );

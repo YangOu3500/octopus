@@ -268,7 +268,7 @@ export function TestResults({
                                                 )}
                                                 title={result?.response_text || result?.error_message || ''}
                                             >
-                                                {runStatus === 'queued' ? `[SYSTEM]: ${t('queued')}...` : isRunning ? `[STREAMS]: ${t('running')}...` : result?.response_text || result?.error_message || '[CONSOLE]: IDLE'}
+                                                {runStatus === 'queued' ? `[SYSTEM]: ${t('queued')}...` : isRunning ? `[STREAMS]: ${t('running')}...` : result?.response_text || result?.error_message || t('consoleIdle')}
                                             </div>
                                         </div>
 

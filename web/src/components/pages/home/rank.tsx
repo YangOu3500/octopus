@@ -119,10 +119,10 @@ export function TopRankings({ className }: { className?: string }) {
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)} className="w-full flex-1 flex flex-col">
                 <TabsList className="bg-muted p-0.5 rounded-lg border border-border/30 h-9 w-fit mb-4">
-                    <TabsTrigger value="keys" className="text-xs px-3.5 py-1 rounded-md">{obsT('topApiKeys')}</TabsTrigger>
-                    <TabsTrigger value="models" className="text-xs px-3.5 py-1 rounded-md">{obsT('topModels')}</TabsTrigger>
-                    <TabsTrigger value="channels" className="text-xs px-3.5 py-1 rounded-md">{obsT('topChannels')}</TabsTrigger>
-                    <TabsTrigger value="sources" className="text-xs px-3.5 py-1 rounded-md">{obsT('sourceBreakdown')}</TabsTrigger>
+                    <TabsTrigger value="keys" className="text-xs px-3.5 py-1 rounded-md">{t('keys')}</TabsTrigger>
+                    <TabsTrigger value="models" className="text-xs px-3.5 py-1 rounded-md">{t('models')}</TabsTrigger>
+                    <TabsTrigger value="channels" className="text-xs px-3.5 py-1 rounded-md">{t('channels')}</TabsTrigger>
+                    <TabsTrigger value="sources" className="text-xs px-3.5 py-1 rounded-md">{t('sources')}</TabsTrigger>
                 </TabsList>
 
                 {sortedList.length === 0 ? (
@@ -135,7 +135,7 @@ export function TopRankings({ className }: { className?: string }) {
                         {/* Left side: Horizontal Bar Chart */}
                         <div className="rounded-xl border border-border/50 bg-background/20 p-4 flex flex-col justify-between">
                             <div className="mb-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                Top 5 {activeTab === 'keys' ? 'API Keys' : activeTab === 'models' ? 'Models' : activeTab === 'channels' ? 'Channels' : 'Request Sources'}
+                                {t('top5', { type: t(activeTab) })}
                             </div>
                             <div style={{ height: `${Math.max(80, chartData.length * 32)}px` }} className="w-full">
                                 <ChartContainer config={chartConfig} className="h-full w-full">
@@ -198,7 +198,7 @@ export function TopRankings({ className }: { className?: string }) {
                                                     <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground/80 font-medium">
                                                         <span className="inline-flex items-center gap-1">
                                                             <Zap className="h-3 w-3 shrink-0" />
-                                                            {item.requests} reqs
+                                                            {t('reqs', { count: item.requests })}
                                                         </span>
                                                         <span>·</span>
                                                         <span

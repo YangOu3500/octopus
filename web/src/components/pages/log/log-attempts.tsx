@@ -14,6 +14,10 @@ import {
 } from './log-utils';
 import { cn } from '@/lib/utils';
 
+function toCamelCase(str: string) {
+    return str.replace(/(?:^|_)([a-z])/g, (_, g) => g.toUpperCase());
+}
+
 // Helper type for merged attempts
 interface MergedAttempt extends ChannelAttempt {
     repeat: number;
@@ -101,7 +105,7 @@ export function LogAttempts({ attempts }: LogAttemptsProps) {
                                 </Badge>
                                 <div className="min-w-0 flex-1">
                                     <div className="truncate font-bold text-foreground" title={attempt.channel_name}>
-                                        {attempt.channel_name || `渠道 #${attempt.channel_id}`}
+                                        {attempt.channel_name || `${t('channel')} #${attempt.channel_id}`}
                                     </div>
                                     <div className="mt-0.5 truncate text-[10px] font-bold text-muted-foreground/60">
                                         {attempt.model_name} {attempt.upstream_model ? `-> ${attempt.upstream_model}` : ''}
@@ -116,19 +120,19 @@ export function LogAttempts({ attempts }: LogAttemptsProps) {
                             {/* Sub details */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] text-muted-foreground/80 leading-normal border-t border-border/20 pt-2">
                                 <div>
-                                    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase">HTTP 状态</span>
+                                    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase">{t('httpStatus')}</span>
                                     <div className="font-bold text-foreground/90 font-mono mt-0.5">{attempt.http_status || '-'}</div>
                                 </div>
                                 <div>
-                                    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase">协议</span>
+                                    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase">{t('protocol')}</span>
                                     <div className="font-bold text-foreground/90 mt-0.5 truncate" title={protocolPath(attempt)}>{protocolPath(attempt)}</div>
                                 </div>
                                 <div>
-                                    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase">消耗费用</span>
+                                    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase">{t('cost')}</span>
                                     <div className="font-bold text-foreground/90 font-mono mt-0.5">{formatCost(attempt.estimated_cost)}</div>
                                 </div>
                                 <div>
-                                    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase">词元 Tokens</span>
+                                    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase">{t('tokenUsage')}</span>
                                     <div className="font-bold text-foreground/90 font-mono mt-0.5">
                                         {attempt.input_tokens || 0} / {attempt.output_tokens || 0}
                                     </div>
@@ -140,29 +144,29 @@ export function LogAttempts({ attempts }: LogAttemptsProps) {
                                 <div className="rounded bg-muted/30 p-2 text-[10px] border border-border/30 flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
                                     {attempt.channel_concurrency_mode && (
                                         <div>
-                                            <span className="font-semibold text-muted-foreground/50">队列模式:</span>{' '}
+                                            <span className="font-semibold text-muted-foreground/50">{t('queueMode')}:</span>{' '}
                                             <span className="font-bold text-foreground/80">
-                                                {attempt.channel_concurrency_mode === 'database' ? '共享队列' : '本地队列'}
+                                                {attempt.channel_concurrency_mode === 'database' ? t('queueModeDatabase') : t('queueModeLocal')}
                                             </span>
                                         </div>
                                     )}
                                     {attempt.channel_concurrency_limit && (
                                         <div>
-                                            <span className="font-semibold text-muted-foreground/50">并发限制:</span>{' '}
+                                            <span className="font-semibold text-muted-foreground/50">{t('queueLimit')}:</span>{' '}
                                             <span className="font-bold text-foreground/80 font-mono">{attempt.channel_concurrency_limit}</span>
                                         </div>
                                     )}
                                     {attempt.channel_concurrency_wait_ms && (
                                         <div>
-                                            <span className="font-semibold text-muted-foreground/50">等待时间:</span>{' '}
+                                            <span className="font-semibold text-muted-foreground/50">{t('queueWait')}:</span>{' '}
                                             <span className="font-bold text-foreground/80 font-mono">{formatDuration(attempt.channel_concurrency_wait_ms)}</span>
                                         </div>
                                     )}
                                     {(attempt.channel_concurrency_acquired || attempt.channel_concurrency_timed_out) && (
                                         <div>
-                                            <span className="font-semibold text-muted-foreground/50">队列结果:</span>{' '}
+                                            <span className="font-semibold text-muted-foreground/50">{t('queueOutcome')}:</span>{' '}
                                             <span className="font-bold text-foreground/80">
-                                                {attempt.channel_concurrency_timed_out ? '排队超时' : '获取成功'}
+                                                {attempt.channel_concurrency_timed_out ? t('queueOutcomeTimedOut') : t('queueOutcomeAcquired')}
                                             </span>
                                         </div>
                                     )}
@@ -174,25 +178,29 @@ export function LogAttempts({ attempts }: LogAttemptsProps) {
                                 <div className="rounded bg-muted/30 p-2 text-[10px] border border-border/30 grid grid-cols-2 gap-x-3 gap-y-1 text-muted-foreground">
                                     {attempt.quota_status && (
                                         <div>
-                                            <span className="font-semibold text-muted-foreground/50">配额状态:</span>{' '}
-                                            <span className="font-bold text-foreground/80">{attempt.quota_status}</span>
+                                            <span className="font-semibold text-muted-foreground/50">{t('quotaStatus')}:</span>{' '}
+                                            <span className="font-bold text-foreground/80">
+                                                {t.has(`quotaStatus${toCamelCase(attempt.quota_status)}`) ? t(`quotaStatus${toCamelCase(attempt.quota_status)}`) : attempt.quota_status}
+                                            </span>
                                         </div>
                                     )}
                                     {attempt.quota_reason && (
                                         <div className="col-span-1 truncate" title={attempt.quota_reason}>
-                                            <span className="font-semibold text-muted-foreground/50">配额原因:</span>{' '}
+                                            <span className="font-semibold text-muted-foreground/50">{t('quotaReason')}:</span>{' '}
                                             <span className="font-bold text-foreground/80">{attempt.quota_reason}</span>
                                         </div>
                                     )}
                                     {attempt.capacity_status && (
                                         <div>
-                                            <span className="font-semibold text-muted-foreground/50">容量状态:</span>{' '}
-                                            <span className="font-bold text-foreground/80">{attempt.capacity_status}</span>
+                                            <span className="font-semibold text-muted-foreground/50">{t('capacityStatus')}:</span>{' '}
+                                            <span className="font-bold text-foreground/80">
+                                                {t.has(`capacityStatus${toCamelCase(attempt.capacity_status)}`) ? t(`capacityStatus${toCamelCase(attempt.capacity_status)}`) : attempt.capacity_status}
+                                            </span>
                                         </div>
                                     )}
                                     {attempt.capacity_reason && (
                                         <div className="col-span-1 truncate" title={attempt.capacity_reason}>
-                                            <span className="font-semibold text-muted-foreground/50">容量原因:</span>{' '}
+                                            <span className="font-semibold text-muted-foreground/50">{t('capacityReason')}:</span>{' '}
                                             <span className="font-bold text-foreground/80">{attempt.capacity_reason}</span>
                                         </div>
                                     )}
