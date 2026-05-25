@@ -1,5 +1,6 @@
 {
     "login": {
+        "description": "Sign in to your AI gateway dashboard.",
         "username": "Username",
         "usernamePlaceholder": "Enter your username",
         "password": "Password",
@@ -2260,5 +2261,25 @@
             "api_key": "API Key",
             "access_token": "Access Token"
         }
+    },
+    "analytics": {
+        "title": "Analytics",
+        "description": "Advanced trend aggregation analysis based on gateway request logs",
+        "dimension": "Dimension",
+        "metric": "Metric",
+        "dimensions": {
+            "model": "Model",
+            "channel": "Channel",
+            "status": "Status",
+            "source": "Source"
+        },
+        "metrics": {
+            "requests": "Requests",
+            "tokens": "Tokens",
+            "cost": "Cost",
+            "latency": "Average Latency"
+        },
+        "no_data": "No Data Available",
+        "loading": "Loading..."
     }
 }

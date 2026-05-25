@@ -1,5 +1,6 @@
 {
     "login": {
+        "description": "登錄到您的 AI 網關儀表盤。",
         "username": "使用者名稱",
         "usernamePlaceholder": "請輸入使用者名稱",
         "password": "密碼",
@@ -2260,5 +2261,25 @@
             "api_key": "API Key",
             "access_token": "Access Token"
         }
+    },
+    "analytics": {
+        "title": "趨勢分析",
+        "description": "基於網關請求日誌數據的高級趨勢聚合分析",
+        "dimension": "分析維度",
+        "metric": "指標",
+        "dimensions": {
+            "model": "模型",
+            "channel": "渠道",
+            "status": "狀態",
+            "source": "來源"
+        },
+        "metrics": {
+            "requests": "請求數",
+            "tokens": "Tokens消耗",
+            "cost": "成本金額",
+            "latency": "平均耗時"
+        },
+        "no_data": "暫無數據",
+        "loading": "載入中..."
     }
 }

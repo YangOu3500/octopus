@@ -60,7 +60,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
             OCT
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">Octopus</h1>
-          <p className="text-sm text-muted-foreground">Sign in to your AI gateway dashboard.</p>
+          <p className="text-xs text-muted-foreground">{t('description')}</p>
         </header>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">

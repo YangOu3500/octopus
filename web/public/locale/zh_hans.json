@@ -1,5 +1,6 @@
 {
     "login": {
+        "description": "登录到您的 AI 网关仪表盘。",
         "username": "用户名",
         "usernamePlaceholder": "请输入用户名",
         "password": "密码",
@@ -2260,5 +2261,25 @@
             "api_key": "API Key",
             "access_token": "Access Token"
         }
+    },
+    "analytics": {
+        "title": "趋势分析",
+        "description": "基于网关请求日志数据的高级趋势聚合分析",
+        "dimension": "分析维度",
+        "metric": "指标",
+        "dimensions": {
+            "model": "模型",
+            "channel": "渠道",
+            "status": "状态",
+            "source": "来源"
+        },
+        "metrics": {
+            "requests": "请求数",
+            "tokens": "Tokens消耗",
+            "cost": "成本金额",
+            "latency": "平均耗时"
+        },
+        "no_data": "暂无数据",
+        "loading": "加载中..."
     }
 }
