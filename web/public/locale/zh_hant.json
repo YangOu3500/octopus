@@ -431,6 +431,7 @@
             "hint": "當渠道連續失敗達到閾值後觸發熔斷，冷卻時間按指數退避增長，上限為最大冷卻時間"
         },
         "saved": "已儲存",
+        "saveFailed": "儲存失敗",
         "backup": {
             "title": "備份 / 復原",
             "export": {
@@ -439,7 +440,8 @@
                 "includeStats": "包含統計",
                 "button": "下載 JSON",
                 "exporting": "匯出中...",
-                "success": "開始匯出"
+                "success": "開始匯出",
+                "failed": "匯出失敗"
             },
             "import": {
                 "title": "匯入（增量）",
@@ -501,6 +503,7 @@
                 "confirm": "確認"
             },
             "stats": {
+                "title": "使用統計",
                 "noData": "暫無統計數據",
                 "inputToken": "輸入 Token",
                 "outputToken": "輸出 Token",
@@ -1696,6 +1699,7 @@
             "capacityStatusUnknown": "未知"
         },
         "card": {
+            "noAttempts": "暫無嘗試記錄",
             "error": "錯誤",
             "errorInfo": "錯誤訊息",
             "firstToken": "首字",

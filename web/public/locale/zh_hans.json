@@ -431,6 +431,7 @@
             "hint": "当渠道连续失败达到阈值后触发熔断，冷却时间按指数退避增长，上限为最大冷却时间"
         },
         "saved": "已保存",
+        "saveFailed": "保存失败",
         "backup": {
             "title": "备份 / 恢复",
             "export": {
@@ -439,7 +440,8 @@
                 "includeStats": "包含统计",
                 "button": "下载 JSON",
                 "exporting": "导出中...",
-                "success": "开始导出"
+                "success": "开始导出",
+                "failed": "导出失败"
             },
             "import": {
                 "title": "导入（增量）",
@@ -501,6 +503,7 @@
                 "confirm": "确认"
             },
             "stats": {
+                "title": "使用统计",
                 "noData": "暂无统计数据",
                 "inputToken": "输入 Token",
                 "outputToken": "输出 Token",
@@ -1696,6 +1699,7 @@
             "capacityStatusUnknown": "未知"
         },
         "card": {
+            "noAttempts": "暂无尝试记录",
             "error": "错误",
             "errorInfo": "错误信息",
             "firstToken": "首字",

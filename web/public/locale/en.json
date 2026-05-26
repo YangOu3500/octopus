@@ -431,6 +431,7 @@
             "hint": "When a channel fails consecutively up to the threshold, circuit breaker trips. Cooldown grows exponentially up to the max cooldown"
         },
         "saved": "Saved",
+        "saveFailed": "Failed to save settings",
         "backup": {
             "title": "Backup / Restore",
             "export": {
@@ -439,7 +440,8 @@
                 "includeStats": "Include Stats",
                 "button": "Download JSON",
                 "exporting": "Exporting...",
-                "success": "Export started"
+                "success": "Export started",
+                "failed": "Export failed"
             },
             "import": {
                 "title": "Import (Incremental)",
@@ -501,6 +503,7 @@
                 "confirm": "Confirm"
             },
             "stats": {
+                "title": "Usage Statistics",
                 "noData": "No statistics available",
                 "inputToken": "Input Token",
                 "outputToken": "Output Token",
@@ -1696,6 +1699,7 @@
             "capacityStatusUnknown": "Unknown"
         },
         "card": {
+            "noAttempts": "No attempts recorded",
             "error": "Error",
             "errorInfo": "Error Info",
             "firstToken": "TTFT",
